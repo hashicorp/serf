@@ -5,10 +5,10 @@ package serf
 func (s *Serf) eventHandler() {
 	for {
 		select {
-		case <-s.joinCh:
-			// TODO: Handle join
-		case <-s.leaveCh:
-			// TODO: Handle leave
+		case n := <-s.joinCh:
+			s.nodeJoin(n)
+		case n := <-s.leaveCh:
+			s.nodeLeave(n)
 		case <-s.shutdownCh:
 			return
 		}
