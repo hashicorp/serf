@@ -74,3 +74,36 @@ func Start(conf *Config) (*Serf, error) {
 	// Done
 	return serf, nil
 }
+
+// Join is used to attempt to join an existing gossip pool
+// Returns an error if none of the existing nodes could be contacted
+func (s *Serf) Join(existing []string) error {
+	return nil
+}
+
+// Members provides a point-in-time snapshot of the members
+func (s *Serf) Members() []*Member {
+	s.memberLock.RLock()
+	defer s.memberLock.RUnlock()
+
+	members := make([]*Member, len(s.members))
+	for idx, m := range s.members {
+		newM := &Member{}
+		*newM = *m
+		members[idx] = newM
+	}
+
+	return members
+}
+
+// Leave allows a node to gracefully leave the cluster. This
+// should be followed by a call to Shutdown
+func (s *Serf) Leave() error {
+	return nil
+}
+
+// Shutdown is used to shutdown all the listeners. It is not graceful,
+// and should be preceeded by a call to Leave.
+func (s *Serf) Shutdown() error {
+	return nil
+}
