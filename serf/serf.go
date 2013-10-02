@@ -1,6 +1,7 @@
 package serf
 
 import (
+	"fmt"
 	"github.com/hashicorp/memberlist"
 	"sync"
 )
@@ -18,10 +19,13 @@ type Serf struct {
 	memberlist *memberlist.Memberlist
 	joinCh     chan *memberlist.Node
 	leaveCh    chan *memberlist.Node
+	shutdownCh chan struct{}
 
 	memberLock sync.RWMutex
 	members    []*Member
 	memberMap  map[string]*Member
+
+	broadcasts *memberlist.TransmitLimitedQueue
 }
 
 // Member represents a single member in the gossip pool
@@ -53,9 +57,16 @@ type EventDelegate interface {
 // Start is used to initialize a new Serf instance
 func Start(conf *Config) (*Serf, error) {
 	serf := &Serf{
-		conf:    conf,
-		joinCh:  make(chan *memberlist.Node, 64),
-		leaveCh: make(chan *memberlist.Node, 64),
+		conf:       conf,
+		joinCh:     make(chan *memberlist.Node, 64),
+		leaveCh:    make(chan *memberlist.Node, 64),
+		shutdownCh: make(chan struct{}, 1),
+	}
+
+	// Create the broadcast queue
+	serf.broadcasts = &memberlist.TransmitLimitedQueue{
+		NumNodes:       func() int { return len(serf.members) },
+		RetransmitMult: conf.RetransmitMult,
 	}
 
 	// Create the memberlist config
@@ -71,6 +82,9 @@ func Start(conf *Config) (*Serf, error) {
 	}
 	serf.memberlist = memb
 
+	// Start the event hander
+	go serf.eventHandler()
+
 	// Done
 	return serf, nil
 }
@@ -78,7 +92,14 @@ func Start(conf *Config) (*Serf, error) {
 // Join is used to attempt to join an existing gossip pool
 // Returns an error if none of the existing nodes could be contacted
 func (s *Serf) Join(existing []string) error {
-	return nil
+	// Ensure we have some input
+	if len(existing) == 0 {
+		return fmt.Errorf("must specify at least one node to join")
+	}
+
+	// Use memberlist to perform the join
+	_, err := s.memberlist.Join(existing)
+	return err
 }
 
 // Members provides a point-in-time snapshot of the members
@@ -99,11 +120,15 @@ func (s *Serf) Members() []*Member {
 // Leave allows a node to gracefully leave the cluster. This
 // should be followed by a call to Shutdown
 func (s *Serf) Leave() error {
-	return nil
+	// TODO: Broadcast leave intention
+
+	// Broadcast our own death
+	return s.memberlist.Leave()
 }
 
 // Shutdown is used to shutdown all the listeners. It is not graceful,
 // and should be preceeded by a call to Leave.
 func (s *Serf) Shutdown() error {
-	return nil
+	s.shutdownCh <- struct{}{}
+	return s.memberlist.Shutdown()
 }
