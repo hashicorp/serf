@@ -12,6 +12,8 @@ type Config struct {
 	MaxCoalesceTime  time.Duration // Maximum period of event coalescing for updates
 	MinQuiescentTime time.Duration // Minimum period of quiescence for updates
 
+	LeaveTimeout time.Duration // Timeout for leaving
+
 	PartitionCount    int           // If PartitionCount nodes fail in PartitionInvernal, it is considered a partition
 	PartitionInterval time.Duration // ParitionInterval must be < MaxCoalesceTime
 

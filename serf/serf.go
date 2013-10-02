@@ -3,7 +3,9 @@ package serf
 import (
 	"fmt"
 	"github.com/hashicorp/memberlist"
+	"log"
 	"sync"
+	"time"
 )
 
 const (
@@ -26,6 +28,8 @@ type Serf struct {
 	memberMap  map[string]*Member
 
 	broadcasts *memberlist.TransmitLimitedQueue
+
+	changeCh chan *Member
 }
 
 // Member represents a single member in the gossip pool
@@ -61,6 +65,7 @@ func Start(conf *Config) (*Serf, error) {
 		joinCh:     make(chan *memberlist.Node, 64),
 		leaveCh:    make(chan *memberlist.Node, 64),
 		shutdownCh: make(chan struct{}, 1),
+		changeCh:   make(chan *Member, 1024),
 	}
 
 	// Create the broadcast queue
@@ -120,8 +125,30 @@ func (s *Serf) Members() []*Member {
 // Leave allows a node to gracefully leave the cluster. This
 // should be followed by a call to Shutdown
 func (s *Serf) Leave() error {
-	// TODO: Broadcast leave intention
+	var notifyCh chan struct{}
+	var l leave
 
+	// No need to broadcast if there is nobody else
+	if len(s.members) <= 1 {
+		goto AFTER_BROADCAST
+	}
+
+	// Create a channel to get notified
+	notifyCh = make(chan struct{}, 1)
+
+	// Broadcast leave intention
+	l = leave{s.conf.Hostname}
+	if err := s.encodeBroadcastNotify(leaveMsg, &l, notifyCh); err != nil {
+		return err
+	}
+
+	select {
+	case <-notifyCh:
+	case <-time.After(s.conf.LeaveTimeout):
+		log.Printf("[WARN] Timed out broadcasting leave intention")
+	}
+
+AFTER_BROADCAST:
 	// Broadcast our own death
 	return s.memberlist.Leave()
 }
