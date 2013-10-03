@@ -1,6 +1,8 @@
 package serf
 
 import (
+	"github.com/hashicorp/memberlist"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -26,6 +28,25 @@ func (m *MockDelegate) MembersFailed(mems []*Member) {
 
 func (m *MockDelegate) MembersPartitioned(mems []*Member) {
 	m.partitioned = mems
+}
+
+type MockDetector struct {
+	suspect   []*Member
+	unsuspect []*Member
+}
+
+func (d *MockDetector) Suspect(m *Member) {
+	d.suspect = append(d.suspect, m)
+}
+
+func (d *MockDetector) Unsuspect(m *Member) {
+	d.unsuspect = append(d.unsuspect, m)
+}
+func (d *MockDetector) PartitionDetected() bool {
+	return false
+}
+func (d *MockDetector) PartitionedMembers() []*Member {
+	return nil
 }
 
 func TestSerf_ChangeHandler_Stop(t *testing.T) {
@@ -191,5 +212,55 @@ func TestSerf_InvokeDelegate(t *testing.T) {
 	}
 	if len(d.partitioned) != 1 || d.partitioned[0] != m3 {
 		t.Fatalf("m3 should have partitioned!")
+	}
+}
+
+func TestSerf_NodeJoin_NewNode(t *testing.T) {
+	c := &Config{}
+	s := newSerf(c)
+
+	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
+	s.nodeJoin(&n)
+
+	mem := s.memberMap["test"]
+	if mem.Name != "test" || !reflect.DeepEqual([]byte(mem.Addr), []byte(n.Addr)) || mem.Role != "foo" || mem.Status != StatusAlive {
+		t.Fatalf("bad member: %v", *mem)
+	}
+
+	ch := <-s.changeCh
+	if ch.member != mem || ch.oldStatus != StatusNone || ch.newStatus != StatusAlive {
+		t.Fatalf("bad status change %v", ch)
+	}
+}
+
+func TestSerf_NodeJoin_Existing(t *testing.T) {
+	c := &Config{}
+	s := newSerf(c)
+	md := &MockDetector{}
+	s.detector = md
+
+	s.memberMap["test"] = &Member{
+		Name:   "test",
+		Addr:   []byte{127, 0, 0, 1},
+		Role:   "foo",
+		Status: StatusFailed,
+	}
+
+	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
+	s.nodeJoin(&n)
+
+	mem := s.memberMap["test"]
+	if mem.Name != "test" || !reflect.DeepEqual([]byte(mem.Addr), []byte(n.Addr)) || mem.Role != "foo" || mem.Status != StatusAlive {
+		t.Fatalf("bad member: %v", *mem)
+	}
+
+	ch := <-s.changeCh
+	if ch.member != mem || ch.oldStatus != StatusFailed || ch.newStatus != StatusAlive {
+		t.Fatalf("bad status change %v", ch)
+	}
+
+	// Should unsuspect
+	if len(md.unsuspect) != 1 || md.unsuspect[0] != mem {
+		t.Fatalf("should unsuspect")
 	}
 }

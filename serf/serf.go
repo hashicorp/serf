@@ -63,13 +63,14 @@ type EventDelegate interface {
 	MembersPartitioned([]*Member)
 }
 
-// Start is used to initialize a new Serf instance
-func Start(conf *Config) (*Serf, error) {
+// newSerf is used to construct a serf struct from its config
+func newSerf(conf *Config) *Serf {
 	serf := &Serf{
 		conf:       conf,
 		joinCh:     make(chan *memberlist.Node, 64),
 		leaveCh:    make(chan *memberlist.Node, 64),
 		shutdownCh: make(chan struct{}),
+		memberMap:  make(map[string]*Member),
 		changeCh:   make(chan statusChange, 1024),
 	}
 
@@ -86,6 +87,12 @@ func Start(conf *Config) (*Serf, error) {
 		NumNodes:       func() int { return len(serf.members) },
 		RetransmitMult: conf.RetransmitMult,
 	}
+	return serf
+}
+
+// Start is used to initialize a new Serf instance
+func Start(conf *Config) (*Serf, error) {
+	serf := newSerf(conf)
 
 	// Create the memberlist config
 	mlConf := memberlistConfig(conf)
