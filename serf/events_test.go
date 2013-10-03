@@ -215,6 +215,34 @@ func TestSerf_InvokeDelegate(t *testing.T) {
 	}
 }
 
+func TestSerf_InvokeDelegate_NoDelegate(t *testing.T) {
+	c := &Config{}
+	s := &Serf{conf: c}
+
+	m1 := &Member{}
+	m2 := &Member{}
+	m3 := &Member{}
+	m4 := &Member{}
+	m5 := &Member{}
+
+	init := map[*Member]MemberStatus{
+		m1: StatusNone,
+		m2: StatusAlive,
+		m3: StatusFailed,
+		m4: StatusLeaving,
+		m5: StatusAlive,
+	}
+	end := map[*Member]MemberStatus{
+		m1: StatusAlive,
+		m2: StatusFailed,
+		m3: StatusPartitioned,
+		m4: StatusLeft,
+		m5: StatusAlive,
+	}
+
+	s.invokeDelegate(init, end)
+}
+
 func TestSerf_NodeJoin_NewNode(t *testing.T) {
 	c := &Config{}
 	s := newSerf(c)
@@ -329,6 +357,14 @@ func TestSerf_NodeLeave_Graceful(t *testing.T) {
 	}
 }
 
+func TestSerf_NodeLeave_Unknown(t *testing.T) {
+	c := &Config{}
+	s := newSerf(c)
+
+	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
+	s.nodeLeave(&n)
+}
+
 func TestSerf_IntendLeave_Alive(t *testing.T) {
 	c := &Config{}
 	s := newSerf(c)
@@ -352,5 +388,15 @@ func TestSerf_IntendLeave_Alive(t *testing.T) {
 
 	if s.intendLeave(&l) {
 		t.Fatalf("expected no rebroadcast")
+	}
+}
+
+func TestSerf_IntendLeave_Unknown(t *testing.T) {
+	c := &Config{}
+	s := newSerf(c)
+
+	l := leave{Node: "test"}
+	if s.intendLeave(&l) {
+		t.Fatalf("unexpected rebroadcast")
 	}
 }
