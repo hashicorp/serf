@@ -28,6 +28,8 @@ type Serf struct {
 	members    []*Member
 	memberMap  map[string]*Member
 
+	detector partitionDetector
+
 	broadcasts *memberlist.TransmitLimitedQueue
 
 	changeCh chan statusChange
@@ -67,6 +69,14 @@ func Start(conf *Config) (*Serf, error) {
 		leaveCh:    make(chan *memberlist.Node, 64),
 		shutdownCh: make(chan struct{}, 4),
 		changeCh:   make(chan statusChange, 1024),
+	}
+
+	// Select a partition detector
+	if conf.PartitionCount > 0 && conf.PartitionInterval > 0 {
+		serf.detector = newPartitionRing(conf.PartitionCount, conf.PartitionInterval)
+	} else {
+		// Parititon detection disabled
+		serf.detector = noopDetector{}
 	}
 
 	// Create the broadcast queue
