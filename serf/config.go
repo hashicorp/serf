@@ -10,7 +10,7 @@ type Config struct {
 	Role     string // Role in the gossip pool
 
 	MaxCoalesceTime  time.Duration // Maximum period of event coalescing for updates
-	MinQuiescentTime time.Duration // Minimum period of quiescence for updates
+	MinQuiescentTime time.Duration // Minimum period of quiescence for updates. This has lower precedence then MaxCoalesceTime
 
 	LeaveTimeout time.Duration // Timeout for leaving
 

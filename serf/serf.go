@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	StatusAlive = iota
+	StatusNone = iota
+	StatusAlive
 	StatusLeaving
 	StatusLeft
 	StatusFailed
@@ -29,7 +30,7 @@ type Serf struct {
 
 	broadcasts *memberlist.TransmitLimitedQueue
 
-	changeCh chan *Member
+	changeCh chan statusChange
 }
 
 // Member represents a single member in the gossip pool
@@ -64,8 +65,8 @@ func Start(conf *Config) (*Serf, error) {
 		conf:       conf,
 		joinCh:     make(chan *memberlist.Node, 64),
 		leaveCh:    make(chan *memberlist.Node, 64),
-		shutdownCh: make(chan struct{}, 1),
-		changeCh:   make(chan *Member, 1024),
+		shutdownCh: make(chan struct{}, 4),
+		changeCh:   make(chan statusChange, 1024),
 	}
 
 	// Create the broadcast queue
@@ -87,8 +88,11 @@ func Start(conf *Config) (*Serf, error) {
 	}
 	serf.memberlist = memb
 
-	// Start the event hander
+	// Start the event handelr
 	go serf.eventHandler()
+
+	// Start the change handler
+	go serf.changeHandler()
 
 	// Done
 	return serf, nil
@@ -156,6 +160,9 @@ AFTER_BROADCAST:
 // Shutdown is used to shutdown all the listeners. It is not graceful,
 // and should be preceeded by a call to Leave.
 func (s *Serf) Shutdown() error {
-	s.shutdownCh <- struct{}{}
+	// Emit once per background routine (eventHandler, changeHandler)
+	for i := 0; i < 2; i++ {
+		s.shutdownCh <- struct{}{}
+	}
 	return s.memberlist.Shutdown()
 }

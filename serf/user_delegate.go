@@ -66,10 +66,12 @@ func (s *Serf) GetBroadcasts(overhead, limit int) [][]byte {
 // LocalState is used for a TCP Push/Pull. This is sent to
 // the remote side as well as membership information
 func (s *Serf) LocalState() []byte {
+	// Do not push any state
 	return nil
 }
 
 // MergeRemoteState is invoked after a TCP Push/Pull. This is the
 // state received from the remote side.
-func (s *Serf) MergeRemoteState([]byte) {
+func (s *Serf) MergeRemoteState(buf []byte) {
+	// Do not merge any remote state
 }
