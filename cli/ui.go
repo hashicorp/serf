@@ -1,4 +1,4 @@
-package serf
+package cli
 
 import (
 	"fmt"
