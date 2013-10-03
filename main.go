@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/hashicorp/serf/cli"
 	"os"
 )
 
@@ -20,4 +21,17 @@ func main() {
 }
 
 func realMain() int {
+	cli := &cli.CLI{
+		Args:     os.Args[1:],
+		Commands: make(map[string]cli.CommandFactory),
+		Ui:       &cli.BasicUi{Writer: os.Stdout},
+	}
+
+	exitCode, err := cli.Run()
+	if err != nil {
+		// TODO(mitchellh): too harsh
+		panic(err)
+	}
+
+	return exitCode
 }
