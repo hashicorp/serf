@@ -127,6 +127,7 @@ func (s *Serf) nodeJoin(n *memberlist.Node) {
 			Status: StatusAlive,
 		}
 		s.memberMap[n.Name] = mem
+		s.members = append(s.members, mem)
 	} else {
 		oldStatus = mem.Status
 		mem.Status = StatusAlive
