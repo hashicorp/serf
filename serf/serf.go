@@ -45,6 +45,10 @@ type Member struct {
 	Status MemberStatus
 }
 
+// EventDelegate is the interface that must be implemented by a client that wants to
+// receive coalesced event notifications. These methods will never be called concurrently.
+// New events will not be coalesced until the delegate returns, so the delegate should minimize
+// time spent in the callbacks.
 type EventDelegate interface {
 	// MembersJoined invoked when members have joined the cluster
 	MembersJoined([]*Member)
@@ -67,11 +71,11 @@ type EventDelegate interface {
 func newSerf(conf *Config) *Serf {
 	serf := &Serf{
 		conf:       conf,
-		joinCh:     make(chan *memberlist.Node, 64),
-		leaveCh:    make(chan *memberlist.Node, 64),
+		joinCh:     make(chan *memberlist.Node, 128),
+		leaveCh:    make(chan *memberlist.Node, 128),
 		shutdownCh: make(chan struct{}),
 		memberMap:  make(map[string]*Member),
-		changeCh:   make(chan statusChange, 1024),
+		changeCh:   make(chan statusChange, 4096),
 	}
 
 	// Select a partition detector
