@@ -75,7 +75,7 @@ func partitionEvents(initial, end map[*Member]MemberStatus) (joined, left, faile
 		case StatusFailed:
 			failed = append(failed, member)
 		case StatusPartitioned:
-			partitioned = append(failed, member)
+			partitioned = append(partitioned, member)
 		}
 	}
 	return
