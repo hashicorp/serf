@@ -15,11 +15,14 @@ type statusChange struct {
 // and apply a partition detection heuristic
 func (s *Serf) changeHandler() {
 	// Run until indicated otherwise
-	for s.singleUpdateSet() {
+	for s.coalesceUpdates() {
 	}
 }
 
-func (s *Serf) singleUpdateSet() bool {
+// coalesceUpdates will collect all the changes we receive until we
+// either reach a quiescent period, or we reach the maximum coaslecing time.
+// The coalesced updates are then forwarded to the Delegate
+func (s *Serf) coalesceUpdates() bool {
 	initialStatus := make(map[*Member]MemberStatus)
 	endStatus := make(map[*Member]MemberStatus)
 	var coalesceDone <-chan time.Time
