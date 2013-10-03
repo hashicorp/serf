@@ -69,7 +69,7 @@ func Start(conf *Config) (*Serf, error) {
 		conf:       conf,
 		joinCh:     make(chan *memberlist.Node, 64),
 		leaveCh:    make(chan *memberlist.Node, 64),
-		shutdownCh: make(chan struct{}, 4),
+		shutdownCh: make(chan struct{}),
 		changeCh:   make(chan statusChange, 1024),
 	}
 
@@ -173,8 +173,6 @@ AFTER_BROADCAST:
 // and should be preceeded by a call to Leave.
 func (s *Serf) Shutdown() error {
 	// Emit once per background routine (eventHandler, changeHandler)
-	for i := 0; i < 2; i++ {
-		s.shutdownCh <- struct{}{}
-	}
+	close(s.shutdownCh)
 	return s.memberlist.Shutdown()
 }
