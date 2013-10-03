@@ -50,3 +50,31 @@ func memberlistConfig(conf *Config) *memberlist.Config {
 	mc.GossipInterval = conf.GossipInterval
 	return mc
 }
+
+// DefaultConfig is used to return a default set of sane configurations
+func DefaultConfig() *Config {
+	c := &Config{}
+
+	// Copy the memberlist configs
+	defaultMb := memberlist.DefaultConfig()
+	c.Hostname = defaultMb.Name
+	c.GossipBindAddr = defaultMb.BindAddr
+	c.GossipPort = defaultMb.UDPPort
+	c.GossipTCPTimeout = defaultMb.TCPTimeout
+	c.IndirectChecks = defaultMb.IndirectChecks
+	c.RetransmitMult = defaultMb.RetransmitMult
+	c.SuspicionMult = defaultMb.SuspicionMult
+	c.PushPullInterval = defaultMb.PushPullInterval
+	c.RTT = defaultMb.RTT
+	c.ProbeInterval = defaultMb.ProbeInterval
+	c.GossipNodes = defaultMb.GossipNodes
+	c.GossipInterval = defaultMb.GossipInterval
+
+	// Set our own defaults
+	c.PartitionCount = 2
+	c.PartitionInterval = 30 * time.Second
+	c.MinQuiescentTime = 5 * time.Second
+	c.MaxCoalesceTime = 60 * time.Second
+
+	return c
+}
