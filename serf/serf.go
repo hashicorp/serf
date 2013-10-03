@@ -17,7 +17,7 @@ const (
 	StatusPartitioned // Partitioned is a best guess, should be treated as failed
 )
 
-type Agent struct {
+type Serf struct {
 	conf       *Config
 	memberlist *memberlist.Memberlist
 	joinCh     chan *memberlist.Node
@@ -60,8 +60,8 @@ type EventDelegate interface {
 }
 
 // Start is used to initialize a new Serf instance
-func Start(conf *Config) (*Agent, error) {
-	serf := &Agent{
+func Start(conf *Config) (*Serf, error) {
+	serf := &Serf{
 		conf:       conf,
 		joinCh:     make(chan *memberlist.Node, 64),
 		leaveCh:    make(chan *memberlist.Node, 64),
@@ -100,7 +100,7 @@ func Start(conf *Config) (*Agent, error) {
 
 // Join is used to attempt to join an existing gossip pool
 // Returns an error if none of the existing nodes could be contacted
-func (s *Agent) Join(existing []string) error {
+func (s *Serf) Join(existing []string) error {
 	// Ensure we have some input
 	if len(existing) == 0 {
 		return fmt.Errorf("must specify at least one node to join")
@@ -112,7 +112,7 @@ func (s *Agent) Join(existing []string) error {
 }
 
 // Members provides a point-in-time snapshot of the members
-func (s *Agent) Members() []*Member {
+func (s *Serf) Members() []*Member {
 	s.memberLock.RLock()
 	defer s.memberLock.RUnlock()
 
@@ -128,7 +128,7 @@ func (s *Agent) Members() []*Member {
 
 // Leave allows a node to gracefully leave the cluster. This
 // should be followed by a call to Shutdown
-func (s *Agent) Leave() error {
+func (s *Serf) Leave() error {
 	var notifyCh chan struct{}
 	var l leave
 
@@ -159,7 +159,7 @@ AFTER_BROADCAST:
 
 // Shutdown is used to shutdown all the listeners. It is not graceful,
 // and should be preceeded by a call to Leave.
-func (s *Agent) Shutdown() error {
+func (s *Serf) Shutdown() error {
 	// Emit once per background routine (eventHandler, changeHandler)
 	for i := 0; i < 2; i++ {
 		s.shutdownCh <- struct{}{}
