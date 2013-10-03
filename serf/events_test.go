@@ -264,3 +264,93 @@ func TestSerf_NodeJoin_Existing(t *testing.T) {
 		t.Fatalf("should unsuspect")
 	}
 }
+
+func TestSerf_NodeLeave_Failed(t *testing.T) {
+	c := &Config{}
+	s := newSerf(c)
+	md := &MockDetector{}
+	s.detector = md
+
+	s.memberMap["test"] = &Member{
+		Name:   "test",
+		Addr:   []byte{127, 0, 0, 1},
+		Role:   "foo",
+		Status: StatusAlive,
+	}
+
+	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
+	s.nodeLeave(&n)
+
+	mem := s.memberMap["test"]
+	if mem.Name != "test" || !reflect.DeepEqual([]byte(mem.Addr), []byte(n.Addr)) || mem.Role != "foo" || mem.Status != StatusFailed {
+		t.Fatalf("bad member: %v", *mem)
+	}
+
+	ch := <-s.changeCh
+	if ch.member != mem || ch.oldStatus != StatusAlive || ch.newStatus != StatusFailed {
+		t.Fatalf("bad status change %v", ch)
+	}
+
+	// Should suspect
+	if len(md.suspect) != 1 || md.suspect[0] != mem {
+		t.Fatalf("should suspect")
+	}
+}
+
+func TestSerf_NodeLeave_Graceful(t *testing.T) {
+	c := &Config{}
+	s := newSerf(c)
+	md := &MockDetector{}
+	s.detector = md
+
+	s.memberMap["test"] = &Member{
+		Name:   "test",
+		Addr:   []byte{127, 0, 0, 1},
+		Role:   "foo",
+		Status: StatusLeaving,
+	}
+
+	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
+	s.nodeLeave(&n)
+
+	mem := s.memberMap["test"]
+	if mem.Name != "test" || !reflect.DeepEqual([]byte(mem.Addr), []byte(n.Addr)) || mem.Role != "foo" || mem.Status != StatusLeft {
+		t.Fatalf("bad member: %v", *mem)
+	}
+
+	ch := <-s.changeCh
+	if ch.member != mem || ch.oldStatus != StatusLeaving || ch.newStatus != StatusLeft {
+		t.Fatalf("bad status change %v", ch)
+	}
+
+	// Should not suspect
+	if len(md.suspect) != 0 {
+		t.Fatalf("should not suspect")
+	}
+}
+
+func TestSerf_IntendLeave_Alive(t *testing.T) {
+	c := &Config{}
+	s := newSerf(c)
+
+	s.memberMap["test"] = &Member{
+		Name:   "test",
+		Addr:   []byte{127, 0, 0, 1},
+		Role:   "foo",
+		Status: StatusAlive,
+	}
+
+	l := leave{Node: "test"}
+	if !s.intendLeave(&l) {
+		t.Fatalf("expected rebroadcast")
+	}
+
+	mem := s.memberMap["test"]
+	if mem.Status != StatusLeaving {
+		t.Fatalf("bad member: %v", *mem)
+	}
+
+	if s.intendLeave(&l) {
+		t.Fatalf("expected no rebroadcast")
+	}
+}
