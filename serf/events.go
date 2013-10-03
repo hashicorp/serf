@@ -13,13 +13,13 @@ type statusChange struct {
 
 // changeHandler is a long running routine to coalesce updates,
 // and apply a partition detection heuristic
-func (s *Serf) changeHandler() {
+func (s *Agent) changeHandler() {
 	// Run until indicated otherwise
 	for s.singleUpdateSet() {
 	}
 }
 
-func (s *Serf) singleUpdateSet() bool {
+func (s *Agent) singleUpdateSet() bool {
 	initialStatus := make(map[*Member]int)
 	endStatus := make(map[*Member]int)
 	var coalesceDone <-chan time.Time
@@ -83,7 +83,7 @@ func partitionEvents(initial, end map[*Member]int) (joined, left, failed, partit
 
 // invokeDelegate is called to invoke the various delegate events
 // after the updates have been coalesced
-func (s *Serf) invokeDelegate(initial, end map[*Member]int) {
+func (s *Agent) invokeDelegate(initial, end map[*Member]int) {
 	// Bail if no delegate
 	d := s.conf.Delegate
 	if d == nil {
@@ -109,7 +109,7 @@ func (s *Serf) invokeDelegate(initial, end map[*Member]int) {
 }
 
 // nodeJoin is fired when memberlist detects a node join
-func (s *Serf) nodeJoin(n *memberlist.Node) {
+func (s *Agent) nodeJoin(n *memberlist.Node) {
 	s.memberLock.Lock()
 	defer s.memberLock.Unlock()
 
@@ -134,7 +134,7 @@ func (s *Serf) nodeJoin(n *memberlist.Node) {
 }
 
 // nodeLeave is fired when memberlist detects a node join
-func (s *Serf) nodeLeave(n *memberlist.Node) {
+func (s *Agent) nodeLeave(n *memberlist.Node) {
 	s.memberLock.Lock()
 	defer s.memberLock.Unlock()
 
@@ -159,7 +159,7 @@ func (s *Serf) nodeLeave(n *memberlist.Node) {
 
 // intendLeave is invoked when we get a message indicating
 // an intention to leave. Returns true if we should re-broadcast
-func (s *Serf) intendLeave(l *leave) bool {
+func (s *Agent) intendLeave(l *leave) bool {
 	s.memberLock.Lock()
 	defer s.memberLock.Unlock()
 

@@ -35,7 +35,7 @@ func (b *serfBroadcast) Finished() {
 
 // encodeBroadcastNotify encodes a message and enqueues it for broadcast and notifies
 // the given channel when transmission is finished
-func (s *Serf) encodeBroadcastNotify(msgType int, msg interface{}, notify chan struct{}) error {
+func (s *Agent) encodeBroadcastNotify(msgType int, msg interface{}, notify chan struct{}) error {
 	buf, err := encode(msgType, msg)
 	if err != nil {
 		return err
@@ -48,7 +48,7 @@ func (s *Serf) encodeBroadcastNotify(msgType int, msg interface{}, notify chan s
 }
 
 // rebroadcast is used to enqueue a message to be rebroadcast
-func (s *Serf) rebroadcast(msg []byte) {
+func (s *Agent) rebroadcast(msg []byte) {
 	b := &serfBroadcast{msg, nil}
 	s.broadcasts.QueueBroadcast(b)
 }
