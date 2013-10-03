@@ -7,8 +7,8 @@ import (
 
 type statusChange struct {
 	member    *Member
-	oldStatus int
-	newStatus int
+	oldStatus MemberStatus
+	newStatus MemberStatus
 }
 
 // changeHandler is a long running routine to coalesce updates,
@@ -20,8 +20,8 @@ func (s *Serf) changeHandler() {
 }
 
 func (s *Serf) singleUpdateSet() bool {
-	initialStatus := make(map[*Member]int)
-	endStatus := make(map[*Member]int)
+	initialStatus := make(map[*Member]MemberStatus)
+	endStatus := make(map[*Member]MemberStatus)
 	var coalesceDone <-chan time.Time
 	var quiescent <-chan time.Time
 
@@ -58,7 +58,7 @@ OUTER:
 }
 
 // partitionedNodes into various groups based on their start and end states
-func partitionEvents(initial, end map[*Member]int) (joined, left, failed, partitioned []*Member) {
+func partitionEvents(initial, end map[*Member]MemberStatus) (joined, left, failed, partitioned []*Member) {
 	for member, endState := range end {
 		initState := initial[member]
 
@@ -83,7 +83,7 @@ func partitionEvents(initial, end map[*Member]int) (joined, left, failed, partit
 
 // invokeDelegate is called to invoke the various delegate events
 // after the updates have been coalesced
-func (s *Serf) invokeDelegate(initial, end map[*Member]int) {
+func (s *Serf) invokeDelegate(initial, end map[*Member]MemberStatus) {
 	// Bail if no delegate
 	d := s.conf.Delegate
 	if d == nil {

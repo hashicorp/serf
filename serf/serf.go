@@ -8,8 +8,10 @@ import (
 	"time"
 )
 
+type MemberStatus int
+
 const (
-	StatusNone = iota
+	StatusNone MemberStatus = iota
 	StatusAlive
 	StatusLeaving
 	StatusLeft
@@ -40,7 +42,7 @@ type Member struct {
 	Name   string
 	Addr   []byte
 	Role   string
-	Status int
+	Status MemberStatus
 }
 
 type EventDelegate interface {
