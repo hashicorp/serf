@@ -10,6 +10,7 @@ type CommandFactory func(string) (Command, error)
 type CLI struct {
 	Args     []string
 	Commands map[string]CommandFactory
+	Ui       Ui
 }
 
 // Run runs the actual CLI based on the arguments given.
