@@ -37,7 +37,7 @@ func (s *Serf) NotifyMsg(buf []byte) {
 	}
 
 	rebroadcast := false
-	msgType := buf[0]
+	msgType := messageType(buf[0])
 	switch msgType {
 	case leaveMsg:
 		l := leave{}

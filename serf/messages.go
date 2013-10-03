@@ -4,8 +4,10 @@ import (
 	"github.com/hashicorp/memberlist"
 )
 
+type messageType uint8
+
 const (
-	leaveMsg = iota
+	leaveMsg messageType = iota
 )
 
 // leave message is broadcast to signal intention to leave
@@ -35,7 +37,7 @@ func (b *serfBroadcast) Finished() {
 
 // encodeBroadcastNotify encodes a message and enqueues it for broadcast and notifies
 // the given channel when transmission is finished
-func (s *Serf) encodeBroadcastNotify(msgType int, msg interface{}, notify chan struct{}) error {
+func (s *Serf) encodeBroadcastNotify(msgType messageType, msg interface{}, notify chan struct{}) error {
 	buf, err := encode(msgType, msg)
 	if err != nil {
 		return err
