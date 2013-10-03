@@ -53,7 +53,7 @@ OUTER:
 	}
 
 	// Fire any relevant events
-	go s.invokeDelegate(initialStatus, endStatus)
+	s.invokeDelegate(initialStatus, endStatus)
 	return true
 }
 
