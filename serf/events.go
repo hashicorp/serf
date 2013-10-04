@@ -144,8 +144,8 @@ func (s *Serf) nodeJoin(n *memberlist.Node) {
 	s.unsuspectPartition(mem)
 
 	// Remove from failed or left lists
-	removeOldMember(s.failedMembers, mem)
-	removeOldMember(s.leftMembers, mem)
+	s.failedMembers = removeOldMember(s.failedMembers, mem)
+	s.leftMembers = removeOldMember(s.leftMembers, mem)
 }
 
 // nodeLeave is fired when memberlist detects a node join

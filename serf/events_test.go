@@ -267,17 +267,18 @@ func TestSerf_NodeJoin_Existing(t *testing.T) {
 	md := &MockDetector{}
 	s.detector = md
 
-	s.members["test"] = &Member{
+	mem := &Member{
 		Name:   "test",
 		Addr:   []byte{127, 0, 0, 1},
 		Role:   "foo",
 		Status: StatusFailed,
 	}
+	s.members["test"] = mem
+	s.failedMembers = append(s.failedMembers, &oldMember{mem, time.Now()})
 
 	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
 	s.nodeJoin(&n)
 
-	mem := s.members["test"]
 	if mem.Name != "test" || !reflect.DeepEqual([]byte(mem.Addr), []byte(n.Addr)) || mem.Role != "foo" || mem.Status != StatusAlive {
 		t.Fatalf("bad member: %v", *mem)
 	}
@@ -290,6 +291,10 @@ func TestSerf_NodeJoin_Existing(t *testing.T) {
 	// Should unsuspect
 	if len(md.unsuspect) != 1 || md.unsuspect[0] != mem {
 		t.Fatalf("should unsuspect")
+	}
+
+	if len(s.failedMembers) != 0 {
+		t.Fatalf("should no longer be a failed member")
 	}
 }
 
@@ -323,6 +328,10 @@ func TestSerf_NodeLeave_Failed(t *testing.T) {
 	if len(md.suspect) != 1 || md.suspect[0] != mem {
 		t.Fatalf("should suspect")
 	}
+
+	if len(s.failedMembers) != 1 || s.failedMembers[0].member != mem {
+		t.Fatalf("should be in the failed members")
+	}
 }
 
 func TestSerf_NodeLeave_Graceful(t *testing.T) {
@@ -354,6 +363,10 @@ func TestSerf_NodeLeave_Graceful(t *testing.T) {
 	// Should not suspect
 	if len(md.suspect) != 0 {
 		t.Fatalf("should not suspect")
+	}
+
+	if len(s.leftMembers) != 1 || s.leftMembers[0].member != mem {
+		t.Fatalf("should be in the left members")
 	}
 }
 
