@@ -135,10 +135,17 @@ func (s *Serf) nodeJoin(n *memberlist.Node) {
 	// Notify about change
 	s.changeCh <- statusChange{mem, oldStatus, StatusAlive}
 
-	// Check if we should unsuspect
-	if oldStatus == StatusFailed || oldStatus == StatusPartitioned {
-		s.unsuspectPartition(mem)
+	// Check if node was previously in a failed state
+	if oldStatus != StatusFailed && oldStatus != StatusPartitioned {
+		return
 	}
+
+	// Unsuspect a partition
+	s.unsuspectPartition(mem)
+
+	// Remove from failed or left lists
+	removeOldMember(s.failedMembers, mem)
+	removeOldMember(s.leftMembers, mem)
 }
 
 // nodeLeave is fired when memberlist detects a node join
@@ -157,8 +164,11 @@ func (s *Serf) nodeLeave(n *memberlist.Node) {
 	switch mem.Status {
 	case StatusAlive:
 		mem.Status = StatusFailed
+		s.failedMembers = append(s.failedMembers, &oldMember{member: mem, time: time.Now()})
+
 	case StatusLeaving:
 		mem.Status = StatusLeft
+		s.leftMembers = append(s.leftMembers, &oldMember{member: mem, time: time.Now()})
 	}
 
 	// Check if we should notify about a change

@@ -26,8 +26,10 @@ type Serf struct {
 	leaveCh    chan *memberlist.Node
 	shutdownCh chan struct{}
 
-	memberLock sync.RWMutex
-	members    map[string]*Member
+	memberLock    sync.RWMutex
+	members       map[string]*Member
+	failedMembers []*oldMember
+	leftMembers   []*oldMember
 
 	detector partitionDetector
 
@@ -115,6 +117,12 @@ func Start(conf *Config) (*Serf, error) {
 
 	// Start the change handler
 	go serf.changeHandler()
+
+	// Start the reconnect handler
+	go serf.reconnectHandler()
+
+	// Start the reap handler
+	go serf.reapHandler()
 
 	// Done
 	return serf, nil

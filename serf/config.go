@@ -19,6 +19,9 @@ type Config struct {
 
 	ReconnectInterval time.Duration // How often do we attempt to reconnect to failed nodes
 	ReconnectTimeout  time.Duration // How long do we keep retrying to connect to a failed node before giving up
+	TombstoneTimeout  time.Duration // How long to keep a tombstone of members that left. Should match reconnect timeout.
+
+	ReapInterval time.Duration // How often we reap tombstones
 
 	GossipBindAddr   string        // Binding address
 	GossipPort       int           // TCP and UDP ports for gossip
@@ -80,6 +83,8 @@ func DefaultConfig() *Config {
 	c.MaxCoalesceTime = 60 * time.Second
 	c.ReconnectInterval = 30 * time.Second
 	c.ReconnectTimeout = 24 * time.Hour
+	c.TombstoneTimeout = 24 * time.Hour
+	c.ReapInterval = 15 * time.Second
 
 	return c
 }
