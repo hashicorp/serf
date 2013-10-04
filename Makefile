@@ -21,4 +21,4 @@ cov:
 	gocov test ./... | gocov-html > /tmp/coverage.html
 	open /tmp/coverage.html
 
-.PNONY: cov integ subnet test
+.PNONY: all cov deps integ subnet test
