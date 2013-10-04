@@ -1,4 +1,14 @@
-test: subnet
+DEPS = $(go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
+
+all: deps
+	@mkdir -p bin/
+	@bash --norc -i ./scripts/build.sh
+
+deps:
+	go get -d -v ./...
+	echo $(DEPS) | xargs -n1 go get -d
+
+test: deps subnet
 	go test ./...
 
 integ: subnet
@@ -11,4 +21,4 @@ cov:
 	gocov test ./... | gocov-html > /tmp/coverage.html
 	open /tmp/coverage.html
 
-.PNONY: test cov integ
+.PNONY: cov integ subnet test

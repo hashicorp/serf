@@ -4,6 +4,7 @@
 *.so
 
 # Folders
+bin
 _obj
 _test
 
