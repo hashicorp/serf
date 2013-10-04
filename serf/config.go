@@ -12,8 +12,6 @@ type Config struct {
 	MaxCoalesceTime  time.Duration // Maximum period of event coalescing for updates
 	MinQuiescentTime time.Duration // Minimum period of quiescence for updates. This has lower precedence then MaxCoalesceTime
 
-	LeaveTimeout time.Duration // Timeout for leaving
-
 	PartitionCount    int           // If PartitionCount nodes fail in PartitionInvernal, it is considered a partition
 	PartitionInterval time.Duration // ParitionInterval must be < MaxCoalesceTime
 
@@ -22,6 +20,8 @@ type Config struct {
 	TombstoneTimeout  time.Duration // How long to keep a tombstone of members that left. Should match reconnect timeout.
 
 	ReapInterval time.Duration // How often we reap tombstones
+
+	LeaveBroadcastTimeout time.Duration // Timeout for broadcasting our leave intention
 
 	GossipBindAddr   string        // Binding address
 	GossipPort       int           // TCP and UDP ports for gossip
@@ -85,6 +85,7 @@ func DefaultConfig() *Config {
 	c.ReconnectTimeout = 24 * time.Hour
 	c.TombstoneTimeout = 24 * time.Hour
 	c.ReapInterval = 15 * time.Second
+	c.LeaveBroadcastTimeout = 5 * time.Second
 
 	return c
 }

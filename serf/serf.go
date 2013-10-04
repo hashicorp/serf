@@ -188,7 +188,7 @@ func (s *Serf) Leave() error {
 
 	select {
 	case <-notifyCh:
-	case <-time.After(s.conf.LeaveTimeout):
+	case <-time.After(s.conf.LeaveBroadcastTimeout):
 		log.Printf("[WARN] Timed out broadcasting leave intention")
 	}
 
