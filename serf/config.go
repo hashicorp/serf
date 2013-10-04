@@ -21,6 +21,8 @@ type Config struct {
 
 	ReapInterval time.Duration // How often we reap tombstones
 
+	LeaveTimeout time.Duration // How long do we give a node to leave after broadcasting their intention
+
 	LeaveBroadcastTimeout time.Duration // Timeout for broadcasting our leave intention
 
 	GossipBindAddr   string        // Binding address
@@ -85,6 +87,7 @@ func DefaultConfig() *Config {
 	c.ReconnectTimeout = 24 * time.Hour
 	c.TombstoneTimeout = 24 * time.Hour
 	c.ReapInterval = 15 * time.Second
+	c.LeaveTimeout = 120 * time.Second
 	c.LeaveBroadcastTimeout = 5 * time.Second
 
 	return c

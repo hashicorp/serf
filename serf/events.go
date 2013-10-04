@@ -196,9 +196,24 @@ func (s *Serf) intendLeave(l *leave) bool {
 	// and re-broadcast
 	if mem.Status == StatusAlive {
 		mem.Status = StatusLeaving
+
+		// Schedule a timer to unmark the intention after a timeout
+		time.AfterFunc(s.conf.LeaveTimeout, func() { s.resetIntention(mem) })
 		return true
 	}
 
 	// State update not relevant, ignore it
 	return false
+}
+
+// resetIntention is called after the leaveTimeout period to
+// transition a node from StatusLeaving back to StatusAlive if it
+// has not yet left the cluster
+func (s *Serf) resetIntention(mem *Member) {
+	s.memberLock.Lock()
+	defer s.memberLock.Unlock()
+
+	if mem.Status == StatusLeaving {
+		mem.Status = StatusAlive
+	}
 }

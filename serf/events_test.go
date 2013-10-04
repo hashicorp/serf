@@ -413,3 +413,33 @@ func TestSerf_IntendLeave_Unknown(t *testing.T) {
 		t.Fatalf("unexpected rebroadcast")
 	}
 }
+
+func TestSerf_IntendLeave_Timeout(t *testing.T) {
+	c := &Config{LeaveTimeout: time.Millisecond}
+	s := newSerf(c)
+
+	s.members["test"] = &Member{
+		Name:   "test",
+		Addr:   []byte{127, 0, 0, 1},
+		Role:   "foo",
+		Status: StatusAlive,
+	}
+
+	l := leave{Node: "test"}
+	if !s.intendLeave(&l) {
+		t.Fatalf("expected rebroadcast")
+	}
+
+	mem := s.members["test"]
+	if mem.Status != StatusLeaving {
+		t.Fatalf("bad member: %v", *mem)
+	}
+
+	// Wait for the timeout
+	time.Sleep(3 * time.Millisecond)
+
+	// Should be reset
+	if mem.Status != StatusAlive {
+		t.Fatalf("bad member: %v", *mem)
+	}
+}
