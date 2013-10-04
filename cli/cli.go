@@ -16,9 +16,10 @@ type CLI struct {
 	Commands map[string]CommandFactory
 	Ui       Ui
 
-	once       sync.Once
-	isHelp     bool
-	subcommand string
+	once           sync.Once
+	isHelp         bool
+	subcommand     string
+	subcommandArgs []string
 }
 
 // IsHelp returns whether or not the help flag is present within the
@@ -38,13 +39,18 @@ func (c *CLI) Run() (int, error) {
 
 	// Attempt to get the factory function for creating the command
 	// implementation. If the command is invalid or blank, it is an error.
-	_, ok := c.Commands[c.Subcommand()]
+	commandFunc, ok := c.Commands[c.Subcommand()]
 	if !ok || c.Subcommand() == "" {
 		c.printHelp()
 		return 1, nil
 	}
 
-	return 0, nil
+	command, err := commandFunc()
+	if err != nil {
+		return 0, err
+	}
+
+	return command.Run(c.SubcommandArgs()), nil
 }
 
 // Subcommand returns the subcommand that the CLI would execute. For
@@ -55,6 +61,13 @@ func (c *CLI) Subcommand() string {
 	return c.subcommand
 }
 
+// SubcommandArgs returns the arguments that will be passed to the
+// subcommand.
+func (c *CLI) SubcommandArgs() []string {
+	c.once.Do(c.processArgs)
+	return c.subcommandArgs
+}
+
 func (c *CLI) printHelp() {
 	c.Ui.Error("usage: serf [--version] [--help] <command> [<args>]\n")
 	c.Ui.Error("Available commands are:")
@@ -63,7 +76,7 @@ func (c *CLI) printHelp() {
 }
 
 func (c *CLI) processArgs() {
-	for _, arg := range c.Args {
+	for i, arg := range c.Args {
 		// If the arg is a help flag, then we saw that, but don't save it.
 		if arg == "-h" || arg == "--help" {
 			c.isHelp = true
@@ -71,9 +84,12 @@ func (c *CLI) processArgs() {
 		}
 
 		// If we didn't find a subcommand yet and this is the first non-flag
-		// argument, then this is our subcommand.
+		// argument, then this is our subcommand. j
 		if c.subcommand == "" && arg[0] != '-' {
 			c.subcommand = arg
+
+			// The remaining args the subcommand arguments
+			c.subcommandArgs = c.Args[i+1:]
 		}
 	}
 }

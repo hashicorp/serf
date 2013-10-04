@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"bytes"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -28,6 +28,36 @@ func TestCLIIsHelp(t *testing.T) {
 	}
 }
 
+func TestCLIRun(t *testing.T) {
+	command := new(MockCommand)
+	cli := &CLI{
+		Args: []string{"foo", "-bar", "-baz"},
+		Commands: map[string]CommandFactory{
+			"foo": func() (Command, error) {
+				return command, nil
+			},
+		},
+		Ui: new(MockUi),
+	}
+
+	exitCode, err := cli.Run()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if exitCode != command.RunResult {
+		t.Fatalf("bad: %d", exitCode)
+	}
+
+	if !command.RunCalled {
+		t.Fatalf("run should be called")
+	}
+
+	if !reflect.DeepEqual(command.RunArgs, []string{"-bar", "-baz"}) {
+		t.Fatalf("bad args: %#v", command.RunArgs)
+	}
+}
+
 func TestCLIRun_printHelp(t *testing.T) {
 	testCases := [][]string{
 		{},
@@ -36,11 +66,7 @@ func TestCLIRun_printHelp(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		ui := &MockUi{
-			ErrorWriter:  new(bytes.Buffer),
-			OutputWriter: new(bytes.Buffer),
-		}
-
+		ui := new(MockUi)
 		cli := &CLI{
 			Args: testCase,
 			Ui:   ui,
