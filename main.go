@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/hashicorp/serf/cli"
 	"io/ioutil"
 	"log"
@@ -49,8 +50,8 @@ func realMain() int {
 
 	exitCode, err := cli.Run()
 	if err != nil {
-		// TODO(mitchellh): too harsh
-		panic(err)
+		fmt.Fprintf(os.Stderr, "Error executing CLI: %s\n", err.Error())
+		return 1
 	}
 
 	return exitCode
