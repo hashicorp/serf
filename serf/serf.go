@@ -27,8 +27,7 @@ type Serf struct {
 	shutdownCh chan struct{}
 
 	memberLock sync.RWMutex
-	members    []*Member
-	memberMap  map[string]*Member
+	members    map[string]*Member
 
 	detector partitionDetector
 
@@ -74,7 +73,7 @@ func newSerf(conf *Config) *Serf {
 		joinCh:     make(chan *memberlist.Node, 128),
 		leaveCh:    make(chan *memberlist.Node, 128),
 		shutdownCh: make(chan struct{}),
-		memberMap:  make(map[string]*Member),
+		members:    make(map[string]*Member),
 		changeCh:   make(chan statusChange, 4096),
 	}
 
@@ -139,11 +138,11 @@ func (s *Serf) Members() []*Member {
 	s.memberLock.RLock()
 	defer s.memberLock.RUnlock()
 
-	members := make([]*Member, len(s.members))
-	for idx, m := range s.members {
+	members := make([]*Member, 0, len(s.members))
+	for _, m := range s.members {
 		newM := &Member{}
 		*newM = *m
-		members[idx] = newM
+		members = append(members, newM)
 	}
 
 	return members
@@ -164,7 +163,7 @@ func (s *Serf) Leave() error {
 
 	// Set our own status to leaving
 	s.memberLock.RLock()
-	mem, ok = s.memberMap[s.conf.Hostname]
+	mem, ok = s.members[s.conf.Hostname]
 	if ok {
 		mem.Status = StatusLeaving
 	}

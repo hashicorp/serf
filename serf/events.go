@@ -117,7 +117,7 @@ func (s *Serf) nodeJoin(n *memberlist.Node) {
 	defer s.memberLock.Unlock()
 
 	// Check if we know about this node already
-	mem, ok := s.memberMap[n.Name]
+	mem, ok := s.members[n.Name]
 	oldStatus := StatusNone
 	if !ok {
 		mem = &Member{
@@ -126,8 +126,7 @@ func (s *Serf) nodeJoin(n *memberlist.Node) {
 			Role:   string(n.Meta),
 			Status: StatusAlive,
 		}
-		s.memberMap[n.Name] = mem
-		s.members = append(s.members, mem)
+		s.members[n.Name] = mem
 	} else {
 		oldStatus = mem.Status
 		mem.Status = StatusAlive
@@ -148,7 +147,7 @@ func (s *Serf) nodeLeave(n *memberlist.Node) {
 	defer s.memberLock.Unlock()
 
 	// Check if we know about this node
-	mem, ok := s.memberMap[n.Name]
+	mem, ok := s.members[n.Name]
 	if !ok {
 		return
 	}
@@ -178,7 +177,7 @@ func (s *Serf) intendLeave(l *leave) bool {
 	defer s.memberLock.Unlock()
 
 	// Check if we know about this node
-	mem, ok := s.memberMap[l.Node]
+	mem, ok := s.members[l.Node]
 	if !ok {
 		return false // unknown, don't rebroadcast
 	}
