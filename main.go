@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/hashicorp/serf/cli"
+	"io/ioutil"
+	"log"
 	"os"
 )
 
@@ -21,6 +23,11 @@ func main() {
 }
 
 func realMain() int {
+	log.SetOutput(ioutil.Discard)
+	if os.Getenv("SERF_LOG") != "" {
+		log.SetOutput(os.Stderr)
+	}
+
 	cli := &cli.CLI{
 		Args:     os.Args[1:],
 		Commands: make(map[string]cli.CommandFactory),
