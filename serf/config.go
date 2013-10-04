@@ -17,6 +17,9 @@ type Config struct {
 	PartitionCount    int           // If PartitionCount nodes fail in PartitionInvernal, it is considered a partition
 	PartitionInterval time.Duration // ParitionInterval must be < MaxCoalesceTime
 
+	ReconnectInterval time.Duration // How often do we attempt to reconnect to failed nodes
+	ReconnectTimeout  time.Duration // How long do we keep retrying to connect to a failed node before giving up
+
 	GossipBindAddr   string        // Binding address
 	GossipPort       int           // TCP and UDP ports for gossip
 	GossipTCPTimeout time.Duration // TCP timeout
@@ -75,6 +78,8 @@ func DefaultConfig() *Config {
 	c.PartitionInterval = 30 * time.Second
 	c.MinQuiescentTime = 5 * time.Second
 	c.MaxCoalesceTime = 60 * time.Second
+	c.ReconnectInterval = 30 * time.Second
+	c.ReconnectTimeout = 24 * time.Hour
 
 	return c
 }
