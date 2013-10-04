@@ -18,3 +18,21 @@ func TestEncodeDecode(t *testing.T) {
 		t.Fatalf("bad node")
 	}
 }
+
+func TestRandomOffset(t *testing.T) {
+	vals := make(map[int]struct{})
+	for i := 0; i < 100; i++ {
+		offset := randomOffset(2 << 30)
+		if _, ok := vals[offset]; ok {
+			t.Fatalf("got collision")
+		}
+		vals[offset] = struct{}{}
+	}
+}
+
+func TestRandomOffset_Zero(t *testing.T) {
+	offset := randomOffset(0)
+	if offset != 0 {
+		t.Fatalf("bad offset")
+	}
+}

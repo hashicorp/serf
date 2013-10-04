@@ -3,7 +3,14 @@ package serf
 import (
 	"bytes"
 	"github.com/ugorji/go/codec"
+	"math/rand"
+	"time"
 )
+
+func init() {
+	// Seed the random number generator
+	rand.Seed(time.Now().UnixNano())
+}
 
 // Decode reverses the encode operation on a byte slice input
 func decode(buf []byte, out interface{}) error {
@@ -21,4 +28,12 @@ func encode(msgType messageType, in interface{}) (*bytes.Buffer, error) {
 	enc := codec.NewEncoder(buf, &hd)
 	err := enc.Encode(in)
 	return buf, err
+}
+
+// Returns a random offset between 0 and n
+func randomOffset(n int) int {
+	if n == 0 {
+		return 0
+	}
+	return int(rand.Uint32() % uint32(n))
 }
