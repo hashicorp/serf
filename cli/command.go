@@ -10,7 +10,7 @@ type Command interface {
 	// Run should run the actual command with the given Serf instance and
 	// command-line arguments. It should return the exit status when it is
 	// finished.
-	Run(args []string) int
+	Run(args []string, ui Ui) int
 
 	// Synopsis should return a one-line, short synopsis of the command.
 	// This should be less than 50 characters ideally.

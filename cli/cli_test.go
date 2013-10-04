@@ -53,6 +53,10 @@ func TestCLIRun(t *testing.T) {
 		t.Fatalf("run should be called")
 	}
 
+	if command.RunUi != cli.Ui {
+		t.Fatal("bad UI")
+	}
+
 	if !reflect.DeepEqual(command.RunArgs, []string{"-bar", "-baz"}) {
 		t.Fatalf("bad args: %#v", command.RunArgs)
 	}

@@ -10,15 +10,17 @@ type MockCommand struct {
 	// Set by the command
 	RunCalled bool
 	RunArgs   []string
+	RunUi     Ui
 }
 
 func (c *MockCommand) Help() string {
 	return ""
 }
 
-func (c *MockCommand) Run(args []string) int {
+func (c *MockCommand) Run(args []string, ui Ui) int {
 	c.RunCalled = true
 	c.RunArgs = args
+	c.RunUi = ui
 
 	return c.RunResult
 }

@@ -45,7 +45,7 @@ func (c *CLI) Run() (int, error) {
 		return 0, err
 	}
 
-	return command.Run(c.SubcommandArgs()), nil
+	return command.Run(c.SubcommandArgs(), c.Ui), nil
 }
 
 // Subcommand returns the subcommand that the CLI would execute. For
