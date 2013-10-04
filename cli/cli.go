@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+	"log"
 	"sync"
 )
 
@@ -67,7 +69,16 @@ func (c *CLI) printHelp() {
 	c.Ui.Error("usage: serf [--version] [--help] <command> [<args>]\n")
 	c.Ui.Error("Available commands are:")
 
-	// TODO(mitchellh)
+	for key, commandFunc := range c.Commands {
+		command, err := commandFunc()
+		if err != nil {
+			log.Printf("[ERR] cli: Command '%s' failed to load: %s",
+				key, err)
+			continue
+		}
+
+		c.Ui.Error(fmt.Sprintf("    %s    %s", key, command.Synopsis()))
+	}
 }
 
 func (c *CLI) processArgs() {
