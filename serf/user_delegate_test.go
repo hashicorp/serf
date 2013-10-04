@@ -30,11 +30,11 @@ func TestSerf_EventHandler(t *testing.T) {
 	}()
 	s.eventHandler()
 
-	if s.memberMap["test"].Status != StatusAlive {
+	if s.members["test"].Status != StatusAlive {
 		t.Fatalf("expected test to be alive")
 	}
-	if s.memberMap["foo"].Status != StatusFailed {
-		t.Fatalf("expected foo to be failed: %v", s.memberMap["foo"])
+	if s.members["foo"].Status != StatusFailed {
+		t.Fatalf("expected foo to be failed: %v", s.members["foo"])
 	}
 }
 
@@ -52,7 +52,7 @@ func TestSerf_NotifyMsg_Leave(t *testing.T) {
 	c := &Config{}
 	s := newSerf(c)
 
-	s.memberMap["test"] = &Member{
+	s.members["test"] = &Member{
 		Name:   "test",
 		Addr:   []byte{127, 0, 0, 1},
 		Role:   "foo",
@@ -63,7 +63,7 @@ func TestSerf_NotifyMsg_Leave(t *testing.T) {
 	buf, _ := encode(leaveMsg, &l)
 	s.NotifyMsg(buf.Bytes())
 
-	mem := s.memberMap["test"]
+	mem := s.members["test"]
 	if mem.Status != StatusLeaving {
 		t.Fatalf("bad member: %v", *mem)
 	}

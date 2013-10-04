@@ -250,7 +250,7 @@ func TestSerf_NodeJoin_NewNode(t *testing.T) {
 	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
 	s.nodeJoin(&n)
 
-	mem := s.memberMap["test"]
+	mem := s.members["test"]
 	if mem.Name != "test" || !reflect.DeepEqual([]byte(mem.Addr), []byte(n.Addr)) || mem.Role != "foo" || mem.Status != StatusAlive {
 		t.Fatalf("bad member: %v", *mem)
 	}
@@ -267,7 +267,7 @@ func TestSerf_NodeJoin_Existing(t *testing.T) {
 	md := &MockDetector{}
 	s.detector = md
 
-	s.memberMap["test"] = &Member{
+	s.members["test"] = &Member{
 		Name:   "test",
 		Addr:   []byte{127, 0, 0, 1},
 		Role:   "foo",
@@ -277,7 +277,7 @@ func TestSerf_NodeJoin_Existing(t *testing.T) {
 	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
 	s.nodeJoin(&n)
 
-	mem := s.memberMap["test"]
+	mem := s.members["test"]
 	if mem.Name != "test" || !reflect.DeepEqual([]byte(mem.Addr), []byte(n.Addr)) || mem.Role != "foo" || mem.Status != StatusAlive {
 		t.Fatalf("bad member: %v", *mem)
 	}
@@ -299,7 +299,7 @@ func TestSerf_NodeLeave_Failed(t *testing.T) {
 	md := &MockDetector{}
 	s.detector = md
 
-	s.memberMap["test"] = &Member{
+	s.members["test"] = &Member{
 		Name:   "test",
 		Addr:   []byte{127, 0, 0, 1},
 		Role:   "foo",
@@ -309,7 +309,7 @@ func TestSerf_NodeLeave_Failed(t *testing.T) {
 	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
 	s.nodeLeave(&n)
 
-	mem := s.memberMap["test"]
+	mem := s.members["test"]
 	if mem.Name != "test" || !reflect.DeepEqual([]byte(mem.Addr), []byte(n.Addr)) || mem.Role != "foo" || mem.Status != StatusFailed {
 		t.Fatalf("bad member: %v", *mem)
 	}
@@ -331,7 +331,7 @@ func TestSerf_NodeLeave_Graceful(t *testing.T) {
 	md := &MockDetector{}
 	s.detector = md
 
-	s.memberMap["test"] = &Member{
+	s.members["test"] = &Member{
 		Name:   "test",
 		Addr:   []byte{127, 0, 0, 1},
 		Role:   "foo",
@@ -341,7 +341,7 @@ func TestSerf_NodeLeave_Graceful(t *testing.T) {
 	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
 	s.nodeLeave(&n)
 
-	mem := s.memberMap["test"]
+	mem := s.members["test"]
 	if mem.Name != "test" || !reflect.DeepEqual([]byte(mem.Addr), []byte(n.Addr)) || mem.Role != "foo" || mem.Status != StatusLeft {
 		t.Fatalf("bad member: %v", *mem)
 	}
@@ -369,7 +369,7 @@ func TestSerf_IntendLeave_Alive(t *testing.T) {
 	c := &Config{}
 	s := newSerf(c)
 
-	s.memberMap["test"] = &Member{
+	s.members["test"] = &Member{
 		Name:   "test",
 		Addr:   []byte{127, 0, 0, 1},
 		Role:   "foo",
@@ -381,7 +381,7 @@ func TestSerf_IntendLeave_Alive(t *testing.T) {
 		t.Fatalf("expected rebroadcast")
 	}
 
-	mem := s.memberMap["test"]
+	mem := s.members["test"]
 	if mem.Status != StatusLeaving {
 		t.Fatalf("bad member: %v", *mem)
 	}
