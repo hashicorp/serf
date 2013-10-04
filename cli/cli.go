@@ -4,11 +4,6 @@ import (
 	"sync"
 )
 
-// CommandFactory is a type of function that is a factory for commands.
-// We need a factory because we may need to setup some state on the
-// struct that implements the command itself.
-type CommandFactory func() (Command, error)
-
 // CLI contains the state necessary to run subcommands and parse the
 // command line arguments.
 type CLI struct {

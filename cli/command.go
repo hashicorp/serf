@@ -16,3 +16,8 @@ type Command interface {
 	// This should be less than 50 characters ideally.
 	Synopsis() string
 }
+
+// CommandFactory is a type of function that is a factory for commands.
+// We need a factory because we may need to setup some state on the
+// struct that implements the command itself.
+type CommandFactory func() (Command, error)
