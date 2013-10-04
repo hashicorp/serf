@@ -30,7 +30,7 @@ func realMain() int {
 
 	cli := &cli.CLI{
 		Args:     os.Args[1:],
-		Commands: make(map[string]cli.CommandFactory),
+		Commands: Commands,
 		Ui:       &cli.BasicUi{Writer: os.Stdout},
 	}
 
