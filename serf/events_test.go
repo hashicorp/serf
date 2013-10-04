@@ -248,7 +248,7 @@ func TestSerf_NodeJoin_NewNode(t *testing.T) {
 	s := newSerf(c)
 
 	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
-	s.nodeJoin(&n)
+	s.NotifyJoin(&n)
 
 	mem := s.members["test"]
 	if mem.Name != "test" || !reflect.DeepEqual([]byte(mem.Addr), []byte(n.Addr)) || mem.Role != "foo" || mem.Status != StatusAlive {
@@ -277,7 +277,7 @@ func TestSerf_NodeJoin_Existing(t *testing.T) {
 	s.failedMembers = append(s.failedMembers, &oldMember{mem, time.Now()})
 
 	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
-	s.nodeJoin(&n)
+	s.NotifyJoin(&n)
 
 	if mem.Name != "test" || !reflect.DeepEqual([]byte(mem.Addr), []byte(n.Addr)) || mem.Role != "foo" || mem.Status != StatusAlive {
 		t.Fatalf("bad member: %v", *mem)
@@ -312,7 +312,7 @@ func TestSerf_NodeLeave_Failed(t *testing.T) {
 	}
 
 	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
-	s.nodeLeave(&n)
+	s.NotifyLeave(&n)
 
 	mem := s.members["test"]
 	if mem.Name != "test" || !reflect.DeepEqual([]byte(mem.Addr), []byte(n.Addr)) || mem.Role != "foo" || mem.Status != StatusFailed {
@@ -348,7 +348,7 @@ func TestSerf_NodeLeave_Graceful(t *testing.T) {
 	}
 
 	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
-	s.nodeLeave(&n)
+	s.NotifyLeave(&n)
 
 	mem := s.members["test"]
 	if mem.Name != "test" || !reflect.DeepEqual([]byte(mem.Addr), []byte(n.Addr)) || mem.Role != "foo" || mem.Status != StatusLeft {
@@ -375,7 +375,7 @@ func TestSerf_NodeLeave_Unknown(t *testing.T) {
 	s := newSerf(c)
 
 	n := memberlist.Node{Name: "test", Addr: []byte{127, 0, 0, 1}, Meta: []byte("foo")}
-	s.nodeLeave(&n)
+	s.NotifyLeave(&n)
 }
 
 func TestSerf_IntendLeave_Alive(t *testing.T) {

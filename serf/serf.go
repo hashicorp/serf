@@ -101,8 +101,7 @@ func Start(conf *Config) (*Serf, error) {
 
 	// Create the memberlist config
 	mlConf := memberlistConfig(conf)
-	mlConf.JoinCh = serf.joinCh
-	mlConf.LeaveCh = serf.leaveCh
+	mlConf.Notify = serf
 	mlConf.UserDelegate = serf
 
 	// Attempt to create the
@@ -111,9 +110,6 @@ func Start(conf *Config) (*Serf, error) {
 		return nil, err
 	}
 	serf.memberlist = memb
-
-	// Start the event handelr
-	go serf.eventHandler()
 
 	// Start the change handler
 	go serf.changeHandler()

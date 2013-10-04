@@ -111,8 +111,8 @@ func (s *Serf) invokeDelegate(initial, end map[*Member]MemberStatus) {
 	}
 }
 
-// nodeJoin is fired when memberlist detects a node join
-func (s *Serf) nodeJoin(n *memberlist.Node) {
+// NotifyJoin is fired when memberlist detects a node join
+func (s *Serf) NotifyJoin(n *memberlist.Node) {
 	s.memberLock.Lock()
 	defer s.memberLock.Unlock()
 
@@ -148,8 +148,8 @@ func (s *Serf) nodeJoin(n *memberlist.Node) {
 	s.leftMembers = removeOldMember(s.leftMembers, mem)
 }
 
-// nodeLeave is fired when memberlist detects a node join
-func (s *Serf) nodeLeave(n *memberlist.Node) {
+// NotifyLeave is fired when memberlist detects a node leave
+func (s *Serf) NotifyLeave(n *memberlist.Node) {
 	s.memberLock.Lock()
 	defer s.memberLock.Unlock()
 
