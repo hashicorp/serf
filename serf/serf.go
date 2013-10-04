@@ -154,11 +154,21 @@ func (s *Serf) Members() []*Member {
 func (s *Serf) Leave() error {
 	var notifyCh chan struct{}
 	var l leave
+	var mem *Member
+	var ok bool
 
 	// No need to broadcast if there is nobody else
 	if len(s.members) <= 1 {
 		goto AFTER_BROADCAST
 	}
+
+	// Set our own status to leaving
+	s.memberLock.RLock()
+	mem, ok = s.memberMap[s.conf.Hostname]
+	if ok {
+		mem.Status = StatusLeaving
+	}
+	s.memberLock.RUnlock()
 
 	// Create a channel to get notified
 	notifyCh = make(chan struct{}, 1)
