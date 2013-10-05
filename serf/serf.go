@@ -101,8 +101,8 @@ func Start(conf *Config) (*Serf, error) {
 
 	// Create the memberlist config
 	mlConf := memberlistConfig(conf)
-	mlConf.Notify = serf
-	mlConf.UserDelegate = serf
+	mlConf.Events = serf
+	mlConf.Delegate = serf
 
 	// Attempt to create the
 	memb, err := memberlist.Create(mlConf)

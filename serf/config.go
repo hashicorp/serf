@@ -32,7 +32,7 @@ type Config struct {
 	RetransmitMult   int           // Retransmits = RetransmitMult * log(N+1)
 	SuspicionMult    int           // Suspicion time = SuspcicionMult * log(N+1) * Interval
 	PushPullInterval time.Duration // How often we do a Push/Pull update
-	RTT              time.Duration // 99% precentile of round-trip-time
+	ProbeTimeout     time.Duration // 99% precentile of round-trip-time
 	ProbeInterval    time.Duration // Failure probing interval length
 	GossipNodes      int           // Number of nodes to gossip to per GossipInterval
 	GossipInterval   time.Duration // Gossip interval for non-piggyback messages (only if GossipNodes > 0)
@@ -52,7 +52,7 @@ func memberlistConfig(conf *Config) *memberlist.Config {
 	mc.RetransmitMult = conf.RetransmitMult
 	mc.SuspicionMult = conf.SuspicionMult
 	mc.PushPullInterval = conf.PushPullInterval
-	mc.RTT = conf.RTT
+	mc.ProbeTimeout = conf.ProbeTimeout
 	mc.ProbeInterval = conf.ProbeInterval
 	mc.GossipNodes = conf.GossipNodes
 	mc.GossipInterval = conf.GossipInterval
@@ -73,7 +73,7 @@ func DefaultConfig() *Config {
 	c.RetransmitMult = defaultMb.RetransmitMult
 	c.SuspicionMult = defaultMb.SuspicionMult
 	c.PushPullInterval = defaultMb.PushPullInterval
-	c.RTT = defaultMb.RTT
+	c.ProbeTimeout = defaultMb.ProbeTimeout
 	c.ProbeInterval = defaultMb.ProbeInterval
 	c.GossipNodes = defaultMb.GossipNodes
 	c.GossipInterval = defaultMb.GossipInterval
