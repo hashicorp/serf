@@ -481,7 +481,7 @@ func TestSerf_ForceRemove_Failed(t *testing.T) {
 	}
 
 	// Should not suspect
-	if len(md.suspect) != 0 {
+	if len(md.unsuspect) != 1 {
 		t.Fatalf("should not suspect")
 	}
 }
