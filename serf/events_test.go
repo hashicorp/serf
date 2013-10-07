@@ -443,3 +443,45 @@ func TestSerf_IntendLeave_Timeout(t *testing.T) {
 		t.Fatalf("bad member: %v", *mem)
 	}
 }
+
+func TestSerf_ForceRemove_Failed(t *testing.T) {
+	c := &Config{}
+	s := newSerf(c)
+	md := &MockDetector{}
+	s.detector = md
+
+	mem := &Member{
+		Name:   "test",
+		Addr:   []byte{127, 0, 0, 1},
+		Role:   "foo",
+		Status: StatusFailed,
+	}
+	s.members["test"] = mem
+	s.failedMembers = append(s.failedMembers, &oldMember{member: mem})
+
+	r := remove{Node: "test"}
+	if !s.forceRemove(&r) {
+		t.Fatalf("expected rebroadcast")
+	}
+
+	if mem.Status != StatusLeft {
+		t.Fatalf("bad member: %v", *mem)
+	}
+
+	if s.forceRemove(&r) {
+		t.Fatalf("expected no rebroadcast")
+	}
+
+	if len(s.failedMembers) != 0 {
+		t.Fatalf("should no longer be a failed member")
+	}
+
+	if len(s.leftMembers) != 1 {
+		t.Fatalf("should be a left member")
+	}
+
+	// Should not suspect
+	if len(md.suspect) != 0 {
+		t.Fatalf("should not suspect")
+	}
+}

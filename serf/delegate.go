@@ -31,6 +31,15 @@ func (s *Serf) NotifyMsg(buf []byte) {
 		}
 
 		rebroadcast = s.intendLeave(&l)
+
+	case removeMsg:
+		r := remove{}
+		if err := decode(buf[1:], &r); err != nil {
+			log.Printf("[ERR] Decoding remove message failed: %v", err)
+		}
+
+		rebroadcast = s.forceRemove(&r)
+
 	default:
 		log.Printf("[WARN] Received message of unknown type %d", msgType)
 	}

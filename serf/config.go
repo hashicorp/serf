@@ -23,7 +23,7 @@ type Config struct {
 
 	LeaveTimeout time.Duration // How long do we give a node to leave after broadcasting their intention
 
-	LeaveBroadcastTimeout time.Duration // Timeout for broadcasting our leave intention
+	BroadcastTimeout time.Duration // Timeout for waiting on broadcasts
 
 	GossipBindAddr   string        // Binding address
 	GossipPort       int           // TCP and UDP ports for gossip
@@ -88,7 +88,7 @@ func DefaultConfig() *Config {
 	c.TombstoneTimeout = 24 * time.Hour
 	c.ReapInterval = 15 * time.Second
 	c.LeaveTimeout = 120 * time.Second
-	c.LeaveBroadcastTimeout = 5 * time.Second
+	c.BroadcastTimeout = 10 * time.Second
 
 	return c
 }

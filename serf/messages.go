@@ -8,10 +8,15 @@ type messageType uint8
 
 const (
 	leaveMsg messageType = iota
+	removeMsg
 )
 
 // leave message is broadcast to signal intention to leave
 type leave struct {
+	Node string
+}
+
+type remove struct {
 	Node string
 }
 

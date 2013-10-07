@@ -101,8 +101,8 @@ func Start(conf *Config) (*Serf, error) {
 
 	// Create the memberlist config
 	mlConf := memberlistConfig(conf)
-	mlConf.Events = serf
-	mlConf.Delegate = serf
+	mlConf.Notify = serf
+	mlConf.UserDelegate = serf
 
 	// Attempt to create the
 	memb, err := memberlist.Create(mlConf)
@@ -184,13 +184,45 @@ func (s *Serf) Leave() error {
 
 	select {
 	case <-notifyCh:
-	case <-time.After(s.conf.LeaveBroadcastTimeout):
+	case <-time.After(s.conf.BroadcastTimeout):
 		log.Printf("[WARN] Timed out broadcasting leave intention")
 	}
 
 AFTER_BROADCAST:
 	// Broadcast our own death
 	return s.memberlist.Leave()
+}
+
+// RemoveNode is used to remove a node from the cluster that is
+// in a failed or partitioned state. It can be used after a node
+// fails to remove it. Serf will eventually give up contacting the node
+// after the ReconnectTimeout, but this can be used to accelerate
+// that process.
+func (s *Serf) RemoveNode(node string) error {
+	// Broadcast remove
+	r := remove{s.conf.Hostname}
+
+	// Process the remove locally
+	s.forceRemove(&r)
+
+	// No need to broadcast if there is nobody else
+	if len(s.members) <= 1 {
+		return nil
+	}
+
+	// Broadcast with a notify channel
+	notifyCh := make(chan struct{}, 1)
+	if err := s.encodeBroadcastNotify(removeMsg, &r, notifyCh); err != nil {
+		return err
+	}
+
+	// Wait for broadcast
+	select {
+	case <-notifyCh:
+	case <-time.After(s.conf.BroadcastTimeout):
+		return fmt.Errorf("timed out broadcasting node removal")
+	}
+	return nil
 }
 
 // Shutdown is used to shutdown all the listeners. It is not graceful,

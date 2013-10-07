@@ -217,3 +217,35 @@ func (s *Serf) resetIntention(mem *Member) {
 		mem.Status = StatusAlive
 	}
 }
+
+// forceRemove is invoked when we get a message indicating
+// a downed node should be force removed. Returns true if we should re-broadcast
+func (s *Serf) forceRemove(r *remove) bool {
+	s.memberLock.Lock()
+	defer s.memberLock.Unlock()
+
+	// Lookup the node, if unknown don't rebroadcast
+	mem, ok := s.members[r.Node]
+	if !ok {
+		return false
+	}
+
+	// If the node is alive, or has left, do nothing
+	if mem.Status == StatusAlive || mem.Status == StatusLeaving || mem.Status == StatusLeft {
+		return false
+	}
+
+	// Update the status to Left
+	mem.Status = StatusLeft
+
+	// Remove from failed list
+	s.failedMembers = removeOldMember(s.failedMembers, mem)
+
+	// Add to the left list
+	s.leftMembers = append(s.leftMembers, &oldMember{member: mem, time: time.Now()})
+	// Unsuspect a partition
+	s.unsuspectPartition(mem)
+
+	// Propogate the status update
+	return true
+}
