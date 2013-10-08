@@ -11,6 +11,11 @@ import (
 var bindLock sync.Mutex
 var bindNum byte = 10
 
+func init() {
+	// Seed the random number generator
+	rand.Seed(time.Now().UnixNano())
+}
+
 func yield() {
 	time.Sleep(10 * time.Millisecond)
 }
@@ -34,6 +39,7 @@ func getRPCAddr() string {
 		l, err := net.Listen("tcp", fmt.Sprintf(":%d", rand.Int31n(25000)+1024))
 		if err == nil {
 			l.Close()
+			time.Sleep(1 * time.Second)
 			return l.Addr().String()
 		}
 	}

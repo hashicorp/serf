@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"log"
 	serfrpc "github.com/hashicorp/serf/rpc"
 	"net/rpc"
 	"testing"
@@ -23,7 +24,10 @@ func TestAgentCommandRun(t *testing.T) {
 		ShutdownCh: shutdownCh,
 	}
 
-	args := []string{"-bind", getBindAddr().String()}
+	args := []string{
+		"-bind", getBindAddr().String(),
+		"-rpc-addr", getRPCAddr(),
+	}
 	ui := new(MockUi)
 
 	resultCh := make(chan int)
@@ -72,7 +76,11 @@ func TestAgentCommandRun_rpc(t *testing.T) {
 	}
 
 	go func() {
-		c.Run(args, new(MockUi))
+		code := c.Run(args, new(MockUi))
+		if code != 0 {
+			log.Printf("bad: %d", code)
+		}
+
 		close(doneCh)
 	}()
 
