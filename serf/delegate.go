@@ -1,6 +1,7 @@
 package serf
 
 import (
+	"fmt"
 	"log"
 )
 
@@ -12,7 +13,7 @@ type delegate struct {
 func (d *delegate) NodeMeta(limit int) []byte {
 	roleBytes := []byte(d.serf.config.Role)
 	if len(roleBytes) > limit {
-		roleBytes = roleBytes[:limit]
+		panic(fmt.Errorf("role '%s' exceeds length limit of %d bytes", d.serf.config.Role, limit))
 	}
 
 	return roleBytes
