@@ -11,6 +11,7 @@ import (
 type CLI struct {
 	Args     []string
 	Commands map[string]CommandFactory
+	RootUi   Ui
 	Ui       Ui
 
 	once           sync.Once
@@ -43,7 +44,7 @@ func (c *CLI) Run() (int, error) {
 
 	// If we've been instructed to just print the help, then print it
 	if c.IsHelp() {
-		c.Ui.Output(command.Help())
+		c.RootUi.Output(command.Help())
 		return 1, nil
 	}
 
@@ -66,8 +67,8 @@ func (c *CLI) SubcommandArgs() []string {
 }
 
 func (c *CLI) printHelp() {
-	c.Ui.Error("usage: serf [--version] [--help] <command> [<args>]\n")
-	c.Ui.Error("Available commands are:")
+	c.RootUi.Error("usage: serf [--version] [--help] <command> [<args>]\n")
+	c.RootUi.Error("Available commands are:")
 
 	for key, commandFunc := range c.Commands {
 		command, err := commandFunc()
@@ -77,7 +78,7 @@ func (c *CLI) printHelp() {
 			continue
 		}
 
-		c.Ui.Error(fmt.Sprintf("    %s    %s", key, command.Synopsis()))
+		c.RootUi.Error(fmt.Sprintf("    %s    %s", key, command.Synopsis()))
 	}
 }
 
