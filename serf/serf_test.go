@@ -490,11 +490,11 @@ func TestSerf_ReapHandler(t *testing.T) {
 	}
 	defer s.Shutdown()
 
-	m := &Member{}
-	s.leftMembers = []*oldMember{
-		&oldMember{m, time.Now()},
-		&oldMember{m, time.Now().Add(-5 * time.Second)},
-		&oldMember{m, time.Now().Add(-10 * time.Second)},
+	m := Member{}
+	s.leftMembers = []*memberState{
+		&memberState{m, 0, time.Now()},
+		&memberState{m, 0, time.Now().Add(-5 * time.Second)},
+		&memberState{m, 0, time.Now().Add(-10 * time.Second)},
 	}
 
 	go func() {
@@ -516,11 +516,11 @@ func TestSerf_Reap(t *testing.T) {
 	}
 	defer s.Shutdown()
 
-	m := &Member{}
-	old := []*oldMember{
-		&oldMember{m, time.Now()},
-		&oldMember{m, time.Now().Add(-5 * time.Second)},
-		&oldMember{m, time.Now().Add(-10 * time.Second)},
+	m := Member{}
+	old := []*memberState{
+		&memberState{m, 0, time.Now()},
+		&memberState{m, 0, time.Now().Add(-5 * time.Second)},
+		&memberState{m, 0, time.Now().Add(-10 * time.Second)},
 	}
 
 	old = s.reap(old, time.Second*6)
@@ -530,17 +530,17 @@ func TestSerf_Reap(t *testing.T) {
 }
 
 func TestRemoveOldMember(t *testing.T) {
-	old := []*oldMember{
-		&oldMember{member: &Member{Name: "foo"}},
-		&oldMember{member: &Member{Name: "bar"}},
-		&oldMember{member: &Member{Name: "baz"}},
+	old := []*memberState{
+		&memberState{Member: Member{Name: "foo"}},
+		&memberState{Member: Member{Name: "bar"}},
+		&memberState{Member: Member{Name: "baz"}},
 	}
 
 	old = removeOldMember(old, "bar")
 	if len(old) != 2 {
 		t.Fatalf("should be shorter")
 	}
-	if old[1].member.Name == "bar" {
+	if old[1].Name == "bar" {
 		t.Fatalf("should remove old member")
 	}
 }

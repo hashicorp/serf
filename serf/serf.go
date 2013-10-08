@@ -25,11 +25,11 @@ func init() {
 type Serf struct {
 	broadcasts    *memberlist.TransmitLimitedQueue
 	config        *Config
-	failedMembers []*oldMember
-	leftMembers   []*oldMember
+	failedMembers []*memberState
+	leftMembers   []*memberState
 	memberlist    *memberlist.Memberlist
 	memberLock    sync.RWMutex
-	members       map[string]*Member
+	members       map[string]*memberState
 
 	stateLock  sync.Mutex
 	state      SerfState
@@ -64,12 +64,13 @@ const (
 	StatusFailed
 )
 
-// oldMember is used to track members that are no longer active due to
+// memberState is used to track members that are no longer active due to
 // leaving, failing, partitioning, etc. It tracks the member along with
 // when that member was marked as leaving.
-type oldMember struct {
-	member *Member
-	time   time.Time
+type memberState struct {
+	Member
+	joinTime  uint64    // lamport clock time of join
+	leaveTime time.Time // wall clock time of leave
 }
 
 // Create creates a new Serf instance, starting all the background tasks
@@ -129,7 +130,7 @@ func Create(conf *Config) (*Serf, error) {
 
 	serf := &Serf{
 		config:     conf,
-		members:    make(map[string]*Member),
+		members:    make(map[string]*memberState),
 		shutdownCh: make(chan struct{}),
 		state:      SerfAlive,
 	}
@@ -235,7 +236,7 @@ func (s *Serf) Members() []Member {
 
 	members := make([]Member, 0, len(s.members))
 	for _, m := range s.members {
-		members = append(members, *m)
+		members = append(members, m.Member)
 	}
 
 	return members
@@ -351,11 +352,7 @@ func (s *Serf) handleNodeForceRemove(remove *messageRemoveFailed) bool {
 	// to the left list so that when we do a sync, other nodes will
 	// remove it from their failed list.
 	s.failedMembers = removeOldMember(s.failedMembers, member.Name)
-	s.leftMembers = append(s.leftMembers, &oldMember{
-		member: member,
-		time:   time.Now(),
-	})
-
+	s.leftMembers = append(s.leftMembers, member)
 	return true
 }
 
@@ -368,10 +365,12 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 	oldStatus := StatusNone
 	member, ok := s.members[n.Name]
 	if !ok {
-		member = &Member{
-			Name: n.Name,
-			Addr: net.IP(n.Addr),
-			Role: string(n.Meta),
+		member = &memberState{
+			Member: Member{
+				Name: n.Name,
+				Addr: net.IP(n.Addr),
+				Role: string(n.Meta),
+			},
 		}
 
 		s.members[n.Name] = member
@@ -380,6 +379,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 	}
 
 	member.Status = StatusAlive
+	member.leaveTime = time.Time{}
 
 	// If node was previously in a failed state, then clean up some
 	// internal accounting.
@@ -392,7 +392,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 	if s.config.EventCh != nil {
 		s.config.EventCh <- Event{
 			Type:    EventMemberJoin,
-			Members: []Member{*member},
+			Members: []Member{member.Member},
 		}
 	}
 }
@@ -413,16 +413,12 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 	switch member.Status {
 	case StatusLeaving:
 		member.Status = StatusLeft
-		s.leftMembers = append(s.leftMembers, &oldMember{
-			member: member,
-			time:   time.Now(),
-		})
+		member.leaveTime = time.Now()
+		s.leftMembers = append(s.leftMembers, member)
 	case StatusAlive:
 		member.Status = StatusFailed
-		s.failedMembers = append(s.failedMembers, &oldMember{
-			member: member,
-			time:   time.Now(),
-		})
+		member.leaveTime = time.Now()
+		s.failedMembers = append(s.failedMembers, member)
 	default:
 		// Unknown state that it was in? Just don't do anything
 		log.Printf("[WARN] Bad state when leave: %d", member.Status)
@@ -438,7 +434,7 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 
 		s.config.EventCh <- Event{
 			Type:    event,
-			Members: []Member{*member},
+			Members: []Member{member.Member},
 		}
 	}
 }
@@ -501,14 +497,14 @@ func (s *Serf) handleReconnect() {
 // reap is called with a list of old members and a timeout, and removes
 // members that have exceeded the timeout. The members are removed from
 // both the old list and the members itself. Locking is left to the caller.
-func (s *Serf) reap(old []*oldMember, timeout time.Duration) []*oldMember {
+func (s *Serf) reap(old []*memberState, timeout time.Duration) []*memberState {
 	now := time.Now()
 	n := len(old)
 	for i := 0; i < n; i++ {
 		m := old[i]
 
 		// Skip if the timeout is not yet reached
-		if now.Sub(m.time) <= timeout {
+		if now.Sub(m.leaveTime) <= timeout {
 			continue
 		}
 
@@ -519,7 +515,7 @@ func (s *Serf) reap(old []*oldMember, timeout time.Duration) []*oldMember {
 		i--
 
 		// Delete from members
-		delete(s.members, m.member.Name)
+		delete(s.members, m.Name)
 	}
 
 	return old
@@ -553,13 +549,13 @@ func (s *Serf) reconnect() {
 	s.memberLock.RUnlock()
 
 	// Format the addr
-	addr := mem.member.Addr.String()
+	addr := mem.Addr.String()
 
 	// Attempt to join at the memberlist level
 	s.memberlist.Join([]string{addr})
 }
 
-func (s *Serf) resetLeaveIntent(m *Member) {
+func (s *Serf) resetLeaveIntent(m *memberState) {
 	s.memberLock.Lock()
 	defer s.memberLock.Unlock()
 
@@ -570,9 +566,9 @@ func (s *Serf) resetLeaveIntent(m *Member) {
 
 // removeOldMember is used to remove an old member from a list of old
 // members.
-func removeOldMember(old []*oldMember, name string) []*oldMember {
+func removeOldMember(old []*memberState, name string) []*memberState {
 	for i, m := range old {
-		if m.member.Name == name {
+		if m.Name == name {
 			n := len(old)
 			old[i], old[n-1] = old[n-1], nil
 			return old[:n-1]
