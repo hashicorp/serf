@@ -35,6 +35,13 @@ Options:
 }
 
 func (c *AgentCommand) Run(args []string, ui Ui) int {
+	ui = &PrefixedUi{
+		OutputPrefix: "==> ",
+		InfoPrefix:   "    ",
+		ErrorPrefix:  "==> ",
+		Ui:           ui,
+	}
+
 	var bindAddr string
 	var nodeName string
 	var rpcAddr string

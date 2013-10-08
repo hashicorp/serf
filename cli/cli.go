@@ -13,7 +13,6 @@ import (
 type CLI struct {
 	Args     []string
 	Commands map[string]CommandFactory
-	RootUi   Ui
 	Ui       Ui
 
 	once           sync.Once
@@ -46,7 +45,7 @@ func (c *CLI) Run() (int, error) {
 
 	// If we've been instructed to just print the help, then print it
 	if c.IsHelp() {
-		c.RootUi.Output(command.Help())
+		c.Ui.Output(command.Help())
 		return 1, nil
 	}
 
@@ -69,8 +68,8 @@ func (c *CLI) SubcommandArgs() []string {
 }
 
 func (c *CLI) printHelp() {
-	c.RootUi.Error("usage: serf [--version] [--help] <command> [<args>]\n")
-	c.RootUi.Error("Available commands are:")
+	c.Ui.Error("usage: serf [--version] [--help] <command> [<args>]\n")
+	c.Ui.Error("Available commands are:")
 
 	// Get the list of keys so we can sort them, and also get the maximum
 	// key length so they can be aligned properly.
@@ -101,16 +100,11 @@ func (c *CLI) printHelp() {
 		}
 
 		key = fmt.Sprintf("%s%s", key, strings.Repeat(" ", maxKeyLen-len(key)))
-		c.RootUi.Error(fmt.Sprintf("    %s    %s", key, command.Synopsis()))
+		c.Ui.Error(fmt.Sprintf("    %s    %s", key, command.Synopsis()))
 	}
 }
 
 func (c *CLI) init() {
-	// If we don't have a RootUi set, then just use the Ui that was set.
-	if c.RootUi == nil {
-		c.RootUi = c.Ui
-	}
-
 	c.processArgs()
 }
 
