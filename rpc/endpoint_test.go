@@ -5,19 +5,6 @@ import (
 	"testing"
 )
 
-func testSerf(t *testing.T) (*serf.Serf, string) {
-	config := serf.DefaultConfig()
-	config.MemberlistConfig.BindAddr = getBindAddr().String()
-	config.NodeName = config.MemberlistConfig.BindAddr
-
-	s, err := serf.Create(config)
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
-	return s, config.MemberlistConfig.BindAddr
-}
-
 func TestEndpointJoin(t *testing.T) {
 	s1, _ := testSerf(t)
 	s2, s2Addr := testSerf(t)
