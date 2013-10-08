@@ -56,6 +56,8 @@ func yield() {
 }
 
 func TestSerfCreate_noName(t *testing.T) {
+	t.Parallel()
+
 	config := testConfig()
 	config.NodeName = ""
 
