@@ -22,6 +22,10 @@ func (u *MockUi) Error(message string) {
 	fmt.Fprint(u.ErrorWriter, "\n")
 }
 
+func (u *MockUi) Info(message string) {
+	u.Output(message)
+}
+
 func (u *MockUi) Output(message string) {
 	u.once.Do(u.init)
 
