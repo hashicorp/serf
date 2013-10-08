@@ -61,7 +61,6 @@ const (
 	StatusLeaving
 	StatusLeft
 	StatusFailed
-	StatusPartition
 )
 
 // oldMember is used to track members that are no longer active due to
