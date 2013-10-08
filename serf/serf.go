@@ -190,13 +190,18 @@ func (s *Serf) Leave() error {
 		panic("Leave after Shutdown")
 	}
 
-	s.memberLock.RLock()
-	defer s.memberLock.RUnlock()
+	// Construct the message for the graceful leave
+	msg := messageLeave{Node: s.config.NodeName}
+
+	// Process the leave locally
+	s.handleNodeLeaveIntent(&msg)
 
 	// If we have more than one member (more than ourself), then we need
 	// to broadcast that we intend to gracefully leave.
+	s.memberLock.RLock()
+	defer s.memberLock.RUnlock()
+
 	if len(s.members) > 1 {
-		msg := messageLeave{Node: s.config.NodeName}
 		notifyCh := make(chan struct{})
 		if err := s.broadcast(messageLeaveType, msg.Node, &msg, notifyCh); err != nil {
 			return err
