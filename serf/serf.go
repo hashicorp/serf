@@ -70,8 +70,8 @@ const (
 // when that member was marked as leaving.
 type memberState struct {
 	Member
-	joinTime  uint64    // lamport clock time of join
-	leaveTime time.Time // wall clock time of leave
+	joinLTime LamportTime // lamport clock time of join
+	leaveTime time.Time   // wall clock time of leave
 }
 
 // Create creates a new Serf instance, starting all the background tasks

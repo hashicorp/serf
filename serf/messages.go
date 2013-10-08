@@ -12,7 +12,15 @@ type messageType uint8
 const (
 	messageLeaveType messageType = iota
 	messageRemoveFailedType
+	messageJoinType
 )
+
+// messageJoin is the message broadcasted after we join to
+// associated the node with a lamport clock
+type messageJoin struct {
+	LTime LamportTime
+	Node  string
+}
 
 // messageLeave is the message broadcasted to signal the intentional to
 // leave.
