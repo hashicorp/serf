@@ -19,11 +19,18 @@ func (c *AgentCommand) Help() string {
 
 func (c *AgentCommand) Run(_ []string, ui Ui) int {
 	config := &serf.Config{}
+
+	ui.Output("Starting Serf agent...")
 	serf, err := serf.Create(config)
 	if err != nil {
 		ui.Error(fmt.Sprintf("Failed to initialize Serf: %s", err))
 		return 1
 	}
+
+	ui.Output("Serf agent running!")
+	ui.Output("")
+	ui.Output(fmt.Sprintf("Node name: '%s'", config.NodeName))
+	ui.Output(fmt.Sprintf("Bind addr: '%s'", config.MemberlistConfig.BindAddr))
 
 	graceful, forceful := c.startShutdownWatcher(serf, ui)
 	select {
