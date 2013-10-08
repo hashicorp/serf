@@ -42,3 +42,35 @@ func (u *BasicUi) Output(message string) {
 	fmt.Fprint(u.Writer, message)
 	fmt.Fprint(u.Writer, "\n")
 }
+
+// PrefixedUi is an implementation of Ui that prefixes messages.
+type PrefixedUi struct {
+	OutputPrefix string
+	InfoPrefix   string
+	ErrorPrefix  string
+	Ui           Ui
+}
+
+func (u *PrefixedUi) Error(message string) {
+	if message != "" {
+		message = fmt.Sprintf("%s%s", u.ErrorPrefix, message)
+	}
+
+	u.Ui.Error(message)
+}
+
+func (u *PrefixedUi) Info(message string) {
+	if message != "" {
+		message = fmt.Sprintf("%s%s", u.InfoPrefix, message)
+	}
+
+	u.Ui.Info(message)
+}
+
+func (u *PrefixedUi) Output(message string) {
+	if message != "" {
+		message = fmt.Sprintf("%s%s", u.OutputPrefix, message)
+	}
+
+	u.Ui.Output(message)
+}
