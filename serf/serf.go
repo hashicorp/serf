@@ -112,6 +112,10 @@ func Create(conf *Config) (*Serf, error) {
 		conf.TombstoneTimeout = 24 * time.Hour
 	}
 
+	if conf.MemberlistConfig == nil {
+		conf.MemberlistConfig = memberlist.DefaultConfig()
+	}
+
 	serf := &Serf{
 		config:     conf,
 		members:    make(map[string]*Member),
