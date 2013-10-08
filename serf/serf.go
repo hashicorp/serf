@@ -381,11 +381,6 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 
 	member.Status = StatusAlive
 
-	// If our state didn't somehow change, then ignore it.
-	if oldStatus == member.Status {
-		return
-	}
-
 	// If node was previously in a failed state, then clean up some
 	// internal accounting.
 	if oldStatus == StatusFailed {
