@@ -558,6 +558,17 @@ func (s *Serf) reconnect() {
 		return
 	}
 
+	// Probability we should attempt to reconect is given
+	// by num failed / (num members - num failed - num left)
+	// This means that we probabilistically expect the cluster
+	// to attempt to connect to each failed member once per
+	// reconnect interval
+	prob := float32(len(s.failedMembers)) / float32(len(s.members)-len(s.failedMembers)-len(s.leftMembers))
+	if rand.Float32() > prob {
+		s.memberLock.RUnlock()
+		return
+	}
+
 	// Select a random member to try and join
 	idx := int(rand.Uint32() % uint32(n))
 	mem := s.failedMembers[idx]
