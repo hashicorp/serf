@@ -12,7 +12,7 @@ var bindLock sync.Mutex
 var bindNum byte = 10
 
 func yield() {
-	time.Sleep(5 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 }
 
 // Returns an unused address for binding to for tests.

@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/serf/serf"
 	"net"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -16,6 +17,9 @@ import (
 // exit.
 type AgentCommand struct {
 	ShutdownCh <-chan struct{}
+
+	lock         sync.Mutex
+	shuttingDown bool
 }
 
 func (c *AgentCommand) Help() string {
@@ -80,7 +84,16 @@ func (c *AgentCommand) Run(args []string, ui Ui) int {
 		ui.Error(fmt.Sprintf("Failed to initialize Serf: %s", err))
 		return 1
 	}
-	go rpcServer.Run()
+	go func() {
+		if err := rpcServer.Run(); err != nil {
+			c.lock.Lock()
+			defer c.lock.Unlock()
+
+			if !c.shuttingDown {
+				panic(err)
+			}
+		}
+	}()
 
 	ui.Output("Serf agent running!")
 	ui.Info(fmt.Sprintf("Node name: '%s'", config.NodeName))
@@ -127,6 +140,11 @@ func (c *AgentCommand) startShutdownWatcher(serf *serf.Serf, ui Ui) (graceful <-
 
 	go func() {
 		<-c.ShutdownCh
+
+		c.lock.Lock()
+		c.shuttingDown = true
+		c.lock.Unlock()
+
 		go c.gracefulShutdown(serf, ui, g)
 
 		select {
