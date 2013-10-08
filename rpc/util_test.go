@@ -3,6 +3,7 @@ package rpc
 import (
 	"net"
 	"sync"
+	"time"
 )
 
 var bindLock sync.Mutex
@@ -20,4 +21,8 @@ func getBindAddr() net.IP {
 	}
 
 	return result
+}
+
+func yield() {
+	time.Sleep(5 * time.Millisecond)
 }
