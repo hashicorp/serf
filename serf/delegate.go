@@ -51,7 +51,6 @@ func (d *delegate) NotifyMsg(buf []byte) {
 		/*
 			TODO(mitchellh): Causes tests to break...
 			d.serf.broadcasts.QueueBroadcast(&broadcast{
-				key:    key,
 				msg:    buf,
 				notify: nil,
 			})
