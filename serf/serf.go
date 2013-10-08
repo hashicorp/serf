@@ -24,6 +24,7 @@ func init() {
 // All functions on the Serf structure are safe to call concurrently.
 type Serf struct {
 	broadcasts    *memberlist.TransmitLimitedQueue
+	clock         LamportClock
 	config        *Config
 	failedMembers []*memberState
 	leftMembers   []*memberState
