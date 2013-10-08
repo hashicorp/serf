@@ -9,6 +9,10 @@ var Commands map[string]cli.CommandFactory
 
 func init() {
 	Commands = map[string]cli.CommandFactory{
+		"agent": func() (cli.Command, error) {
+			return &cli.AgentCommand{}, nil
+		},
+
 		"version": func() (cli.Command, error) {
 			return &cli.VersionCommand{
 				Revision:          GitCommit,
