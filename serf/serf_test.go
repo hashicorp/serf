@@ -465,3 +465,82 @@ func TestSerfState(t *testing.T) {
 		t.Fatalf("bad state: %d", s1.State())
 	}
 }
+
+func TestSerf_ReapHandler_Shutdown(t *testing.T) {
+	s, err := Create(testConfig())
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	go func() {
+		s.Shutdown()
+		time.Sleep(time.Millisecond)
+		t.Fatalf("timeout")
+	}()
+	s.handleReap()
+}
+
+func TestSerf_ReapHandler(t *testing.T) {
+	c := testConfig()
+	c.ReapInterval = time.Nanosecond
+	c.TombstoneTimeout = time.Second * 6
+	s, err := Create(c)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s.Shutdown()
+
+	m := &Member{}
+	s.leftMembers = []*oldMember{
+		&oldMember{m, time.Now()},
+		&oldMember{m, time.Now().Add(-5 * time.Second)},
+		&oldMember{m, time.Now().Add(-10 * time.Second)},
+	}
+
+	go func() {
+		time.Sleep(time.Millisecond)
+		s.Shutdown()
+	}()
+
+	s.handleReap()
+
+	if len(s.leftMembers) != 2 {
+		t.Fatalf("should be shorter")
+	}
+}
+
+func TestSerf_Reap(t *testing.T) {
+	s, err := Create(testConfig())
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s.Shutdown()
+
+	m := &Member{}
+	old := []*oldMember{
+		&oldMember{m, time.Now()},
+		&oldMember{m, time.Now().Add(-5 * time.Second)},
+		&oldMember{m, time.Now().Add(-10 * time.Second)},
+	}
+
+	old = s.reap(old, time.Second*6)
+	if len(old) != 2 {
+		t.Fatalf("should be shorter")
+	}
+}
+
+func TestRemoveOldMember(t *testing.T) {
+	old := []*oldMember{
+		&oldMember{member: &Member{Name: "foo"}},
+		&oldMember{member: &Member{Name: "bar"}},
+		&oldMember{member: &Member{Name: "baz"}},
+	}
+
+	old = removeOldMember(old, "bar")
+	if len(old) != 2 {
+		t.Fatalf("should be shorter")
+	}
+	if old[1].member.Name == "bar" {
+		t.Fatalf("should remove old member")
+	}
+}
