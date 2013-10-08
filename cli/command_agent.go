@@ -28,9 +28,8 @@ func (c *AgentCommand) Run(_ []string, ui Ui) int {
 	}
 
 	ui.Output("Serf agent running!")
-	ui.Output("")
-	ui.Output(fmt.Sprintf("Node name: '%s'", config.NodeName))
-	ui.Output(fmt.Sprintf("Bind addr: '%s'", config.MemberlistConfig.BindAddr))
+	ui.Info(fmt.Sprintf("Node name: '%s'", config.NodeName))
+	ui.Info(fmt.Sprintf("Bind addr: '%s'", config.MemberlistConfig.BindAddr))
 
 	graceful, forceful := c.startShutdownWatcher(serf, ui)
 	select {

@@ -42,10 +42,17 @@ func realMain() int {
 		}
 	}
 
+	ui := &cli.PrefixedUi{
+		OutputPrefix: "==> ",
+		InfoPrefix:   "    ",
+		ErrorPrefix:  "==> ",
+		Ui:           &cli.BasicUi{Writer: os.Stdout},
+	}
+
 	cli := &cli.CLI{
 		Args:     args,
 		Commands: Commands,
-		Ui:       &cli.BasicUi{Writer: os.Stdout},
+		Ui:       ui,
 	}
 
 	exitCode, err := cli.Run()
