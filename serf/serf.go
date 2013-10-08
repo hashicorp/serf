@@ -151,13 +151,9 @@ func Create(conf *Config) (*Serf, error) {
 		RetransmitMult: conf.MemberlistConfig.RetransmitMult,
 	}
 
-	// Setup the channel used for handling node events. We make this buffered
-	// in case our handling can't keep up with the events. The buffer is
-	// probably too big, but we'd rather be safe than lose events.
-	eventCh := make(chan memberlist.NodeEvent, 64)
-
 	// Modify the memberlist configuration with keys that we set
-	conf.MemberlistConfig.Events = &memberlist.ChannelEventDelegate{Ch: eventCh}
+	//conf.MemberlistConfig.Events = &memberlist.ChannelEventDelegate{Ch: eventCh}
+	conf.MemberlistConfig.Events = &eventDelegate{serf: serf}
 	conf.MemberlistConfig.Delegate = &delegate{serf: serf}
 	conf.MemberlistConfig.Name = conf.NodeName
 
@@ -172,7 +168,6 @@ func Create(conf *Config) (*Serf, error) {
 
 	// Start the background tasks. See the documentation above each method
 	// for more information on their role.
-	go serf.handleNodeEvents(eventCh)
 	go serf.handleReap()
 	go serf.handleReconnect()
 
@@ -362,24 +357,6 @@ func (s *Serf) handleNodeForceRemove(remove *messageRemoveFailed) bool {
 	})
 
 	return true
-}
-
-// handleNodeEvents sits in a loop until shutdown, reading events from
-// the given channel and processing them in order to update state within
-// the Serf.
-func (s *Serf) handleNodeEvents(ch <-chan memberlist.NodeEvent) {
-	// TODO(mitchellh): handle shutdown
-	for {
-		event := <-ch
-		switch event.Event {
-		case memberlist.NodeJoin:
-			s.handleNodeJoin(event.Node)
-		case memberlist.NodeLeave:
-			s.handleNodeLeave(event.Node)
-		default:
-			panic(fmt.Sprintf("unknown event type: %#v", event))
-		}
-	}
 }
 
 // handleNodeJoin is called when a node join event is received
