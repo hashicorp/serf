@@ -5,90 +5,101 @@ import (
 	"time"
 )
 
+// Config is the configuration for creating a Serf instance.
 type Config struct {
-	Hostname string // Node name (FQDN)
-	Role     string // Role in the gossip pool
+	// The name of this node. This must be unique in the cluster.
+	NodeName string
 
-	MaxCoalesceTime  time.Duration // Maximum period of event coalescing for updates
-	MinQuiescentTime time.Duration // Minimum period of quiescence for updates. This has lower precedence then MaxCoalesceTime
+	// The role for this node, if any. This is used to differentiate
+	// between perhaps different members of a Serf. For example, you might
+	// have a "load-balancer" role and a "web" role part of the same cluster.
+	// When new nodes are added, the load balancer wants to know (so it
+	// must be part of the cluster), but it doesn't want to add other load
+	// balancers to the rotation, so it checks if the added nodes are "web".
+	Role string
 
-	PartitionCount    int           // If PartitionCount nodes fail in PartitionInvernal, it is considered a partition
-	PartitionInterval time.Duration // ParitionInterval must be < MaxCoalesceTime
+	// EventCh is a channel that receives all the Serf events. The events
+	// are sent on this channel in proper ordering. Care must be taken that
+	// this channel doesn't block, either by processing the events quick
+	// enough or buffering the channel, otherwise it can block state updates
+	// within Serf itself. If no EventCh is specified, no events will be fired,
+	// but point-in-time snapshots of members can still be retrieved by
+	// calling Members on Serf.
+	EventCh chan<- Event
 
-	ReconnectInterval time.Duration // How often do we attempt to reconnect to failed nodes
-	ReconnectTimeout  time.Duration // How long do we keep retrying to connect to a failed node before giving up
-	TombstoneTimeout  time.Duration // How long to keep a tombstone of members that left. Should match reconnect timeout.
+	// LeaveTimeout is the amount of time to wait for a node to gracefully
+	// leave. If this is not set, a timeout of 120 seconds will be set.
+	LeaveTimeout time.Duration
 
-	ReapInterval time.Duration // How often we reap tombstones
+	// BroadcastTimeout is the amount of time to wait for a broadcast
+	// message to be sent to the cluster. Broadcast messages are used for
+	// things like leave messages and force remove messages. If this is not
+	// set, a timeout of 5 seconds will be set.
+	BroadcastTimeout time.Duration
 
-	LeaveTimeout time.Duration // How long do we give a node to leave after broadcasting their intention
+	// The settings below relate to Serf's event coalescence feature. Serf
+	// is able to coalesce multiple events into single events in order to
+	// reduce the amount of noise that is sent along the EventCh. For example
+	// if five nodes quickly join, the EventCh will be sent one EventMemberJoin
+	// containing the five nodes rather than five individual EventMemberJoin
+	// events. Coalescence can mitigate potential flapping behavior.
+	//
+	// Coalescence is disabled by default and can be enabled by setting
+	// CoalescePeriod.
+	//
+	// CoalescePeriod specifies the time duration to coalesce events.
+	// For example, if this is set to 5 seconds, then all events received
+	// within 5 seconds that can be coalesced will be.
+	//
+	// QuiescentPeriod specifies the duration of time where if no events
+	// are received, coalescence immediately happens. For example, if
+	// CoalscePeriod is set to 10 seconds but QuiscentPeriod is set to 2
+	// seconds, then the events will be coalesced and dispatched if no
+	// new events are received within 2 seconds of the last event. Otherwise,
+	// every event will always be delayed by at least 10 seconds.
+	CoalescePeriod  time.Duration
+	QuiescentPeriod time.Duration
 
-	BroadcastTimeout time.Duration // Timeout for waiting on broadcasts
+	// The settings below relate to Serf keeping track of recently
+	// failed/left nodes and attempting reconnects.
+	//
+	// ReapInterval is the interval when the reaper runs. If this is not
+	// set (it is zero), it will be set to a reasonable default.
+	//
+	// ReconnectInterval is the interval when we attempt to reconnect
+	// to failed nodes. If this is not set (it is zero), it will be set
+	// to a reasonable default.
+	//
+	// ReconnectTimeout is the amount of time to attempt to reconnect to
+	// a failed node before giving up and considering it completely gone.
+	//
+	// TombstoneTimeout is the amount of time to keep around nodes
+	// that gracefully left as tombstones for syncing state with other
+	// Serf nodes.
+	ReapInterval      time.Duration
+	ReconnectInterval time.Duration
+	ReconnectTimeout  time.Duration
+	TombstoneTimeout  time.Duration
 
-	GossipBindAddr   string        // Binding address
-	GossipPort       int           // TCP and UDP ports for gossip
-	GossipTCPTimeout time.Duration // TCP timeout
-	IndirectChecks   int           // Number of indirect checks to use
-	RetransmitMult   int           // Retransmits = RetransmitMult * log(N+1)
-	SuspicionMult    int           // Suspicion time = SuspcicionMult * log(N+1) * Interval
-	PushPullInterval time.Duration // How often we do a Push/Pull update
-	ProbeTimeout     time.Duration // 99% precentile of round-trip-time
-	ProbeInterval    time.Duration // Failure probing interval length
-	GossipNodes      int           // Number of nodes to gossip to per GossipInterval
-	GossipInterval   time.Duration // Gossip interval for non-piggyback messages (only if GossipNodes > 0)
-
-	Delegate EventDelegate // Notified on member events
+	// MemberlistConfig is the memberlist configuration that Serf will
+	// use to do the underlying membership management and gossip. Some
+	// fields in the MemberlistConfig will be overwritten by Serf no
+	// matter what:
+	//
+	//   * Name - This will always be set to the same as the NodeName
+	//     in this configuration.
+	//
+	//   * Events - Serf uses a custom event delegate.
+	//
+	//   * Delegate - Serf uses a custom delegate.
+	//
+	MemberlistConfig *memberlist.Config
 }
 
-// memberlistConfig constructs the memberlist configuration from our configuration
-func memberlistConfig(conf *Config) *memberlist.Config {
-	mc := &memberlist.Config{}
-	mc.Name = conf.Hostname
-	mc.BindAddr = conf.GossipBindAddr
-	mc.UDPPort = conf.GossipPort
-	mc.TCPPort = conf.GossipPort
-	mc.TCPTimeout = conf.GossipTCPTimeout
-	mc.IndirectChecks = conf.IndirectChecks
-	mc.RetransmitMult = conf.RetransmitMult
-	mc.SuspicionMult = conf.SuspicionMult
-	mc.PushPullInterval = conf.PushPullInterval
-	mc.RTT = conf.ProbeTimeout
-	mc.ProbeInterval = conf.ProbeInterval
-	mc.GossipNodes = conf.GossipNodes
-	mc.GossipInterval = conf.GossipInterval
-	return mc
-}
-
-// DefaultConfig is used to return a default set of sane configurations
+// DefaultConfig returns a Config struct that contains reasonable defaults
+// for most of the configurations.
 func DefaultConfig() *Config {
-	c := &Config{}
-
-	// Copy the memberlist configs
-	defaultMb := memberlist.DefaultConfig()
-	c.Hostname = defaultMb.Name
-	c.GossipBindAddr = defaultMb.BindAddr
-	c.GossipPort = defaultMb.UDPPort
-	c.GossipTCPTimeout = defaultMb.TCPTimeout
-	c.IndirectChecks = defaultMb.IndirectChecks
-	c.RetransmitMult = defaultMb.RetransmitMult
-	c.SuspicionMult = defaultMb.SuspicionMult
-	c.PushPullInterval = defaultMb.PushPullInterval
-	c.ProbeTimeout = defaultMb.RTT
-	c.ProbeInterval = defaultMb.ProbeInterval
-	c.GossipNodes = defaultMb.GossipNodes
-	c.GossipInterval = defaultMb.GossipInterval
-
-	// Set our own defaults
-	c.PartitionCount = 2
-	c.PartitionInterval = 30 * time.Second
-	c.MinQuiescentTime = 5 * time.Second
-	c.MaxCoalesceTime = 60 * time.Second
-	c.ReconnectInterval = 30 * time.Second
-	c.ReconnectTimeout = 24 * time.Hour
-	c.TombstoneTimeout = 24 * time.Hour
-	c.ReapInterval = 15 * time.Second
-	c.LeaveTimeout = 120 * time.Second
-	c.BroadcastTimeout = 10 * time.Second
-
-	return c
+	return &Config{
+		MemberlistConfig: memberlist.DefaultConfig(),
+	}
 }

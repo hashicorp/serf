@@ -1,4 +1,4 @@
-package serf2
+package serf
 
 // EventType are all the types of events that may occur and be sent
 // along the Serf channel.

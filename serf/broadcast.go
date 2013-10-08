@@ -1,4 +1,4 @@
-package serf2
+package serf
 
 import (
 	"github.com/hashicorp/memberlist"

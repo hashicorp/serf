@@ -1,38 +1,23 @@
 package serf
 
 import (
-	"testing"
+	"net"
+	"sync"
 )
 
-func TestEncodeDecode(t *testing.T) {
-	msg := &leave{Node: "foo"}
-	buf, err := encode(leaveMsg, msg)
-	if err != nil {
-		t.Fatalf("unexpected err: %s", err)
-	}
-	var out leave
-	if err := decode(buf.Bytes()[1:], &out); err != nil {
-		t.Fatalf("unexpected err: %s", err)
-	}
-	if out.Node != "foo" {
-		t.Fatalf("bad node")
-	}
-}
+var bindLock sync.Mutex
+var bindNum byte = 10
 
-func TestRandomOffset(t *testing.T) {
-	vals := make(map[int]struct{})
-	for i := 0; i < 100; i++ {
-		offset := randomOffset(2 << 30)
-		if _, ok := vals[offset]; ok {
-			t.Fatalf("got collision")
-		}
-		vals[offset] = struct{}{}
-	}
-}
+// Returns an unused address for binding to for tests.
+func getBindAddr() net.IP {
+	bindLock.Lock()
+	defer bindLock.Unlock()
 
-func TestRandomOffset_Zero(t *testing.T) {
-	offset := randomOffset(0)
-	if offset != 0 {
-		t.Fatalf("bad offset")
+	result := net.IPv4(127, 0, 0, bindNum)
+	bindNum++
+	if bindNum > 255 {
+		bindNum = 10
 	}
+
+	return result
 }

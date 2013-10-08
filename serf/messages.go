@@ -1,61 +1,42 @@
 package serf
 
 import (
-	"github.com/hashicorp/memberlist"
+	"bytes"
+	"github.com/ugorji/go/codec"
 )
 
+// messageType are the types of gossip messages Serf will send along
+// memberlist.
 type messageType uint8
 
 const (
-	leaveMsg messageType = iota
-	removeMsg
+	messageLeaveType messageType = iota
+	messageRemoveFailedType
 )
 
-// leave message is broadcast to signal intention to leave
-type leave struct {
+// messageLeave is the message broadcasted to signal the intentional to
+// leave.
+type messageLeave struct {
 	Node string
 }
 
-type remove struct {
+// messageRemoveFailed is the message broadcasted to force remove
+// a failed node from the failed node list and the member list.
+type messageRemoveFailed struct {
 	Node string
 }
 
-type serfBroadcast struct {
-	msg    []byte
-	notify chan struct{}
+func decodeMessage(buf []byte, out interface{}) error {
+	var handle codec.MsgpackHandle
+	return codec.NewDecoder(bytes.NewBuffer(buf), &handle).Decode(out)
 }
 
-func (b *serfBroadcast) Invalidates(other memberlist.Broadcast) bool {
-	return false
-}
+func encodeMessage(t messageType, msg interface{}) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	buf.WriteByte(uint8(t))
 
-func (b *serfBroadcast) Message() []byte {
-	return b.msg
-}
-
-func (b *serfBroadcast) Finished() {
-	select {
-	case b.notify <- struct{}{}:
-	default:
-	}
-}
-
-// encodeBroadcastNotify encodes a message and enqueues it for broadcast and notifies
-// the given channel when transmission is finished
-func (s *Serf) encodeBroadcastNotify(msgType messageType, msg interface{}, notify chan struct{}) error {
-	buf, err := encode(msgType, msg)
-	if err != nil {
-		return err
-	}
-
-	// Encode the broadcast
-	b := &serfBroadcast{buf.Bytes(), notify}
-	s.broadcasts.QueueBroadcast(b)
-	return nil
-}
-
-// rebroadcast is used to enqueue a message to be rebroadcast
-func (s *Serf) rebroadcast(msg []byte) {
-	b := &serfBroadcast{msg, nil}
-	s.broadcasts.QueueBroadcast(b)
+	handle := codec.MsgpackHandle{}
+	encoder := codec.NewEncoder(buf, &handle)
+	err := encoder.Encode(msg)
+	return buf.Bytes(), err
 }
