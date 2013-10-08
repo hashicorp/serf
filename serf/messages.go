@@ -17,13 +17,15 @@ const (
 // messageLeave is the message broadcasted to signal the intentional to
 // leave.
 type messageLeave struct {
-	Node string
+	LTime LamportTime
+	Node  string
 }
 
 // messageRemoveFailed is the message broadcasted to force remove
 // a failed node from the failed node list and the member list.
 type messageRemoveFailed struct {
-	Node string
+	LTime LamportTime
+	Node  string
 }
 
 func decodeMessage(buf []byte, out interface{}) error {
