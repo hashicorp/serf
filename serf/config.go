@@ -7,7 +7,8 @@ import (
 
 // Config is the configuration for creating a Serf instance.
 type Config struct {
-	// The name of this node. This must be unique in the cluster.
+	// The name of this node. This must be unique in the cluster. If this
+	// is not set, Serf will set it to the hostname of the running machine.
 	NodeName string
 
 	// The role for this node, if any. This is used to differentiate
