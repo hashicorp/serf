@@ -20,8 +20,9 @@ func TestAgentCommandRun(t *testing.T) {
 	}
 
 	resultCh := make(chan int)
+	ui := new(MockUi)
 	go func() {
-		resultCh <- c.Run(nil, new(MockUi))
+		resultCh <- c.Run(nil, ui)
 	}()
 
 	yield()
@@ -29,7 +30,7 @@ func TestAgentCommandRun(t *testing.T) {
 	// Verify it runs "forever"
 	select {
 	case <-resultCh:
-		t.Fatalf("ended too soon")
+		t.Fatalf("ended too soon, err: %s", ui.ErrorWriter.String())
 	case <-time.After(50 * time.Millisecond):
 	}
 
