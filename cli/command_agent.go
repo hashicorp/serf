@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"flag"
 	"fmt"
 	"github.com/hashicorp/serf/serf"
+	"strings"
 )
 
 // AgentCommand is a Command implementation that runs a Serf agent.
@@ -14,11 +16,32 @@ type AgentCommand struct {
 }
 
 func (c *AgentCommand) Help() string {
-	return ""
+	helpText := `
+Usage: serf agent [options]
+
+  Starts the Serf agent and runs until an interrupt is received. The
+  agent represents a single node in a cluster.
+
+Options:
+
+  -node=foo            Name of this node. Must be unique in the cluster.
+`
+	return strings.TrimSpace(helpText)
 }
 
-func (c *AgentCommand) Run(_ []string, ui Ui) int {
-	config := &serf.Config{}
+func (c *AgentCommand) Run(args []string, ui Ui) int {
+	var nodeName string
+
+	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
+	cmdFlags.Usage = func() { ui.Output(c.Help()) }
+	cmdFlags.StringVar(&nodeName, "node", "", "node name")
+	if err := cmdFlags.Parse(args); err != nil {
+		return 1
+	}
+
+	config := &serf.Config{
+		NodeName: nodeName,
+	}
 
 	ui.Output("Starting Serf agent...")
 	serf, err := serf.Create(config)
