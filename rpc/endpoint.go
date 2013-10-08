@@ -8,3 +8,9 @@ import (
 type endpoint struct {
 	serf *serf.Serf
 }
+
+// Members returns the members that are currently part of the Serf.
+func (e *endpoint) Members(args interface{}, result *[]serf.Member) error {
+	*result = e.serf.Members()
+	return nil
+}
