@@ -1,9 +1,9 @@
 package cli
 
 import (
-	"time"
 	"net"
 	"sync"
+	"time"
 )
 
 var bindLock sync.Mutex

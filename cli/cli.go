@@ -3,6 +3,8 @@ package cli
 import (
 	"fmt"
 	"log"
+	"sort"
+	"strings"
 	"sync"
 )
 
@@ -23,7 +25,7 @@ type CLI struct {
 // IsHelp returns whether or not the help flag is present within the
 // arguments.
 func (c *CLI) IsHelp() bool {
-	c.once.Do(c.processArgs)
+	c.once.Do(c.init)
 	return c.isHelp
 }
 
@@ -55,14 +57,14 @@ func (c *CLI) Run() (int, error) {
 // example, a CLI from "--version version --help" would return a Subcommand
 // of "version"
 func (c *CLI) Subcommand() string {
-	c.once.Do(c.processArgs)
+	c.once.Do(c.init)
 	return c.subcommand
 }
 
 // SubcommandArgs returns the arguments that will be passed to the
 // subcommand.
 func (c *CLI) SubcommandArgs() []string {
-	c.once.Do(c.processArgs)
+	c.once.Do(c.init)
 	return c.subcommandArgs
 }
 
@@ -70,7 +72,27 @@ func (c *CLI) printHelp() {
 	c.RootUi.Error("usage: serf [--version] [--help] <command> [<args>]\n")
 	c.RootUi.Error("Available commands are:")
 
-	for key, commandFunc := range c.Commands {
+	// Get the list of keys so we can sort them, and also get the maximum
+	// key length so they can be aligned properly.
+	keys := make([]string, 0, len(c.Commands))
+	maxKeyLen := 0
+	for key, _ := range c.Commands {
+		if len(key) > maxKeyLen {
+			maxKeyLen = len(key)
+		}
+
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		commandFunc, ok := c.Commands[key]
+		if !ok {
+			// This should never happen since we JUST built the list of
+			// keys.
+			panic("command not found: " + key)
+		}
+
 		command, err := commandFunc()
 		if err != nil {
 			log.Printf("[ERR] cli: Command '%s' failed to load: %s",
@@ -78,8 +100,18 @@ func (c *CLI) printHelp() {
 			continue
 		}
 
+		key = fmt.Sprintf("%s%s", key, strings.Repeat(" ", maxKeyLen-len(key)))
 		c.RootUi.Error(fmt.Sprintf("    %s    %s", key, command.Synopsis()))
 	}
+}
+
+func (c *CLI) init() {
+	// If we don't have a RootUi set, then just use the Ui that was set.
+	if c.RootUi == nil {
+		c.RootUi = c.Ui
+	}
+
+	c.processArgs()
 }
 
 func (c *CLI) processArgs() {

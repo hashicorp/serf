@@ -45,7 +45,7 @@ func TestPrefixedUiError(t *testing.T) {
 	ui := new(MockUi)
 	p := &PrefixedUi{
 		ErrorPrefix: "foo",
-		Ui: ui,
+		Ui:          ui,
 	}
 
 	p.Error("bar")
@@ -58,7 +58,7 @@ func TestPrefixedUiInfo(t *testing.T) {
 	ui := new(MockUi)
 	p := &PrefixedUi{
 		InfoPrefix: "foo",
-		Ui: ui,
+		Ui:         ui,
 	}
 
 	p.Info("bar")
@@ -71,7 +71,7 @@ func TestPrefixedUiOutput(t *testing.T) {
 	ui := new(MockUi)
 	p := &PrefixedUi{
 		OutputPrefix: "foo",
-		Ui: ui,
+		Ui:           ui,
 	}
 
 	p.Output("bar")
