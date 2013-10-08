@@ -203,7 +203,7 @@ func (s *Serf) Leave() error {
 
 	if len(s.members) > 1 {
 		notifyCh := make(chan struct{})
-		if err := s.broadcast(messageLeaveType, msg.Node, &msg, notifyCh); err != nil {
+		if err := s.broadcast(messageLeaveType, &msg, notifyCh); err != nil {
 			return err
 		}
 
@@ -255,7 +255,7 @@ func (s *Serf) RemoveFailedNode(node string) error {
 
 	// Broadcast the remove
 	notifyCh := make(chan struct{})
-	if err := s.broadcast(messageRemoveFailedType, msg.Node, &msg, notifyCh); err != nil {
+	if err := s.broadcast(messageRemoveFailedType, &msg, notifyCh); err != nil {
 		return err
 	}
 
@@ -309,14 +309,13 @@ func (s *Serf) State() SerfState {
 // broadcast takes a Serf message type, encodes it for the wire, and queues
 // the broadcast. If a notify channel is given, this channel will be closed
 // when the broadcast is sent.
-func (s *Serf) broadcast(t messageType, key string, msg interface{}, notify chan<- struct{}) error {
+func (s *Serf) broadcast(t messageType, msg interface{}, notify chan<- struct{}) error {
 	raw, err := encodeMessage(t, msg)
 	if err != nil {
 		return err
 	}
 
 	s.broadcasts.QueueBroadcast(&broadcast{
-		key:    key,
 		msg:    raw,
 		notify: notify,
 	})
