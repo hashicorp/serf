@@ -19,10 +19,12 @@ func TestAgentCommandRun(t *testing.T) {
 		ShutdownCh: shutdownCh,
 	}
 
-	resultCh := make(chan int)
+	args := []string{"-bind", getBindAddr().String()}
 	ui := new(MockUi)
+
+	resultCh := make(chan int)
 	go func() {
-		resultCh <- c.Run(nil, ui)
+		resultCh <- c.Run(args, ui)
 	}()
 
 	yield()

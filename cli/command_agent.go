@@ -24,24 +24,27 @@ Usage: serf agent [options]
 
 Options:
 
-  -node=foo            Name of this node. Must be unique in the cluster.
+  -bind=0.0.0.0        Address to bind network listeners to
+  -node=foo            Name of this node. Must be unique in the cluster
 `
 	return strings.TrimSpace(helpText)
 }
 
 func (c *AgentCommand) Run(args []string, ui Ui) int {
+	var bindAddr string
 	var nodeName string
 
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
+	cmdFlags.StringVar(&bindAddr, "bind", "", "address to bind listeners to")
 	cmdFlags.StringVar(&nodeName, "node", "", "node name")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
 
-	config := &serf.Config{
-		NodeName: nodeName,
-	}
+	config := serf.DefaultConfig()
+	config.MemberlistConfig.BindAddr = bindAddr
+	config.NodeName = nodeName
 
 	ui.Output("Starting Serf agent...")
 	serf, err := serf.Create(config)
