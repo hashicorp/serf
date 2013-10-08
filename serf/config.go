@@ -52,7 +52,7 @@ func memberlistConfig(conf *Config) *memberlist.Config {
 	mc.RetransmitMult = conf.RetransmitMult
 	mc.SuspicionMult = conf.SuspicionMult
 	mc.PushPullInterval = conf.PushPullInterval
-	mc.ProbeTimeout = conf.ProbeTimeout
+	mc.RTT = conf.ProbeTimeout
 	mc.ProbeInterval = conf.ProbeInterval
 	mc.GossipNodes = conf.GossipNodes
 	mc.GossipInterval = conf.GossipInterval
@@ -73,7 +73,7 @@ func DefaultConfig() *Config {
 	c.RetransmitMult = defaultMb.RetransmitMult
 	c.SuspicionMult = defaultMb.SuspicionMult
 	c.PushPullInterval = defaultMb.PushPullInterval
-	c.ProbeTimeout = defaultMb.ProbeTimeout
+	c.ProbeTimeout = defaultMb.RTT
 	c.ProbeInterval = defaultMb.ProbeInterval
 	c.GossipNodes = defaultMb.GossipNodes
 	c.GossipInterval = defaultMb.GossipInterval
