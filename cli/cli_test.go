@@ -95,6 +95,44 @@ func TestCLIRun_printHelp(t *testing.T) {
 	}
 }
 
+func TestCLIRun_printCommandHelp(t *testing.T) {
+	testCases := [][]string{
+		{"foo", "-h"},
+		{"-h", "foo"},
+		{"foo", "--help"},
+	}
+
+	for _, args := range testCases {
+		command := &MockCommand{
+			HelpText: "donuts",
+		}
+
+		ui := new(MockUi)
+		cli := &CLI{
+			Args: args,
+			Commands: map[string]CommandFactory{
+				"foo": func() (Command, error) {
+					return command, nil
+				},
+			},
+			Ui: ui,
+		}
+
+		exitCode, err := cli.Run()
+		if err != nil {
+			t.Fatalf("err: %s", err)
+		}
+
+		if exitCode != 1 {
+			t.Fatalf("bad exit code: %d", exitCode)
+		}
+
+		if !strings.Contains(ui.OutputWriter.String(), "donuts") {
+			t.Fatalf("bad contents %#v: %s", args, ui.OutputWriter.String())
+		}
+	}
+}
+
 func TestCLISubcommand(t *testing.T) {
 	testCases := []struct {
 		args       []string

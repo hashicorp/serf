@@ -28,12 +28,6 @@ func (c *CLI) IsHelp() bool {
 
 // Run runs the actual CLI based on the arguments given.
 func (c *CLI) Run() (int, error) {
-	// If we've been instructed to just print the help, then print it
-	if c.IsHelp() {
-		c.printHelp()
-		return 1, nil
-	}
-
 	// Attempt to get the factory function for creating the command
 	// implementation. If the command is invalid or blank, it is an error.
 	commandFunc, ok := c.Commands[c.Subcommand()]
@@ -45,6 +39,12 @@ func (c *CLI) Run() (int, error) {
 	command, err := commandFunc()
 	if err != nil {
 		return 0, err
+	}
+
+	// If we've been instructed to just print the help, then print it
+	if c.IsHelp() {
+		c.Ui.Output(command.Help())
+		return 1, nil
 	}
 
 	return command.Run(c.SubcommandArgs(), c.Ui), nil

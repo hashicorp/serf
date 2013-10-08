@@ -5,6 +5,7 @@ package cli
 // externally.
 type MockCommand struct {
 	// Settable
+	HelpText  string
 	RunResult int
 
 	// Set by the command
@@ -14,7 +15,7 @@ type MockCommand struct {
 }
 
 func (c *MockCommand) Help() string {
-	return ""
+	return c.HelpText
 }
 
 func (c *MockCommand) Run(args []string, ui Ui) int {
