@@ -3,7 +3,9 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"github.com/hashicorp/serf/rpc"
 	"github.com/hashicorp/serf/serf"
+	"net"
 	"strings"
 )
 
@@ -24,8 +26,9 @@ Usage: serf agent [options]
 
 Options:
 
-  -bind=0.0.0.0        Address to bind network listeners to
-  -node=foo            Name of this node. Must be unique in the cluster
+  -bind=0.0.0.0            Address to bind network listeners to
+  -node=hostname           Name of this node. Must be unique in the cluster
+  -rpc-addr=127.0.0.1:7373 Address to bind the RPC listener.
 `
 	return strings.TrimSpace(helpText)
 }
@@ -33,11 +36,14 @@ Options:
 func (c *AgentCommand) Run(args []string, ui Ui) int {
 	var bindAddr string
 	var nodeName string
+	var rpcAddr string
 
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
-	cmdFlags.StringVar(&bindAddr, "bind", "", "address to bind listeners to")
+	cmdFlags.StringVar(&bindAddr, "bind", "0.0.0.0", "address to bind listeners to")
 	cmdFlags.StringVar(&nodeName, "node", "", "node name")
+	cmdFlags.StringVar(&rpcAddr, "rpc-addr", "127.0.0.1:7373",
+		"address to bind RPC listener to")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
@@ -52,10 +58,26 @@ func (c *AgentCommand) Run(args []string, ui Ui) int {
 		ui.Error(fmt.Sprintf("Failed to initialize Serf: %s", err))
 		return 1
 	}
+	defer serf.Shutdown()
+
+	rpcL, err := net.Listen("tcp", rpcAddr)
+	if err != nil {
+		ui.Error(fmt.Sprintf("Failed to initialize RPC listener: %s", err))
+		return 1
+	}
+	defer rpcL.Close()
+
+	rpcServer, err := rpc.NewServer(serf, rpcL)
+	if err != nil {
+		ui.Error(fmt.Sprintf("Failed to initialize Serf: %s", err))
+		return 1
+	}
+	go rpcServer.Run()
 
 	ui.Output("Serf agent running!")
 	ui.Info(fmt.Sprintf("Node name: '%s'", config.NodeName))
 	ui.Info(fmt.Sprintf("Bind addr: '%s'", config.MemberlistConfig.BindAddr))
+	ui.Info(fmt.Sprintf(" RPC addr: '%s'", rpcAddr))
 
 	graceful, forceful := c.startShutdownWatcher(serf, ui)
 	select {
