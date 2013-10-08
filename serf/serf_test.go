@@ -2,6 +2,7 @@ package serf
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
 )
@@ -58,12 +59,21 @@ func yield() {
 func TestSerfCreate_noName(t *testing.T) {
 	t.Parallel()
 
+	hostname, err := os.Hostname()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
 	config := testConfig()
 	config.NodeName = ""
 
-	_, err := Create(config)
-	if err == nil {
-		t.Fatal("should have error")
+	_, err = Create(config)
+	if err != nil {
+		t.Fatalf("should not have error")
+	}
+
+	if config.NodeName != hostname {
+		t.Fatalf("bad node name: %s", config.NodeName)
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"os"
 	"sync"
 	"time"
 )
@@ -77,9 +78,14 @@ type oldMember struct {
 // After calling this function, the configuration should no longer be used
 // or modified by the caller.
 func Create(conf *Config) (*Serf, error) {
-	// Some configuration validation first.
 	if conf.NodeName == "" {
-		return nil, errors.New("NodeName must be set")
+		// Default the node name to the hostname
+		hostname, err := os.Hostname()
+		if err != nil {
+			return nil, fmt.Errorf("Error setting NodeName to hostname: %s", err)
+		}
+
+		conf.NodeName = hostname
 	}
 
 	if conf.BroadcastTimeout == 0 {
