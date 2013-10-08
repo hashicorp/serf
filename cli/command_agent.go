@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/serf/serf"
 	"net"
 	"strings"
+	"time"
 )
 
 // AgentCommand is a Command implementation that runs a Serf agent.
@@ -125,6 +126,7 @@ func (c *AgentCommand) startShutdownWatcher(serf *serf.Serf, ui Ui) (graceful <-
 		case <-g:
 			// Gracefully shut down properly
 		case <-c.ShutdownCh:
+			time.Sleep(50 * time.Millisecond)
 			c.forceShutdown(serf, ui)
 			close(f)
 		}

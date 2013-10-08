@@ -15,6 +15,8 @@ func TestAgentCommand_implements(t *testing.T) {
 
 func TestAgentCommandRun(t *testing.T) {
 	shutdownCh := make(chan struct{})
+	defer close(shutdownCh)
+
 	c := &AgentCommand{
 		ShutdownCh: shutdownCh,
 	}
@@ -47,4 +49,30 @@ func TestAgentCommandRun(t *testing.T) {
 	case <-time.After(50 * time.Millisecond):
 		t.Fatalf("timeout")
 	}
+}
+
+func TestAgentCommandRun_rpc(t *testing.T) {
+	doneCh := make(chan struct{})
+	shutdownCh := make(chan struct{})
+	defer func() {
+		close(shutdownCh)
+		<-doneCh
+	}()
+
+	c := &AgentCommand{
+		ShutdownCh: shutdownCh,
+	}
+
+	rpcAddr := getRPCAddr()
+	args := []string{
+		"-bind", getBindAddr().String(),
+		"-rpc-addr", rpcAddr,
+	}
+
+	go func() {
+		c.Run(args, new(MockUi))
+		close(doneCh)
+	}()
+
+	yield()
 }
