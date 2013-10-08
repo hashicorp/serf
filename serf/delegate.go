@@ -48,13 +48,10 @@ func (d *delegate) NotifyMsg(buf []byte) {
 	}
 
 	if rebroadcast {
-		/*
-			TODO(mitchellh): Causes tests to break...
-			d.serf.broadcasts.QueueBroadcast(&broadcast{
-				msg:    buf,
-				notify: nil,
-			})
-		*/
+		d.serf.broadcasts.QueueBroadcast(&broadcast{
+			msg:    buf,
+			notify: nil,
+		})
 	}
 }
 
