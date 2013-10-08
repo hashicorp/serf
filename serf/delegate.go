@@ -59,7 +59,17 @@ func (d *delegate) NotifyMsg(buf []byte) {
 }
 
 func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
-	return d.serf.broadcasts.GetBroadcasts(overhead, limit)
+	msgs := d.serf.broadcasts.GetBroadcasts(overhead, limit)
+
+	if msgs != nil {
+		numq := d.serf.broadcasts.NumQueued()
+		limit := d.serf.config.QueueDepthWarning
+		if numq >= limit {
+			log.Printf("[WARN] Broadcast queue depth: %d", numq)
+		}
+	}
+
+	return msgs
 }
 
 func (d *delegate) LocalState() []byte {

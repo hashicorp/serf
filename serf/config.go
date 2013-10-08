@@ -81,6 +81,12 @@ type Config struct {
 	ReconnectTimeout  time.Duration
 	TombstoneTimeout  time.Duration
 
+	// QueueDepthWarning is used to generate warning message is the
+	// number of queued messages to broadcast exceeds this number. This
+	// is to provide the user feed back if events are being triggered
+	// faster than they can be disseminated
+	QueueDepthWarning int
+
 	// MemberlistConfig is the memberlist configuration that Serf will
 	// use to do the underlying membership management and gossip. Some
 	// fields in the MemberlistConfig will be overwritten by Serf no

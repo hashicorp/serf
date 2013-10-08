@@ -112,6 +112,11 @@ func Create(conf *Config) (*Serf, error) {
 		conf.TombstoneTimeout = 24 * time.Hour
 	}
 
+	if conf.QueueDepthWarning == 0 {
+		// Set reasonable default for QueueDepthWarning
+		conf.QueueDepthWarning = 128
+	}
+
 	if conf.MemberlistConfig == nil {
 		conf.MemberlistConfig = memberlist.DefaultConfig()
 	}
