@@ -211,11 +211,6 @@ func (s *Serf) Leave() error {
 	// Process the leave locally
 	s.handleNodeLeaveIntent(&msg)
 
-	// If we have more than one member (more than ourself), then we need
-	// to broadcast that we intend to gracefully leave.
-	s.memberLock.RLock()
-	defer s.memberLock.RUnlock()
-
 	if len(s.members) > 1 {
 		notifyCh := make(chan struct{})
 		if err := s.broadcast(messageLeaveType, &msg, notifyCh); err != nil {
@@ -229,7 +224,7 @@ func (s *Serf) Leave() error {
 		}
 	}
 
-	err := s.memberlist.Leave()
+	err := s.memberlist.Leave(s.config.BroadcastTimeout)
 	if err != nil {
 		return err
 	}
