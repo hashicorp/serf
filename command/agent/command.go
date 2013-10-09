@@ -36,12 +36,12 @@ Options:
 	return strings.TrimSpace(helpText)
 }
 
-func (c *Command) Run(args []string, ui cli.Ui) int {
-	ui = &cli.PrefixedUi{
+func (c *Command) Run(args []string, rawUi cli.Ui) int {
+	ui := &cli.PrefixedUi{
 		OutputPrefix: "==> ",
 		InfoPrefix:   "    ",
 		ErrorPrefix:  "==> ",
-		Ui:           ui,
+		Ui:           rawUi,
 	}
 
 	var bindAddr string
@@ -58,9 +58,12 @@ func (c *Command) Run(args []string, ui cli.Ui) int {
 		return 1
 	}
 
+	logoutput := &cli.UiWriter{Ui: rawUi}
 	config := serf.DefaultConfig()
 	config.MemberlistConfig.BindAddr = bindAddr
+	config.MemberlistConfig.LogOutput = logoutput
 	config.NodeName = nodeName
+	config.LogOutput = logoutput
 
 	agent := &Agent{
 		RPCAddr:    rpcAddr,
@@ -77,6 +80,8 @@ func (c *Command) Run(args []string, ui cli.Ui) int {
 	ui.Info(fmt.Sprintf("Node name: '%s'", config.NodeName))
 	ui.Info(fmt.Sprintf("Bind addr: '%s'", config.MemberlistConfig.BindAddr))
 	ui.Info(fmt.Sprintf(" RPC addr: '%s'", rpcAddr))
+	ui.Info("")
+	ui.Output("Log data will now stream in as it occurs:\n")
 
 	graceful, forceful := c.startShutdownWatcher(agent, ui)
 	select {
