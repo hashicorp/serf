@@ -307,36 +307,6 @@ func TestSerf_reconnect(t *testing.T) {
 		[]EventType{EventMemberJoin, EventMemberFailed, EventMemberJoin})
 }
 
-// internals
-func TestSerf_resetLeaveIntent(t *testing.T) {
-	s1Config := testConfig()
-	s1Config.LeaveTimeout = 10 * time.Millisecond
-
-	s1, err := Create(s1Config)
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-	defer s1.Shutdown()
-
-	yield()
-
-	s1.handleNodeLeaveIntent(&messageLeave{
-		Node: s1Config.NodeName,
-	})
-
-	members := s1.Members()
-	if members[0].Status != StatusLeaving {
-		t.Fatalf("status should be leaving: %d", members[0].Status)
-	}
-
-	time.Sleep(s1Config.LeaveTimeout + 10*time.Millisecond)
-
-	members = s1.Members()
-	if members[0].Status == StatusLeaving {
-		t.Fatalf("status should not be leaving: %d", members[0].Status)
-	}
-}
-
 func TestSerf_role(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()
