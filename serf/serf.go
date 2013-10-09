@@ -95,8 +95,8 @@ func (s MemberStatus) String() string {
 // when that member was marked as leaving.
 type memberState struct {
 	Member
-	joinLTime LamportTime // lamport clock time of join
-	leaveTime time.Time   // wall clock time of leave
+	statusLTime LamportTime // lamport clock time of last received message
+	leaveTime   time.Time   // wall clock time of leave
 }
 
 // nodeIntent is used to buffer intents for out-of-order deliveries
@@ -433,13 +433,14 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 
 		// Check if we have a join intent and use the LTime
 		if join := recentIntent(s.recentJoin, n.Name); join != nil {
-			member.joinLTime = join.LTime
+			member.statusLTime = join.LTime
 		}
 
 		// Check if we have a leave intent
 		if leave := recentIntent(s.recentLeave, n.Name); leave != nil {
-			if leave.LTime > member.joinLTime {
+			if leave.LTime > member.statusLTime {
 				member.Status = StatusLeaving
+				member.statusLTime = leave.LTime
 			}
 		}
 
@@ -588,12 +589,12 @@ func (s *Serf) handleNodeJoinIntent(joinMsg *messageJoin) bool {
 	}
 
 	// Check if this time is newer than what we have
-	if joinMsg.LTime <= member.joinLTime {
+	if joinMsg.LTime <= member.statusLTime {
 		return false
 	}
 
 	// Update the LTime
-	member.joinLTime = joinMsg.LTime
+	member.statusLTime = joinMsg.LTime
 
 	// If we are in the leaving state, we should go back to alive,
 	// since the leaving message must have been for an older time

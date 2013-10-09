@@ -30,12 +30,12 @@ func TestSerf_joinLeave_ltime(t *testing.T) {
 
 	yield()
 
-	if s2.members[s1.config.NodeName].joinLTime != 1 {
+	if s2.members[s1.config.NodeName].statusLTime != 1 {
 		t.Fatalf("join time is not valid %d",
-			s2.members[s1.config.NodeName].joinLTime)
+			s2.members[s1.config.NodeName].statusLTime)
 	}
 
-	if s2.clock.Time() <= s2.members[s1.config.NodeName].joinLTime {
+	if s2.clock.Time() <= s2.members[s1.config.NodeName].statusLTime {
 		t.Fatalf("join should increment")
 	}
 	oldClock := s2.clock.Time()
@@ -51,6 +51,32 @@ func TestSerf_joinLeave_ltime(t *testing.T) {
 	if s2.clock.Time() <= oldClock {
 		t.Fatalf("leave should increment (%d / %d)",
 			s2.clock.Time(), oldClock)
+	}
+}
+
+func TestSerf_join_pendingIntent(t *testing.T) {
+	c := testConfig()
+	s, err := Create(c)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s.Shutdown()
+
+	s.recentJoin[0] = nodeIntent{5, "test"}
+
+	n := memberlist.Node{Name: "test",
+		Addr: nil,
+		Meta: []byte("test"),
+	}
+
+	s.handleNodeJoin(&n)
+
+	mem := s.members["test"]
+	if mem.statusLTime != 5 {
+		t.Fatalf("bad join time")
+	}
+	if mem.Status != StatusAlive {
+		t.Fatalf("bad status")
 	}
 }
 
@@ -73,54 +99,11 @@ func TestSerf_join_pendingIntents(t *testing.T) {
 	s.handleNodeJoin(&n)
 
 	mem := s.members["test"]
-	if mem.joinLTime != 5 {
+	if mem.statusLTime != 6 {
 		t.Fatalf("bad join time")
 	}
 	if mem.Status != StatusLeaving {
 		t.Fatalf("bad status")
-	}
-}
-
-func TestSerf_forceRemove_oldMessage(t *testing.T) {
-	c := testConfig()
-	s, err := Create(c)
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-	defer s.Shutdown()
-
-	s.members["test"] = &memberState{
-		Member: Member{
-			Status: StatusFailed,
-		},
-		joinLTime: 12,
-	}
-
-	r := messageRemoveFailed{LTime: 10, Node: "test"}
-	if s.handleNodeForceRemove(&r) {
-		t.Fatalf("should not rebroadcast")
-	}
-
-	if s.members["test"].Status != StatusFailed {
-		t.Fatalf("should still be failed")
-	}
-}
-
-func TestSerf_forceRemove_noNode(t *testing.T) {
-	c := testConfig()
-	s, err := Create(c)
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-	defer s.Shutdown()
-
-	r := messageRemoveFailed{LTime: 10, Node: "test"}
-	if s.handleNodeForceRemove(&r) {
-		t.Fatalf("should not rebroadcast")
-	}
-
-	if s.clock.Time() != 11 {
-		t.Fatalf("time wrong")
 	}
 }
 
@@ -162,7 +145,7 @@ func TestSerf_leaveIntent_oldMessage(t *testing.T) {
 		Member: Member{
 			Status: StatusAlive,
 		},
-		joinLTime: 12,
+		statusLTime: 12,
 	}
 
 	j := messageLeave{LTime: 10, Node: "test"}
@@ -187,7 +170,7 @@ func TestSerf_leaveIntent_newer(t *testing.T) {
 		Member: Member{
 			Status: StatusAlive,
 		},
-		joinLTime: 12,
+		statusLTime: 12,
 	}
 
 	j := messageLeave{LTime: 14, Node: "test"}
@@ -243,7 +226,7 @@ func TestSerf_joinIntent_oldMessage(t *testing.T) {
 	defer s.Shutdown()
 
 	s.members["test"] = &memberState{
-		joinLTime: 12,
+		statusLTime: 12,
 	}
 
 	j := messageJoin{LTime: 10, Node: "test"}
@@ -265,7 +248,7 @@ func TestSerf_joinIntent_newer(t *testing.T) {
 	defer s.Shutdown()
 
 	s.members["test"] = &memberState{
-		joinLTime: 12,
+		statusLTime: 12,
 	}
 
 	// Deliver a join intent message early
@@ -278,7 +261,7 @@ func TestSerf_joinIntent_newer(t *testing.T) {
 		t.Fatalf("bad index")
 	}
 
-	if s.members["test"].joinLTime != 14 {
+	if s.members["test"].statusLTime != 14 {
 		t.Fatalf("should update join time")
 	}
 
