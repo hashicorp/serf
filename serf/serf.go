@@ -686,6 +686,7 @@ func (s *Serf) reconnect() {
 	prob := numFailed / numAlive
 	if rand.Float32() > prob {
 		s.memberLock.RUnlock()
+		s.logger.Printf("[DEBUG] serf: forgoing reconnect for random throttling")
 		return
 	}
 
@@ -693,6 +694,7 @@ func (s *Serf) reconnect() {
 	idx := int(rand.Uint32() % uint32(n))
 	mem := s.failedMembers[idx]
 	s.memberLock.RUnlock()
+	s.logger.Printf("[INFO] serf: attempting reconnect to %v %v", mem.Name, net.IP(mem.Addr))
 
 	// Format the addr
 	addr := mem.Addr.String()
