@@ -24,7 +24,7 @@ func init() {
 		},
 
 		"version": func() (cli.Command, error) {
-			return &cli.VersionCommand{
+			return &command.VersionCommand{
 				Revision:          GitCommit,
 				Version:           Version,
 				VersionPrerelease: VersionPrerelease,
