@@ -95,11 +95,6 @@ func Create(conf *Config) (*Serf, error) {
 		conf.BroadcastTimeout = 5 * time.Second
 	}
 
-	if conf.LeaveTimeout == 0 {
-		// Set a cautious default for a leave timeout.
-		conf.LeaveTimeout = 120 * time.Second
-	}
-
 	if conf.ReapInterval == 0 {
 		// Set a reasonable default for ReapInterval
 		conf.ReapInterval = 15 * time.Second
@@ -498,13 +493,8 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		return false
 	}
 
+	// Update the status
 	member.Status = StatusLeaving
-
-	// Schedule a timer to unmark the leave intention after timeout
-	time.AfterFunc(s.config.LeaveTimeout, func() {
-		s.resetLeaveIntent(member)
-	})
-
 	return true
 }
 
@@ -531,6 +521,12 @@ func (s *Serf) handleNodeJoinIntent(joinMsg *messageJoin) bool {
 
 	// Update the LTime
 	member.joinLTime = joinMsg.LTime
+
+	// If we are in the leaving state, we should go back to alive,
+	// since the leaving message must have been for an older time
+	if member.Status == StatusLeaving {
+		member.Status = StatusAlive
+	}
 	return true
 }
 
@@ -621,15 +617,6 @@ func (s *Serf) reconnect() {
 
 	// Attempt to join at the memberlist level
 	s.memberlist.Join([]string{addr})
-}
-
-func (s *Serf) resetLeaveIntent(m *memberState) {
-	s.memberLock.Lock()
-	defer s.memberLock.Unlock()
-
-	if m.Status == StatusLeaving {
-		m.Status = StatusAlive
-	}
 }
 
 // removeOldMember is used to remove an old member from a list of old

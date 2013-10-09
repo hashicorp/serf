@@ -28,10 +28,6 @@ type Config struct {
 	// calling Members on Serf.
 	EventCh chan<- Event
 
-	// LeaveTimeout is the amount of time to wait for a node to gracefully
-	// leave. If this is not set, a timeout of 120 seconds will be set.
-	LeaveTimeout time.Duration
-
 	// BroadcastTimeout is the amount of time to wait for a broadcast
 	// message to be sent to the cluster. Broadcast messages are used for
 	// things like leave messages and force remove messages. If this is not
