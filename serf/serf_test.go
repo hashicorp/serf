@@ -529,6 +529,8 @@ func TestRecentIntent(t *testing.T) {
 		nodeIntent{2, "bar"},
 		nodeIntent{3, "baz"},
 		nodeIntent{4, "bar"},
+		nodeIntent{0, "bar"},
+		nodeIntent{5, "bar"},
 	}
 
 	if r := recentIntent(recent, "bar"); r.LTime != 4 {
