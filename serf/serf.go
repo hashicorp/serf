@@ -660,17 +660,20 @@ func removeOldMember(old []*memberState, name string) []*memberState {
 
 // recentNodeJoin checks the recent join buffer for a matching
 // entry for a given node, and either returns the message or nil
-func recentNodeJoin(recent []messageJoin, node string) *messageJoin {
+func recentNodeJoin(recent []messageJoin, node string) (join *messageJoin) {
 	for i := 0; i < len(recent); i++ {
 		// Break fast if we hit a zero entry
 		if recent[i].LTime == 0 {
-			return nil
+			break
 		}
 
 		// Check for a node match
 		if recent[i].Node == node {
-			return &recent[i]
+			// Take the most recent entry
+			if join == nil || recent[i].LTime > join.LTime {
+				join = &recent[i]
+			}
 		}
 	}
-	return nil
+	return
 }
