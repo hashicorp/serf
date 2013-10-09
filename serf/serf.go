@@ -198,7 +198,6 @@ func Create(conf *Config) (*Serf, error) {
 	serf.clock.Increment()
 
 	// Modify the memberlist configuration with keys that we set
-	//conf.MemberlistConfig.Events = &memberlist.ChannelEventDelegate{Ch: eventCh}
 	conf.MemberlistConfig.Events = &eventDelegate{serf: serf}
 	conf.MemberlistConfig.Delegate = &delegate{serf: serf}
 	conf.MemberlistConfig.Name = conf.NodeName
