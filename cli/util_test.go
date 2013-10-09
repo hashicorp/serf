@@ -39,7 +39,6 @@ func getRPCAddr() string {
 		l, err := net.Listen("tcp", fmt.Sprintf(":%d", rand.Int31n(25000)+1024))
 		if err == nil {
 			l.Close()
-			time.Sleep(1 * time.Second)
 			return l.Addr().String()
 		}
 	}

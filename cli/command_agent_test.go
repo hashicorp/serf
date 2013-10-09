@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"log"
 	serfrpc "github.com/hashicorp/serf/rpc"
+	"log"
 	"net/rpc"
 	"testing"
 	"time"
