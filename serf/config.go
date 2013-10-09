@@ -84,6 +84,13 @@ type Config struct {
 	// faster than they can be disseminated
 	QueueDepthWarning int
 
+	// RecentJoinBuffer is used to set the size of recent join intent
+	// messages that will be buffered. This is used to guard against
+	// the case where Serf broadcasts a join intent that arrives before
+	// Memberlist has recognized the node joining. Typically this should
+	// just be left at the default.
+	RecentJoinBuffer int
+
 	// MemberlistConfig is the memberlist configuration that Serf will
 	// use to do the underlying membership management and gossip. Some
 	// fields in the MemberlistConfig will be overwritten by Serf no

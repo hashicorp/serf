@@ -32,6 +32,12 @@ type Serf struct {
 	memberLock    sync.RWMutex
 	members       map[string]*memberState
 
+	// Circular buffer for recent join intents, used
+	// in case we get the intent before the join happens
+	// inside of memberlist
+	recentJoin      []messageJoin
+	recentJoinIndex int
+
 	stateLock  sync.Mutex
 	state      SerfState
 	shutdownCh chan struct{}
@@ -120,6 +126,11 @@ func Create(conf *Config) (*Serf, error) {
 		conf.QueueDepthWarning = 128
 	}
 
+	if conf.RecentJoinBuffer == 0 {
+		// Set a reasonable default for RecentJoinBuffer
+		conf.RecentJoinBuffer = 128
+	}
+
 	if conf.MemberlistConfig == nil {
 		conf.MemberlistConfig = memberlist.DefaultConfig()
 	}
@@ -147,6 +158,9 @@ func Create(conf *Config) (*Serf, error) {
 		},
 		RetransmitMult: conf.MemberlistConfig.RetransmitMult,
 	}
+
+	// Create the buffer for recent joins
+	serf.recentJoin = make([]messageJoin, conf.RecentJoinBuffer)
 
 	// Modify the memberlist configuration with keys that we set
 	//conf.MemberlistConfig.Events = &memberlist.ChannelEventDelegate{Ch: eventCh}
@@ -402,6 +416,11 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 			},
 		}
 
+		// Check if we have a join intent and use the LTime
+		if join := recentNodeJoin(s.recentJoin, n.Name); join != nil {
+			member.joinLTime = join.LTime
+		}
+
 		s.members[n.Name] = member
 	} else {
 		oldStatus = member.Status
@@ -509,9 +528,15 @@ func (s *Serf) handleNodeJoinIntent(joinMsg *messageJoin) bool {
 
 	member, ok := s.members[joinMsg.Node]
 	if !ok {
-		// We don't know this member so don't rebroadcast.
-		// TODO: Cache for a short while...
-		return false
+		// If we've already seen this message don't rebroadcast
+		if recentNodeJoin(s.recentJoin, joinMsg.Node) != nil {
+			return false
+		}
+
+		// We don't know this member so store it in a buffer for now
+		s.recentJoin[s.recentJoinIndex] = *joinMsg
+		s.recentJoinIndex = (s.recentJoinIndex + 1) % len(s.recentJoin)
+		return true
 	}
 
 	// Check if this time is newer than what we have
@@ -631,4 +656,21 @@ func removeOldMember(old []*memberState, name string) []*memberState {
 	}
 
 	return old
+}
+
+// recentNodeJoin checks the recent join buffer for a matching
+// entry for a given node, and either returns the message or nil
+func recentNodeJoin(recent []messageJoin, node string) *messageJoin {
+	for i := 0; i < len(recent); i++ {
+		// Break fast if we hit a zero entry
+		if recent[i].LTime == 0 {
+			return nil
+		}
+
+		// Check for a node match
+		if recent[i].Node == node {
+			return &recent[i]
+		}
+	}
+	return nil
 }
