@@ -72,6 +72,23 @@ const (
 	StatusFailed
 )
 
+func (s MemberStatus) String() string {
+	switch s {
+	case StatusNone:
+		return "none"
+	case StatusAlive:
+		return "alive"
+	case StatusLeaving:
+		return "leaving"
+	case StatusLeft:
+		return "left"
+	case StatusFailed:
+		return "failed"
+	default:
+		panic(fmt.Sprintf("unknown MemberStatus: %d", s))
+	}
+}
+
 // memberState is used to track members that are no longer active due to
 // leaving, failing, partitioning, etc. It tracks the member along with
 // when that member was marked as leaving.
