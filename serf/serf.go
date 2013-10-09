@@ -374,6 +374,11 @@ func (s *Serf) handleNodeForceRemove(remove *messageRemoveFailed) bool {
 		return false
 	}
 
+	// If the message is old, then it is irrelevant and we can skip it
+	if remove.LTime <= member.joinLTime {
+		return false
+	}
+
 	// Update the status to left
 	member.Status = StatusLeft
 
@@ -488,6 +493,11 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		return false
 	}
 
+	// If the message is old, then it is irrelevant and we can skip it
+	if leaveMsg.LTime <= member.joinLTime {
+		return false
+	}
+
 	member.Status = StatusLeaving
 
 	// Schedule a timer to unmark the leave intention after timeout
@@ -510,11 +520,12 @@ func (s *Serf) handleNodeJoinIntent(joinMsg *messageJoin) bool {
 	member, ok := s.members[joinMsg.Node]
 	if !ok {
 		// We don't know this member so don't rebroadcast.
+		// TODO: Cache for a short while...
 		return false
 	}
 
 	// Check if this time is newer than what we have
-	if member.joinLTime >= joinMsg.LTime {
+	if joinMsg.LTime <= member.joinLTime {
 		return false
 	}
 
