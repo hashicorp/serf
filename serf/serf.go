@@ -203,7 +203,10 @@ func (s *Serf) Leave() error {
 	}
 
 	// Construct the message for the graceful leave
-	msg := messageLeave{Node: s.config.NodeName}
+	msg := messageLeave{
+		LTime: s.clock.Increment(),
+		Node:  s.config.NodeName,
+	}
 
 	// Process the leave locally
 	s.handleNodeLeaveIntent(&msg)
@@ -247,7 +250,10 @@ func (s *Serf) Members() []Member {
 // immediately, instead of waiting for the reaper to eventually reclaim it.
 func (s *Serf) RemoveFailedNode(node string) error {
 	// Construct the message to broadcast
-	msg := messageRemoveFailed{Node: node}
+	msg := messageRemoveFailed{
+		LTime: s.clock.Increment(),
+		Node:  node,
+	}
 
 	// Process our own event
 	s.handleNodeForceRemove(&msg)
@@ -333,6 +339,9 @@ func (s *Serf) broadcast(t messageType, msg interface{}, notify chan<- struct{})
 // handleNodeForceRemove is invoked when we get a messageRemoveFailed
 // message.
 func (s *Serf) handleNodeForceRemove(remove *messageRemoveFailed) bool {
+	// Witness a potentially newer time
+	s.clock.Witness(remove.LTime)
+
 	s.memberLock.Lock()
 	defer s.memberLock.Unlock()
 
@@ -442,6 +451,9 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 
 // handleNodeLeaveIntent is called when an intent to leave is received.
 func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
+	// Witness a potentially newer time
+	s.clock.Witness(leaveMsg.LTime)
+
 	s.memberLock.Lock()
 	defer s.memberLock.Unlock()
 
