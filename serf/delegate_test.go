@@ -87,3 +87,49 @@ func TestDelegate_LocalState(t *testing.T) {
 		t.Fatalf("missing left members")
 	}
 }
+
+// internals
+func TestDelegate_MergeRemoteState(t *testing.T) {
+	c1 := testConfig()
+	s1, err := Create(c1)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	// Do a state dump
+	d := c1.MemberlistConfig.Delegate
+
+	// Make a fake push pull
+	pp := messagePushPull{
+		LTime: 42,
+		StatusLTimes: map[string]LamportTime{
+			"test": 20,
+			"foo":  15,
+		},
+		LeftMembers: []string{"foo"},
+	}
+
+	buf, err := encodeMessage(messagePushPullType, &pp)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Merge in fake state
+	d.MergeRemoteState(buf)
+
+	// Verify lamport
+	if s1.clock.Time() != 42 {
+		t.Fatalf("clock mismatch")
+	}
+
+	// Verify pending join for test
+	if s1.recentJoin[0].Node != "test" || s1.recentJoin[0].LTime != 20 {
+		t.Fatalf("bad recent join")
+	}
+
+	// Verify pending leave for foo
+	if s1.recentLeave[0].Node != "foo" || s1.recentLeave[0].LTime != 15 {
+		t.Fatalf("bad recent leave")
+	}
+}
