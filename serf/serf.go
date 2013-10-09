@@ -193,6 +193,10 @@ func Create(conf *Config) (*Serf, error) {
 	serf.recentJoin = make([]nodeIntent, conf.RecentIntentBuffer)
 	serf.recentLeave = make([]nodeIntent, conf.RecentIntentBuffer)
 
+	// Ensure our lamport clock is at least 1, so that the default
+	// join LTime of 0 does not cause issues
+	serf.clock.Increment()
+
 	// Modify the memberlist configuration with keys that we set
 	//conf.MemberlistConfig.Events = &memberlist.ChannelEventDelegate{Ch: eventCh}
 	conf.MemberlistConfig.Events = &eventDelegate{serf: serf}
@@ -233,9 +237,10 @@ func (s *Serf) Join(existing []string) (int, error) {
 	if num > 0 {
 		// Construct message to update our lamport clock
 		msg := messageJoin{
-			LTime: s.clock.Increment(),
+			LTime: s.clock.Time(),
 			Node:  s.config.NodeName,
 		}
+		s.clock.Increment()
 
 		// Process update locally
 		s.handleNodeJoinIntent(&msg)
@@ -263,9 +268,10 @@ func (s *Serf) Leave() error {
 
 	// Construct the message for the graceful leave
 	msg := messageLeave{
-		LTime: s.clock.Increment(),
+		LTime: s.clock.Time(),
 		Node:  s.config.NodeName,
 	}
+	s.clock.Increment()
 
 	// Process the leave locally
 	s.handleNodeLeaveIntent(&msg)
@@ -320,9 +326,10 @@ func (s *Serf) Members() []Member {
 func (s *Serf) RemoveFailedNode(node string) error {
 	// Construct the message to broadcast
 	msg := messageRemoveFailed{
-		LTime: s.clock.Increment(),
+		LTime: s.clock.Time(),
 		Node:  node,
 	}
+	s.clock.Increment()
 
 	// Process our own event
 	s.handleNodeForceRemove(&msg)
