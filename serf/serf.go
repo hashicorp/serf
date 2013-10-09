@@ -453,9 +453,9 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 	}
 
 	// Send an event along
+	log.Printf("[INFO] serf: EventMemberJoin: %s %s",
+		member.Member.Name, member.Member.Addr)
 	if s.config.EventCh != nil {
-		log.Printf("[INFO] serf: EventMemberJoin: %s %s",
-			member.Member.Name, member.Member.Addr)
 		s.config.EventCh <- Event{
 			Type:    EventMemberJoin,
 			Members: []Member{member.Member},
@@ -492,16 +492,16 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 	}
 
 	// Send an event along
-	if s.config.EventCh != nil {
-		event := EventMemberLeave
-		eventStr := "EventMemberLeave"
-		if member.Status != StatusLeft {
-			event = EventMemberFailed
-			eventStr = "EventMemberFailed"
-		}
+	event := EventMemberLeave
+	eventStr := "EventMemberLeave"
+	if member.Status != StatusLeft {
+		event = EventMemberFailed
+		eventStr = "EventMemberFailed"
+	}
 
-		log.Printf("[INFO] serf: %s: %s %s",
-			eventStr, member.Member.Name, member.Member.Addr)
+	log.Printf("[INFO] serf: %s: %s %s",
+		eventStr, member.Member.Name, member.Member.Addr)
+	if s.config.EventCh != nil {
 		s.config.EventCh <- Event{
 			Type:    event,
 			Members: []Member{member.Member},
@@ -527,7 +527,7 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		// We don't know this member so store it in a buffer for now
 		s.recentLeave[s.recentLeaveIndex] = nodeIntent{
 			LTime: leaveMsg.LTime,
-			Node: leaveMsg.Node,
+			Node:  leaveMsg.Node,
 		}
 		s.recentLeaveIndex = (s.recentLeaveIndex + 1) % len(s.recentLeave)
 		return true
