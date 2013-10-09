@@ -1,8 +1,9 @@
-package cli
+package agent
 
 import (
 	"flag"
 	"fmt"
+	"github.com/hashicorp/serf/cli"
 	"github.com/hashicorp/serf/rpc"
 	"github.com/hashicorp/serf/serf"
 	"net"
@@ -11,18 +12,18 @@ import (
 	"time"
 )
 
-// AgentCommand is a Command implementation that runs a Serf agent.
+// Command is a Command implementation that runs a Serf agent.
 // The command will not end unless a shutdown message is sent on the
 // ShutdownCh. If two messages are sent on the ShutdownCh it will forcibly
 // exit.
-type AgentCommand struct {
+type Command struct {
 	ShutdownCh <-chan struct{}
 
 	lock         sync.Mutex
 	shuttingDown bool
 }
 
-func (c *AgentCommand) Help() string {
+func (c *Command) Help() string {
 	helpText := `
 Usage: serf agent [options]
 
@@ -38,8 +39,8 @@ Options:
 	return strings.TrimSpace(helpText)
 }
 
-func (c *AgentCommand) Run(args []string, ui Ui) int {
-	ui = &PrefixedUi{
+func (c *Command) Run(args []string, ui cli.Ui) int {
+	ui = &cli.PrefixedUi{
 		OutputPrefix: "==> ",
 		InfoPrefix:   "    ",
 		ErrorPrefix:  "==> ",
@@ -111,18 +112,18 @@ func (c *AgentCommand) Run(args []string, ui Ui) int {
 	return 0
 }
 
-func (c *AgentCommand) Synopsis() string {
+func (c *Command) Synopsis() string {
 	return "runs a Serf agent"
 }
 
-func (c *AgentCommand) forceShutdown(serf *serf.Serf, ui Ui) {
+func (c *Command) forceShutdown(serf *serf.Serf, ui cli.Ui) {
 	ui.Output("Forcefully shutting down agent...")
 	if err := serf.Shutdown(); err != nil {
 		ui.Error(fmt.Sprintf("Error: %s", err))
 	}
 }
 
-func (c *AgentCommand) gracefulShutdown(serf *serf.Serf, ui Ui, done chan<- struct{}) {
+func (c *Command) gracefulShutdown(serf *serf.Serf, ui cli.Ui, done chan<- struct{}) {
 	ui.Output("Gracefully shutting down agent. " +
 		"Interrupt again to forcefully shut down.")
 	if err := serf.Leave(); err != nil {
@@ -132,7 +133,7 @@ func (c *AgentCommand) gracefulShutdown(serf *serf.Serf, ui Ui, done chan<- stru
 	close(done)
 }
 
-func (c *AgentCommand) startShutdownWatcher(serf *serf.Serf, ui Ui) (graceful <-chan struct{}, forceful <-chan struct{}) {
+func (c *Command) startShutdownWatcher(serf *serf.Serf, ui cli.Ui) (graceful <-chan struct{}, forceful <-chan struct{}) {
 	g := make(chan struct{})
 	f := make(chan struct{})
 	graceful = g

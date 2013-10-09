@@ -1,6 +1,7 @@
-package cli
+package agent
 
 import (
+	"github.com/hashicorp/serf/cli"
 	serfrpc "github.com/hashicorp/serf/rpc"
 	"github.com/hashicorp/serf/testutil"
 	"log"
@@ -9,19 +10,19 @@ import (
 	"time"
 )
 
-func TestAgentCommand_implements(t *testing.T) {
+func TestCommand_implements(t *testing.T) {
 	var raw interface{}
-	raw = &AgentCommand{}
-	if _, ok := raw.(Command); !ok {
+	raw = &Command{}
+	if _, ok := raw.(cli.Command); !ok {
 		t.Fatal("should be a Command")
 	}
 }
 
-func TestAgentCommandRun(t *testing.T) {
+func TestCommandRun(t *testing.T) {
 	shutdownCh := make(chan struct{})
 	defer close(shutdownCh)
 
-	c := &AgentCommand{
+	c := &Command{
 		ShutdownCh: shutdownCh,
 	}
 
@@ -29,14 +30,14 @@ func TestAgentCommandRun(t *testing.T) {
 		"-bind", testutil.GetBindAddr().String(),
 		"-rpc-addr", getRPCAddr(),
 	}
-	ui := new(MockUi)
+	ui := new(cli.MockUi)
 
 	resultCh := make(chan int)
 	go func() {
 		resultCh <- c.Run(args, ui)
 	}()
 
-	yield()
+	testutil.Yield()
 
 	// Verify it runs "forever"
 	select {
@@ -58,7 +59,7 @@ func TestAgentCommandRun(t *testing.T) {
 	}
 }
 
-func TestAgentCommandRun_rpc(t *testing.T) {
+func TestCommandRun_rpc(t *testing.T) {
 	doneCh := make(chan struct{})
 	shutdownCh := make(chan struct{})
 	defer func() {
@@ -66,7 +67,7 @@ func TestAgentCommandRun_rpc(t *testing.T) {
 		<-doneCh
 	}()
 
-	c := &AgentCommand{
+	c := &Command{
 		ShutdownCh: shutdownCh,
 	}
 
@@ -77,7 +78,7 @@ func TestAgentCommandRun_rpc(t *testing.T) {
 	}
 
 	go func() {
-		code := c.Run(args, new(MockUi))
+		code := c.Run(args, new(cli.MockUi))
 		if code != 0 {
 			log.Printf("bad: %d", code)
 		}
@@ -85,7 +86,7 @@ func TestAgentCommandRun_rpc(t *testing.T) {
 		close(doneCh)
 	}()
 
-	yield()
+	testutil.Yield()
 
 	rpcClient, err := rpc.Dial("tcp", rpcAddr)
 	if err != nil {
