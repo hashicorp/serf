@@ -2,6 +2,7 @@ package cli
 
 import (
 	serfrpc "github.com/hashicorp/serf/rpc"
+	"github.com/hashicorp/serf/testutil"
 	"log"
 	"net/rpc"
 	"testing"
@@ -25,7 +26,7 @@ func TestAgentCommandRun(t *testing.T) {
 	}
 
 	args := []string{
-		"-bind", getBindAddr().String(),
+		"-bind", testutil.GetBindAddr().String(),
 		"-rpc-addr", getRPCAddr(),
 	}
 	ui := new(MockUi)
@@ -71,7 +72,7 @@ func TestAgentCommandRun_rpc(t *testing.T) {
 
 	rpcAddr := getRPCAddr()
 	args := []string{
-		"-bind", getBindAddr().String(),
+		"-bind", testutil.GetBindAddr().String(),
 		"-rpc-addr", rpcAddr,
 	}
 

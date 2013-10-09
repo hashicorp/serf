@@ -1,4 +1,4 @@
-package serf
+package testutil
 
 import (
 	"net"
@@ -9,7 +9,7 @@ var bindLock sync.Mutex
 var bindNum byte = 10
 
 // Returns an unused address for binding to for tests.
-func getBindAddr() net.IP {
+func GetBindAddr() net.IP {
 	bindLock.Lock()
 	defer bindLock.Unlock()
 

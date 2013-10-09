@@ -2,6 +2,7 @@ package serf
 
 import (
 	"fmt"
+	"github.com/hashicorp/serf/testutil"
 	"os"
 	"testing"
 	"time"
@@ -9,7 +10,7 @@ import (
 
 func testConfig() *Config {
 	config := DefaultConfig()
-	config.MemberlistConfig.BindAddr = getBindAddr().String()
+	config.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
 
 	// Set probe intervals that are aggressive for finding bad nodes
 	config.MemberlistConfig.ProbeInterval = 50 * time.Millisecond
