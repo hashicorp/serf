@@ -2,9 +2,9 @@ package agent
 
 import (
 	"fmt"
-	"net"
 	"github.com/hashicorp/serf/rpc"
 	"github.com/hashicorp/serf/serf"
+	"net"
 )
 
 // Agent actually starts and manages a Serf agent.
@@ -13,7 +13,7 @@ type Agent struct {
 	SerfConfig *serf.Config
 
 	rpcListener net.Listener
-	serf *serf.Serf
+	serf        *serf.Serf
 }
 
 // Shutdown does a graceful shutdown of this agent and all of its processes.
