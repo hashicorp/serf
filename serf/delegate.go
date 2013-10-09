@@ -35,7 +35,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			break
 		}
 
-		log.Printf("[DEBUG] messageLeaveType: %s", leave.Node)
+		log.Printf("[DEBUG] serf-delegate: messageLeaveType: %s", leave.Node)
 		rebroadcast = d.serf.handleNodeLeaveIntent(&leave)
 
 	case messageRemoveFailedType:
@@ -45,7 +45,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			break
 		}
 
-		log.Printf("[DEBUG] messageRemoveFailedType: %s", remove.Node)
+		log.Printf("[DEBUG] serf-delegate: messageRemoveFailedType: %s", remove.Node)
 		rebroadcast = d.serf.handleNodeForceRemove(&remove)
 
 	case messageJoinType:
@@ -55,7 +55,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			break
 		}
 
-		log.Printf("[DEBUG] messageJoinType: %s", join.Node)
+		log.Printf("[DEBUG] serf-delegate: messageJoinType: %s", join.Node)
 		rebroadcast = d.serf.handleNodeJoinIntent(&join)
 
 	default:
