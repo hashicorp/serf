@@ -2,7 +2,6 @@ package serf
 
 import (
 	"fmt"
-	"log"
 )
 
 // delegate is the memberlist.Delegate implementation that Serf uses.
@@ -31,35 +30,35 @@ func (d *delegate) NotifyMsg(buf []byte) {
 	case messageLeaveType:
 		var leave messageLeave
 		if err := decodeMessage(buf[1:], &leave); err != nil {
-			log.Printf("[ERR] Error decoding leave message: %s", err)
+			d.serf.logger.Printf("[ERR] Error decoding leave message: %s", err)
 			break
 		}
 
-		log.Printf("[DEBUG] serf-delegate: messageLeaveType: %s", leave.Node)
+		d.serf.logger.Printf("[DEBUG] serf-delegate: messageLeaveType: %s", leave.Node)
 		rebroadcast = d.serf.handleNodeLeaveIntent(&leave)
 
 	case messageRemoveFailedType:
 		var remove messageRemoveFailed
 		if err := decodeMessage(buf[1:], &remove); err != nil {
-			log.Printf("[ERR] Error decoding remove message: %s", err)
+			d.serf.logger.Printf("[ERR] Error decoding remove message: %s", err)
 			break
 		}
 
-		log.Printf("[DEBUG] serf-delegate: messageRemoveFailedType: %s", remove.Node)
+		d.serf.logger.Printf("[DEBUG] serf-delegate: messageRemoveFailedType: %s", remove.Node)
 		rebroadcast = d.serf.handleNodeForceRemove(&remove)
 
 	case messageJoinType:
 		var join messageJoin
 		if err := decodeMessage(buf[1:], &join); err != nil {
-			log.Printf("[ERR] Error decoding join message: %s", err)
+			d.serf.logger.Printf("[ERR] Error decoding join message: %s", err)
 			break
 		}
 
-		log.Printf("[DEBUG] serf-delegate: messageJoinType: %s", join.Node)
+		d.serf.logger.Printf("[DEBUG] serf-delegate: messageJoinType: %s", join.Node)
 		rebroadcast = d.serf.handleNodeJoinIntent(&join)
 
 	default:
-		log.Printf("[WARN] Received message of unknown type: %d", t)
+		d.serf.logger.Printf("[WARN] Received message of unknown type: %d", t)
 	}
 
 	if rebroadcast {
@@ -77,7 +76,7 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 		numq := d.serf.broadcasts.NumQueued()
 		limit := d.serf.config.QueueDepthWarning
 		if numq >= limit {
-			log.Printf("[WARN] Broadcast queue depth: %d", numq)
+			d.serf.logger.Printf("[WARN] Broadcast queue depth: %d", numq)
 		}
 	}
 

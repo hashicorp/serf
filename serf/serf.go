@@ -39,6 +39,7 @@ type Serf struct {
 	recentJoin       []nodeIntent
 	recentJoinIndex  int
 
+	logger     *log.Logger
 	stateLock  sync.Mutex
 	state      SerfState
 	shutdownCh chan struct{}
@@ -159,8 +160,13 @@ func Create(conf *Config) (*Serf, error) {
 		conf.MemberlistConfig = memberlist.DefaultConfig()
 	}
 
+	if conf.LogOutput == nil {
+		conf.LogOutput = os.Stderr
+	}
+
 	serf := &Serf{
 		config:     conf,
+		logger:     log.New(conf.LogOutput, "", log.LstdFlags),
 		members:    make(map[string]*memberState),
 		shutdownCh: make(chan struct{}),
 		state:      SerfAlive,
@@ -352,7 +358,7 @@ func (s *Serf) Shutdown() error {
 	}
 
 	if s.state != SerfLeft {
-		log.Println("[WARN] Shutdown without a Leave")
+		s.logger.Println("[WARN] Shutdown without a Leave")
 	}
 
 	err := s.memberlist.Shutdown()
@@ -470,7 +476,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 	}
 
 	// Send an event along
-	log.Printf("[INFO] serf: EventMemberJoin: %s %s",
+	s.logger.Printf("[INFO] serf: EventMemberJoin: %s %s",
 		member.Member.Name, member.Member.Addr)
 	if s.config.EventCh != nil {
 		s.config.EventCh <- Event{
@@ -504,7 +510,7 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 		s.failedMembers = append(s.failedMembers, member)
 	default:
 		// Unknown state that it was in? Just don't do anything
-		log.Printf("[WARN] Bad state when leave: %d", member.Status)
+		s.logger.Printf("[WARN] Bad state when leave: %d", member.Status)
 		return
 	}
 
@@ -516,7 +522,7 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 		eventStr = "EventMemberFailed"
 	}
 
-	log.Printf("[INFO] serf: %s: %s %s",
+	s.logger.Printf("[INFO] serf: %s: %s %s",
 		eventStr, member.Member.Name, member.Member.Addr)
 	if s.config.EventCh != nil {
 		s.config.EventCh <- Event{

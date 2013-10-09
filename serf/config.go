@@ -2,6 +2,7 @@ package serf
 
 import (
 	"github.com/hashicorp/memberlist"
+	"io"
 	"time"
 )
 
@@ -104,6 +105,10 @@ type Config struct {
 	//   * Delegate - Serf uses a custom delegate.
 	//
 	MemberlistConfig *memberlist.Config
+
+	// LogOutput is the location to write logs to. If this is not set,
+	// logs will go to stderr.
+	LogOutput io.Writer
 }
 
 // DefaultConfig returns a Config struct that contains reasonable defaults
