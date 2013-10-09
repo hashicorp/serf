@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/hashicorp/serf/cli"
 	"github.com/hashicorp/serf/cli/agent"
+	"github.com/hashicorp/serf/commands"
 	"os"
 	"os/signal"
 )
@@ -19,7 +20,7 @@ func init() {
 		},
 
 		"members": func() (cli.Command, error) {
-			return &cli.MembersCommand{}, nil
+			return &commands.MembersCommand{}, nil
 		},
 
 		"version": func() (cli.Command, error) {
