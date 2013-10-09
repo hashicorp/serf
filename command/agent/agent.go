@@ -17,6 +17,7 @@ type Agent struct {
 
 	rpcListener net.Listener
 	serf        *serf.Serf
+	shutdownCh  chan<- struct{}
 	state       AgentState
 	lock        sync.Mutex
 }
@@ -60,6 +61,7 @@ func (a *Agent) Shutdown() error {
 
 	log.Println("[INFO] agent: shutdown complete")
 	a.state = AgentIdle
+	close(a.shutdownCh)
 	return nil
 }
 
@@ -68,6 +70,12 @@ func (a *Agent) Shutdown() error {
 func (a *Agent) Start() error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
+
+	var eventCh chan serf.Event
+	if a.EventScript != "" {
+		eventCh = make(chan serf.Event, 64)
+		a.SerfConfig.EventCh = eventCh
+	}
 
 	var err error
 	a.serf, err = serf.Create(a.SerfConfig)
@@ -87,6 +95,27 @@ func (a *Agent) Start() error {
 
 	go rpcServer.Run()
 
+	shutdownCh := make(chan struct{})
+
+	// Only listen for events if we care about events.
+	if eventCh != nil {
+		go a.eventLoop(a.EventScript, eventCh, shutdownCh)
+	}
+
+	a.shutdownCh = shutdownCh
 	a.state = AgentRunning
 	return nil
+}
+
+func (a *Agent) eventLoop(script string, eventCh <-chan serf.Event, done <-chan struct{}) {
+	for {
+		select {
+		case <-done:
+			return
+		case e := <-eventCh:
+			if err := invokeEventScript(script, &e); err != nil {
+				log.Printf("[ERR] Error executing event script: %s", err)
+			}
+		}
+	}
 }
