@@ -277,15 +277,7 @@ func (s *Serf) Leave() error {
 
 	// Only broadcast the leave message if there is at least one
 	// other node alive.
-	hasAlive := false
-	for _, m := range s.members {
-		if m.Status == StatusAlive {
-			hasAlive = true
-			break
-		}
-	}
-
-	if hasAlive {
+	if s.hasAliveMembers() {
 		notifyCh := make(chan struct{})
 		if err := s.broadcast(messageLeaveType, &msg, notifyCh); err != nil {
 			return err
@@ -305,6 +297,21 @@ func (s *Serf) Leave() error {
 
 	s.state = SerfLeft
 	return nil
+}
+
+// hasAliveMembers is called to check for any alive members
+func (s *Serf) hasAliveMembers() bool {
+	s.memberLock.RLock()
+	defer s.memberLock.RUnlock()
+
+	hasAlive := false
+	for _, m := range s.members {
+		if m.Status == StatusAlive {
+			hasAlive = true
+			break
+		}
+	}
+	return hasAlive
 }
 
 // Members returns a point-in-time snapshot of the members of this cluster.
@@ -334,12 +341,9 @@ func (s *Serf) RemoveFailedNode(node string) error {
 	s.handleNodeLeaveIntent(&msg)
 
 	// If we have no members, then we don't need to broadcast
-	s.memberLock.RLock()
-	if len(s.members) <= 1 {
-		s.memberLock.RUnlock()
+	if !s.hasAliveMembers() {
 		return nil
 	}
-	s.memberLock.RUnlock()
 
 	// Broadcast the remove
 	notifyCh := make(chan struct{})
