@@ -4,12 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"github.com/hashicorp/serf/cli"
-	"github.com/hashicorp/serf/rpc"
 	"github.com/hashicorp/serf/serf"
-	"net"
 	"strings"
 	"sync"
-	"time"
 )
 
 // Command is a Command implementation that runs a Serf agent.
@@ -65,43 +62,23 @@ func (c *Command) Run(args []string, ui cli.Ui) int {
 	config.MemberlistConfig.BindAddr = bindAddr
 	config.NodeName = nodeName
 
+	agent := &Agent{
+		RPCAddr:    rpcAddr,
+		SerfConfig: config,
+	}
+
 	ui.Output("Starting Serf agent...")
-	serf, err := serf.Create(config)
-	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to initialize Serf: %s", err))
+	if err := agent.Start(); err != nil {
+		ui.Error(err.Error())
 		return 1
 	}
-	defer serf.Shutdown()
-
-	rpcL, err := net.Listen("tcp", rpcAddr)
-	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to initialize RPC listener: %s", err))
-		return 1
-	}
-	defer rpcL.Close()
-
-	rpcServer, err := rpc.NewServer(serf, rpcL)
-	if err != nil {
-		ui.Error(fmt.Sprintf("Failed to initialize Serf: %s", err))
-		return 1
-	}
-	go func() {
-		if err := rpcServer.Run(); err != nil {
-			c.lock.Lock()
-			defer c.lock.Unlock()
-
-			if !c.shuttingDown {
-				panic(err)
-			}
-		}
-	}()
 
 	ui.Output("Serf agent running!")
 	ui.Info(fmt.Sprintf("Node name: '%s'", config.NodeName))
 	ui.Info(fmt.Sprintf("Bind addr: '%s'", config.MemberlistConfig.BindAddr))
 	ui.Info(fmt.Sprintf(" RPC addr: '%s'", rpcAddr))
 
-	graceful, forceful := c.startShutdownWatcher(serf, ui)
+	graceful, forceful := c.startShutdownWatcher(agent, ui)
 	select {
 	case <-graceful:
 	case <-forceful:
@@ -116,24 +93,7 @@ func (c *Command) Synopsis() string {
 	return "runs a Serf agent"
 }
 
-func (c *Command) forceShutdown(serf *serf.Serf, ui cli.Ui) {
-	ui.Output("Forcefully shutting down agent...")
-	if err := serf.Shutdown(); err != nil {
-		ui.Error(fmt.Sprintf("Error: %s", err))
-	}
-}
-
-func (c *Command) gracefulShutdown(serf *serf.Serf, ui cli.Ui, done chan<- struct{}) {
-	ui.Output("Gracefully shutting down agent. " +
-		"Interrupt again to forcefully shut down.")
-	if err := serf.Leave(); err != nil {
-		ui.Error(fmt.Sprintf("Error: %s", err))
-		return
-	}
-	close(done)
-}
-
-func (c *Command) startShutdownWatcher(serf *serf.Serf, ui cli.Ui) (graceful <-chan struct{}, forceful <-chan struct{}) {
+func (c *Command) startShutdownWatcher(agent *Agent, ui cli.Ui) (graceful <-chan struct{}, forceful <-chan struct{}) {
 	g := make(chan struct{})
 	f := make(chan struct{})
 	graceful = g
@@ -146,14 +106,19 @@ func (c *Command) startShutdownWatcher(serf *serf.Serf, ui cli.Ui) (graceful <-c
 		c.shuttingDown = true
 		c.lock.Unlock()
 
-		go c.gracefulShutdown(serf, ui, g)
+		ui.Output("Gracefully shutting down agent...")
+		go func() {
+			if err := agent.Shutdown(); err != nil {
+				ui.Error(fmt.Sprintf("Error: %s", err))
+				return
+			}
+			close(g)
+		}()
 
 		select {
 		case <-g:
 			// Gracefully shut down properly
 		case <-c.ShutdownCh:
-			time.Sleep(50 * time.Millisecond)
-			c.forceShutdown(serf, ui)
 			close(f)
 		}
 	}()
