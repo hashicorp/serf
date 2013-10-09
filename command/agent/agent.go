@@ -6,15 +6,19 @@ import (
 	"github.com/hashicorp/serf/serf"
 	"log"
 	"net"
+	"sync"
 )
 
 // Agent actually starts and manages a Serf agent.
 type Agent struct {
-	RPCAddr    string
-	SerfConfig *serf.Config
+	EventScript string
+	RPCAddr     string
+	SerfConfig  *serf.Config
 
 	rpcListener net.Listener
 	serf        *serf.Serf
+	shutdown    bool
+	lock        sync.Mutex
 }
 
 // Returns the Serf agent of the running Agent.
@@ -24,6 +28,13 @@ func (a *Agent) Serf() *serf.Serf {
 
 // Shutdown does a graceful shutdown of this agent and all of its processes.
 func (a *Agent) Shutdown() error {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	if a.shutdown {
+		return nil
+	}
+
 	// Stop the RPC listener which in turn will stop the RPC server.
 	if err := a.rpcListener.Close(); err != nil {
 		return err
@@ -41,6 +52,7 @@ func (a *Agent) Shutdown() error {
 	}
 
 	log.Println("[INFO] agent: shutdown complete")
+	a.shutdown = true
 	return nil
 }
 

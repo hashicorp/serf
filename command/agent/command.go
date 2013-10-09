@@ -30,6 +30,7 @@ Usage: serf agent [options]
 Options:
 
   -bind=0.0.0.0            Address to bind network listeners to
+  -event-script=foo        Script to execute when events occur.
   -node=hostname           Name of this node. Must be unique in the cluster
   -rpc-addr=127.0.0.1:7373 Address to bind the RPC listener.
 `
@@ -45,12 +46,15 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	}
 
 	var bindAddr string
+	var eventScript string
 	var nodeName string
 	var rpcAddr string
 
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
 	cmdFlags.StringVar(&bindAddr, "bind", "0.0.0.0", "address to bind listeners to")
+	cmdFlags.StringVar(&eventScript, "event-script", "",
+		"script to execute when events occur")
 	cmdFlags.StringVar(&nodeName, "node", "", "node name")
 	cmdFlags.StringVar(&rpcAddr, "rpc-addr", "127.0.0.1:7373",
 		"address to bind RPC listener to")
@@ -69,8 +73,9 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	config.LogOutput = logoutput
 
 	agent := &Agent{
-		RPCAddr:    rpcAddr,
-		SerfConfig: config,
+		EventScript: eventScript,
+		RPCAddr:     rpcAddr,
+		SerfConfig:  config,
 	}
 
 	ui.Output("Starting Serf agent...")

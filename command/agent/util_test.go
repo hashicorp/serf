@@ -2,6 +2,8 @@ package agent
 
 import (
 	"fmt"
+	"github.com/hashicorp/serf/serf"
+	"github.com/hashicorp/serf/testutil"
 	"math/rand"
 	"net"
 	"time"
@@ -22,4 +24,17 @@ func getRPCAddr() string {
 	}
 
 	panic("no listener")
+}
+
+func testAgent() *Agent {
+	config := serf.DefaultConfig()
+	config.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
+	config.NodeName = config.MemberlistConfig.BindAddr
+
+	agent := &Agent{
+		RPCAddr:    getRPCAddr(),
+		SerfConfig: config,
+	}
+
+	return agent
 }
