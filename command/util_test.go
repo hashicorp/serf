@@ -5,10 +5,10 @@ import (
 	"github.com/hashicorp/serf/cli/agent"
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
-	"testing"
-	"time"
 	"math/rand"
 	"net"
+	"testing"
+	"time"
 )
 
 func init() {

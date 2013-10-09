@@ -2,8 +2,8 @@ package command
 
 import (
 	"flag"
-	"github.com/hashicorp/serf/cli"
 	"fmt"
+	"github.com/hashicorp/serf/cli"
 	"strings"
 )
 
