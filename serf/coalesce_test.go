@@ -23,7 +23,7 @@ func testCoalescer(cPeriod, qPeriod time.Duration) (chan<- Event, <-chan Event, 
 }
 
 func TestCoalescer_basic(t *testing.T) {
-	in, out, shutdown := testCoalescer(0, 0)
+	in, out, shutdown := testCoalescer(0, time.Second)
 	defer close(shutdown)
 
 	send := []Event{

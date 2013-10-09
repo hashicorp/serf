@@ -269,3 +269,39 @@ func TestSerf_joinIntent_newer(t *testing.T) {
 		t.Fatalf("should update clock")
 	}
 }
+
+func TestSerf_joinIntent_resetLeaving(t *testing.T) {
+	c := testConfig()
+	s, err := Create(c)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s.Shutdown()
+
+	s.members["test"] = &memberState{
+		Member: Member{
+			Status: StatusLeaving,
+		},
+		statusLTime: 12,
+	}
+
+	j := messageJoin{LTime: 14, Node: "test"}
+	if !s.handleNodeJoinIntent(&j) {
+		t.Fatalf("should rebroadcast")
+	}
+
+	if s.recentJoinIndex != 0 {
+		t.Fatalf("bad index")
+	}
+
+	if s.members["test"].statusLTime != 14 {
+		t.Fatalf("should update join time")
+	}
+	if s.members["test"].Status != StatusAlive {
+		t.Fatalf("should update status")
+	}
+
+	if s.clock.Time() != 15 {
+		t.Fatalf("should update clock")
+	}
+}
