@@ -62,8 +62,12 @@ func (d *delegate) NotifyMsg(buf []byte) {
 	}
 
 	if rebroadcast {
+		// Copy the buffer since it we cannot rely on the slice not changing
+		newBuf := make([]byte, len(buf))
+		copy(newBuf, buf)
+
 		d.serf.broadcasts.QueueBroadcast(&broadcast{
-			msg:    buf,
+			msg:    newBuf,
 			notify: nil,
 		})
 	}
