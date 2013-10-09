@@ -39,6 +39,9 @@ func TestSerf_leaveIntent_oldMessage(t *testing.T) {
 	defer s.Shutdown()
 
 	s.members["test"] = &memberState{
+		Member: Member{
+			Status: StatusAlive,
+		},
 		joinLTime: 12,
 	}
 
