@@ -44,6 +44,16 @@ func (d *delegate) NotifyMsg(buf []byte) {
 		}
 
 		rebroadcast = d.serf.handleNodeForceRemove(&remove)
+
+	case messageJoinType:
+		var join messageJoin
+		if err := decodeMessage(buf[1:], &join); err != nil {
+			log.Printf("[ERR] Error decoding join message: %s", err)
+			break
+		}
+
+		rebroadcast = d.serf.handleNodeJoinIntent(&join)
+
 	default:
 		log.Printf("[WARN] Received message of unknown type: %d", t)
 	}

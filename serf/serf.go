@@ -479,6 +479,31 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 	return true
 }
 
+// handleNodeJoinIntent is called when a node broadcasts a
+// join message to set the lamport time of its join
+func (s *Serf) handleNodeJoinIntent(joinMsg *messageJoin) bool {
+	// Witness a potentially newer time
+	s.clock.Witness(joinMsg.LTime)
+
+	s.memberLock.Lock()
+	defer s.memberLock.Unlock()
+
+	member, ok := s.members[joinMsg.Node]
+	if !ok {
+		// We don't know this member so don't rebroadcast.
+		return false
+	}
+
+	// Check if this time is newer than what we have
+	if member.joinLTime >= joinMsg.LTime {
+		return false
+	}
+
+	// Update the LTime
+	member.joinLTime = joinMsg.LTime
+	return true
+}
+
 // handleReap periodically reaps the list of failed and left members.
 func (s *Serf) handleReap() {
 	for {
