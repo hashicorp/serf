@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/hashicorp/serf/cli"
+	"github.com/hashicorp/serf/cli/agent"
 	"os"
 	"os/signal"
 )
@@ -12,7 +13,7 @@ var Commands map[string]cli.CommandFactory
 func init() {
 	Commands = map[string]cli.CommandFactory{
 		"agent": func() (cli.Command, error) {
-			return &cli.AgentCommand{
+			return &agent.Command{
 				ShutdownCh: makeShutdownCh(),
 			}, nil
 		},
