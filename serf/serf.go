@@ -270,7 +270,17 @@ func (s *Serf) Leave() error {
 	// Process the leave locally
 	s.handleNodeLeaveIntent(&msg)
 
-	if len(s.members) > 1 {
+	// Only broadcast the leave message if there is at least one
+	// other node alive.
+	hasAlive := false
+	for _, m := range s.members {
+		if m.Status == StatusAlive {
+			hasAlive = true
+			break
+		}
+	}
+
+	if hasAlive {
 		notifyCh := make(chan struct{})
 		if err := s.broadcast(messageLeaveType, &msg, notifyCh); err != nil {
 			return err
