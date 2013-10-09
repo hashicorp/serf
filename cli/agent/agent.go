@@ -16,6 +16,11 @@ type Agent struct {
 	serf        *serf.Serf
 }
 
+// Returns the Serf agent of the running Agent.
+func (a *Agent) Serf() *serf.Serf {
+	return a.serf
+}
+
 // Shutdown does a graceful shutdown of this agent and all of its processes.
 func (a *Agent) Shutdown() error {
 	// Stop the RPC listener which in turn will stop the RPC server.

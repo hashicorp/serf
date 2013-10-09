@@ -1,7 +1,8 @@
-package cli
+package command
 
 import (
 	"flag"
+	"github.com/hashicorp/serf/cli"
 	"fmt"
 	"strings"
 )
@@ -24,11 +25,19 @@ Options:
 	return strings.TrimSpace(helpText)
 }
 
-func (c *JoinCommand) Run(args []string, ui Ui) int {
+func (c *JoinCommand) Run(args []string, ui cli.Ui) int {
 	cmdFlags := flag.NewFlagSet("join", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
+		return 1
+	}
+
+	addrs := cmdFlags.Args()
+	if len(addrs) == 0 {
+		ui.Error("At least one address to join must be specified.")
+		ui.Error("")
+		ui.Error(c.Help())
 		return 1
 	}
 
@@ -39,6 +48,14 @@ func (c *JoinCommand) Run(args []string, ui Ui) int {
 	}
 	defer client.Close()
 
+	n, err := client.Join(addrs)
+	if err != nil {
+		ui.Error(fmt.Sprintf("Error joining the cluster: %s", err))
+		return 1
+	}
+
+	ui.Output(fmt.Sprintf(
+		"Successfully joined cluster by contacting %d nodes.", n))
 	return 0
 }
 
