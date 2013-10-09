@@ -17,6 +17,10 @@ func init() {
 			}, nil
 		},
 
+		"members": func() (cli.Command, error) {
+			return &cli.MembersCommand{}, nil
+		},
+
 		"version": func() (cli.Command, error) {
 			return &cli.VersionCommand{
 				Revision:          GitCommit,
