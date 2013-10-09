@@ -22,6 +22,11 @@ func (c *Client) Close() error {
 	return c.rpcClient.Close()
 }
 
+func (c *Client) Join(addrs []string) (n int, err error) {
+	err = c.rpcClient.Call("Serf.Join", addrs, &n)
+	return
+}
+
 func (c *Client) Members() ([]serf.Member, error) {
 	var result []serf.Member
 	err := c.rpcClient.Call("Serf.Members", new(interface{}), &result)

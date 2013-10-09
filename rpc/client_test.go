@@ -55,6 +55,27 @@ func testClient(t *testing.T, serf *serf.Serf) *Client {
 	return NewClient(client)
 }
 
+func TestClientJoin(t *testing.T) {
+	s1, _ := testSerf(t)
+	s2, s2Addr := testSerf(t)
+	defer s1.Shutdown()
+	defer s2.Shutdown()
+
+	c := testClient(t, s1)
+	n, err := c.Join([]string{s2Addr})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if n != 1 {
+		t.Fatalf("bad: %d", n)
+	}
+
+	if len(s1.Members()) != 2 {
+		t.Fatalf("bad: %#v", s1.Members())
+	}
+}
+
 func TestClientMembers(t *testing.T) {
 	s1, _ := testSerf(t)
 	defer s1.Shutdown()
