@@ -9,7 +9,7 @@ deps:
 	echo $(DEPS) | xargs -n1 go get -d
 
 test: deps subnet
-	go test ./...
+	go list ./... | xargs -n1 go test
 
 integ: subnet
 	INTEG_TESTS=yes go test ./...
