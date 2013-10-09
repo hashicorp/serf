@@ -17,6 +17,11 @@ func NewClient(rpcClient *rpc.Client) *Client {
 	}
 }
 
+// Close just closes the underlying RPC client.
+func (c *Client) Close() error {
+	return c.rpcClient.Close()
+}
+
 func (c *Client) Members() ([]serf.Member, error) {
 	var result []serf.Member
 	err := c.rpcClient.Call("Serf.Members", new(interface{}), &result)

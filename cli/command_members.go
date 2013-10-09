@@ -3,8 +3,6 @@ package cli
 import (
 	"flag"
 	"fmt"
-	serfrpc "github.com/hashicorp/serf/rpc"
-	"net/rpc"
 	"strings"
 )
 
@@ -26,23 +24,20 @@ Options:
 }
 
 func (c *MembersCommand) Run(args []string, ui Ui) int {
-	var rpcAddr string
 	cmdFlags := flag.NewFlagSet("members", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
-	cmdFlags.StringVar(&rpcAddr, "rpc-addr", "127.0.0.1:7373",
-		"RPC address of the Serf agent")
+	rpcAddr := RPCAddrFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
 
-	rpcClient, err := rpc.Dial("tcp", rpcAddr)
+	client, err := RPCClient(*rpcAddr)
 	if err != nil {
 		ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
 		return 1
 	}
-	defer rpcClient.Close()
+	defer client.Close()
 
-	client := serfrpc.NewClient(rpcClient)
 	members, err := client.Members()
 	if err != nil {
 		ui.Error(fmt.Sprintf("Error retrieving members: %s", err))
