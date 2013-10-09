@@ -32,11 +32,12 @@ type Serf struct {
 	memberLock    sync.RWMutex
 	members       map[string]*memberState
 
-	// Circular buffer for recent join intents, used
-	// in case we get the intent before the join happens
-	// inside of memberlist
-	recentJoin      []messageJoin
-	recentJoinIndex int
+	// Circular buffers for recent intents, used
+	// in case we get the intent before the relevent event
+	recentLeave      []nodeIntent
+	recentLeaveIndex int
+	recentJoin       []nodeIntent
+	recentJoinIndex  int
 
 	stateLock  sync.Mutex
 	state      SerfState
@@ -78,6 +79,12 @@ type memberState struct {
 	Member
 	joinLTime LamportTime // lamport clock time of join
 	leaveTime time.Time   // wall clock time of leave
+}
+
+// nodeIntent is used to buffer intents for out-of-order deliveries
+type nodeIntent struct {
+	LTime LamportTime
+	Node  string
 }
 
 // Create creates a new Serf instance, starting all the background tasks
@@ -126,9 +133,9 @@ func Create(conf *Config) (*Serf, error) {
 		conf.QueueDepthWarning = 128
 	}
 
-	if conf.RecentJoinBuffer == 0 {
+	if conf.RecentIntentBuffer == 0 {
 		// Set a reasonable default for RecentJoinBuffer
-		conf.RecentJoinBuffer = 128
+		conf.RecentIntentBuffer = 128
 	}
 
 	if conf.MemberlistConfig == nil {
@@ -159,8 +166,9 @@ func Create(conf *Config) (*Serf, error) {
 		RetransmitMult: conf.MemberlistConfig.RetransmitMult,
 	}
 
-	// Create the buffer for recent joins
-	serf.recentJoin = make([]messageJoin, conf.RecentJoinBuffer)
+	// Create the buffer for recent intents
+	serf.recentJoin = make([]nodeIntent, conf.RecentIntentBuffer)
+	serf.recentLeave = make([]nodeIntent, conf.RecentIntentBuffer)
 
 	// Modify the memberlist configuration with keys that we set
 	//conf.MemberlistConfig.Events = &memberlist.ChannelEventDelegate{Ch: eventCh}
@@ -405,29 +413,37 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 	s.memberLock.Lock()
 	defer s.memberLock.Unlock()
 
-	oldStatus := StatusNone
+	var oldStatus MemberStatus
 	member, ok := s.members[n.Name]
 	if !ok {
+		oldStatus = StatusNone
 		member = &memberState{
 			Member: Member{
-				Name: n.Name,
-				Addr: net.IP(n.Addr),
-				Role: string(n.Meta),
+				Name:   n.Name,
+				Addr:   net.IP(n.Addr),
+				Role:   string(n.Meta),
+				Status: StatusAlive,
 			},
 		}
 
 		// Check if we have a join intent and use the LTime
-		if join := recentNodeJoin(s.recentJoin, n.Name); join != nil {
+		if join := recentIntent(s.recentJoin, n.Name); join != nil {
 			member.joinLTime = join.LTime
+		}
+
+		// Check if we have a leave intent
+		if leave := recentIntent(s.recentLeave, n.Name); leave != nil {
+			if leave.LTime > member.joinLTime {
+				member.Status = StatusLeaving
+			}
 		}
 
 		s.members[n.Name] = member
 	} else {
 		oldStatus = member.Status
+		member.Status = StatusAlive
+		member.leaveTime = time.Time{}
 	}
-
-	member.Status = StatusAlive
-	member.leaveTime = time.Time{}
 
 	// If node was previously in a failed state, then clean up some
 	// internal accounting.
@@ -497,8 +513,15 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 
 	member, ok := s.members[leaveMsg.Node]
 	if !ok {
-		// We don't know this member so don't rebroadcast.
-		return false
+		// If we've already seen this message don't rebroadcast
+		if recentIntent(s.recentLeave, leaveMsg.Node) != nil {
+			return false
+		}
+
+		// We don't know this member so store it in a buffer for now
+		s.recentLeave[s.recentLeaveIndex] = nodeIntent{LTime: leaveMsg.LTime, Node: leaveMsg.Node}
+		s.recentLeaveIndex = (s.recentLeaveIndex + 1) % len(s.recentLeave)
+		return true
 	}
 
 	// If the node isn't alive, then this message is irrelevent and
@@ -529,12 +552,12 @@ func (s *Serf) handleNodeJoinIntent(joinMsg *messageJoin) bool {
 	member, ok := s.members[joinMsg.Node]
 	if !ok {
 		// If we've already seen this message don't rebroadcast
-		if recentNodeJoin(s.recentJoin, joinMsg.Node) != nil {
+		if recentIntent(s.recentJoin, joinMsg.Node) != nil {
 			return false
 		}
 
 		// We don't know this member so store it in a buffer for now
-		s.recentJoin[s.recentJoinIndex] = *joinMsg
+		s.recentJoin[s.recentJoinIndex] = nodeIntent{LTime: joinMsg.LTime, Node: joinMsg.Node}
 		s.recentJoinIndex = (s.recentJoinIndex + 1) % len(s.recentJoin)
 		return true
 	}
@@ -658,9 +681,9 @@ func removeOldMember(old []*memberState, name string) []*memberState {
 	return old
 }
 
-// recentNodeJoin checks the recent join buffer for a matching
+// recentIntent checks the recent intent buffer for a matching
 // entry for a given node, and either returns the message or nil
-func recentNodeJoin(recent []messageJoin, node string) (join *messageJoin) {
+func recentIntent(recent []nodeIntent, node string) (intent *nodeIntent) {
 	for i := 0; i < len(recent); i++ {
 		// Break fast if we hit a zero entry
 		if recent[i].LTime == 0 {
@@ -670,8 +693,8 @@ func recentNodeJoin(recent []messageJoin, node string) (join *messageJoin) {
 		// Check for a node match
 		if recent[i].Node == node {
 			// Take the most recent entry
-			if join == nil || recent[i].LTime > join.LTime {
-				join = &recent[i]
+			if intent == nil || recent[i].LTime > intent.LTime {
+				intent = &recent[i]
 			}
 		}
 	}
