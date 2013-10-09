@@ -227,7 +227,7 @@ func (s *Serf) Join(existing []string) (int, error) {
 	defer s.stateLock.Unlock()
 
 	if s.state == SerfShutdown {
-		panic("Serf can't Join after Shutdown")
+		return 0, fmt.Errorf("Serf can't Join after Shutdown")
 	}
 
 	num, err := s.memberlist.Join(existing)
@@ -262,7 +262,7 @@ func (s *Serf) Leave() error {
 	if s.state == SerfLeft {
 		return nil
 	} else if s.state == SerfShutdown {
-		panic("Leave after Shutdown")
+		return fmt.Errorf("Leave called after Shutdown")
 	}
 
 	// Construct the message for the graceful leave
