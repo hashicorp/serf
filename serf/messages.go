@@ -12,6 +12,7 @@ type messageType uint8
 const (
 	messageLeaveType messageType = iota
 	messageJoinType
+	messagePushPullType
 )
 
 // messageJoin is the message broadcasted after we join to
@@ -28,6 +29,12 @@ type messageLeave struct {
 	Node  string
 }
 
+// messagePushPullType is used when doing a state exchange. This
+// is a relatively large message, but is sent infrequently
+type messagePushPull struct {
+	LTime        LamportTime            // Current node lamport time
+	StatusLTimes map[string]LamportTime // Maps the node to its status time
+	LeftMembers  []string               // List of left nodes
 }
 
 func decodeMessage(buf []byte, out interface{}) error {

@@ -78,8 +78,75 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 }
 
 func (d *delegate) LocalState() []byte {
-	return nil
+	d.serf.memberLock.RLock()
+	defer d.serf.memberLock.RUnlock()
+
+	// Create the message to send
+	pp := messagePushPull{
+		LTime:        d.serf.clock.Time(),
+		StatusLTimes: make(map[string]LamportTime, len(d.serf.members)),
+		LeftMembers:  make([]string, 0, len(d.serf.leftMembers)),
+	}
+
+	// Add all the join LTimes
+	for name, member := range d.serf.members {
+		pp.StatusLTimes[name] = member.statusLTime
+	}
+
+	// Add all the left nodes
+	for _, member := range d.serf.leftMembers {
+		pp.LeftMembers = append(pp.LeftMembers, member.Name)
+	}
+
+	// Encode the push pull state
+	buf, err := encodeMessage(messagePushPullType, &pp)
+	if err != nil {
+		d.serf.logger.Printf("[ERR] serf: Failed to encode local state: %v", err)
+		return nil
+	}
+	return buf
 }
 
-func (d *delegate) MergeRemoteState([]byte) {
+func (d *delegate) MergeRemoteState(buf []byte) {
+	// Check the message type
+	if messageType(buf[0]) != messagePushPullType {
+		d.serf.logger.Printf("[ERR] serf: Remote state has bad type prefix: %v", buf[0])
+		return
+	}
+
+	// Attempt a decode
+	pp := messagePushPull{}
+	if err := decodeMessage(buf[1:], &pp); err != nil {
+		d.serf.logger.Printf("[ERR] serf: Failed to decode remote state: %v", err)
+		return
+	}
+
+	// Witness the Lamport clock first. We subtract 1 since no message with that
+	// clock has been sent yet
+	d.serf.clock.Witness(pp.LTime - 1)
+
+	// Process the left nodes first to avoid the LTimes from being increment
+	// in the wrong order
+	leftMap := make(map[string]struct{}, len(pp.LeftMembers))
+	leave := messageLeave{}
+	for _, name := range pp.LeftMembers {
+		leftMap[name] = struct{}{}
+		leave.LTime = pp.StatusLTimes[name]
+		leave.Node = name
+		d.serf.handleNodeLeaveIntent(&leave)
+	}
+
+	// Update any other LTimes
+	join := messageJoin{}
+	for name, statusLTime := range pp.StatusLTimes {
+		// Skip the left nodes
+		if _, ok := leftMap[name]; ok {
+			continue
+		}
+
+		// Create an artificial join message
+		join.LTime = statusLTime
+		join.Node = name
+		d.serf.handleNodeJoinIntent(&join)
+	}
 }
