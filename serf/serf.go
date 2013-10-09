@@ -325,14 +325,14 @@ func (s *Serf) Members() []Member {
 // immediately, instead of waiting for the reaper to eventually reclaim it.
 func (s *Serf) RemoveFailedNode(node string) error {
 	// Construct the message to broadcast
-	msg := messageRemoveFailed{
+	msg := messageLeave{
 		LTime: s.clock.Time(),
 		Node:  node,
 	}
 	s.clock.Increment()
 
 	// Process our own event
-	s.handleNodeForceRemove(&msg)
+	s.handleNodeLeaveIntent(&msg)
 
 	// If we have no members, then we don't need to broadcast
 	s.memberLock.RLock()
@@ -344,7 +344,7 @@ func (s *Serf) RemoveFailedNode(node string) error {
 
 	// Broadcast the remove
 	notifyCh := make(chan struct{})
-	if err := s.broadcast(messageRemoveFailedType, &msg, notifyCh); err != nil {
+	if err := s.broadcast(messageLeaveType, &msg, notifyCh); err != nil {
 		return err
 	}
 
@@ -410,41 +410,6 @@ func (s *Serf) broadcast(t messageType, msg interface{}, notify chan<- struct{})
 	})
 
 	return nil
-}
-
-// handleNodeForceRemove is invoked when we get a messageRemoveFailed
-// message.
-func (s *Serf) handleNodeForceRemove(remove *messageRemoveFailed) bool {
-	// Witness a potentially newer time
-	s.clock.Witness(remove.LTime)
-
-	s.memberLock.Lock()
-	defer s.memberLock.Unlock()
-
-	member, ok := s.members[remove.Node]
-	if !ok {
-		return false
-	}
-
-	// If the node isn't failed, then do nothing
-	if member.Status != StatusFailed {
-		return false
-	}
-
-	// If the message is old, then it is irrelevant and we can skip it
-	if remove.LTime <= member.joinLTime {
-		return false
-	}
-
-	// Update the status to left
-	member.Status = StatusLeft
-
-	// Remove from the failed list and add to the left list. We add
-	// to the left list so that when we do a sync, other nodes will
-	// remove it from their failed list.
-	s.failedMembers = removeOldMember(s.failedMembers, member.Name)
-	s.leftMembers = append(s.leftMembers, member)
-	return true
 }
 
 // handleNodeJoin is called when a node join event is received
@@ -573,20 +538,31 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		return true
 	}
 
-	// If the node isn't alive, then this message is irrelevent and
-	// we skip it.
-	if member.Status != StatusAlive {
-		return false
-	}
-
 	// If the message is old, then it is irrelevant and we can skip it
-	if leaveMsg.LTime <= member.joinLTime {
+	if leaveMsg.LTime <= member.statusLTime {
 		return false
 	}
 
-	// Update the status
-	member.Status = StatusLeaving
-	return true
+	// State transition depends on current state
+	switch member.Status {
+	case StatusAlive:
+		member.Status = StatusLeaving
+		member.statusLTime = leaveMsg.LTime
+		return true
+	case StatusFailed:
+		member.Status = StatusLeft
+		member.statusLTime = leaveMsg.LTime
+
+		// Remove from the failed list and add to the left list. We add
+		// to the left list so that when we do a sync, other nodes will
+		// remove it from their failed list.
+		s.failedMembers = removeOldMember(s.failedMembers, member.Name)
+		s.leftMembers = append(s.leftMembers, member)
+
+		return true
+	default:
+		return false
+	}
 }
 
 // handleNodeJoinIntent is called when a node broadcasts a

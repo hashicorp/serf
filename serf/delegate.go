@@ -37,16 +37,6 @@ func (d *delegate) NotifyMsg(buf []byte) {
 		d.serf.logger.Printf("[DEBUG] serf-delegate: messageLeaveType: %s", leave.Node)
 		rebroadcast = d.serf.handleNodeLeaveIntent(&leave)
 
-	case messageRemoveFailedType:
-		var remove messageRemoveFailed
-		if err := decodeMessage(buf[1:], &remove); err != nil {
-			d.serf.logger.Printf("[ERR] Error decoding remove message: %s", err)
-			break
-		}
-
-		d.serf.logger.Printf("[DEBUG] serf-delegate: messageRemoveFailedType: %s", remove.Node)
-		rebroadcast = d.serf.handleNodeForceRemove(&remove)
-
 	case messageJoinType:
 		var join messageJoin
 		if err := decodeMessage(buf[1:], &join); err != nil {

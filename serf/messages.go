@@ -11,7 +11,6 @@ type messageType uint8
 
 const (
 	messageLeaveType messageType = iota
-	messageRemoveFailedType
 	messageJoinType
 )
 
@@ -29,11 +28,6 @@ type messageLeave struct {
 	Node  string
 }
 
-// messageRemoveFailed is the message broadcasted to force remove
-// a failed node from the failed node list and the member list.
-type messageRemoveFailed struct {
-	LTime LamportTime
-	Node  string
 }
 
 func decodeMessage(buf []byte, out interface{}) error {
