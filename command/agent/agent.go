@@ -17,9 +17,16 @@ type Agent struct {
 
 	rpcListener net.Listener
 	serf        *serf.Serf
-	shutdown    bool
+	state       AgentState
 	lock        sync.Mutex
 }
+
+type AgentState int
+
+const (
+	AgentIdle AgentState = iota
+	AgentRunning
+)
 
 // Returns the Serf agent of the running Agent.
 func (a *Agent) Serf() *serf.Serf {
@@ -31,7 +38,7 @@ func (a *Agent) Shutdown() error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	if a.shutdown {
+	if a.state == AgentIdle {
 		return nil
 	}
 
@@ -52,13 +59,16 @@ func (a *Agent) Shutdown() error {
 	}
 
 	log.Println("[INFO] agent: shutdown complete")
-	a.shutdown = true
+	a.state = AgentIdle
 	return nil
 }
 
 // Start starts the agent, kicking off any goroutines to handle various
 // aspects of the agent.
 func (a *Agent) Start() error {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
 	var err error
 	a.serf, err = serf.Create(a.SerfConfig)
 	if err != nil {
@@ -76,5 +86,7 @@ func (a *Agent) Start() error {
 	}
 
 	go rpcServer.Run()
+
+	a.state = AgentRunning
 	return nil
 }

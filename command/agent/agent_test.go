@@ -16,3 +16,10 @@ func TestAgentShutdown_multiple(t *testing.T) {
 		}
 	}
 }
+
+func TestAgentShutdown_noStart(t *testing.T) {
+	a := testAgent()
+	if err := a.Shutdown(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+}
