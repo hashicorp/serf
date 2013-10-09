@@ -19,6 +19,10 @@ func init() {
 			}, nil
 		},
 
+		"join": func() (cli.Command, error) {
+			return &command.JoinCommand{}, nil
+		},
+
 		"members": func() (cli.Command, error) {
 			return &command.MembersCommand{}, nil
 		},
