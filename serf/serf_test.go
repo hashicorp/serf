@@ -515,3 +515,27 @@ func TestRemoveOldMember(t *testing.T) {
 		t.Fatalf("should remove old member")
 	}
 }
+
+func TestRecentIntent(t *testing.T) {
+	if recentIntent(nil, "foo") != nil {
+		t.Fatalf("should get nil on empty recent")
+	}
+	if recentIntent([]nodeIntent{}, "foo") != nil {
+		t.Fatalf("should get nil on empty recent")
+	}
+
+	recent := []nodeIntent{
+		nodeIntent{1, "foo"},
+		nodeIntent{2, "bar"},
+		nodeIntent{3, "baz"},
+		nodeIntent{4, "bar"},
+	}
+
+	if r := recentIntent(recent, "bar"); r.LTime != 4 {
+		t.Fatalf("bad time for bar")
+	}
+
+	if r := recentIntent(recent, "tubez"); r != nil {
+		t.Fatalf("got result for tubez")
+	}
+}
