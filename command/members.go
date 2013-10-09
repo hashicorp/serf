@@ -1,6 +1,7 @@
-package cli
+package command
 
 import (
+	"github.com/hashicorp/serf/cli"
 	"flag"
 	"fmt"
 	"strings"
@@ -23,7 +24,7 @@ Options:
 	return strings.TrimSpace(helpText)
 }
 
-func (c *MembersCommand) Run(args []string, ui Ui) int {
+func (c *MembersCommand) Run(args []string, ui cli.Ui) int {
 	cmdFlags := flag.NewFlagSet("members", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
 	rpcAddr := RPCAddrFlag(cmdFlags)
