@@ -649,7 +649,12 @@ func (s *Serf) reconnect() {
 	// This means that we probabilistically expect the cluster
 	// to attempt to connect to each failed member once per
 	// reconnect interval
-	prob := float32(len(s.failedMembers)) / float32(len(s.members)-len(s.failedMembers)-len(s.leftMembers))
+	numFailed := float32(len(s.failedMembers))
+	numAlive := float32(len(s.members) - len(s.failedMembers) - len(s.leftMembers))
+	if numAlive == 0 {
+		numAlive = 1 // guard against zero divide
+	}
+	prob := numFailed / numAlive
 	if rand.Float32() > prob {
 		s.memberLock.RUnlock()
 		return
