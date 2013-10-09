@@ -187,7 +187,26 @@ func (s *Serf) Join(existing []string) (int, error) {
 		panic("Serf can't Join after Shutdown")
 	}
 
-	return s.memberlist.Join(existing)
+	num, err := s.memberlist.Join(existing)
+
+	// If we joined any nodes, broadcast the join message
+	if num > 0 {
+		// Construct message to update our lamport clock
+		msg := messageJoin{
+			LTime: s.clock.Increment(),
+			Node:  s.config.NodeName,
+		}
+
+		// Process update locally
+		s.handleNodeJoinIntent(&msg)
+
+		// Start broadcasting the update
+		if err := s.broadcast(messageJoinType, &msg, nil); err != nil {
+			return num, err
+		}
+	}
+
+	return num, err
 }
 
 // Leave gracefully exits the cluster. It is safe to call this multiple
