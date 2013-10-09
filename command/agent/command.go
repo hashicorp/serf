@@ -58,7 +58,10 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		return 1
 	}
 
-	logoutput := &cli.UiWriter{Ui: rawUi}
+	logoutput := &GatedWriter{
+		Writer: &cli.UiWriter{Ui: rawUi},
+	}
+
 	config := serf.DefaultConfig()
 	config.MemberlistConfig.BindAddr = bindAddr
 	config.MemberlistConfig.LogOutput = logoutput
@@ -82,6 +85,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	ui.Info(fmt.Sprintf(" RPC addr: '%s'", rpcAddr))
 	ui.Info("")
 	ui.Output("Log data will now stream in as it occurs:\n")
+	logoutput.Flush()
 
 	graceful, forceful := c.startShutdownWatcher(agent, ui)
 	select {
