@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/serf/rpc"
 	"github.com/hashicorp/serf/serf"
+	"log"
 	"net"
 )
 
@@ -29,13 +30,17 @@ func (a *Agent) Shutdown() error {
 	}
 
 	// Gracefully leave the serf cluster
+	log.Println("[INFO] agent: requesting graceful leave from Serf")
 	if err := a.serf.Leave(); err != nil {
 		return err
 	}
+
+	log.Println("[INFO] agent: requesting serf shutdown")
 	if err := a.serf.Shutdown(); err != nil {
 		return err
 	}
 
+	log.Println("[INFO] agent: shutdown complete")
 	return nil
 }
 

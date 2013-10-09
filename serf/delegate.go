@@ -35,7 +35,9 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			break
 		}
 
+		log.Printf("[DEBUG] messageLeaveType: %s", leave.Node)
 		rebroadcast = d.serf.handleNodeLeaveIntent(&leave)
+
 	case messageRemoveFailedType:
 		var remove messageRemoveFailed
 		if err := decodeMessage(buf[1:], &remove); err != nil {
@@ -43,6 +45,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			break
 		}
 
+		log.Printf("[DEBUG] messageRemoveFailedType: %s", remove.Node)
 		rebroadcast = d.serf.handleNodeForceRemove(&remove)
 
 	case messageJoinType:
@@ -52,6 +55,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			break
 		}
 
+		log.Printf("[DEBUG] messageJoinType: %s", join.Node)
 		rebroadcast = d.serf.handleNodeJoinIntent(&join)
 
 	default:
