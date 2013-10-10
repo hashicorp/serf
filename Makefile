@@ -24,4 +24,7 @@ cov:
 website:
 	./scripts/website_run.sh
 
+website-push:
+	./scripts/website_push.sh
+
 .PNONY: all cov deps integ subnet test
