@@ -15,6 +15,21 @@ const (
 	EventUser
 )
 
+func (t EventType) String() string {
+	switch t {
+	case EventMemberJoin:
+		return "member-join"
+	case EventMemberLeave:
+		return "member-leave"
+	case EventMemberFailed:
+		return "member-failed"
+	case EventUser:
+		return "user-event"
+	default:
+		panic(fmt.Sprintf("unknown event type: %d", t))
+	}
+}
+
 // Event is a generic interface for exposing Serf events
 // Clients will usually need to use a type switches to get
 // to a more useful type
