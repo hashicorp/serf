@@ -682,8 +682,9 @@ func (s *Serf) handleUserEvent(eventMsg *messageUserEvent) bool {
 	defer s.eventLock.Unlock()
 
 	// Check if this message is too old
-	if eventMsg.LTime > LamportTime(len(s.eventBuffer)) &&
-		eventMsg.LTime < s.eventClock.Time()-LamportTime(len(s.eventBuffer)) {
+	curTime := s.eventClock.Time()
+	if curTime > LamportTime(len(s.eventBuffer)) &&
+		eventMsg.LTime < curTime-LamportTime(len(s.eventBuffer)) {
 		s.logger.Printf(
 			"[WARN] serf: received old event %s from time %d (current: %d)",
 			eventMsg.Name,
