@@ -4,6 +4,10 @@ all: deps
 	@mkdir -p bin/
 	@bash --norc -i ./scripts/build.sh
 
+cov:
+	gocov test ./... | gocov-html > /tmp/coverage.html
+	open /tmp/coverage.html
+
 deps:
 	go get -d -v ./...
 	echo $(DEPS) | xargs -n1 go get -d
@@ -17,14 +21,10 @@ integ: subnet
 subnet:
 	echo ./test/setup_subnet.sh
 
-cov:
-	gocov test ./... | gocov-html > /tmp/coverage.html
-	open /tmp/coverage.html
-
 website:
 	./scripts/website_run.sh
 
 website-push:
 	./scripts/website_push.sh
 
-.PNONY: all cov deps integ subnet test
+.PNONY: all cov deps integ subnet test website website-push
