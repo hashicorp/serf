@@ -21,10 +21,10 @@ integ: subnet
 subnet:
 	echo ./test/setup_subnet.sh
 
-website:
+web:
 	./scripts/website_run.sh
 
-website-push:
+web-push:
 	./scripts/website_push.sh
 
-.PNONY: all cov deps integ subnet test website website-push
+.PNONY: all cov deps integ subnet test web web-push
