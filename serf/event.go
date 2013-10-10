@@ -22,15 +22,41 @@ func (t EventType) String() string {
 		return "member-leave"
 	case EventMemberFailed:
 		return "member-failed"
+	case EventUser:
+		return "user-event"
 	default:
 		panic(fmt.Sprintf("unknown event type: %d", t))
 	}
 }
 
-// Event is the struct sent along the event channel configured for
-// Serf. Because Serf coalesces events, an event may contain multiple
-// members.
-type Event struct {
+// Event is a generic interface for exposing Serf events
+// Clients will usually need to use a type switches to get
+// to a more useful type
+type Event interface {
+	EventType() EventType
+	String() string
+}
+
+// MemberEvent is the struct used for member related events
+// Because Serf coalesces events, an event may contain multiple members.
+type MemberEvent struct {
 	Type    EventType
 	Members []Member
+}
+
+func (m MemberEvent) EventType() EventType {
+	return m.Type
+}
+
+func (m MemberEvent) String() string {
+	switch m.Type {
+	case EventMemberJoin:
+		return "member-join"
+	case EventMemberLeave:
+		return "member-leave"
+	case EventMemberFailed:
+		return "member-failed"
+	default:
+		panic(fmt.Sprintf("unknown event type: %d", m.Type))
+	}
 }

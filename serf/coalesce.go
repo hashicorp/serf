@@ -37,7 +37,17 @@ func coalescer(eventCh <-chan Event, newCh chan<- Event, shutdownCh <-chan struc
 		coalesce := false
 
 		select {
-		case e := <-eventCh:
+		case rawEvent := <-eventCh:
+			// Ignore any non-member related events
+			eventType := rawEvent.EventType()
+			if eventType != EventMemberJoin && eventType != EventMemberLeave && eventType != EventMemberFailed {
+				newCh <- rawEvent
+				continue
+			}
+
+			// Cast to a member event
+			e := rawEvent.(MemberEvent)
+
 			// Start a new quantum if we need to and update the quiescent
 			// timer.
 			if quantum == nil {
@@ -70,7 +80,7 @@ func coalescer(eventCh <-chan Event, newCh chan<- Event, shutdownCh <-chan struc
 		quiescent = nil
 
 		// Coalesce the various events we got into a single set of events.
-		events := make(map[EventType]*Event)
+		events := make(map[EventType]*MemberEvent)
 		for name, cevent := range latestEvents {
 			previous, ok := lastEvents[name]
 
@@ -85,7 +95,7 @@ func coalescer(eventCh <-chan Event, newCh chan<- Event, shutdownCh <-chan struc
 			// Add it to our event
 			newEvent, ok := events[cevent.Type]
 			if !ok {
-				newEvent = &Event{Type: cevent.Type}
+				newEvent = &MemberEvent{Type: cevent.Type}
 				events[cevent.Type] = newEvent
 			}
 			newEvent.Members = append(newEvent.Members, *cevent.Member)

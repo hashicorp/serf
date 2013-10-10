@@ -27,15 +27,15 @@ func TestCoalescer_basic(t *testing.T) {
 	defer close(shutdown)
 
 	send := []Event{
-		Event{
+		MemberEvent{
 			Type:    EventMemberJoin,
 			Members: []Member{Member{Name: "foo"}},
 		},
-		Event{
+		MemberEvent{
 			Type:    EventMemberLeave,
 			Members: []Member{Member{Name: "foo"}},
 		},
-		Event{
+		MemberEvent{
 			Type:    EventMemberLeave,
 			Members: []Member{Member{Name: "bar"}},
 		},
@@ -47,16 +47,16 @@ func TestCoalescer_basic(t *testing.T) {
 
 	select {
 	case e := <-out:
-		if e.Type != EventMemberLeave {
-			t.Fatalf("expected leave, got: %d", e.Type)
+		if e.EventType() != EventMemberLeave {
+			t.Fatalf("expected leave, got: %d", e.EventType())
 		}
 
-		if len(e.Members) != 2 {
-			t.Fatalf("should have two members: %d", len(e.Members))
+		if len(e.(MemberEvent).Members) != 2 {
+			t.Fatalf("should have two members: %d", len(e.(MemberEvent).Members))
 		}
 
 		expected := []string{"bar", "foo"}
-		names := []string{e.Members[0].Name, e.Members[1].Name}
+		names := []string{e.(MemberEvent).Members[0].Name, e.(MemberEvent).Members[1].Name}
 		sort.Strings(names)
 
 		if !reflect.DeepEqual(expected, names) {
@@ -75,15 +75,15 @@ func TestCoalescer_quiescent(t *testing.T) {
 	defer close(shutdown)
 
 	send := []Event{
-		Event{
+		MemberEvent{
 			Type:    EventMemberJoin,
 			Members: []Member{Member{Name: "foo"}},
 		},
-		Event{
+		MemberEvent{
 			Type:    EventMemberLeave,
 			Members: []Member{Member{Name: "foo"}},
 		},
-		Event{
+		MemberEvent{
 			Type:    EventMemberLeave,
 			Members: []Member{Member{Name: "bar"}},
 		},
@@ -95,16 +95,16 @@ func TestCoalescer_quiescent(t *testing.T) {
 
 	select {
 	case e := <-out:
-		if e.Type != EventMemberLeave {
-			t.Fatalf("expected leave, got: %d", e.Type)
+		if e.EventType() != EventMemberLeave {
+			t.Fatalf("expected leave, got: %d", e.EventType())
 		}
 
-		if len(e.Members) != 2 {
-			t.Fatalf("should have two members: %d", len(e.Members))
+		if len(e.(MemberEvent).Members) != 2 {
+			t.Fatalf("should have two members: %d", len(e.(MemberEvent).Members))
 		}
 
 		expected := []string{"bar", "foo"}
-		names := []string{e.Members[0].Name, e.Members[1].Name}
+		names := []string{e.(MemberEvent).Members[0].Name, e.(MemberEvent).Members[1].Name}
 		sort.Strings(names)
 
 		if !reflect.DeepEqual(expected, names) {

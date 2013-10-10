@@ -530,7 +530,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 	s.logger.Printf("[INFO] serf: EventMemberJoin: %s %s",
 		member.Member.Name, member.Member.Addr)
 	if s.config.EventCh != nil {
-		s.config.EventCh <- Event{
+		s.config.EventCh <- MemberEvent{
 			Type:    EventMemberJoin,
 			Members: []Member{member.Member},
 		}
@@ -576,7 +576,7 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 	s.logger.Printf("[INFO] serf: %s: %s %s",
 		eventStr, member.Member.Name, member.Member.Addr)
 	if s.config.EventCh != nil {
-		s.config.EventCh <- Event{
+		s.config.EventCh <- MemberEvent{
 			Type:    event,
 			Members: []Member{member.Member},
 		}

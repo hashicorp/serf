@@ -14,7 +14,12 @@ func testEvents(t *testing.T, ch <-chan Event, node string, expected []EventType
 TESTEVENTLOOP:
 	for {
 		select {
-		case e := <-ch:
+		case r := <-ch:
+			e, ok := r.(MemberEvent)
+			if !ok {
+				continue
+			}
+
 			found := false
 			for _, m := range e.Members {
 				if m.Name == node {
