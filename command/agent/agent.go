@@ -142,6 +142,12 @@ func (a *Agent) Start() error {
 
 	a.logger.Println("[INFO] Serf agent starting")
 
+	for _, script := range a.EventScripts {
+		if !script.Valid() {
+			return fmt.Errorf("Invalid event script: %s", script)
+		}
+	}
+
 	// Setup logging a bit
 	a.SerfConfig.MemberlistConfig.LogOutput = a.LogOutput
 	a.SerfConfig.LogOutput = a.LogOutput

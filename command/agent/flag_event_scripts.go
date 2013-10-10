@@ -40,6 +40,20 @@ func (s *EventScript) Invoke(e serf.Event) bool {
 	return true
 }
 
+// Valid checks if this is a valid agent event script.
+func (s *EventScript) Valid() bool {
+	switch s.Event {
+	case "member-join":
+	case "member-leave":
+	case "member-failed":
+	case "user":
+	default:
+		return false
+	}
+
+	return true
+}
+
 // ParseEventScript takes a string in the format of "type=script" and
 // parses it into an EventScript struct, if it can.
 func ParseEventScript(v string) ([]EventScript, error) {
