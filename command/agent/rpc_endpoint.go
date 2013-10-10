@@ -11,7 +11,7 @@ type rpcEndpoint struct {
 
 // Join asks the Serf to join another cluster.
 func (e *rpcEndpoint) Join(addrs []string, result *int) (err error) {
-	*result, err = e.agent.Serf().Join(addrs)
+	*result, err = e.agent.Join(addrs)
 	return
 }
 
