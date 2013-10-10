@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/serf/testutil"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -244,6 +245,23 @@ func TestSerf_eventsUser(t *testing.T) {
 	testUserEvents(t, eventCh,
 		[]string{"event!", "second"},
 		[][]byte{[]byte("test"), []byte("foobar")})
+}
+
+func TestSerf_eventsUser_sizeLimit(t *testing.T) {
+	// Create the s1 config with an event channel so we can listen
+	s1Config := testConfig()
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	name := "this is too large an event"
+	payload := make([]byte, UserEventSizeLimit)
+	err = s1.UserEvent(name, payload)
+	if strings.HasPrefix(err.Error(), "user event exceeds limit of ") {
+		t.Fatalf("should get size limit error")
+	}
 }
 
 func TestSerf_joinLeave(t *testing.T) {

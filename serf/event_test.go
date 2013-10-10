@@ -121,3 +121,22 @@ func TestUserEvent(t *testing.T) {
 		t.Fatalf("bad string val")
 	}
 }
+
+func TestEventType_String(t *testing.T) {
+	events := []EventType{EventMemberJoin, EventMemberLeave, EventMemberFailed, EventUser}
+	expect := []string{"member-join", "member-leave", "member-failed", "user-event"}
+
+	for idx, event := range events {
+		if event.String() != expect[idx] {
+			t.Fatalf("expect %v got %v", expect[idx], event.String())
+		}
+	}
+
+	other := EventType(100)
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("expected panic")
+		}
+	}()
+	other.String()
+}

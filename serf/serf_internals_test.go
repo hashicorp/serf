@@ -305,3 +305,83 @@ func TestSerf_joinIntent_resetLeaving(t *testing.T) {
 		t.Fatalf("should update clock")
 	}
 }
+
+func TestSerf_userEvent_oldMessage(t *testing.T) {
+	c := testConfig()
+	s, err := Create(c)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s.Shutdown()
+
+	// increase the ltime artifically
+	s.eventClock.Witness(LamportTime(c.EventBuffer + 1000))
+
+	msg := messageUserEvent{
+		LTime:   1,
+		Name:    "old",
+		Payload: nil,
+	}
+	if s.handleUserEvent(&msg) {
+		t.Fatalf("should not rebroadcast")
+	}
+}
+
+func TestSerf_userEvent_sameClock(t *testing.T) {
+	eventCh := make(chan Event, 4)
+	c := testConfig()
+	c.EventCh = eventCh
+	s, err := Create(c)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s.Shutdown()
+
+	msg := messageUserEvent{
+		LTime:   1,
+		Name:    "first",
+		Payload: []byte("test"),
+	}
+	if !s.handleUserEvent(&msg) {
+		t.Fatalf("should rebroadcast")
+	}
+	msg = messageUserEvent{
+		LTime:   1,
+		Name:    "first",
+		Payload: []byte("newpayload"),
+	}
+	if !s.handleUserEvent(&msg) {
+		t.Fatalf("should rebroadcast")
+	}
+	msg = messageUserEvent{
+		LTime:   1,
+		Name:    "second",
+		Payload: []byte("other"),
+	}
+	if !s.handleUserEvent(&msg) {
+		t.Fatalf("should rebroadcast")
+	}
+
+	testUserEvents(t, eventCh,
+		[]string{"first", "first", "second"},
+		[][]byte{[]byte("test"), []byte("newpayload"), []byte("other")})
+}
+
+func TestMemberStatus_String(t *testing.T) {
+	status := []MemberStatus{StatusNone, StatusAlive, StatusLeaving, StatusLeft, StatusFailed}
+	expect := []string{"none", "alive", "leaving", "left", "failed"}
+
+	for idx, s := range status {
+		if s.String() != expect[idx] {
+			t.Fatalf("got string %v, expected %v", s.String(), expect[idx])
+		}
+	}
+
+	other := MemberStatus(100)
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("expected panic")
+		}
+	}()
+	other.String()
+}

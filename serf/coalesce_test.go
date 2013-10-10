@@ -114,3 +114,36 @@ func TestCoalescer_quiescent(t *testing.T) {
 		t.Fatalf("timeout")
 	}
 }
+
+func TestCoalescer_passThrough(t *testing.T) {
+	in, out, shutdown := testCoalescer(time.Second, time.Second)
+	defer close(shutdown)
+
+	send := []Event{
+		UserEvent{
+			Name:    "test",
+			Payload: []byte("foo"),
+		},
+	}
+
+	for _, e := range send {
+		in <- e
+	}
+
+	select {
+	case e := <-out:
+		if e.EventType() != EventUser {
+			t.Fatalf("expected user event, got: %d", e.EventType())
+		}
+
+		if e.(UserEvent).Name != "test" {
+			t.Fatalf("name should be test. %v", e)
+		}
+
+		if !reflect.DeepEqual([]byte("foo"), e.(UserEvent).Payload) {
+			t.Fatalf("bad: %#v", e.(UserEvent).Payload)
+		}
+	case <-time.After(50 * time.Millisecond):
+		t.Fatalf("timeout")
+	}
+}
