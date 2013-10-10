@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
+	"log"
 	"net"
 	"strings"
 	"testing"
@@ -90,15 +91,53 @@ func TestRPCEndpointMonitor(t *testing.T) {
 	}
 	defer conn.Close()
 
-	var message string
-	dec := gob.NewDecoder(conn)
-	if err := dec.Decode(&message); err != nil {
-		t.Fatalf("err: %s", err)
+	eventCh := make(chan string, 64)
+	go func() {
+		var message string
+
+		dec := gob.NewDecoder(conn)
+		for {
+			if err := dec.Decode(&message); err != nil {
+				log.Printf("[TEST] Error decoding message: %s", err)
+				return
+			}
+
+			eventCh <- message
+		}
+	}()
+
+	testutil.Yield()
+
+	select {
+	case e := <-eventCh:
+		if !strings.Contains(e, "starting") {
+			t.Fatalf("bad: %s", e)
+		}
+	default:
+		t.Fatalf("should have message right away")
 	}
 
-	if !strings.Contains(message, "starting") {
-		t.Fatalf("bad: %s", message)
+	// Drain the eventCh
+DRAIN:
+	for {
+		select {
+		case <-eventCh:
+		default:
+			break DRAIN
+		}
 	}
 
-	// TODO(mitchellh): test the streaming
+	// Do a join to trigger more log messages. It should stream it.
+	a1.Join(nil)
+
+	testutil.Yield()
+
+	select {
+	case e := <-eventCh:
+		if !strings.Contains(e, "joining") {
+			t.Fatalf("bad: %s", e)
+		}
+	default:
+		t.Fatalf("should have message")
+	}
 }
