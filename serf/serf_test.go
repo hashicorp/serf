@@ -196,6 +196,56 @@ func TestSerf_eventsLeave(t *testing.T) {
 		[]EventType{EventMemberJoin, EventMemberLeave})
 }
 
+func TestSerf_eventsUser(t *testing.T) {
+	// Create the s1 config with an event channel so we can listen
+	eventCh := make(chan Event, 4)
+	s1Config := testConfig()
+	s2Config := testConfig()
+	s2Config.EventCh = eventCh
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	defer s1.Shutdown()
+	defer s2.Shutdown()
+
+	yield()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	yield()
+
+	// Fire a user event
+	if err := s1.UserEvent("event!", []byte("test")); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	yield()
+
+	// Fire a user event
+	if err := s1.UserEvent("second", []byte("foobar")); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	yield()
+
+	// check the events to make sure we got
+	// a leave event in s1 about the leave.
+	testUserEvents(t, eventCh,
+		[]string{"event!", "second"},
+		[][]byte{[]byte("test"), []byte("foobar")})
+}
+
 func TestSerf_joinLeave(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()

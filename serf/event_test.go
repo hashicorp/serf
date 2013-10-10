@@ -41,6 +41,37 @@ TESTEVENTLOOP:
 	}
 }
 
+// testUserEvents tests that the given sequence of usr events
+// on the event channel took place.
+func testUserEvents(t *testing.T, ch <-chan Event, expectedName []string, expectedPayload [][]byte) {
+	actualName := make([]string, 0, len(expectedName))
+	actualPayload := make([][]byte, 0, len(expectedPayload))
+
+TESTEVENTLOOP:
+	for {
+		select {
+		case r := <-ch:
+			u, ok := r.(UserEvent)
+			if !ok {
+				continue
+			}
+
+			actualName = append(actualName, u.Name)
+			actualPayload = append(actualPayload, u.Payload)
+		case <-time.After(10 * time.Millisecond):
+			break TESTEVENTLOOP
+		}
+	}
+
+	if !reflect.DeepEqual(actualName, expectedName) {
+		t.Fatalf("expected names: %v. Got: %v", expectedName, actualName)
+	}
+	if !reflect.DeepEqual(actualPayload, expectedPayload) {
+		t.Fatalf("expected payloads: %v. Got: %v", expectedPayload, actualPayload)
+	}
+
+}
+
 func TestMemberEvent(t *testing.T) {
 	me := MemberEvent{
 		Type:    EventMemberJoin,
