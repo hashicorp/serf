@@ -3,9 +3,11 @@ package agent
 import (
 	"fmt"
 	"github.com/hashicorp/serf/serf"
+	"io"
 	"log"
 	"net"
 	"net/rpc"
+	"os"
 	"sync"
 	"time"
 )
@@ -13,6 +15,7 @@ import (
 // Agent actually starts and manages a Serf agent.
 type Agent struct {
 	EventScript string
+	LogOutput   io.Writer
 	RPCAddr     string
 	SerfConfig  *serf.Config
 
@@ -20,6 +23,8 @@ type Agent struct {
 	eventChs    map[chan<- string]struct{}
 	eventIndex  int
 	eventLock   sync.Mutex
+	logger      *log.Logger
+	once        sync.Once
 	rpcListener net.Listener
 	serf        *serf.Serf
 	shutdownCh  chan<- struct{}
@@ -36,6 +41,8 @@ const (
 
 // Join asks the Serf instance to join. See the Serf.Join function.
 func (a *Agent) Join(addrs []string) (n int, err error) {
+	a.once.Do(a.init)
+
 	a.event(fmt.Sprintf("Serf join request: %v", addrs))
 	n, err = a.serf.Join(addrs)
 	if err != nil {
@@ -53,6 +60,8 @@ func (a *Agent) Join(addrs []string) (n int, err error) {
 //
 // All NotifyEvent calls should be paired with a StopEvents call.
 func (a *Agent) NotifyEvents(ch chan<- string) []string {
+	a.once.Do(a.init)
+
 	a.eventLock.Lock()
 	defer a.eventLock.Unlock()
 
@@ -84,6 +93,8 @@ func (a *Agent) NotifyEvents(ch chan<- string) []string {
 // StopEvents causes the agent to stop sending events to the given
 // channel.
 func (a *Agent) StopEvents(ch chan<- string) {
+	a.once.Do(a.init)
+
 	a.eventLock.Lock()
 	defer a.eventLock.Unlock()
 
@@ -97,6 +108,8 @@ func (a *Agent) Serf() *serf.Serf {
 
 // Shutdown does a graceful shutdown of this agent and all of its processes.
 func (a *Agent) Shutdown() error {
+	a.once.Do(a.init)
+
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
@@ -110,17 +123,17 @@ func (a *Agent) Shutdown() error {
 	}
 
 	// Gracefully leave the serf cluster
-	log.Println("[INFO] agent: requesting graceful leave from Serf")
+	a.logger.Println("[INFO] agent: requesting graceful leave from Serf")
 	if err := a.serf.Leave(); err != nil {
 		return err
 	}
 
-	log.Println("[INFO] agent: requesting serf shutdown")
+	a.logger.Println("[INFO] agent: requesting serf shutdown")
 	if err := a.serf.Shutdown(); err != nil {
 		return err
 	}
 
-	log.Println("[INFO] agent: shutdown complete")
+	a.logger.Println("[INFO] agent: shutdown complete")
 	a.state = AgentIdle
 	close(a.shutdownCh)
 	return nil
@@ -129,8 +142,14 @@ func (a *Agent) Shutdown() error {
 // Start starts the agent, kicking off any goroutines to handle various
 // aspects of the agent.
 func (a *Agent) Start() error {
+	a.once.Do(a.init)
+
 	a.lock.Lock()
 	defer a.lock.Unlock()
+
+	// Setup logging a bit
+	a.SerfConfig.MemberlistConfig.LogOutput = a.LogOutput
+	a.SerfConfig.LogOutput = a.LogOutput
 
 	var eventCh chan serf.Event
 	if a.EventScript != "" {
@@ -159,7 +178,7 @@ func (a *Agent) Start() error {
 		for {
 			conn, err := l.Accept()
 			if err != nil {
-				log.Printf("[ERR] RPC accept error: %s", err)
+				a.logger.Printf("[ERR] RPC accept error: %s", err)
 				return
 			}
 			go rpcServer.ServeConn(conn)
@@ -206,9 +225,17 @@ func (a *Agent) eventLoop(script string, eventCh <-chan serf.Event, done <-chan 
 		case <-done:
 			return
 		case e := <-eventCh:
-			if err := invokeEventScript(script, e); err != nil {
-				log.Printf("[ERR] Error executing event script: %s", err)
+			if err := a.invokeEventScript(script, e); err != nil {
+				a.logger.Printf("[ERR] Error executing event script: %s", err)
 			}
 		}
 	}
+}
+
+func (a *Agent) init() {
+	if a.LogOutput == nil {
+		a.LogOutput = os.Stderr
+	}
+
+	a.logger = log.New(a.LogOutput, "", log.LstdFlags)
 }

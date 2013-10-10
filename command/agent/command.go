@@ -68,12 +68,11 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 
 	config := serf.DefaultConfig()
 	config.MemberlistConfig.BindAddr = bindAddr
-	config.MemberlistConfig.LogOutput = logoutput
 	config.NodeName = nodeName
-	config.LogOutput = logoutput
 
 	agent := &Agent{
 		EventScript: eventScript,
+		LogOutput:   logoutput,
 		RPCAddr:     rpcAddr,
 		SerfConfig:  config,
 	}

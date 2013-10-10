@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"github.com/hashicorp/serf/serf"
 	"io"
-	"log"
 	"os/exec"
 	"strings"
 )
 
 // invokeEventScript will execute the given event script with the given
 // event.
-func invokeEventScript(script string, event serf.Event) error {
+func (a *Agent) invokeEventScript(script string, event serf.Event) error {
 	var output bytes.Buffer
 	cmd := exec.Command("/bin/sh", "-c", script)
 	cmd.Args[0] = "serf-event"
@@ -37,7 +36,7 @@ func invokeEventScript(script string, event serf.Event) error {
 	}
 
 	err = cmd.Wait()
-	log.Printf("[DEBUG] Event '%s' script output: %s",
+	a.logger.Printf("[DEBUG] Event '%s' script output: %s",
 		event.EventType().String(), output.String())
 
 	if err != nil {
