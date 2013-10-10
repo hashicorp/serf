@@ -39,7 +39,7 @@ func (e *rpcEndpoint) monitorStream(addr string) {
 	}
 	defer conn.Close()
 
-	eventCh := make(chan string, 64)
+	eventCh := make(chan string, 128)
 	defer e.agent.StopEvents(eventCh)
 
 	enc := gob.NewEncoder(conn)

@@ -185,7 +185,7 @@ func (a *Agent) event(v string) {
 	defer a.eventLock.Unlock()
 
 	if a.events == nil {
-		a.events = make([]string, 255)
+		a.events = make([]string, 512)
 	}
 
 	v = fmt.Sprintf("%s %s", time.Now(), v)
