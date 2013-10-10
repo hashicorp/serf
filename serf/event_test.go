@@ -40,3 +40,53 @@ TESTEVENTLOOP:
 		t.Fatalf("expected events: %v. Got: %v", expected, actual)
 	}
 }
+
+func TestMemberEvent(t *testing.T) {
+	me := MemberEvent{
+		Type:    EventMemberJoin,
+		Members: nil,
+	}
+	if me.EventType() != EventMemberJoin {
+		t.Fatalf("bad event type")
+	}
+	if me.String() != "member-join" {
+		t.Fatalf("bad string val")
+	}
+
+	me.Type = EventMemberLeave
+	if me.EventType() != EventMemberLeave {
+		t.Fatalf("bad event type")
+	}
+	if me.String() != "member-leave" {
+		t.Fatalf("bad string val")
+	}
+
+	me.Type = EventMemberFailed
+	if me.EventType() != EventMemberFailed {
+		t.Fatalf("bad event type")
+	}
+	if me.String() != "member-failed" {
+		t.Fatalf("bad string val")
+	}
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("expected panic")
+		}
+	}()
+	me.Type = EventUser
+	me.String()
+}
+
+func TestUserEvent(t *testing.T) {
+	ue := UserEvent{
+		Name:    "test",
+		Payload: []byte("foobar"),
+	}
+	if ue.EventType() != EventUser {
+		t.Fatalf("bad event type")
+	}
+	if ue.String() != "user-event: test" {
+		t.Fatalf("bad string val")
+	}
+}
