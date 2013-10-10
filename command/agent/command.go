@@ -70,14 +70,14 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 
 	var bindAddr string
 	var logLevel string
-	var eventScript string
+	var eventScripts []EventScript
 	var nodeName string
 	var rpcAddr string
 
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
 	cmdFlags.StringVar(&bindAddr, "bind", "0.0.0.0", "address to bind listeners to")
-	cmdFlags.StringVar(&eventScript, "event-script", "",
+	cmdFlags.Var((*FlagEventScripts)(&eventScripts), "event-script",
 		"script to execute when events occur")
 	cmdFlags.StringVar(&logLevel, "log-level", "INFO", "log level")
 	cmdFlags.StringVar(&nodeName, "node", "", "node name")
@@ -109,9 +109,10 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	config.NodeName = nodeName
 
 	agent := &Agent{
-		LogOutput:  logLevelFilter,
-		RPCAddr:    rpcAddr,
-		SerfConfig: config,
+		EventScripts: eventScripts,
+		LogOutput:    logLevelFilter,
+		RPCAddr:      rpcAddr,
+		SerfConfig:   config,
 	}
 
 	ui.Output("Starting Serf agent...")
