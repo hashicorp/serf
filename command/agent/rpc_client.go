@@ -2,6 +2,7 @@ package agent
 
 import (
 	"encoding/gob"
+	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/serf"
 	"log"
 	"net"
@@ -30,7 +31,7 @@ func (c *RPCClient) Members() ([]serf.Member, error) {
 	return result, err
 }
 
-func (c *RPCClient) Monitor(ch chan<- string, done <-chan struct{}) error {
+func (c *RPCClient) Monitor(level logutils.LogLevel, ch chan<- string, done <-chan struct{}) error {
 	var conn net.Conn
 	var connClosed bool
 	var l net.Listener
@@ -44,7 +45,11 @@ func (c *RPCClient) Monitor(ch chan<- string, done <-chan struct{}) error {
 	}
 
 	// Make the RPC call that will call back to us
-	err = c.Client.Call("Agent.Monitor", l.Addr().String(), new(interface{}))
+	args := RPCMonitorArgs{
+		CallbackAddr: l.Addr().String(),
+		LogLevel:     string(level),
+	}
+	err = c.Client.Call("Agent.Monitor", args, new(interface{}))
 	if err != nil {
 		return err
 	}

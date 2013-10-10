@@ -80,7 +80,9 @@ func TestRPCEndpointMonitor(t *testing.T) {
 	defer l.Close()
 
 	e := &rpcEndpoint{agent: a1}
-	err = e.Monitor(l.Addr().String(), new(interface{}))
+	err = e.Monitor(RPCMonitorArgs{
+		CallbackAddr: l.Addr().String(),
+	}, new(interface{}))
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}

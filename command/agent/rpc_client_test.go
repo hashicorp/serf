@@ -123,7 +123,7 @@ func TestRPCClientMonitor(t *testing.T) {
 	eventCh := make(chan string, 64)
 	doneCh := make(chan struct{}, 64)
 	defer close(doneCh)
-	if err := client.Monitor(eventCh, doneCh); err != nil {
+	if err := client.Monitor("debug", eventCh, doneCh); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
