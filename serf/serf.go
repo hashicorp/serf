@@ -223,6 +223,10 @@ func Create(conf *Config) (*Serf, error) {
 // successfully contacted. The returned error will be non-nil only in the
 // case that no nodes could be contacted.
 func (s *Serf) Join(existing []string) (int, error) {
+	if s == nil {
+		return 0, errors.New("Serf must be initialized")
+	}
+
 	s.stateLock.Lock()
 	defer s.stateLock.Unlock()
 
