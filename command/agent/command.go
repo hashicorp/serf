@@ -109,10 +109,9 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	config.NodeName = nodeName
 
 	agent := &Agent{
-		EventScript: eventScript,
-		LogOutput:   logLevelFilter,
-		RPCAddr:     rpcAddr,
-		SerfConfig:  config,
+		LogOutput:  logLevelFilter,
+		RPCAddr:    rpcAddr,
+		SerfConfig: config,
 	}
 
 	ui.Output("Starting Serf agent...")

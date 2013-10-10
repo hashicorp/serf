@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"github.com/hashicorp/serf/serf"
 	"strings"
 )
 
@@ -12,6 +13,31 @@ type EventScript struct {
 	Event     string
 	UserEvent string
 	Script    string
+}
+
+// Invoke tests whether or not this event script should be invoked
+// for the given Serf event.
+func (s *EventScript) Invoke(e serf.Event) bool {
+	if s.Event == "*" {
+		return true
+	}
+
+	if e.EventType().String() != s.Event {
+		return false
+	}
+
+	if s.UserEvent != "" {
+		userE, ok := e.(serf.UserEvent)
+		if !ok {
+			return false
+		}
+
+		if userE.Name != s.UserEvent {
+			return false
+		}
+	}
+
+	return true
 }
 
 // ParseEventScript takes a string in the format of "type=script" and

@@ -24,7 +24,7 @@ func (t EventType) String() string {
 	case EventMemberFailed:
 		return "member-failed"
 	case EventUser:
-		return "user-event"
+		return "user"
 	default:
 		panic(fmt.Sprintf("unknown event type: %d", t))
 	}

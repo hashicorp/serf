@@ -81,7 +81,12 @@ func TestAgent_eventScript(t *testing.T) {
 	defer a2.Shutdown()
 
 	script, results := testEventScript(t)
-	a1.EventScript = script
+	a1.EventScripts = []EventScript{
+		{
+			Event:  "*",
+			Script: script,
+		},
+	}
 
 	if err := a1.Start(); err != nil {
 		t.Fatalf("err: %s", err)

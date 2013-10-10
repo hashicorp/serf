@@ -2,8 +2,55 @@ package agent
 
 import (
 	"flag"
+	"github.com/hashicorp/serf/serf"
 	"testing"
 )
+
+func TestEventScriptInvoke(t *testing.T) {
+	testCases := []struct {
+		script EventScript
+		event  serf.Event
+		invoke bool
+	}{
+		{
+			EventScript{"*", "", "script.sh"},
+			serf.MemberEvent{},
+			true,
+		},
+		{
+			EventScript{"user", "", "script.sh"},
+			serf.MemberEvent{},
+			false,
+		},
+		{
+			EventScript{"user", "deploy", "script.sh"},
+			serf.UserEvent{Name: "deploy"},
+			true,
+		},
+		{
+			EventScript{"user", "deploy", "script.sh"},
+			serf.UserEvent{Name: "restart"},
+			false,
+		},
+		{
+			EventScript{"member-join", "", "script.sh"},
+			serf.MemberEvent{Type: serf.EventMemberJoin},
+			true,
+		},
+		{
+			EventScript{"member-join", "", "script.sh"},
+			serf.MemberEvent{Type: serf.EventMemberLeave},
+			false,
+		},
+	}
+
+	for _, tc := range testCases {
+		result := tc.script.Invoke(tc.event)
+		if result != tc.invoke {
+			t.Errorf("bad: %#v", tc)
+		}
+	}
+}
 
 func TestParseEventScript(t *testing.T) {
 	testCases := []struct {
