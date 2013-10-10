@@ -12,6 +12,7 @@ const (
 	EventMemberJoin EventType = iota
 	EventMemberLeave
 	EventMemberFailed
+	EventUser
 )
 
 func (t EventType) String() string {
@@ -59,4 +60,19 @@ func (m MemberEvent) String() string {
 	default:
 		panic(fmt.Sprintf("unknown event type: %d", m.Type))
 	}
+}
+
+// UserEvent is the struct used for events that are triggered
+// by the user and are not related to members
+type UserEvent struct {
+	Name    string
+	Payload []byte
+}
+
+func (u UserEvent) EventType() EventType {
+	return EventUser
+}
+
+func (u UserEvent) String() string {
+	return fmt.Sprintf("user-event: %s", u.Name)
 }
