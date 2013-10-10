@@ -9,4 +9,12 @@ DIR="$( cd -P "$( dirname "$SOURCE" )/.." && pwd )"
 cd $DIR/website
 
 # Run the website
+echo
+echo "=========== INSTALLING WEBSITE DEPS ==========="
+echo
+bundle
+
+echo
+echo "=========== STARTING WEBSITE ==========="
+echo
 bundle exec middleman server
