@@ -3,6 +3,7 @@ package agent
 import (
 	"flag"
 	"fmt"
+	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/cli"
 	"github.com/hashicorp/serf/serf"
 	"strings"
@@ -31,6 +32,7 @@ Options:
 
   -bind=0.0.0.0            Address to bind network listeners to
   -event-script=foo        Script to execute when events occur.
+  -log-level=info          Log level of the agent.
   -node=hostname           Name of this node. Must be unique in the cluster
   -rpc-addr=127.0.0.1:7373 Address to bind the RPC listener.
 `
@@ -46,6 +48,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	}
 
 	var bindAddr string
+	var logLevel string
 	var eventScript string
 	var nodeName string
 	var rpcAddr string
@@ -55,6 +58,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	cmdFlags.StringVar(&bindAddr, "bind", "0.0.0.0", "address to bind listeners to")
 	cmdFlags.StringVar(&eventScript, "event-script", "",
 		"script to execute when events occur")
+	cmdFlags.StringVar(&logLevel, "log-level", "INFO", "log level")
 	cmdFlags.StringVar(&nodeName, "node", "", "node name")
 	cmdFlags.StringVar(&rpcAddr, "rpc-addr", "127.0.0.1:7373",
 		"address to bind RPC listener to")
@@ -62,8 +66,30 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		return 1
 	}
 
-	logoutput := &GatedWriter{
+	// Setup logging. First create the gated log writer, which will
+	// store logs until we're ready to show them. Then create the level
+	// filter, filtering logs of the specified level.
+	logGate := &GatedWriter{
 		Writer: &cli.UiWriter{Ui: rawUi},
+	}
+
+	logLevelFilter := levelFilter()
+	logLevelFilter.MinLevel = logutils.LogLevel(strings.ToUpper(logLevel))
+	logLevelFilter.Writer = logGate
+
+	found := false
+	for _, level := range logLevelFilter.Levels {
+		if level == logLevelFilter.MinLevel {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		ui.Error(fmt.Sprintf(
+			"Invalid log level: %s. Valid log levels are: %v",
+			logLevelFilter.MinLevel, logLevelFilter.Levels))
+		return 1
 	}
 
 	config := serf.DefaultConfig()
@@ -72,7 +98,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 
 	agent := &Agent{
 		EventScript: eventScript,
-		LogOutput:   logoutput,
+		LogOutput:   logLevelFilter,
 		RPCAddr:     rpcAddr,
 		SerfConfig:  config,
 	}
@@ -89,7 +115,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	ui.Info(fmt.Sprintf(" RPC addr: '%s'", rpcAddr))
 	ui.Info("")
 	ui.Output("Log data will now stream in as it occurs:\n")
-	logoutput.Flush()
+	logGate.Flush()
 
 	graceful, forceful := c.startShutdownWatcher(agent, ui)
 	select {
