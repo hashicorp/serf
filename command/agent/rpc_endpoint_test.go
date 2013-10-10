@@ -151,7 +151,7 @@ func TestRPCEndpointMonitor_badLogLevel(t *testing.T) {
 	e := &rpcEndpoint{agent: a1}
 	err := e.Monitor(RPCMonitorArgs{
 		CallbackAddr: "",
-		LogLevel: "foo",
+		LogLevel:     "foo",
 	}, new(interface{}))
 	if err == nil {
 		t.Fatal("should have error")

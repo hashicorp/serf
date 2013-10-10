@@ -73,19 +73,10 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		Writer: &cli.UiWriter{Ui: rawUi},
 	}
 
-	logLevelFilter := levelFilter()
+	logLevelFilter := LevelFilter()
 	logLevelFilter.MinLevel = logutils.LogLevel(strings.ToUpper(logLevel))
 	logLevelFilter.Writer = logGate
-
-	found := false
-	for _, level := range logLevelFilter.Levels {
-		if level == logLevelFilter.MinLevel {
-			found = true
-			break
-		}
-	}
-
-	if !found {
+	if !ValidateLevelFilter(logLevelFilter) {
 		ui.Error(fmt.Sprintf(
 			"Invalid log level: %s. Valid log levels are: %v",
 			logLevelFilter.MinLevel, logLevelFilter.Levels))

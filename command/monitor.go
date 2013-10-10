@@ -3,6 +3,7 @@ package command
 import (
 	"flag"
 	"fmt"
+	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/cli"
 	"strings"
 )
@@ -22,14 +23,17 @@ Usage: serf monitor [options]
 
 Options:
 
+  -log-level=info          Log level of the agent.
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
 `
 	return strings.TrimSpace(helpText)
 }
 
 func (c *MonitorCommand) Run(args []string, ui cli.Ui) int {
+	var logLevel string
 	cmdFlags := flag.NewFlagSet("monitor", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
+	cmdFlags.StringVar(&logLevel, "log-level", "INFO", "log level")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
@@ -44,7 +48,7 @@ func (c *MonitorCommand) Run(args []string, ui cli.Ui) int {
 
 	eventCh := make(chan string)
 	doneCh := make(chan struct{})
-	if err := client.Monitor(eventCh, doneCh); err != nil {
+	if err := client.Monitor(logutils.LogLevel(logLevel), eventCh, doneCh); err != nil {
 		ui.Error(fmt.Sprintf("Error starting monitor: %s", err))
 		return 1
 	}

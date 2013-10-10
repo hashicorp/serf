@@ -1,8 +1,8 @@
 package agent
 
 import (
-	"fmt"
 	"encoding/gob"
+	"fmt"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/serf"
 	"log"
@@ -49,17 +49,9 @@ func (e *rpcEndpoint) Monitor(args RPCMonitorArgs, result *interface{}) error {
 	}
 	args.LogLevel = strings.ToUpper(args.LogLevel)
 
-	filter := levelFilter()
+	filter := LevelFilter()
 	filter.MinLevel = logutils.LogLevel(args.LogLevel)
-	found := false
-	for _, level := range filter.Levels {
-		if level == filter.MinLevel {
-			found = true
-			break
-		}
-	}
-
-	if !found {
+	if !ValidateLevelFilter(filter) {
 		return fmt.Errorf("Unknown log level: %s", filter.MinLevel)
 	}
 
