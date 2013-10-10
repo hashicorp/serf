@@ -204,7 +204,7 @@ func (a *Agent) eventLoop(script string, eventCh <-chan serf.Event, done <-chan 
 		case <-done:
 			return
 		case e := <-eventCh:
-			if err := invokeEventScript(script, &e); err != nil {
+			if err := invokeEventScript(script, e); err != nil {
 				log.Printf("[ERR] Error executing event script: %s", err)
 			}
 		}

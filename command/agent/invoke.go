@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/hashicorp/serf/serf"
+	"io"
 	"log"
 	"os/exec"
 	"strings"
@@ -11,11 +12,11 @@ import (
 
 // invokeEventScript will execute the given event script with the given
 // event.
-func invokeEventScript(script string, event *serf.Event) error {
+func invokeEventScript(script string, event serf.Event) error {
 	var output bytes.Buffer
 	cmd := exec.Command("/bin/sh", "-c", script)
 	cmd.Args[0] = "serf-event"
-	cmd.Env = append(cmd.Env, "SERF_EVENT="+event.Type.String())
+	cmd.Env = append(cmd.Env, "SERF_EVENT="+event.EventType().String())
 	cmd.Stderr = &output
 	cmd.Stdout = &output
 
@@ -24,29 +25,20 @@ func invokeEventScript(script string, event *serf.Event) error {
 		return err
 	}
 
+	switch e := event.(type) {
+	case serf.MemberEvent:
+		go memberEventStdin(stdin, &e)
+	default:
+		return fmt.Errorf("Unknown event type: %s", event.EventType().String())
+	}
+
 	if err := cmd.Start(); err != nil {
 		return err
 	}
 
-	// Start a go-routine that will send data on stdin when it can,
-	// closing stdin when it is completed.
-	go func() {
-		defer stdin.Close()
-		for _, member := range event.Members {
-			_, err = stdin.Write([]byte(fmt.Sprintf(
-				"%s\t%s\t%s\n",
-				eventClean(member.Name),
-				member.Addr.String(),
-				eventClean(member.Role))))
-			if err != nil {
-				return
-			}
-		}
-	}()
-
 	err = cmd.Wait()
 	log.Printf("[DEBUG] Event '%s' script output: %s",
-		event.Type.String(), output.String())
+		event.EventType().String(), output.String())
 
 	if err != nil {
 		return err
@@ -61,4 +53,18 @@ func eventClean(v string) string {
 	v = strings.Replace(v, "\t", "\\t", -1)
 	v = strings.Replace(v, "\n", "\\n", -1)
 	return v
+}
+
+func memberEventStdin(stdin io.WriteCloser, e *serf.MemberEvent) {
+	defer stdin.Close()
+	for _, member := range e.Members {
+		_, err := stdin.Write([]byte(fmt.Sprintf(
+			"%s\t%s\t%s\n",
+			eventClean(member.Name),
+			member.Addr.String(),
+			eventClean(member.Role))))
+		if err != nil {
+			return
+		}
+	}
 }
