@@ -1,0 +1,73 @@
+<% wrap_layout :inner do %>
+	<% content_for :sidebar do %>
+		<h2>Docs</h2>
+
+		<ul>
+			<li><a href="/docs/installation.html">Installation</a></li>
+			<li><a href="/docs/basics/terminology.html">Terminology</a></li>
+		</ul>
+
+		<ul>
+			<li><h4>Command-Line</h4></li>
+			<li><a href="/docs/command-line/introduction.html">Introduction</a></li>
+			<li><a href="/docs/command-line/build.html">Build</a></li>
+			<li><a href="/docs/command-line/fix.html">Fix</a></li>
+			<li><a href="/docs/command-line/inspect.html">Inspect</a></li>
+			<li><a href="/docs/command-line/validate.html">Validate</a></li>
+			<li><a href="/docs/command-line/machine-readable.html">Machine-Readable Output</a></li>
+		</ul>
+
+		<ul>
+			<li><h4>Templates</h4></li>
+			<li><a href="/docs/templates/introduction.html">Introduction</a></li>
+			<li><a href="/docs/templates/builders.html">Builders</a></li>
+			<li><a href="/docs/templates/provisioners.html">Provisioners</a></li>
+			<li><a href="/docs/templates/post-processors.html">Post-Processors</a></li>
+			<li><a href="/docs/templates/configuration-templates.html">Configuration Templates</a></li>
+			<li><a href="/docs/templates/user-variables.html">User Variables</a></li>
+			<li><a href="/docs/templates/veewee-to-packer.html">Veewee-to-Packer</a></li>
+		</ul>
+
+		<ul>
+			<li><h4>Builders</h4></li>
+			<li><a href="/docs/builders/amazon.html">Amazon EC2 (AMI)</a></li>
+			<li><a href="/docs/builders/digitalocean.html">DigitalOcean</a></li>
+			<li><a href="/docs/builders/openstack.html">OpenStack</a></li>
+			<li><a href="/docs/builders/virtualbox.html">VirtualBox</a></li>
+			<li><a href="/docs/builders/vmware.html">VMware</a></li>
+			<li><a href="/docs/builders/custom.html">Custom</a></li>
+		</ul>
+
+		<ul>
+			<li><h4>Provisioners</h4></li>
+			<li><a href="/docs/provisioners/shell.html">Shell Scripts</a></li>
+			<li><a href="/docs/provisioners/file.html">File Uploads</a></li>
+			<li><a href="/docs/provisioners/chef-solo.html">Chef Solo</a></li>
+			<li><a href="/docs/provisioners/puppet-masterless.html">Puppet</a></li>
+			<li><a href="/docs/provisioners/salt-masterless.html">Salt</a></li>
+			<li><a href="/docs/provisioners/custom.html">Custom</a></li>
+		</ul>
+
+		<ul>
+			<li><h4>Post-Processors</h4></li>
+			<li><a href="/docs/post-processors/vagrant.html">Vagrant</a></li>
+		</ul>
+
+		<ul>
+			<li><h4>Other</h4></li>
+			<li><a href="/docs/other/core-configuration.html">Core Configuration</a></li>
+			<li><a href="/docs/other/debugging.html">Debugging</a></li>
+		</ul>
+
+		<ul>
+			<li><h4>Extend Packer</h4></li>
+			<li><a href="/docs/extend/plugins.html">Packer Plugins</a></li>
+			<li><a href="/docs/extend/developing-plugins.html">Developing Plugins</a></li>
+			<li><a href="/docs/extend/builder.html">Custom Builder</a></li>
+			<li><a href="/docs/extend/command.html">Custom Command</a></li>
+			<li><a href="/docs/extend/post-processor.html">Custom Post-Processor</a></li>
+			<li><a href="/docs/extend/provisioner.html">Custom Provisioner</a></li>
+		</ul>
+	<% end %>
+	<%= yield %>
+<% end %>
