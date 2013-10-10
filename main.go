@@ -25,9 +25,6 @@ func main() {
 
 func realMain() int {
 	log.SetOutput(ioutil.Discard)
-	if os.Getenv("SERF_LOG") != "" {
-		log.SetOutput(os.Stderr)
-	}
 
 	// Get the command line args. We shortcut "--version" and "-v" to
 	// just show the version.
