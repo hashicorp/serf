@@ -11,7 +11,7 @@ import (
 
 const eventScript = `#!/bin/sh
 RESULT_FILE="%s"
-echo $SERF_EVENT "$@" >>${RESULT_FILE}
+echo $SERF_EVENT $SERF_USER_EVENT "$@" >>${RESULT_FILE}
 while read line; do
 	printf "${line}\n" >>${RESULT_FILE}
 done
@@ -101,7 +101,7 @@ func TestAgent_eventScript(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	// Double yield here on purpose just ot be sure
+	// Double yield here on purpose just to be sure
 	testutil.Yield()
 	testutil.Yield()
 
@@ -140,5 +140,39 @@ func TestAgentShutdown_noStart(t *testing.T) {
 	a := testAgent()
 	if err := a.Shutdown(); err != nil {
 		t.Fatalf("err: %s", err)
+	}
+}
+
+func TestAgentUserEvent(t *testing.T) {
+	a1 := testAgent()
+	defer a1.Shutdown()
+
+	script, results := testEventScript(t)
+	a1.EventScripts = []EventScript{
+		{
+			Event:  "*",
+			Script: script,
+		},
+	}
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	if err := a1.UserEvent("deploy", []byte("foo\n")); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	result, err := ioutil.ReadFile(results)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !strings.Contains(string(result), "user deploy\nfoo") {
+		t.Fatalf("bad: %#v", string(result))
 	}
 }

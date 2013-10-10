@@ -193,6 +193,13 @@ func (a *Agent) Start() error {
 	return nil
 }
 
+// UserEvent sends a UserEvent on Serf, see Serf.UserEvent.
+func (a *Agent) UserEvent(name string, payload []byte) error {
+	a.logger.Printf("Requesting user event send: %s %#v",
+		name, string(payload))
+	return a.serf.UserEvent(name, payload)
+}
+
 func (a *Agent) event(v string) {
 	a.eventLock.Lock()
 	defer a.eventLock.Unlock()
@@ -221,13 +228,14 @@ func (a *Agent) eventLoop(scripts []EventScript, eventCh <-chan serf.Event, done
 		case <-done:
 			return
 		case e := <-eventCh:
+			a.logger.Printf("[DEBUG] agent: Received event: %s", e.String())
 			for _, script := range scripts {
 				if !script.Invoke(e) {
 					continue
 				}
 
 				if err := a.invokeEventScript(script.Script, e); err != nil {
-					a.logger.Printf("[ERR] Error executing event script: %s", err)
+					a.logger.Printf("[ERR] agent: Error executing event script: %s", err)
 				}
 			}
 		}

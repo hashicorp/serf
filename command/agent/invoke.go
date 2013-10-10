@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/serf/serf"
 	"io"
+	"log"
 	"os/exec"
 	"strings"
 )
@@ -26,7 +27,10 @@ func (a *Agent) invokeEventScript(script string, event serf.Event) error {
 
 	switch e := event.(type) {
 	case serf.MemberEvent:
-		go memberEventStdin(stdin, &e)
+		go memberEventStdin(a.logger, stdin, &e)
+	case serf.UserEvent:
+		cmd.Env = append(cmd.Env, "SERF_USER_EVENT="+e.Name)
+		go userEventStdin(a.logger, stdin, &e)
 	default:
 		return fmt.Errorf("Unknown event type: %s", event.EventType().String())
 	}
@@ -54,7 +58,7 @@ func eventClean(v string) string {
 	return v
 }
 
-func memberEventStdin(stdin io.WriteCloser, e *serf.MemberEvent) {
+func memberEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.MemberEvent) {
 	defer stdin.Close()
 	for _, member := range e.Members {
 		_, err := stdin.Write([]byte(fmt.Sprintf(
@@ -65,5 +69,13 @@ func memberEventStdin(stdin io.WriteCloser, e *serf.MemberEvent) {
 		if err != nil {
 			return
 		}
+	}
+}
+
+func userEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.UserEvent) {
+	defer stdin.Close()
+	if _, err := stdin.Write(e.Payload); err != nil {
+		logger.Printf("[ERR] Error writing user event payload: %s", err)
+		return
 	}
 }
