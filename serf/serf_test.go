@@ -610,3 +610,22 @@ func TestRecentIntent(t *testing.T) {
 		t.Fatalf("got result for tubez")
 	}
 }
+
+func TestMemberStatus_String(t *testing.T) {
+	status := []MemberStatus{StatusNone, StatusAlive, StatusLeaving, StatusLeft, StatusFailed}
+	expect := []string{"none", "alive", "leaving", "left", "failed"}
+
+	for idx, s := range status {
+		if s.String() != expect[idx] {
+			t.Fatalf("got string %v, expected %v", s.String(), expect[idx])
+		}
+	}
+
+	other := MemberStatus(100)
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("expected panic")
+		}
+	}()
+	other.String()
+}
