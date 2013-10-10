@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/rpc"
 	"sync"
+	"time"
 )
 
 // Agent actually starts and manages a Serf agent.
@@ -187,6 +188,7 @@ func (a *Agent) event(v string) {
 		a.events = make([]string, 255)
 	}
 
+	v = fmt.Sprintf("%s %s", time.Now(), v)
 	a.events[a.eventIndex] = v
 	a.eventIndex++
 	if a.eventIndex > len(a.events) {
