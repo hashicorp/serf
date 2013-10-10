@@ -123,34 +123,6 @@ func TestAgent_eventScript(t *testing.T) {
 	}
 }
 
-func TestAgentStart_eventScripts(t *testing.T) {
-	testCases := []struct {
-		Event string
-		Err   bool
-	}{
-		{"member-join", false},
-		{"member-leave", false},
-		{"member-failed", false},
-		{"user", false},
-		{"User", true},
-		{"member", true},
-	}
-
-	for _, tc := range testCases {
-		a1 := testAgent()
-		a1.EventScripts = []EventScript{
-			{Event: tc.Event},
-		}
-
-		err := a1.Start()
-		if (err != nil) != tc.Err {
-			t.Errorf("bad: %#v", tc)
-		}
-		a1.Shutdown()
-	}
-
-}
-
 func TestAgentShutdown_multiple(t *testing.T) {
 	a := testAgent()
 	if err := a.Start(); err != nil {

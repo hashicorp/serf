@@ -40,6 +40,10 @@ func (s *EventScript) Invoke(e serf.Event) bool {
 	return true
 }
 
+func (s *EventScript) String() string {
+	return fmt.Sprintf("Event '%s' invoking '%s'", s.Event, s.Script)
+}
+
 // Valid checks if this is a valid agent event script.
 func (s *EventScript) Valid() bool {
 	switch s.Event {

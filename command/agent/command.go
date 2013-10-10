@@ -87,6 +87,13 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		return 1
 	}
 
+	for _, script := range eventScripts {
+		if !script.Valid() {
+			rawUi.Error(fmt.Sprintf("Invalid event script: %s", script.String()))
+			return 1
+		}
+	}
+
 	// Setup logging. First create the gated log writer, which will
 	// store logs until we're ready to show them. Then create the level
 	// filter, filtering logs of the specified level.

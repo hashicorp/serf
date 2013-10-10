@@ -52,6 +52,27 @@ func TestEventScriptInvoke(t *testing.T) {
 	}
 }
 
+func TestEventScriptValid(t *testing.T) {
+	testCases := []struct {
+		Event string
+		Valid bool
+	}{
+		{"member-join", true},
+		{"member-leave", true},
+		{"member-failed", true},
+		{"user", true},
+		{"User", false},
+		{"member", false},
+	}
+
+	for _, tc := range testCases {
+		script := EventScript{Event: tc.Event}
+		if script.Valid() != tc.Valid {
+			t.Errorf("bad: %#v", tc)
+		}
+	}
+}
+
 func TestParseEventScript(t *testing.T) {
 	testCases := []struct {
 		v       string
