@@ -25,6 +25,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 	}
 
 	rebroadcast := false
+	rebroadcastQueue := d.serf.broadcasts
 	t := messageType(buf[0])
 	switch t {
 	case messageLeaveType:
@@ -56,6 +57,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 
 		d.serf.logger.Printf("[DEBUG] serf-delegate: messageUserEventType: %s", event.Name)
 		rebroadcast = d.serf.handleUserEvent(&event)
+		rebroadcastQueue = d.serf.eventBroadcasts
 
 	default:
 		d.serf.logger.Printf("[WARN] Received message of unknown type: %d", t)
@@ -66,7 +68,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 		newBuf := make([]byte, len(buf))
 		copy(newBuf, buf)
 
-		d.serf.broadcasts.QueueBroadcast(&broadcast{
+		rebroadcastQueue.QueueBroadcast(&broadcast{
 			msg:    newBuf,
 			notify: nil,
 		})
@@ -76,12 +78,16 @@ func (d *delegate) NotifyMsg(buf []byte) {
 func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 	msgs := d.serf.broadcasts.GetBroadcasts(overhead, limit)
 
-	if msgs != nil {
-		numq := d.serf.broadcasts.NumQueued()
-		limit := d.serf.config.QueueDepthWarning
-		if numq >= limit {
-			d.serf.logger.Printf("[WARN] Broadcast queue depth: %d", numq)
-		}
+	// Determine the bytes used already
+	bytesUsed := 0
+	for _, msg := range msgs {
+		bytesUsed += len(msg) + overhead
+	}
+
+	// Get any additional event broadcasts
+	eventMsgs := d.serf.eventBroadcasts.GetBroadcasts(overhead, limit-bytesUsed)
+	if eventMsgs != nil {
+		msgs = append(msgs, eventMsgs...)
 	}
 
 	return msgs

@@ -40,9 +40,10 @@ type Serf struct {
 	recentJoin       []nodeIntent
 	recentJoinIndex  int
 
-	eventBuffer []*userEvents
-	eventClock  LamportClock
-	eventLock   sync.Mutex
+	eventBroadcasts *memberlist.TransmitLimitedQueue
+	eventBuffer     []*userEvents
+	eventClock      LamportClock
+	eventLock       sync.Mutex
 
 	logger     *log.Logger
 	stateLock  sync.Mutex
@@ -217,8 +218,12 @@ func Create(conf *Config) (*Serf, error) {
 	// broadcasts along the gossip channel.
 	serf.broadcasts = &memberlist.TransmitLimitedQueue{
 		NumNodes: func() int {
-			serf.memberLock.RLock()
-			defer serf.memberLock.RUnlock()
+			return len(serf.members)
+		},
+		RetransmitMult: conf.MemberlistConfig.RetransmitMult,
+	}
+	serf.eventBroadcasts = &memberlist.TransmitLimitedQueue{
+		NumNodes: func() int {
 			return len(serf.members)
 		},
 		RetransmitMult: conf.MemberlistConfig.RetransmitMult,
@@ -253,6 +258,10 @@ func Create(conf *Config) (*Serf, error) {
 	// for more information on their role.
 	go serf.handleReap()
 	go serf.handleReconnect()
+	go serf.checkQueueDepth(conf.QueueDepthWarning, "Intent",
+		serf.broadcasts, serf.shutdownCh)
+	go serf.checkQueueDepth(conf.QueueDepthWarning, "Event",
+		serf.eventBroadcasts, serf.shutdownCh)
 
 	return serf, nil
 }
@@ -278,9 +287,13 @@ func (s *Serf) UserEvent(name string, payload []byte) error {
 	s.handleUserEvent(&msg)
 
 	// Start broadcasting the event
-	if err := s.broadcast(messageUserEventType, &msg, nil); err != nil {
+	raw, err := encodeMessage(messageUserEventType, &msg)
+	if err != nil {
 		return err
 	}
+	s.eventBroadcasts.QueueBroadcast(&broadcast{
+		msg: raw,
+	})
 	return nil
 }
 
@@ -814,6 +827,22 @@ func (s *Serf) reconnect() {
 
 	// Attempt to join at the memberlist level
 	s.memberlist.Join([]string{addr})
+}
+
+// checkQueueDepth periodically checks the size of a queue to see if
+// it is too large
+func (s *Serf) checkQueueDepth(limit int, name string, queue *memberlist.TransmitLimitedQueue, shutdownCh chan struct{}) {
+	for {
+		select {
+		case <-time.After(time.Second):
+			numq := queue.NumQueued()
+			if numq >= limit {
+				s.logger.Printf("[WARN] %s queue depth: %d", name, numq)
+			}
+		case <-shutdownCh:
+			return
+		}
+	}
 }
 
 // removeOldMember is used to remove an old member from a list of old
