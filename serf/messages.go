@@ -36,6 +36,8 @@ type messagePushPull struct {
 	LTime        LamportTime            // Current node lamport time
 	StatusLTimes map[string]LamportTime // Maps the node to its status time
 	LeftMembers  []string               // List of left nodes
+	EventLTime   LamportTime            // Lamport time for event clock
+	Events       []*userEvents          // Recent events
 }
 
 // messageUserEvent is used for user-generated events

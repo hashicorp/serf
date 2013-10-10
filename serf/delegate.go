@@ -96,12 +96,16 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 func (d *delegate) LocalState() []byte {
 	d.serf.memberLock.RLock()
 	defer d.serf.memberLock.RUnlock()
+	d.serf.eventLock.RLock()
+	defer d.serf.eventLock.RUnlock()
 
 	// Create the message to send
 	pp := messagePushPull{
 		LTime:        d.serf.clock.Time(),
 		StatusLTimes: make(map[string]LamportTime, len(d.serf.members)),
 		LeftMembers:  make([]string, 0, len(d.serf.leftMembers)),
+		EventLTime:   d.serf.eventClock.Time(),
+		Events:       d.serf.eventBuffer,
 	}
 
 	// Add all the join LTimes
@@ -137,9 +141,10 @@ func (d *delegate) MergeRemoteState(buf []byte) {
 		return
 	}
 
-	// Witness the Lamport clock first. We subtract 1 since no message with that
-	// clock has been sent yet
+	// Witness the Lamport clocks first.
+	// We subtract 1 since no message with that clock has been sent yet
 	d.serf.clock.Witness(pp.LTime - 1)
+	d.serf.eventClock.Witness(pp.EventLTime - 1)
 
 	// Process the left nodes first to avoid the LTimes from being increment
 	// in the wrong order
@@ -164,5 +169,19 @@ func (d *delegate) MergeRemoteState(buf []byte) {
 		join.LTime = statusLTime
 		join.Node = name
 		d.serf.handleNodeJoinIntent(&join)
+	}
+
+	// Process all the events
+	userEvent := messageUserEvent{}
+	for _, events := range pp.Events {
+		if events == nil {
+			continue
+		}
+		userEvent.LTime = events.LTime
+		for _, e := range events.Events {
+			userEvent.Name = e.Name
+			userEvent.Payload = e.Payload
+			d.serf.handleUserEvent(&userEvent)
+		}
 	}
 }

@@ -43,7 +43,7 @@ type Serf struct {
 	eventBroadcasts *memberlist.TransmitLimitedQueue
 	eventBuffer     []*userEvents
 	eventClock      LamportClock
-	eventLock       sync.Mutex
+	eventLock       sync.RWMutex
 
 	logger     *log.Logger
 	stateLock  sync.Mutex
@@ -239,6 +239,7 @@ func Create(conf *Config) (*Serf, error) {
 	// Ensure our lamport clock is at least 1, so that the default
 	// join LTime of 0 does not cause issues
 	serf.clock.Increment()
+	serf.eventClock.Increment()
 
 	// Modify the memberlist configuration with keys that we set
 	conf.MemberlistConfig.Events = &eventDelegate{serf: serf}

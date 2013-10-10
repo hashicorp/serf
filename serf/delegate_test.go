@@ -55,6 +55,11 @@ func TestDelegate_LocalState(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
+	err = s1.UserEvent("test", []byte("test"))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
 	// s2 can leave now
 	s2.Leave()
 
@@ -86,6 +91,14 @@ func TestDelegate_LocalState(t *testing.T) {
 	if len(pp.LeftMembers) != 1 {
 		t.Fatalf("missing left members")
 	}
+
+	if pp.EventLTime != s1.eventClock.Time() {
+		t.Fatalf("clock mismatch")
+	}
+
+	if len(pp.Events) != s1.config.EventBuffer {
+		t.Fatalf("should send full event buffer")
+	}
 }
 
 // internals
@@ -108,6 +121,18 @@ func TestDelegate_MergeRemoteState(t *testing.T) {
 			"foo":  15,
 		},
 		LeftMembers: []string{"foo"},
+		EventLTime:  50,
+		Events: []*userEvents{
+			&userEvents{
+				LTime: 45,
+				Events: []userEvent{
+					userEvent{
+						Name:    "test",
+						Payload: nil,
+					},
+				},
+			},
+		},
 	}
 
 	buf, err := encodeMessage(messagePushPullType, &pp)
@@ -131,5 +156,17 @@ func TestDelegate_MergeRemoteState(t *testing.T) {
 	// Verify pending leave for foo
 	if s1.recentLeave[0].Node != "foo" || s1.recentLeave[0].LTime != 15 {
 		t.Fatalf("bad recent leave")
+	}
+
+	// Very event time
+	if s1.eventClock.Time() != 50 {
+		t.Fatalf("bad event clock")
+	}
+
+	if s1.eventBuffer[45] == nil {
+		t.Fatalf("missing event buffer for time")
+	}
+	if s1.eventBuffer[45].Events[0].Name != "test" {
+		t.Fatalf("missing event")
 	}
 }

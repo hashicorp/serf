@@ -124,7 +124,7 @@ func TestUserEvent(t *testing.T) {
 
 func TestEventType_String(t *testing.T) {
 	events := []EventType{EventMemberJoin, EventMemberLeave, EventMemberFailed, EventUser}
-	expect := []string{"member-join", "member-leave", "member-failed", "user-event"}
+	expect := []string{"member-join", "member-leave", "member-failed", "user"}
 
 	for idx, event := range events {
 		if event.String() != expect[idx] {
