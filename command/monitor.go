@@ -6,12 +6,16 @@ import (
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/cli"
 	"strings"
+	"sync"
 )
 
 // MonitorCommand is a Command implementation that queries a running
 // Serf agent what members are part of the cluster currently.
 type MonitorCommand struct {
 	ShutdownCh <-chan struct{}
+
+	lock     sync.Mutex
+	quitting bool
 }
 
 func (c *MonitorCommand) Help() string {
@@ -59,11 +63,23 @@ func (c *MonitorCommand) Run(args []string, ui cli.Ui) int {
 		for e := range eventCh {
 			ui.Info(e)
 		}
+
+		c.lock.Lock()
+		defer c.lock.Unlock()
+		if !c.quitting {
+			ui.Info("")
+			ui.Output("Remote side ended the monitor! This usually means that the\n" +
+				"remote side has exited or crashed.")
+		}
 	}()
 
 	select {
 	case <-eventDoneCh:
+		return 1
 	case <-c.ShutdownCh:
+		c.lock.Lock()
+		c.quitting = true
+		c.lock.Unlock()
 	}
 
 	close(doneCh)
