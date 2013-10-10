@@ -711,7 +711,10 @@ func (s *Serf) handleUserEvent(eventMsg *messageUserEvent) bool {
 	seen.Events = append(seen.Events, userEvent)
 
 	if s.config.EventCh != nil {
-		// TODO: notify EventCh
+		s.config.EventCh <- UserEvent{
+			Name:    eventMsg.Name,
+			Payload: eventMsg.Payload,
+		}
 	}
 	return true
 }
