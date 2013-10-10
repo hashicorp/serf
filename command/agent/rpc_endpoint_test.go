@@ -1,8 +1,11 @@
 package agent
 
 import (
+	"encoding/gob"
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
+	"net"
+	"strings"
 	"testing"
 )
 
@@ -58,5 +61,52 @@ func TestRPCEndpointMembers(t *testing.T) {
 
 	if len(result) != 1 {
 		t.Fatalf("bad: %d", len(result))
+	}
+}
+
+func TestRPCEndpointMonitor(t *testing.T) {
+	a1 := testAgent()
+	defer a1.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer l.Close()
+
+	e := &rpcEndpoint{agent: a1}
+	err = e.Monitor(l.Addr().String(), new(interface{}))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	conn, err := l.Accept()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer conn.Close()
+
+	var message string
+	dec := gob.NewDecoder(conn)
+	if err := dec.Decode(&message); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !strings.Contains(message, "started") {
+		t.Fatalf("bad: %s", message)
+	}
+
+	a1.Join(nil)
+
+	if err := dec.Decode(&message); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !strings.Contains(message, "join") {
+		t.Fatalf("bad: %s", message)
 	}
 }
