@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/serf/testutil"
 	"net"
 	"net/rpc"
+	"strings"
 	"testing"
 )
 
@@ -107,5 +108,66 @@ func TestRPCClientMembers(t *testing.T) {
 
 	if len(mem) != 2 {
 		t.Fatalf("bad: %#v", mem)
+	}
+}
+
+func TestRPCClientMonitor(t *testing.T) {
+	client, a1 := testRPCClient(t)
+	defer client.Close()
+	defer a1.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	eventCh := make(chan string, 64)
+	doneCh := make(chan struct{}, 64)
+	defer close(doneCh)
+	if err := client.Monitor(eventCh, doneCh); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	select {
+	case e := <-eventCh:
+		if !strings.Contains(e, "starting") {
+			t.Fatalf("bad: %s", e)
+		}
+	default:
+		t.Fatalf("should have backlog")
+	}
+
+	// Drain the rest of the messages as we know it
+	drainEventCh(eventCh)
+
+	// Join a bad thing to generate more events
+	a1.Join(nil)
+
+	testutil.Yield()
+
+	select {
+	case e := <-eventCh:
+		if !strings.Contains(e, "joining") {
+			t.Fatalf("bad: %s", e)
+		}
+	default:
+		t.Fatalf("should have message")
+	}
+
+	// End the monitor
+	doneCh <- struct{}{}
+	testutil.Yield()
+	drainEventCh(eventCh)
+
+	// Do another thing to generate more events
+	a1.Join(nil)
+
+	testutil.Yield()
+
+	select {
+	case e := <-eventCh:
+		t.Fatalf("should have no more: %s", e)
+	default:
 	}
 }

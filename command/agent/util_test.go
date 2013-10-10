@@ -14,6 +14,16 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+func drainEventCh(ch <-chan string) {
+	for {
+		select {
+		case <-ch:
+		default:
+			return
+		}
+	}
+}
+
 func getRPCAddr() string {
 	for i := 0; i < 500; i++ {
 		l, err := net.Listen("tcp", fmt.Sprintf(":%d", rand.Int31n(25000)+1024))
