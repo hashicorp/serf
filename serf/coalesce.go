@@ -16,7 +16,7 @@ type coalesceEvent struct {
 // at one time, events will be coalesced together into one event.
 func coalescedEventCh(outCh chan<- Event, shutdownCh <-chan struct{},
 	coalescePeriod time.Duration, quiescentPeriod time.Duration) chan<- Event {
-	eventCh := make(chan Event)
+	eventCh := make(chan Event, 1024)
 	go coalescer(eventCh, outCh, shutdownCh, coalescePeriod, quiescentPeriod)
 	return eventCh
 }
