@@ -21,4 +21,7 @@ cov:
 	gocov test ./... | gocov-html > /tmp/coverage.html
 	open /tmp/coverage.html
 
+website:
+	./scripts/website_run.sh
+
 .PNONY: all cov deps integ subnet test
