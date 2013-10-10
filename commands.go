@@ -27,6 +27,12 @@ func init() {
 			return &command.MembersCommand{}, nil
 		},
 
+		"monitor": func() (cli.Command, error) {
+			return &command.MonitorCommand{
+				ShutdownCh: makeShutdownCh(),
+			}, nil
+		},
+
 		"version": func() (cli.Command, error) {
 			return &command.VersionCommand{
 				Revision:          GitCommit,

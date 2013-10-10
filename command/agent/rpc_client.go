@@ -1,8 +1,12 @@
 package agent
 
 import (
+	"encoding/gob"
 	"github.com/hashicorp/serf/serf"
+	"log"
+	"net"
 	"net/rpc"
+	"sync"
 )
 
 // RPCClient is the RPC client to make requests to the agent RPC.
@@ -24,4 +28,78 @@ func (c *RPCClient) Members() ([]serf.Member, error) {
 	var result []serf.Member
 	err := c.Client.Call("Agent.Members", new(interface{}), &result)
 	return result, err
+}
+
+func (c *RPCClient) Monitor(ch chan<- string, done <-chan struct{}) error {
+	var conn net.Conn
+	var connClosed bool
+	var l net.Listener
+	var lClosed bool
+	var lock sync.Mutex
+	internalDone := make(chan struct{})
+
+	l, err := net.Listen("tcp", "0.0.0.0:0")
+	if err != nil {
+		return err
+	}
+
+	// Make the RPC call that will call back to us
+	err = c.Client.Call("Agent.Monitor", l.Addr().String(), new(interface{}))
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		select {
+		case <-done:
+		case <-internalDone:
+		}
+
+		lock.Lock()
+		defer lock.Unlock()
+
+		if l != nil && !lClosed {
+			l.Close()
+			lClosed = true
+		}
+
+		if conn != nil && !connClosed {
+			conn.Close()
+			connClosed = true
+		}
+	}()
+
+	go func() {
+		defer close(internalDone)
+
+		// Accept the connection that the RPC server will make to us
+		var err error
+		conn, err = l.Accept()
+
+		// Close the listener right away, we only accept one connection
+		lock.Lock()
+		if !lClosed {
+			l.Close()
+			lClosed = true
+		}
+		lock.Unlock()
+
+		if err != nil {
+			log.Printf("[ERR] Failed to accept monitor connection: %s", err)
+			return
+		}
+
+		var event string
+		dec := gob.NewDecoder(conn)
+		for {
+			if err := dec.Decode(&event); err != nil {
+				log.Printf("[ERR] Error decoding monitor event: %s", err)
+				return
+			}
+
+			ch <- event
+		}
+	}()
+
+	return nil
 }
