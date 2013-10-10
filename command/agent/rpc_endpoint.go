@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"encoding/gob"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/serf"
@@ -46,21 +47,32 @@ func (e *rpcEndpoint) Monitor(args RPCMonitorArgs, result *interface{}) error {
 	if args.LogLevel == "" {
 		args.LogLevel = "DEBUG"
 	}
-
 	args.LogLevel = strings.ToUpper(args.LogLevel)
-	go e.monitorStream(args.CallbackAddr, logutils.LogLevel(args.LogLevel))
+
+	filter := levelFilter()
+	filter.MinLevel = logutils.LogLevel(args.LogLevel)
+	found := false
+	for _, level := range filter.Levels {
+		if level == filter.MinLevel {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("Unknown log level: %s", filter.MinLevel)
+	}
+
+	go e.monitorStream(args.CallbackAddr, filter)
 	return nil
 }
 
-func (e *rpcEndpoint) monitorStream(addr string, level logutils.LogLevel) {
+func (e *rpcEndpoint) monitorStream(addr string, filter *logutils.LevelFilter) {
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		log.Printf("[ERR] Monitor connect error: %s", err)
 	}
 	defer conn.Close()
-
-	filter := levelFilter()
-	filter.MinLevel = level
 
 	eventCh := make(chan string, 128)
 	defer e.agent.StopEvents(eventCh)

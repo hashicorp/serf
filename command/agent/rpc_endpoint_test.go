@@ -143,3 +143,17 @@ DRAIN:
 		t.Fatalf("should have message")
 	}
 }
+
+func TestRPCEndpointMonitor_badLogLevel(t *testing.T) {
+	a1 := testAgent()
+	defer a1.Shutdown()
+
+	e := &rpcEndpoint{agent: a1}
+	err := e.Monitor(RPCMonitorArgs{
+		CallbackAddr: "",
+		LogLevel: "foo",
+	}, new(interface{}))
+	if err == nil {
+		t.Fatal("should have error")
+	}
+}
