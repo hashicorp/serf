@@ -31,10 +31,31 @@ Usage: serf agent [options]
 Options:
 
   -bind=0.0.0.0            Address to bind network listeners to
-  -event-script=foo        Script to execute when events occur.
+  -event-script=foo        Script to execute when events occur. This can
+                           be specified multiple times. See the event scripts
+                           section below for more info.
   -log-level=info          Log level of the agent.
   -node=hostname           Name of this node. Must be unique in the cluster
   -rpc-addr=127.0.0.1:7373 Address to bind the RPC listener.
+
+Event scripts:
+
+  For more information on what event scripts are, please read the
+  Serf documentation. This section will document how to configure them
+  on the command-line. There are three methods of specifying an event
+  script:
+
+  - The value can be a plain script, such as "event.sh". In this case,
+    Serf will send all events to this script, and you'll be responsible
+    for differentiating between them based on the SERF_EVENT.
+
+  - The value can be in the format of "TYPE=SCRIPT", such as
+    "member-join=join.sh". With this format, Serf will only send events
+    of that type to that script.
+
+  - The value can be in the format of "user:EVENT=SCRIPT", such as
+    "user:deploy=deploy.sh". This means that Serf will only invoke this
+    script in the case of user events named "deploy".
 `
 	return strings.TrimSpace(helpText)
 }
