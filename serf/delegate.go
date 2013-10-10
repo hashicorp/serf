@@ -47,6 +47,16 @@ func (d *delegate) NotifyMsg(buf []byte) {
 		d.serf.logger.Printf("[DEBUG] serf-delegate: messageJoinType: %s", join.Node)
 		rebroadcast = d.serf.handleNodeJoinIntent(&join)
 
+	case messageUserEventType:
+		var event messageUserEvent
+		if err := decodeMessage(buf[1:], &event); err != nil {
+			d.serf.logger.Printf("[ERR] Error decoding user event message: %s", err)
+			break
+		}
+
+		d.serf.logger.Printf("[DEBUG] serf-delegate: messageUserEventType: %s", event.Name)
+		rebroadcast = d.serf.handleUserEvent(&event)
+
 	default:
 		d.serf.logger.Printf("[WARN] Received message of unknown type: %d", t)
 	}

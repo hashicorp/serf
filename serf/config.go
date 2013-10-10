@@ -92,6 +92,14 @@ type Config struct {
 	// continuous rebroadcasting of dead events.
 	RecentIntentBuffer int
 
+	// EventBuffer is used to control how many events are buffered.
+	// This is used to prevent re-delivery of events to a client. The buffer
+	// must be large enough to handle all "recent" events, since Serf will
+	// not deliver messages that are older than the oldest entry in the buffer.
+	// Thus if a client is generating too many events, it's possible that the
+	// buffer gets overrun and messages are not delivered.
+	EventBuffer int
+
 	// MemberlistConfig is the memberlist configuration that Serf will
 	// use to do the underlying membership management and gossip. Some
 	// fields in the MemberlistConfig will be overwritten by Serf no

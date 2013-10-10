@@ -13,6 +13,7 @@ const (
 	messageLeaveType messageType = iota
 	messageJoinType
 	messagePushPullType
+	messageUserEventType
 )
 
 // messageJoin is the message broadcasted after we join to
@@ -35,6 +36,13 @@ type messagePushPull struct {
 	LTime        LamportTime            // Current node lamport time
 	StatusLTimes map[string]LamportTime // Maps the node to its status time
 	LeftMembers  []string               // List of left nodes
+}
+
+// messageUserEvent is used for user-generated events
+type messageUserEvent struct {
+	LTime   LamportTime
+	Name    string
+	Payload []byte
 }
 
 func decodeMessage(buf []byte, out interface{}) error {

@@ -1,6 +1,7 @@
 package serf
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/memberlist"
@@ -38,6 +39,10 @@ type Serf struct {
 	recentLeaveIndex int
 	recentJoin       []nodeIntent
 	recentJoinIndex  int
+
+	eventBuffer []*userEvents
+	eventClock  LamportClock
+	eventLock   sync.Mutex
 
 	logger     *log.Logger
 	stateLock  sync.Mutex
@@ -105,6 +110,32 @@ type nodeIntent struct {
 	Node  string
 }
 
+// userEvent is used to buffer events to prevent re-delivery
+type userEvent struct {
+	Name    string
+	Payload []byte
+}
+
+func (ue *userEvent) Equals(other *userEvent) bool {
+	if ue.Name != other.Name {
+		return false
+	}
+	if bytes.Compare(ue.Payload, other.Payload) != 0 {
+		return false
+	}
+	return true
+}
+
+// userEvents stores all the user events at a specific time
+type userEvents struct {
+	LTime  LamportTime
+	Events []userEvent
+}
+
+const (
+	UserEventSizeLimit = 128 // Maximum byte size for event name and payload
+)
+
 // Create creates a new Serf instance, starting all the background tasks
 // to maintain cluster membership information.
 //
@@ -156,6 +187,10 @@ func Create(conf *Config) (*Serf, error) {
 		conf.RecentIntentBuffer = 128
 	}
 
+	if conf.EventBuffer == 0 {
+		conf.EventBuffer = 512
+	}
+
 	if conf.MemberlistConfig == nil {
 		conf.MemberlistConfig = memberlist.DefaultConfig()
 	}
@@ -193,6 +228,9 @@ func Create(conf *Config) (*Serf, error) {
 	serf.recentJoin = make([]nodeIntent, conf.RecentIntentBuffer)
 	serf.recentLeave = make([]nodeIntent, conf.RecentIntentBuffer)
 
+	// Create a buffer for events
+	serf.eventBuffer = make([]*userEvents, conf.EventBuffer)
+
 	// Ensure our lamport clock is at least 1, so that the default
 	// join LTime of 0 does not cause issues
 	serf.clock.Increment()
@@ -217,6 +255,33 @@ func Create(conf *Config) (*Serf, error) {
 	go serf.handleReconnect()
 
 	return serf, nil
+}
+
+// UserEvent is used to broadcast a custom user event with a given
+// name and payload. The events must be fairly small, and if the
+// size limit is exceeded and error will be returned.
+func (s *Serf) UserEvent(name string, payload []byte) error {
+	// Check the size limit
+	if len(name)+len(payload) > UserEventSizeLimit {
+		return fmt.Errorf("user event payload exceeds limit of %d bytes", UserEventSizeLimit)
+	}
+
+	// Create a message
+	msg := messageUserEvent{
+		LTime:   s.eventClock.Time(),
+		Name:    name,
+		Payload: payload,
+	}
+	s.eventClock.Increment()
+
+	// Process update locally
+	s.handleUserEvent(&msg)
+
+	// Start broadcasting the event
+	if err := s.broadcast(messageUserEventType, &msg, nil); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Join joins an existing Serf cluster. Returns the number of nodes
@@ -603,6 +668,50 @@ func (s *Serf) handleNodeJoinIntent(joinMsg *messageJoin) bool {
 	// since the leaving message must have been for an older time
 	if member.Status == StatusLeaving {
 		member.Status = StatusAlive
+	}
+	return true
+}
+
+// handleUserEvent is called when a user event broadcast is
+// received. Returns if the message should be rebroadcast.
+func (s *Serf) handleUserEvent(eventMsg *messageUserEvent) bool {
+	// Witness a potentially newer time
+	s.eventClock.Witness(eventMsg.LTime)
+
+	s.eventLock.Lock()
+	defer s.eventLock.Unlock()
+
+	// Check if this message is too old
+	if eventMsg.LTime > LamportTime(len(s.eventBuffer)) &&
+		eventMsg.LTime < s.eventClock.Time()-LamportTime(len(s.eventBuffer)) {
+		s.logger.Printf(
+			"[WARN] serf: received old event %s from time %d (current: %d)",
+			eventMsg.Name,
+			eventMsg.LTime,
+			s.eventClock.Time())
+		return false
+	}
+
+	// Check if we've already seen this
+	idx := eventMsg.LTime % LamportTime(len(s.eventBuffer))
+	seen := s.eventBuffer[idx]
+	userEvent := userEvent{Name: eventMsg.Name, Payload: eventMsg.Payload}
+	if seen != nil && seen.LTime == eventMsg.LTime {
+		for _, previous := range seen.Events {
+			if previous.Equals(&userEvent) {
+				return false
+			}
+		}
+	} else {
+		seen = &userEvents{LTime: eventMsg.LTime}
+		s.eventBuffer[idx] = seen
+	}
+
+	// Add to recent events
+	seen.Events = append(seen.Events, userEvent)
+
+	if s.config.EventCh != nil {
+		// TODO: notify EventCh
 	}
 	return true
 }
