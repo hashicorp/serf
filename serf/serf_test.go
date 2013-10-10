@@ -354,18 +354,6 @@ func TestSerf_role(t *testing.T) {
 	}
 }
 
-func TestSerfJoin_nil(t *testing.T) {
-	var s *Serf
-	n, err := s.Join(nil)
-	if err == nil {
-		t.Fatal("should have error")
-	}
-
-	if n != 0 {
-		t.Fatalf("bad: %d", n)
-	}
-}
-
 func TestSerfRemoveFailedNode(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()
