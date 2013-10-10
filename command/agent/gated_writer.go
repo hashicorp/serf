@@ -36,6 +36,8 @@ func (w *GatedWriter) Write(p []byte) (n int, err error) {
 		return w.Writer.Write(p)
 	}
 
-	w.buf = append(w.buf, p)
+	p2 := make([]byte, len(p))
+	copy(p2, p)
+	w.buf = append(w.buf, p2)
 	return len(p), nil
 }
