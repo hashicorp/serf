@@ -2,10 +2,10 @@ package agent
 
 import (
 	"fmt"
-	"github.com/hashicorp/serf/rpc"
 	"github.com/hashicorp/serf/serf"
 	"log"
 	"net"
+	"net/rpc"
 	"sync"
 )
 
@@ -88,12 +88,22 @@ func (a *Agent) Start() error {
 		return fmt.Errorf("Error starting RPC listener: %s", err)
 	}
 
-	rpcServer, err := rpc.NewServer(a.serf, a.rpcListener)
+	rpcServer := rpc.NewServer()
+	err = rpcServer.RegisterName("Agent", &rpcEndpoint{agent: a})
 	if err != nil {
 		return fmt.Errorf("Error starting RPC server: %s", err)
 	}
 
-	go rpcServer.Run()
+	go func(l net.Listener) {
+		for {
+			conn, err := l.Accept()
+			if err != nil {
+				log.Printf("[ERR] RPC accept error: %s", err)
+				return
+			}
+			go rpcServer.ServeConn(conn)
+		}
+	}(a.rpcListener)
 
 	shutdownCh := make(chan struct{})
 

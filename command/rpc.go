@@ -2,7 +2,7 @@ package command
 
 import (
 	"flag"
-	serfrpc "github.com/hashicorp/serf/rpc"
+	"github.com/hashicorp/serf/command/agent"
 	"net/rpc"
 )
 
@@ -14,11 +14,11 @@ func RPCAddrFlag(f *flag.FlagSet) *string {
 }
 
 // RPCClient returns a new Serf RPC client with the given address.
-func RPCClient(addr string) (*serfrpc.Client, error) {
+func RPCClient(addr string) (*agent.RPCClient, error) {
 	rpcClient, err := rpc.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
 
-	return serfrpc.NewClient(rpcClient), nil
+	return &agent.RPCClient{Client: rpcClient}, nil
 }

@@ -2,7 +2,6 @@ package agent
 
 import (
 	"github.com/hashicorp/serf/cli"
-	serfrpc "github.com/hashicorp/serf/rpc"
 	"github.com/hashicorp/serf/testutil"
 	"log"
 	"net/rpc"
@@ -88,13 +87,13 @@ func TestCommandRun_rpc(t *testing.T) {
 
 	testutil.Yield()
 
-	rpcClient, err := rpc.Dial("tcp", rpcAddr)
+	rpcConn, err := rpc.Dial("tcp", rpcAddr)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	defer rpcClient.Close()
+	defer rpcConn.Close()
 
-	client := serfrpc.NewClient(rpcClient)
+	client := &RPCClient{Client: rpcConn}
 	members, err := client.Members()
 	if err != nil {
 		t.Fatalf("err: %s", err)
