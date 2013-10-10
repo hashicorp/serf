@@ -53,16 +53,20 @@ func (c *MonitorCommand) Run(args []string, ui cli.Ui) int {
 		return 1
 	}
 
-	for {
-		select {
-		case e := <-eventCh:
+	eventDoneCh := make(chan struct{})
+	go func() {
+		defer close(eventDoneCh)
+		for e := range eventCh {
 			ui.Info(e)
-		case <-c.ShutdownCh:
-			close(doneCh)
-			return 0
 		}
+	}()
+
+	select {
+	case <-eventDoneCh:
+	case <-c.ShutdownCh:
 	}
 
+	close(doneCh)
 	return 0
 }
 

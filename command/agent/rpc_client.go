@@ -99,6 +99,7 @@ func (c *RPCClient) Monitor(level logutils.LogLevel, ch chan<- string, done <-ch
 		for {
 			if err := dec.Decode(&event); err != nil {
 				log.Printf("[ERR] Error decoding monitor event: %s", err)
+				close(ch)
 				return
 			}
 

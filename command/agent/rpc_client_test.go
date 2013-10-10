@@ -155,19 +155,8 @@ func TestRPCClientMonitor(t *testing.T) {
 		t.Fatalf("should have message")
 	}
 
-	// End the monitor
+	// End the monitor and wait for the eventCh to close
 	doneCh <- struct{}{}
-	testutil.Yield()
-	drainEventCh(eventCh)
-
-	// Do another thing to generate more events
-	a1.Join(nil)
-
-	testutil.Yield()
-
-	select {
-	case e := <-eventCh:
-		t.Fatalf("should have no more: %s", e)
-	default:
+	for _ = range eventCh {
 	}
 }
