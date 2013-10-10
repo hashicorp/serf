@@ -5,7 +5,14 @@ import (
 	"github.com/hashicorp/serf/serf"
 	"log"
 	"net"
+	"net/rpc"
 )
+
+// registerEndpoint registers the API endpoint on the given RPC server
+// for the given agent.
+func registerEndpoint(s *rpc.Server, agent *Agent) error {
+	return s.RegisterName("Agent", &rpcEndpoint{agent: agent})
+}
 
 // rpcEndpoint is the RPC endpoint for agent RPC calls.
 type rpcEndpoint struct {

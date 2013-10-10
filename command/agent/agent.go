@@ -164,7 +164,7 @@ func (a *Agent) Start() error {
 	}
 
 	rpcServer := rpc.NewServer()
-	err = rpcServer.RegisterName("Agent", &rpcEndpoint{agent: a})
+	err = registerEndpoint(rpcServer, a)
 	if err != nil {
 		return fmt.Errorf("Error starting RPC server: %s", err)
 	}
