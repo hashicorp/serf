@@ -15,6 +15,10 @@ type Agent struct {
 	RPCAddr     string
 	SerfConfig  *serf.Config
 
+	events      []string
+	eventChs    map[chan<- string]struct{}
+	eventIndex  int
+	eventLock   sync.Mutex
 	rpcListener net.Listener
 	serf        *serf.Serf
 	shutdownCh  chan<- struct{}
@@ -28,6 +32,62 @@ const (
 	AgentIdle AgentState = iota
 	AgentRunning
 )
+
+// Join asks the Serf instance to join. See the Serf.Join function.
+func (a *Agent) Join(addrs []string) (n int, err error) {
+	a.event(fmt.Sprintf("Serf join request: %v", addrs))
+	n, err = a.serf.Join(addrs)
+	if err != nil {
+		a.event(fmt.Sprintf("Serf join error: %s", err))
+	} else {
+		a.event(fmt.Sprintf("Serf joined %d nodes", n))
+	}
+
+	return
+}
+
+// NotifyEvents causes the agent to begin sending log events to the
+// given channel. The return value is a buffer of past events up to a
+// point.
+//
+// All NotifyEvent calls should be paired with a StopEvents call.
+func (a *Agent) NotifyEvents(ch chan<- string) []string {
+	a.eventLock.Lock()
+	defer a.eventLock.Unlock()
+
+	if a.eventChs == nil {
+		a.eventChs = make(map[chan<- string]struct{})
+	}
+
+	a.eventChs[ch] = struct{}{}
+
+	if a.events == nil {
+		return nil
+	}
+
+	past := make([]string, 0, len(a.events))
+	var endIndex int
+	for i := len(a.events) - 1; i >= a.eventIndex; i-- {
+		if a.events[i] != "" {
+			break
+		}
+
+		endIndex = i
+	}
+
+	past = append(past, a.events[a.eventIndex:endIndex]...)
+	past = append(past, a.events[:a.eventIndex]...)
+	return past
+}
+
+// StopEvents causes the agent to stop sending events to the given
+// channel.
+func (a *Agent) StopEvents(ch chan<- string) {
+	a.eventLock.Lock()
+	defer a.eventLock.Unlock()
+
+	delete(a.eventChs, ch)
+}
 
 // Returns the Serf agent of the running Agent.
 func (a *Agent) Serf() *serf.Serf {
@@ -112,9 +172,30 @@ func (a *Agent) Start() error {
 		go a.eventLoop(a.EventScript, eventCh, shutdownCh)
 	}
 
+	a.event("Serf agent started")
+
 	a.shutdownCh = shutdownCh
 	a.state = AgentRunning
 	return nil
+}
+
+func (a *Agent) event(v string) {
+	a.eventLock.Lock()
+	defer a.eventLock.Unlock()
+
+	if a.events == nil {
+		a.events = make([]string, 255)
+	}
+
+	a.events[a.eventIndex] = v
+	a.eventIndex++
+	if a.eventIndex > len(a.events) {
+		a.eventIndex = 0
+	}
+
+	for ch, _ := range a.eventChs {
+		ch <- v
+	}
 }
 
 func (a *Agent) eventLoop(script string, eventCh <-chan serf.Event, done <-chan struct{}) {

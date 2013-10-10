@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/hashicorp/serf/testutil"
 	"io/ioutil"
+	"strings"
 	"testing"
+	"time"
 )
 
 const eventScript = `#!/bin/sh
@@ -45,6 +47,34 @@ func testEventScript(t *testing.T) (string, string) {
 }
 
 func TestAgent_events(t *testing.T) {
+	a1 := testAgent()
+	defer a1.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	eventsCh := make(chan string, 64)
+	prev := a1.NotifyEvents(eventsCh)
+	defer a1.StopEvents(eventsCh)
+
+	if len(prev) != 1 {
+		t.Fatalf("bad: %d", len(prev))
+	}
+
+	a1.Join(nil)
+
+	select {
+	case e := <-eventsCh:
+		if !strings.Contains(e, "join") {
+			t.Fatalf("bad: %s", e)
+		}
+	case <-time.After(5 * time.Millisecond):
+		t.Fatal("timeout")
+	}
+}
+
+func TestAgent_eventScript(t *testing.T) {
 	a1 := testAgent()
 	a2 := testAgent()
 	defer a1.Shutdown()
