@@ -157,3 +157,7 @@ func TestRPCEndpointMonitor_badLogLevel(t *testing.T) {
 		t.Fatal("should have error")
 	}
 }
+
+func TestRPCEndpointUserEvent(t *testing.T) {
+	// TODO(mitchellh: test this
+}
