@@ -58,7 +58,7 @@ func TestAgent_events(t *testing.T) {
 	prev := a1.NotifyEvents(eventsCh)
 	defer a1.StopEvents(eventsCh)
 
-	if len(prev) != 1 {
+	if len(prev) < 1 {
 		t.Fatalf("bad: %d", len(prev))
 	}
 

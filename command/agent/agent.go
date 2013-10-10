@@ -9,7 +9,6 @@ import (
 	"net/rpc"
 	"os"
 	"sync"
-	"time"
 )
 
 // Agent actually starts and manages a Serf agent.
@@ -43,14 +42,8 @@ const (
 func (a *Agent) Join(addrs []string) (n int, err error) {
 	a.once.Do(a.init)
 
-	a.event(fmt.Sprintf("Serf join request: %v", addrs))
+	a.logger.Printf("[INFO] Agent joining: %v", addrs)
 	n, err = a.serf.Join(addrs)
-	if err != nil {
-		a.event(fmt.Sprintf("Serf join error: %s", err))
-	} else {
-		a.event(fmt.Sprintf("Serf joined %d nodes", n))
-	}
-
 	return
 }
 
@@ -147,6 +140,8 @@ func (a *Agent) Start() error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
+	a.logger.Println("[INFO] Serf agent starting")
+
 	// Setup logging a bit
 	a.SerfConfig.MemberlistConfig.LogOutput = a.LogOutput
 	a.SerfConfig.LogOutput = a.LogOutput
@@ -192,10 +187,9 @@ func (a *Agent) Start() error {
 		go a.eventLoop(a.EventScript, eventCh, shutdownCh)
 	}
 
-	a.event("Serf agent started")
-
 	a.shutdownCh = shutdownCh
 	a.state = AgentRunning
+	a.logger.Println("[INFO] Serf agent started")
 	return nil
 }
 
@@ -207,7 +201,6 @@ func (a *Agent) event(v string) {
 		a.events = make([]string, 512)
 	}
 
-	v = fmt.Sprintf("%s %s", time.Now(), v)
 	a.events[a.eventIndex] = v
 	a.eventIndex++
 	if a.eventIndex > len(a.events) {
@@ -236,6 +229,9 @@ func (a *Agent) init() {
 	if a.LogOutput == nil {
 		a.LogOutput = os.Stderr
 	}
+
+	eventWriter := &EventWriter{Agent: a}
+	a.LogOutput = io.MultiWriter(a.LogOutput, eventWriter)
 
 	a.logger = log.New(a.LogOutput, "", log.LstdFlags)
 }

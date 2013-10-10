@@ -96,17 +96,9 @@ func TestRPCEndpointMonitor(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	if !strings.Contains(message, "started") {
+	if !strings.Contains(message, "starting") {
 		t.Fatalf("bad: %s", message)
 	}
 
-	a1.Join(nil)
-
-	if err := dec.Decode(&message); err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
-	if !strings.Contains(message, "join") {
-		t.Fatalf("bad: %s", message)
-	}
+	// TODO(mitchellh): test the streaming
 }
