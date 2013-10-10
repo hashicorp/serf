@@ -208,7 +208,10 @@ func (a *Agent) event(v string) {
 	}
 
 	for ch, _ := range a.eventChs {
-		ch <- v
+		select {
+		case ch <- v:
+		default:
+		}
 	}
 }
 
