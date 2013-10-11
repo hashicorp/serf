@@ -35,7 +35,7 @@ online.
 
 ## How it Works
 
-## Node Setup
+### Node Setup
 
 All the nodes (webs and load balancer) come up at the same time, with no
 explicit ordering defined. If there is an order, it doesn't actually matter
@@ -64,13 +64,13 @@ Note that Serf can join _any_ node in the cluster. We just set a static IP
 on the load balancer for ease of automation, but in a real production
 environment you can use any existing node, potentially just using DNS.
 
-## Serf Configuration
+### Serf Configuration
 
 The Serf configuration is very simple. Each node runs a Serf agent. The
 web servers run the agent with a role of "web" and the load balancer runs
 the agent with a role "lb".
 
-### Event: member-join
+#### Event: member-join
 
 On member-join, the following shell script is run. We'll talk about the
 function of the shell script after the code sample.
@@ -108,7 +108,7 @@ Finally, HAProxy is reloaded so the configuration is read.
 The result of this is that as members join, they're automatically added into
 rotation on the load balancer.
 
-### Event: member-leave,member-failed
+#### Event: member-leave,member-failed
 
 On member-leave and member-failed evets, the following shell script is run.
 This demo doesn't differentiate between the two events, treating both
