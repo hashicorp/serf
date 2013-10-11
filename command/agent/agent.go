@@ -219,7 +219,7 @@ func (a *Agent) storeLog(v string) {
 
 	a.logs[a.logIndex] = v
 	a.logIndex++
-	if a.logIndex > len(a.logs) {
+	if a.logIndex >= len(a.logs) {
 		a.logIndex = 0
 	}
 
