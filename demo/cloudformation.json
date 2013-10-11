@@ -1,0 +1,159 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+
+    "Parameters": {
+        "WebNodes": {
+            "Type": "String",
+            "Default": "5",
+            "Description": "Number of web servers to launch."
+        }
+    },
+
+    "Outputs": {
+        "LoadBalancerIP": {
+            "Value": { "Ref": "LoadBalancerIP" }
+        }
+    },
+
+    "Resources": {
+        "Gateway": {
+            "Type": "AWS::EC2::InternetGateway"
+        },
+
+        "VPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": "10.0.0.0/16",
+                "EnableDnsHostnames": true
+            }
+        },
+
+        "VPCGateway": {
+            "Type" : "AWS::EC2::VPCGatewayAttachment",
+            "Properties" : {
+                "InternetGatewayId" : { "Ref": "Gateway" },
+                "VpcId": { "Ref": "VPC" }
+            }
+        },
+
+        "PublicSubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": "10.0.0.0/24",
+                "VpcId": { "Ref": "VPC" }
+            }
+        },
+
+        "PublicSubnetRoute": {
+            "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties" : {
+                "RouteTableId" : { "Ref": "RouteTable" },
+                "SubnetId" : { "Ref": "PublicSubnet" }
+            }
+        },
+
+        "RouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": { "Ref": "VPC" }
+            }
+        },
+
+        "RouteGlobal": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": { "Ref": "RouteTable" },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": { "Ref": "Gateway" }
+            }
+        },
+
+        "LoadBalancer": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "KeyName": "hashicorp-basic",
+                "ImageId": "ami-ad3660c4",
+                "PrivateIpAddress": "10.0.0.5",
+                "SecurityGroupIds": [
+                    {"Ref": "InstanceSecurityGroup"}
+                ],
+                "SubnetId": { "Ref": "PublicSubnet" },
+                "Tags": [
+                    { "Key": "Name", "Value": "Serf Demo LB" }
+                ]
+            }
+        },
+
+        "LoadBalancerIP": {
+            "Type" : "AWS::EC2::EIP",
+            "Properties" : {
+                "InstanceId" : { "Ref": "LoadBalancer" },
+                "Domain" : "vpc"
+            },
+            "DependsOn": "VPCGateway"
+        },
+
+        "WebGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "AvailabilityZones": [
+                    { "Fn::GetAtt" : [ "PublicSubnet", "AvailabilityZone" ] }
+                ],
+                "LaunchConfigurationName": { "Ref": "WebLaunchConfig" },
+                "DesiredCapacity": { "Ref": "WebNodes" },
+                "MinSize": { "Ref": "WebNodes" },
+                "MaxSize": { "Ref": "WebNodes" },
+                "VPCZoneIdentifier": [
+                    { "Ref": "PublicSubnet" }
+                ]
+            }
+        },
+
+        "WebLaunchConfig": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "KeyName": "hashicorp-basic",
+                "ImageId": "ami-ad3660c4",
+                "InstanceType": "m1.small",
+                "SecurityGroups": [
+                    {"Ref": "InstanceSecurityGroup"}
+                ]
+            }
+        },
+
+        "InstanceSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Serf demo security group",
+                "VpcId": { "Ref": "VPC" },
+                "SecurityGroupIngress": [{
+                    "IpProtocol": "icmp",
+                    "FromPort": "-1",
+                    "ToPort": "-1",
+                    "CidrIp": "0.0.0.0/0"
+                }, {
+                    "IpProtocol": "tcp",
+                    "FromPort": "22",
+                    "ToPort": "22",
+                    "CidrIp": "0.0.0.0/0"
+                }, {
+                    "IpProtocol": "tcp",
+                    "FromPort": "80",
+                    "ToPort": "80",
+                    "CidrIp": "0.0.0.0/0"
+                }]
+            }
+        },
+
+        "InstanceSecurityGroupSelfRule": {
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": { "Ref": "InstanceSecurityGroup" },
+                "IpProtocol": "-1",
+                "FromPort": "0",
+                "ToPort": "65535",
+                "SourceSecurityGroupId": { "Ref": "InstanceSecurityGroup" }
+            }
+        }
+    }
+}
