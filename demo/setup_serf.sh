@@ -14,7 +14,9 @@ sudo apt-get install -y unzip
 
 # Download and install Serf
 cd /tmp
-wget -O serf.zip http://hc-ops.s3.amazonaws.com/serf/amd64.zip
+until wget -O serf.zip http://hc-ops.s3.amazonaws.com/serf/amd64.zip; do
+    sleep 1
+done
 unzip serf.zip
 sudo mv serf /usr/local/bin/serf
 
