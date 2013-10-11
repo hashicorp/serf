@@ -44,27 +44,84 @@
             }
         },
 
-        "PublicSubnetRoute": {
-            "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-            "Properties" : {
-                "RouteTableId" : { "Ref": "RouteTable" },
-                "SubnetId" : { "Ref": "PublicSubnet" }
+        "PrivateSubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": "10.0.1.0/24",
+                "VpcId": { "Ref": "VPC" }
             }
         },
 
-        "RouteTable": {
+        "PrivateSubnetRoute": {
+            "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties" : {
+                "RouteTableId" : { "Ref": "PrivateRouteTable" },
+                "SubnetId" : { "Ref": "PrivateSubnet" }
+            }
+        },
+
+        "PrivateRouteTable": {
             "Type": "AWS::EC2::RouteTable",
             "Properties": {
                 "VpcId": { "Ref": "VPC" }
             }
         },
 
-        "RouteGlobal": {
+        "PrivateRouteGlobal": {
             "Type": "AWS::EC2::Route",
             "Properties": {
-                "RouteTableId": { "Ref": "RouteTable" },
+                "RouteTableId": { "Ref": "PrivateRouteTable" },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "InstanceId" : { "Ref" : "NATDevice" }
+            },
+            "DependsOn": "PublicRouteGlobal"
+        },
+
+        "PublicSubnetRoute": {
+            "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties" : {
+                "RouteTableId" : { "Ref": "PublicRouteTable" },
+                "SubnetId" : { "Ref": "PublicSubnet" }
+            }
+        },
+
+        "PublicRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": { "Ref": "VPC" }
+            }
+        },
+
+        "PublicRouteGlobal": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": { "Ref": "PublicRouteTable" },
                 "DestinationCidrBlock": "0.0.0.0/0",
                 "GatewayId": { "Ref": "Gateway" }
+            }
+        },
+
+        "NATIPAddress": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc",
+                "InstanceId": { "Ref": "NATDevice" }
+            },
+            "DependsOn": "VPCGateway"
+        },
+
+        "NATDevice" : {
+            "Type" : "AWS::EC2::Instance",
+            "Properties" : {
+                "SubnetId" : { "Ref" : "PublicSubnet" },
+                "SourceDestCheck" : "false",
+                "ImageId" : "ami-c6699baf",
+                "SecurityGroupIds" : [
+                    { "Ref" : "InstanceSecurityGroup" }
+                ],
+                "Tags": [
+                    { "Key": "Name", "Value": "Serf Demo NAT Device" }
+                ]
             }
         },
 
@@ -80,8 +137,10 @@
                 "SubnetId": { "Ref": "PublicSubnet" },
                 "Tags": [
                     { "Key": "Name", "Value": "Serf Demo LB" }
-                ]
-            }
+                ],
+                "UserData": "IyEvYmluL2Jhc2gKU0NSSVBUX1VSTD0iaHR0cHM6Ly9yYXcuZ2l0aHViLmNvbS9oYXNoaWNvcnAvc2VyZi9tYXN0ZXIvZGVtby9zZXR1cF9sb2FkX2JhbGFuY2VyLnNoP2xvZ2luPW1pdGNoZWxsaCZ0b2tlbj02ZGNmMGJjYzc5M2NhNDM3ZGE2ZDc3NzQ2ZmI4MTBiNyIKCndnZXQgLU8gLSAkU0NSSVBUX1VSTCB8IGJhc2gK"
+            },
+            "DependsOn": "PublicRouteGlobal"
         },
 
         "LoadBalancerIP": {
@@ -97,16 +156,17 @@
             "Type": "AWS::AutoScaling::AutoScalingGroup",
             "Properties": {
                 "AvailabilityZones": [
-                    { "Fn::GetAtt" : [ "PublicSubnet", "AvailabilityZone" ] }
+                    { "Fn::GetAtt" : [ "PrivateSubnet", "AvailabilityZone" ] }
                 ],
                 "LaunchConfigurationName": { "Ref": "WebLaunchConfig" },
                 "DesiredCapacity": { "Ref": "WebNodes" },
                 "MinSize": { "Ref": "WebNodes" },
                 "MaxSize": { "Ref": "WebNodes" },
                 "VPCZoneIdentifier": [
-                    { "Ref": "PublicSubnet" }
+                    { "Ref": "PrivateSubnet" }
                 ]
-            }
+            },
+            "DependsOn": ["NATDevice", "NATIPAddress", "PrivateRouteGlobal"]
         },
 
         "WebLaunchConfig": {
@@ -117,7 +177,8 @@
                 "InstanceType": "m1.small",
                 "SecurityGroups": [
                     {"Ref": "InstanceSecurityGroup"}
-                ]
+                ],
+                "UserData": "IyEvYmluL2Jhc2gKU0NSSVBUX1VSTD0iaHR0cHM6Ly9yYXcuZ2l0aHViLmNvbS9oYXNoaWNvcnAvc2VyZi9tYXN0ZXIvZGVtby9zZXR1cF93ZWJfc2VydmVyLnNoP2xvZ2luPW1pdGNoZWxsaCZ0b2tlbj04OTRiNjlmODMzNTIyYThkM2MzMzVjNDBhYzk5ZmE2ZCIKCndnZXQgLU8gLSAkU0NSSVBUX1VSTCB8IGJhc2gK"
             }
         },
 
