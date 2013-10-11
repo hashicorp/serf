@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
 	"net"
 	"net/rpc"
@@ -111,6 +112,46 @@ func TestRPCClientMembers(t *testing.T) {
 	}
 }
 
+func TestRPCClientUserEvent(t *testing.T) {
+	client, a1 := testRPCClient(t)
+	defer client.Close()
+	defer a1.Shutdown()
+
+	handler := new(MockEventHandler)
+	a1.EventHandler = handler
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	if err := client.UserEvent("deploy", []byte("foo")); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	handler.Lock()
+	defer handler.Unlock()
+
+	if len(handler.Events) == 0 {
+		t.Fatal("no events")
+	}
+
+	serfEvent, ok := handler.Events[len(handler.Events)-1].(serf.UserEvent)
+	if !ok {
+		t.Fatalf("bad: %#v", serfEvent)
+	}
+
+	if serfEvent.Name != "deploy" {
+		t.Fatalf("bad: %#v", serfEvent)
+	}
+
+	if string(serfEvent.Payload) != "foo" {
+		t.Fatalf("bad: %#v", serfEvent)
+	}
+}
 func TestRPCClientMonitor(t *testing.T) {
 	client, a1 := testRPCClient(t)
 	defer client.Close()

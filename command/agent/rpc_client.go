@@ -31,6 +31,13 @@ func (c *RPCClient) Members() ([]serf.Member, error) {
 	return result, err
 }
 
+func (c *RPCClient) UserEvent(name string, payload []byte) error {
+	return c.Client.Call("Agent.UserEvent", RPCUserEventArgs{
+		Name:    name,
+		Payload: payload,
+	}, new(interface{}))
+}
+
 func (c *RPCClient) Monitor(level logutils.LogLevel, ch chan<- string, done <-chan struct{}) error {
 	var conn net.Conn
 	var connClosed bool
