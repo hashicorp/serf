@@ -11,12 +11,26 @@ import (
 	"sync"
 )
 
-// Agent actually starts and manages a Serf agent.
+// Agent starts and manages a Serf instance, adding some niceties
+// on top of Serf such as storing logs that you can later retrieve,
+// invoking and EventHandler when events occur, and putting an RPC
+// layer in front so that you can query and control the Serf instance
+// remotely.
 type Agent struct {
+	// EventHandler is what is invoked when an event occurs. If this
+	// isn't set, then events aren't handled in any special way.
 	EventHandler EventHandler
-	LogOutput    io.Writer
-	RPCAddr      string
-	SerfConfig   *serf.Config
+
+	// LogOutput is where log messages are written to for the Agent,
+	// Serf, and the underlying Memberlist.
+	LogOutput io.Writer
+
+	// RPCAddr is the address to bind the RPC listener to.
+	RPCAddr string
+
+	// SerfConfig is the configuration of Serf to use. Some settings
+	// in here may be overriden by the agent.
+	SerfConfig *serf.Config
 
 	logs        []string
 	logChs      map[chan<- string]struct{}

@@ -8,6 +8,9 @@ type EventWriter struct {
 
 func (w *EventWriter) Write(p []byte) (n int, err error) {
 	n = len(p)
+
+	// Strip off newlines at the end if there are any since we store
+	// individual log lines in the agent.
 	if p[n-1] == '\n' {
 		p = p[:n-1]
 	}

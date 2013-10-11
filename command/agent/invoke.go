@@ -11,7 +11,14 @@ import (
 )
 
 // invokeEventScript will execute the given event script with the given
-// event.
+// event. Depending on the event, the semantics of how data are passed
+// are a bit different. For all events, the SERF_EVENT environmental
+// variable is the type of the event. For user events, the SERF_USER_EVENT
+// environmental variable is also set, containing the name of the user
+// event that was fired.
+//
+// In all events, data is passed in via stdin to faciliate piping. See
+// the various stdin functions below for more information.
 func invokeEventScript(logger *log.Logger, script string, event serf.Event) error {
 	var output bytes.Buffer
 	cmd := exec.Command("/bin/sh", "-c", script)
@@ -57,6 +64,13 @@ func eventClean(v string) string {
 	return v
 }
 
+// Sends data on stdin for a member event.
+//
+// The format for the data is unix tool friendly, separated by whitespace
+// and newlines. The structure of each line for any member event is:
+// "NAME    ADDRESS    ROLE" where the whitespace is actually tabs.
+// The name and role are cleaned so that newlines and tabs are replaced
+// with "\n" and "\t" respectively.
 func memberEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.MemberEvent) {
 	defer stdin.Close()
 	for _, member := range e.Members {
@@ -71,6 +85,8 @@ func memberEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.MemberEv
 	}
 }
 
+// Sends data on stdin for a user event. The stdin simply contains the
+// payload (if any) of the event.
 func userEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.UserEvent) {
 	defer stdin.Close()
 	if _, err := stdin.Write(e.Payload); err != nil {
