@@ -10,7 +10,7 @@ func TestJoinCommand_implements(t *testing.T) {
 	var _ cli.Command = &JoinCommand{}
 }
 
-func TestCommandRun(t *testing.T) {
+func TestJoinCommandRun(t *testing.T) {
 	a1 := testAgent(t)
 	a2 := testAgent(t)
 	defer a1.Shutdown()
@@ -33,7 +33,7 @@ func TestCommandRun(t *testing.T) {
 	}
 }
 
-func TestCommandRun_noAddrs(t *testing.T) {
+func TestJoinCommandRun_noAddrs(t *testing.T) {
 	c := &JoinCommand{}
 	args := []string{"-rpc-addr=foo"}
 	ui := new(cli.MockUi)
