@@ -36,6 +36,9 @@ Options:
                            section below for more info.
   -log-level=info          Log level of the agent.
   -node=hostname           Name of this node. Must be unique in the cluster
+  -role=foo                The role of this node, if any. This can be used
+                           by event scripts to differentiate different types
+						   of nodes that may be part of the same cluster.
   -rpc-addr=127.0.0.1:7373 Address to bind the RPC listener.
 
 Event scripts:
@@ -72,6 +75,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	var logLevel string
 	var eventScripts []EventScript
 	var nodeName string
+	var nodeRole string
 	var rpcAddr string
 
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
@@ -81,6 +85,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		"script to execute when events occur")
 	cmdFlags.StringVar(&logLevel, "log-level", "INFO", "log level")
 	cmdFlags.StringVar(&nodeName, "node", "", "node name")
+	cmdFlags.StringVar(&nodeRole, "role", "", "role name")
 	cmdFlags.StringVar(&rpcAddr, "rpc-addr", "127.0.0.1:7373",
 		"address to bind RPC listener to")
 	if err := cmdFlags.Parse(args); err != nil {
@@ -114,6 +119,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	config := serf.DefaultConfig()
 	config.MemberlistConfig.BindAddr = bindAddr
 	config.NodeName = nodeName
+	config.Role = nodeRole
 
 	agent := &Agent{
 		EventHandler: &ScriptEventHandler{
