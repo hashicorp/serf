@@ -28,6 +28,7 @@ listen stats
     mode http
     stats enable
     stats uri /
+    stats refresh 2s
 
 listen http-in
     bind *:80
