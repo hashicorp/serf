@@ -27,8 +27,13 @@ if [ "x\${SERF_SELF_ROLE}" != "xlb" ]; then
 fi
 
 while read line; do
+    ROLE=\`echo \$line | awk '{print \\\$3 }'\`
+    if [ "x\${ROLE}" != "xweb" ]; then
+        continue
+    fi
+
     echo \$line | \\
-        awk '{ printf "    server %s %s\\n", \$1, \$2 }' >>/etc/haproxy/haproxy.cfg
+        awk '{ printf "    server %s %s check\\n", \$1, \$2 }' >>/etc/haproxy/haproxy.cfg
 done
 
 /etc/init.d/haproxy reload
@@ -46,6 +51,7 @@ fi
 
 while read line; do
     NAME=\`echo \$line | awk '{print \\\$1 }'\`
+    sed -i'' "/${NAME}/d" /etc/haproxy/haproxy.cfg
 done
 
 /etc/init.d/haproxy reload
