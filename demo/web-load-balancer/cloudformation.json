@@ -128,7 +128,6 @@
         "LoadBalancer": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
-                "KeyName": "hashicorp-basic",
                 "ImageId": "ami-ad3660c4",
                 "PrivateIpAddress": "10.0.0.5",
                 "SecurityGroupIds": [
@@ -172,7 +171,6 @@
         "WebLaunchConfig": {
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
-                "KeyName": "hashicorp-basic",
                 "ImageId": "ami-ad3660c4",
                 "InstanceType": "m1.small",
                 "SecurityGroups": [
