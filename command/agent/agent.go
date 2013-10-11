@@ -223,7 +223,7 @@ func (a *Agent) eventLoop(h EventHandler, eventCh <-chan serf.Event, done <-chan
 		case <-done:
 			return
 		case e := <-eventCh:
-			a.logger.Printf("[DEBUG] agent: Received event: %s", e.String())
+			a.logger.Printf("[INFO] agent: Received event: %s", e.String())
 
 			if h == nil {
 				continue
