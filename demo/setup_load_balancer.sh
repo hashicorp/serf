@@ -32,6 +32,8 @@ listen stats
 
 listen http-in
     bind *:80
+    balance roundrobin
+    option http-server-close
 EOF
 sudo mv /tmp/haproxy.cfg /etc/haproxy/haproxy.cfg
 
