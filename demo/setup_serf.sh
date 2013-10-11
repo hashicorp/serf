@@ -75,3 +75,25 @@ sudo mv /tmp/agent.conf /etc/init/serf.conf
 
 # Start the agent!
 sudo start serf
+
+# If we're the web node, then we need to configure the join retry
+if [ "x${SERF_ROLE}" != "xweb" ]; then
+    exit 0
+fi
+
+cat <<EOF >/tmp/join.conf
+description "Join the serf cluster"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+task
+respawn
+
+script
+    sleep 5
+    exec /usr/local/bin/serf join 10.0.0.5
+end script
+EOF
+sudo mv /tmp/join.conf /etc/init/serf-join.conf
+sudo start serf-join
