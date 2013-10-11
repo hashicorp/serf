@@ -12,6 +12,7 @@ import (
 
 const eventScript = `#!/bin/sh
 RESULT_FILE="%s"
+echo $SERF_SELF_NAME $SERF_SELF_ROLE >>${RESULT_FILE}
 echo $SERF_EVENT $SERF_USER_EVENT "$@" >>${RESULT_FILE}
 while read line; do
 	printf "${line}\n" >>${RESULT_FILE}
@@ -51,6 +52,10 @@ func TestScriptEventHandler(t *testing.T) {
 	script, results := testEventScript(t)
 
 	h := &ScriptEventHandler{
+		Self: serf.Member{
+			Name: "ourname",
+			Role: "ourrole",
+		},
 		Scripts: []EventScript{
 			{
 				Event:  "*",
@@ -81,7 +86,7 @@ func TestScriptEventHandler(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	expected := "member-join\nfoo\t1.2.3.4\tbar\n"
+	expected := "ourname ourrole\nmember-join\nfoo\t1.2.3.4\tbar\n"
 	if string(result) != expected {
 		t.Fatalf("bad: %#v. Expected: %#v", string(result), expected)
 	}

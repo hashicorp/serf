@@ -19,11 +19,15 @@ import (
 //
 // In all events, data is passed in via stdin to faciliate piping. See
 // the various stdin functions below for more information.
-func invokeEventScript(logger *log.Logger, script string, event serf.Event) error {
+func invokeEventScript(logger *log.Logger, script string, self serf.Member, event serf.Event) error {
 	var output bytes.Buffer
 	cmd := exec.Command("/bin/sh", "-c", script)
 	cmd.Args[0] = "serf-event"
-	cmd.Env = append(cmd.Env, "SERF_EVENT="+event.EventType().String())
+	cmd.Env = append(cmd.Env,
+		"SERF_EVENT="+event.EventType().String(),
+		"SERF_SELF_NAME="+self.Name,
+		"SERF_SELF_ROLE="+self.Role,
+	)
 	cmd.Stderr = &output
 	cmd.Stdout = &output
 

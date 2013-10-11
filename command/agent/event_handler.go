@@ -12,6 +12,7 @@ type EventHandler interface {
 
 // ScriptEventHandler invokes scripts for the events that it receives.
 type ScriptEventHandler struct {
+	Self    serf.Member
 	Scripts []EventScript
 }
 
@@ -21,7 +22,7 @@ func (h *ScriptEventHandler) HandleEvent(logger *log.Logger, e serf.Event) error
 			continue
 		}
 
-		err := invokeEventScript(logger, script.Script, e)
+		err := invokeEventScript(logger, script.Script, h.Self, e)
 		if err != nil {
 			logger.Printf("[ERR] Error invoking script '%s': %s",
 				script.Script, err)
