@@ -83,16 +83,9 @@ func (a *Agent) NotifyLogs(ch chan<- string) []string {
 	}
 
 	past := make([]string, 0, len(a.logs))
-	var endIndex int
-	for i := len(a.logs) - 1; i >= a.logIndex; i-- {
-		if a.logs[i] != "" {
-			break
-		}
-
-		endIndex = i
+	if a.logs[a.logIndex] != "" {
+		past = append(past, a.logs[a.logIndex:]...)
 	}
-
-	past = append(past, a.logs[a.logIndex:endIndex]...)
 	past = append(past, a.logs[:a.logIndex]...)
 	return past
 }
