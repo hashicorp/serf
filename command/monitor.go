@@ -22,8 +22,11 @@ func (c *MonitorCommand) Help() string {
 	helpText := `
 Usage: serf monitor [options]
 
-  Shows recent events of a Serf agent, and monitors the agent, outputting
-  events as they occur in real time.
+  Shows recent log messages of a Serf agent, and attaches to the agent,
+  outputting log messages as they occur in real time. The monitor lets you
+  listen for log levels that may be filtered out of the Serf agent. For
+  example your agent may only be logging at INFO level, but with the monitor
+  you can see the DEBUG level logs.
 
 Options:
 
@@ -87,5 +90,5 @@ func (c *MonitorCommand) Run(args []string, ui cli.Ui) int {
 }
 
 func (c *MonitorCommand) Synopsis() string {
-	return "Stream events from a Serf agent"
+	return "Stream logs from a Serf agent"
 }
