@@ -1,7 +1,7 @@
 #!/bin/bash
-NODE_SETUP_URL="https://raw.github.com/hashicorp/serf/master/demo/setup_web_server.sh?login=mitchellh&token=894b69f833522a8d3c335c40ac99fa6d"
+NODE_SETUP_URL="https://raw.github.com/hashicorp/serf/master/demo/web-load-balancer/setup_web_server.sh?login=mitchellh&token=f489c8d8bdbd7dcc10d2dcb19c04ab0d"
 
-SERF_SETUP_URL="https://raw.github.com/hashicorp/serf/master/demo/setup_serf.sh?login=mitchellh&token=09af864f2bdfef4ebdd9245a02177991"
+SERF_SETUP_URL="https://raw.github.com/hashicorp/serf/master/demo/web-load-balancer/setup_serf.sh?login=mitchellh&token=0f5c264420dc0cc74fc9a9b421cbddb1"
 
 # Setup the node itself
 wget -O - $NODE_SETUP_URL | bash
