@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/cli"
 	"github.com/hashicorp/serf/serf"
+	"os"
 	"strings"
 	"sync"
 )
@@ -99,6 +100,16 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		}
 	}
 
+	if nodeName == "" {
+		hostname, err := os.Hostname()
+		if err != nil {
+			rawUi.Error(fmt.Sprintf("Error determining hostname: %s", err))
+			return 1
+		}
+
+		nodeName = hostname
+	}
+
 	// Setup logging. First create the gated log writer, which will
 	// store logs until we're ready to show them. Then create the level
 	// filter, filtering logs of the specified level.
@@ -123,6 +134,10 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 
 	agent := &Agent{
 		EventHandler: &ScriptEventHandler{
+			Self: serf.Member{
+				Name: config.NodeName,
+				Role: config.Role,
+			},
 			Scripts: eventScripts,
 		},
 		LogOutput:  logLevelFilter,
