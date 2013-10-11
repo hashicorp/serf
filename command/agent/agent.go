@@ -18,10 +18,10 @@ type Agent struct {
 	RPCAddr      string
 	SerfConfig   *serf.Config
 
-	events      []string
-	eventChs    map[chan<- string]struct{}
-	eventIndex  int
-	eventLock   sync.Mutex
+	logs        []string
+	logChs      map[chan<- string]struct{}
+	logIndex    int
+	logLock     sync.Mutex
 	logger      *log.Logger
 	once        sync.Once
 	rpcListener net.Listener
@@ -47,51 +47,51 @@ func (a *Agent) Join(addrs []string) (n int, err error) {
 	return
 }
 
-// NotifyEvents causes the agent to begin sending log events to the
+// NotifyLogs causes the agent to begin sending log events to the
 // given channel. The return value is a buffer of past events up to a
 // point.
 //
-// All NotifyEvent calls should be paired with a StopEvents call.
-func (a *Agent) NotifyEvents(ch chan<- string) []string {
+// All NotifyLogs calls should be paired with a StopLogs call.
+func (a *Agent) NotifyLogs(ch chan<- string) []string {
 	a.once.Do(a.init)
 
-	a.eventLock.Lock()
-	defer a.eventLock.Unlock()
+	a.logLock.Lock()
+	defer a.logLock.Unlock()
 
-	if a.eventChs == nil {
-		a.eventChs = make(map[chan<- string]struct{})
+	if a.logChs == nil {
+		a.logChs = make(map[chan<- string]struct{})
 	}
 
-	a.eventChs[ch] = struct{}{}
+	a.logChs[ch] = struct{}{}
 
-	if a.events == nil {
+	if a.logs == nil {
 		return nil
 	}
 
-	past := make([]string, 0, len(a.events))
+	past := make([]string, 0, len(a.logs))
 	var endIndex int
-	for i := len(a.events) - 1; i >= a.eventIndex; i-- {
-		if a.events[i] != "" {
+	for i := len(a.logs) - 1; i >= a.logIndex; i-- {
+		if a.logs[i] != "" {
 			break
 		}
 
 		endIndex = i
 	}
 
-	past = append(past, a.events[a.eventIndex:endIndex]...)
-	past = append(past, a.events[:a.eventIndex]...)
+	past = append(past, a.logs[a.logIndex:endIndex]...)
+	past = append(past, a.logs[:a.logIndex]...)
 	return past
 }
 
-// StopEvents causes the agent to stop sending events to the given
+// StopLogs causes the agent to stop sending logs to the given
 // channel.
-func (a *Agent) StopEvents(ch chan<- string) {
+func (a *Agent) StopLogs(ch chan<- string) {
 	a.once.Do(a.init)
 
-	a.eventLock.Lock()
-	defer a.eventLock.Unlock()
+	a.logLock.Lock()
+	defer a.logLock.Unlock()
 
-	delete(a.eventChs, ch)
+	delete(a.logChs, ch)
 }
 
 // Returns the Serf agent of the running Agent.
@@ -195,21 +195,21 @@ func (a *Agent) UserEvent(name string, payload []byte) error {
 	return a.serf.UserEvent(name, payload)
 }
 
-func (a *Agent) event(v string) {
-	a.eventLock.Lock()
-	defer a.eventLock.Unlock()
+func (a *Agent) storeLog(v string) {
+	a.logLock.Lock()
+	defer a.logLock.Unlock()
 
-	if a.events == nil {
-		a.events = make([]string, 512)
+	if a.logs == nil {
+		a.logs = make([]string, 512)
 	}
 
-	a.events[a.eventIndex] = v
-	a.eventIndex++
-	if a.eventIndex > len(a.events) {
-		a.eventIndex = 0
+	a.logs[a.logIndex] = v
+	a.logIndex++
+	if a.logIndex > len(a.logs) {
+		a.logIndex = 0
 	}
 
-	for ch, _ := range a.eventChs {
+	for ch, _ := range a.logChs {
 		select {
 		case ch <- v:
 		default:

@@ -78,10 +78,10 @@ func (e *rpcEndpoint) monitorStream(addr string, filter *logutils.LevelFilter) {
 	defer conn.Close()
 
 	eventCh := make(chan string, 128)
-	defer e.agent.StopEvents(eventCh)
+	defer e.agent.StopLogs(eventCh)
 
 	enc := gob.NewEncoder(conn)
-	for _, past := range e.agent.NotifyEvents(eventCh) {
+	for _, past := range e.agent.NotifyLogs(eventCh) {
 		if !filter.Check([]byte(past)) {
 			continue
 		}

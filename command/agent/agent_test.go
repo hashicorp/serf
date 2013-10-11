@@ -39,8 +39,8 @@ func TestAgent_events(t *testing.T) {
 	}
 
 	eventsCh := make(chan string, 64)
-	prev := a1.NotifyEvents(eventsCh)
-	defer a1.StopEvents(eventsCh)
+	prev := a1.NotifyLogs(eventsCh)
+	defer a1.StopLogs(eventsCh)
 
 	if len(prev) < 1 {
 		t.Fatalf("bad: %d", len(prev))

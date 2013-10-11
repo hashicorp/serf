@@ -12,6 +12,6 @@ func (w *EventWriter) Write(p []byte) (n int, err error) {
 		p = p[:n-1]
 	}
 
-	w.Agent.event(string(p))
+	w.Agent.storeLog(string(p))
 	return
 }
