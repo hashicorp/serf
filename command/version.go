@@ -33,5 +33,5 @@ func (c *VersionCommand) Run(_ []string, ui cli.Ui) int {
 }
 
 func (c *VersionCommand) Synopsis() string {
-	return "prints the Serf version"
+	return "Prints the Serf version"
 }

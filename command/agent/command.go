@@ -150,7 +150,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 }
 
 func (c *Command) Synopsis() string {
-	return "runs a Serf agent"
+	return "Runs a Serf agent"
 }
 
 func (c *Command) startShutdownWatcher(agent *Agent, ui cli.Ui) (graceful <-chan struct{}, forceful <-chan struct{}) {
