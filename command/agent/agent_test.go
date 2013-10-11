@@ -1,49 +1,33 @@
 package agent
 
 import (
-	"fmt"
+	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
-	"io/ioutil"
 	"strings"
 	"testing"
 	"time"
 )
 
-const eventScript = `#!/bin/sh
-RESULT_FILE="%s"
-echo $SERF_EVENT $SERF_USER_EVENT "$@" >>${RESULT_FILE}
-while read line; do
-	printf "${line}\n" >>${RESULT_FILE}
-done
-`
+func TestAgent_eventHandler(t *testing.T) {
+	a1 := testAgent()
+	defer a1.Shutdown()
 
-// testEventScript creates an event script that can be used with the
-// agent. It returns the path to the event script itself and a path to
-// the file that will contain the events that that script receives.
-func testEventScript(t *testing.T) (string, string) {
-	scriptFile, err := ioutil.TempFile("", "serf")
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-	defer scriptFile.Close()
+	handler := new(MockEventHandler)
+	a1.EventHandler = handler
 
-	if err := scriptFile.Chmod(0755); err != nil {
+	if err := a1.Start(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	resultFile, err := ioutil.TempFile("", "serf-result")
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-	defer resultFile.Close()
+	testutil.Yield()
 
-	_, err = scriptFile.Write([]byte(
-		fmt.Sprintf(eventScript, resultFile.Name())))
-	if err != nil {
-		t.Fatalf("err: %s")
+	if len(handler.Events) != 1 {
+		t.Fatalf("bad: %#v", handler.Events)
 	}
 
-	return scriptFile.Name(), resultFile.Name()
+	if handler.Events[0].EventType() != serf.EventMemberJoin {
+		t.Fatalf("bad: %#v", handler.Events[0])
+	}
 }
 
 func TestAgent_events(t *testing.T) {
@@ -74,55 +58,6 @@ func TestAgent_events(t *testing.T) {
 	}
 }
 
-func TestAgent_eventScript(t *testing.T) {
-	a1 := testAgent()
-	a2 := testAgent()
-	defer a1.Shutdown()
-	defer a2.Shutdown()
-
-	script, results := testEventScript(t)
-	a1.EventScripts = []EventScript{
-		{
-			Event:  "*",
-			Script: script,
-		},
-	}
-
-	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
-	if err := a2.Start(); err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
-	_, err := a1.Serf().Join([]string{a2.SerfConfig.MemberlistConfig.BindAddr})
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
-	// Double yield here on purpose just to be sure
-	testutil.Yield()
-	testutil.Yield()
-
-	result, err := ioutil.ReadFile(results)
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
-	expected := fmt.Sprintf(
-		"member-join\n%s\t%s\n"+
-			"member-join\n%s\t%s\n",
-		a1.SerfConfig.NodeName,
-		a1.SerfConfig.MemberlistConfig.BindAddr,
-		a2.SerfConfig.NodeName,
-		a2.SerfConfig.MemberlistConfig.BindAddr)
-
-	if string(result) != expected {
-		t.Fatalf("bad: %#v. Expected: %#v", string(result), expected)
-	}
-}
-
 func TestAgentShutdown_multiple(t *testing.T) {
 	a := testAgent()
 	if err := a.Start(); err != nil {
@@ -147,13 +82,8 @@ func TestAgentUserEvent(t *testing.T) {
 	a1 := testAgent()
 	defer a1.Shutdown()
 
-	script, results := testEventScript(t)
-	a1.EventScripts = []EventScript{
-		{
-			Event:  "*",
-			Script: script,
-		},
-	}
+	handler := new(MockEventHandler)
+	a1.EventHandler = handler
 
 	if err := a1.Start(); err != nil {
 		t.Fatalf("err: %s", err)
@@ -161,18 +91,29 @@ func TestAgentUserEvent(t *testing.T) {
 
 	testutil.Yield()
 
-	if err := a1.UserEvent("deploy", []byte("foo\n")); err != nil {
+	if err := a1.UserEvent("deploy", []byte("foo")); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
 	testutil.Yield()
 
-	result, err := ioutil.ReadFile(results)
-	if err != nil {
-		t.Fatalf("err: %s", err)
+	handler.Lock()
+	defer handler.Unlock()
+
+	if len(handler.Events) == 0 {
+		t.Fatal("no events")
 	}
 
-	if !strings.Contains(string(result), "user deploy\nfoo") {
-		t.Fatalf("bad: %#v", string(result))
+	e, ok := handler.Events[len(handler.Events)-1].(serf.UserEvent)
+	if !ok {
+		t.Fatalf("bad: %#v", e)
+	}
+
+	if e.Name != "deploy" {
+		t.Fatalf("bad: %#v", e)
+	}
+
+	if string(e.Payload) != "foo" {
+		t.Fatalf("bad: %#v", e)
 	}
 }

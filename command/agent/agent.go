@@ -13,7 +13,7 @@ import (
 
 // Agent actually starts and manages a Serf agent.
 type Agent struct {
-	EventScripts []EventScript
+	EventHandler EventHandler
 	LogOutput    io.Writer
 	RPCAddr      string
 	SerfConfig   *serf.Config
@@ -146,11 +146,8 @@ func (a *Agent) Start() error {
 	a.SerfConfig.MemberlistConfig.LogOutput = a.LogOutput
 	a.SerfConfig.LogOutput = a.LogOutput
 
-	var eventCh chan serf.Event
-	if len(a.EventScripts) > 0 {
-		eventCh = make(chan serf.Event, 64)
-		a.SerfConfig.EventCh = eventCh
-	}
+	eventCh := make(chan serf.Event, 64)
+	a.SerfConfig.EventCh = eventCh
 
 	var err error
 	a.serf, err = serf.Create(a.SerfConfig)
@@ -183,9 +180,7 @@ func (a *Agent) Start() error {
 	shutdownCh := make(chan struct{})
 
 	// Only listen for events if we care about events.
-	if eventCh != nil {
-		go a.eventLoop(a.EventScripts, eventCh, shutdownCh)
-	}
+	go a.eventLoop(a.EventHandler, eventCh, shutdownCh)
 
 	a.shutdownCh = shutdownCh
 	a.state = AgentRunning
@@ -222,21 +217,21 @@ func (a *Agent) event(v string) {
 	}
 }
 
-func (a *Agent) eventLoop(scripts []EventScript, eventCh <-chan serf.Event, done <-chan struct{}) {
+func (a *Agent) eventLoop(h EventHandler, eventCh <-chan serf.Event, done <-chan struct{}) {
 	for {
 		select {
 		case <-done:
 			return
 		case e := <-eventCh:
 			a.logger.Printf("[DEBUG] agent: Received event: %s", e.String())
-			for _, script := range scripts {
-				if !script.Invoke(e) {
-					continue
-				}
 
-				if err := a.invokeEventScript(script.Script, e); err != nil {
-					a.logger.Printf("[ERR] agent: Error executing event script: %s", err)
-				}
+			if h == nil {
+				continue
+			}
+
+			err := h.HandleEvent(a.logger, e)
+			if err != nil {
+				a.logger.Printf("[ERR] agent: Error invoking event handler: %s", err)
 			}
 		}
 	}

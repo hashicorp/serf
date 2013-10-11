@@ -12,7 +12,7 @@ import (
 
 // invokeEventScript will execute the given event script with the given
 // event.
-func (a *Agent) invokeEventScript(script string, event serf.Event) error {
+func invokeEventScript(logger *log.Logger, script string, event serf.Event) error {
 	var output bytes.Buffer
 	cmd := exec.Command("/bin/sh", "-c", script)
 	cmd.Args[0] = "serf-event"
@@ -27,10 +27,10 @@ func (a *Agent) invokeEventScript(script string, event serf.Event) error {
 
 	switch e := event.(type) {
 	case serf.MemberEvent:
-		go memberEventStdin(a.logger, stdin, &e)
+		go memberEventStdin(logger, stdin, &e)
 	case serf.UserEvent:
 		cmd.Env = append(cmd.Env, "SERF_USER_EVENT="+e.Name)
-		go userEventStdin(a.logger, stdin, &e)
+		go userEventStdin(logger, stdin, &e)
 	default:
 		return fmt.Errorf("Unknown event type: %s", event.EventType().String())
 	}
@@ -40,14 +40,13 @@ func (a *Agent) invokeEventScript(script string, event serf.Event) error {
 	}
 
 	err = cmd.Wait()
-	a.logger.Printf("[DEBUG] Event '%s' script output: %s",
+	logger.Printf("[DEBUG] Event '%s' script output: %s",
 		event.EventType().String(), output.String())
 
 	if err != nil {
 		return err
 	}
 
-	// TODO(mitchellh): log stdout/stderr
 	return nil
 }
 
