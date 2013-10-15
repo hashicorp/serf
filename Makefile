@@ -16,7 +16,7 @@ test: deps subnet
 	go list ./... | xargs -n1 go test
 
 integ: subnet
-	INTEG_TESTS=yes go test ./...
+	go list ./... | INTEG_TESTS=yes xargs -n1 go test
 
 subnet:
 	echo ./test/setup_subnet.sh
