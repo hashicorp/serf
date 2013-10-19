@@ -30,4 +30,10 @@ func TestLamportClock(t *testing.T) {
 	if l.Time() != 42 {
 		t.Fatalf("bad time value")
 	}
+
+	l.Witness(30)
+
+	if l.Time() != 42 {
+		t.Fatalf("bad time value")
+	}
 }
