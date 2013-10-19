@@ -8,7 +8,6 @@ import (
 	"log"
 	"math/rand"
 	"net"
-	"os"
 	"sync"
 	"time"
 )
@@ -143,63 +142,6 @@ const (
 // After calling this function, the configuration should no longer be used
 // or modified by the caller.
 func Create(conf *Config) (*Serf, error) {
-	if conf.NodeName == "" {
-		// Default the node name to the hostname
-		hostname, err := os.Hostname()
-		if err != nil {
-			return nil, fmt.Errorf("Error setting NodeName to hostname: %s", err)
-		}
-
-		conf.NodeName = hostname
-	}
-
-	if conf.BroadcastTimeout == 0 {
-		// Set a cautious default for the timeout for leave broadcasts.
-		conf.BroadcastTimeout = 5 * time.Second
-	}
-
-	if conf.ReapInterval == 0 {
-		// Set a reasonable default for ReapInterval
-		conf.ReapInterval = 15 * time.Second
-	}
-
-	if conf.ReconnectInterval == 0 {
-		// Set a reasonable default for ReconnectInterval
-		conf.ReconnectInterval = 30 * time.Second
-	}
-
-	if conf.ReconnectTimeout == 0 {
-		// Set a reasonable default for ReconnectTimeout
-		conf.ReconnectTimeout = 24 * time.Hour
-	}
-
-	if conf.TombstoneTimeout == 0 {
-		// Set a reasonable default for TombstoneTimeout
-		conf.TombstoneTimeout = 24 * time.Hour
-	}
-
-	if conf.QueueDepthWarning == 0 {
-		// Set reasonable default for QueueDepthWarning
-		conf.QueueDepthWarning = 128
-	}
-
-	if conf.RecentIntentBuffer == 0 {
-		// Set a reasonable default for RecentJoinBuffer
-		conf.RecentIntentBuffer = 128
-	}
-
-	if conf.EventBuffer == 0 {
-		conf.EventBuffer = 512
-	}
-
-	if conf.MemberlistConfig == nil {
-		conf.MemberlistConfig = memberlist.DefaultConfig()
-	}
-
-	if conf.LogOutput == nil {
-		conf.LogOutput = os.Stderr
-	}
-
 	serf := &Serf{
 		config:     conf,
 		logger:     log.New(conf.LogOutput, "", log.LstdFlags),

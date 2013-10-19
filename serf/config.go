@@ -3,6 +3,7 @@ package serf
 import (
 	"github.com/hashicorp/memberlist"
 	"io"
+	"os"
 	"time"
 )
 
@@ -79,9 +80,9 @@ type Config struct {
 	ReconnectTimeout  time.Duration
 	TombstoneTimeout  time.Duration
 
-	// QueueDepthWarning is used to generate warning message is the
+	// QueueDepthWarning is used to generate warning message if the
 	// number of queued messages to broadcast exceeds this number. This
-	// is to provide the user feed back if events are being triggered
+	// is to provide the user feedback if events are being triggered
 	// faster than they can be disseminated
 	QueueDepthWarning int
 
@@ -121,8 +122,23 @@ type Config struct {
 
 // DefaultConfig returns a Config struct that contains reasonable defaults
 // for most of the configurations.
-func DefaultConfig() *Config {
-	return &Config{
-		MemberlistConfig: memberlist.DefaultConfig(),
+func DefaultConfig() (*Config, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
 	}
+
+	return &Config{
+		NodeName:           hostname,
+		BroadcastTimeout:   5 * time.Second,
+		EventBuffer:        512,
+		LogOutput:          os.Stderr,
+		ReapInterval:       15 * time.Second,
+		RecentIntentBuffer: 128,
+		ReconnectInterval:  30 * time.Second,
+		ReconnectTimeout:   24 * time.Hour,
+		QueueDepthWarning:  128,
+		TombstoneTimeout:   24 * time.Hour,
+		MemberlistConfig:   memberlist.DefaultConfig(),
+	}, nil
 }

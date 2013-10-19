@@ -2,6 +2,7 @@ package serf
 
 import (
 	"github.com/hashicorp/memberlist"
+	"github.com/hashicorp/serf/testutil"
 	"testing"
 )
 
@@ -21,14 +22,14 @@ func TestSerf_joinLeave_ltime(t *testing.T) {
 	}
 	defer s2.Shutdown()
 
-	yield()
+	testutil.Yield()
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	yield()
+	testutil.Yield()
 
 	if s2.members[s1.config.NodeName].statusLTime != 1 {
 		t.Fatalf("join time is not valid %d",
@@ -45,7 +46,7 @@ func TestSerf_joinLeave_ltime(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	yield()
+	testutil.Yield()
 
 	// s1 clock should exceed s2 due to leave
 	if s2.clock.Time() <= oldClock {

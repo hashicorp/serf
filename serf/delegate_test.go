@@ -2,6 +2,7 @@ package serf
 
 import (
 	"github.com/hashicorp/memberlist"
+	"github.com/hashicorp/serf/testutil"
 	"reflect"
 	"testing"
 )
@@ -48,7 +49,7 @@ func TestDelegate_LocalState(t *testing.T) {
 	}
 	defer s2.Shutdown()
 
-	yield()
+	testutil.Yield()
 
 	_, err = s1.Join([]string{c2.MemberlistConfig.BindAddr})
 	if err != nil {

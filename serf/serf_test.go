@@ -3,14 +3,17 @@ package serf
 import (
 	"fmt"
 	"github.com/hashicorp/serf/testutil"
-	"os"
 	"strings"
 	"testing"
 	"time"
 )
 
 func testConfig() *Config {
-	config := DefaultConfig()
+	config, err := DefaultConfig()
+	if err != nil {
+		panic(err)
+	}
+
 	config.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
 
 	// Set probe intervals that are aggressive for finding bad nodes
@@ -55,31 +58,6 @@ func testMember(t *testing.T, members []Member, name string, status MemberStatus
 	t.Fatalf("node not found: %s", name)
 }
 
-func yield() {
-	time.Sleep(5 * time.Millisecond)
-}
-
-func TestSerfCreate_noName(t *testing.T) {
-	t.Parallel()
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
-	config := testConfig()
-	config.NodeName = ""
-
-	_, err = Create(config)
-	if err != nil {
-		t.Fatalf("should not have error")
-	}
-
-	if config.NodeName != hostname {
-		t.Fatalf("bad node name: %s", config.NodeName)
-	}
-}
-
 func TestSerf_eventsFailed(t *testing.T) {
 	// Create the s1 config with an event channel so we can listen
 	eventCh := make(chan Event, 4)
@@ -101,14 +79,14 @@ func TestSerf_eventsFailed(t *testing.T) {
 	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	yield()
+	testutil.Yield()
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	yield()
+	testutil.Yield()
 
 	if err := s2.Shutdown(); err != nil {
 		t.Fatalf("err: %s", err)
@@ -142,14 +120,14 @@ func TestSerf_eventsJoin(t *testing.T) {
 	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	yield()
+	testutil.Yield()
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	yield()
+	testutil.Yield()
 
 	testEvents(t, eventCh, s2Config.NodeName,
 		[]EventType{EventMemberJoin})
@@ -176,20 +154,20 @@ func TestSerf_eventsLeave(t *testing.T) {
 	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	yield()
+	testutil.Yield()
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	yield()
+	testutil.Yield()
 
 	if err := s2.Leave(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	yield()
+	testutil.Yield()
 
 	// Now that s2 has left, we check the events to make sure we got
 	// a leave event in s1 about the leave.
@@ -217,28 +195,28 @@ func TestSerf_eventsUser(t *testing.T) {
 	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	yield()
+	testutil.Yield()
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	yield()
+	testutil.Yield()
 
 	// Fire a user event
 	if err := s1.UserEvent("event!", []byte("test")); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	yield()
+	testutil.Yield()
 
 	// Fire a user event
 	if err := s1.UserEvent("second", []byte("foobar")); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	yield()
+	testutil.Yield()
 
 	// check the events to make sure we got
 	// a leave event in s1 about the leave.
@@ -281,7 +259,7 @@ func TestSerf_joinLeave(t *testing.T) {
 	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	yield()
+	testutil.Yield()
 
 	if len(s1.Members()) != 1 {
 		t.Fatalf("s1 members: %d", len(s1.Members()))
@@ -296,7 +274,7 @@ func TestSerf_joinLeave(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	yield()
+	testutil.Yield()
 
 	if len(s1.Members()) != 2 {
 		t.Fatalf("s1 members: %d", len(s1.Members()))
@@ -345,14 +323,14 @@ func TestSerf_reconnect(t *testing.T) {
 	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	yield()
+	testutil.Yield()
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	yield()
+	testutil.Yield()
 
 	// Now force the shutdown of s2 so it appears to fail.
 	if err := s2.Shutdown(); err != nil {
@@ -401,7 +379,7 @@ func TestSerf_role(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	yield()
+	testutil.Yield()
 
 	members := s1.Members()
 	if len(members) != 2 {
@@ -456,7 +434,7 @@ func TestSerfRemoveFailedNode(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	yield()
+	testutil.Yield()
 
 	// Now force the shutdown of s2 so it appears to fail.
 	if err := s2.Shutdown(); err != nil {
