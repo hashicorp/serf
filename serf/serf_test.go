@@ -9,11 +9,7 @@ import (
 )
 
 func testConfig() *Config {
-	config, err := DefaultConfig()
-	if err != nil {
-		panic(err)
-	}
-
+	config := DefaultConfig()
 	config.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
 
 	// Set probe intervals that are aggressive for finding bad nodes

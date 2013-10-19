@@ -122,10 +122,10 @@ type Config struct {
 
 // DefaultConfig returns a Config struct that contains reasonable defaults
 // for most of the configurations.
-func DefaultConfig() (*Config, error) {
+func DefaultConfig() *Config {
 	hostname, err := os.Hostname()
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	return &Config{
@@ -140,5 +140,5 @@ func DefaultConfig() (*Config, error) {
 		QueueDepthWarning:  128,
 		TombstoneTimeout:   24 * time.Hour,
 		MemberlistConfig:   memberlist.DefaultConfig(),
-	}, nil
+	}
 }
