@@ -19,3 +19,10 @@ infection and quickly alerts the other living humans. Serf
 relies on a random probing technique which is proven to
 efficiently scale to clusters of any size.
 
+## Custom Events
+
+In addition to managing membership, Serf can broadcast custom events.
+These can be used to trigger deploys, restart processes, spread tales
+of human heroism, and anything else you may want. The event system is
+flexible and lightweight, making it easy for application developers and
+sysadmins alike to leverage.
