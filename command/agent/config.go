@@ -23,3 +23,19 @@ type Config struct {
 	// EventHandlers is a list of event handlers that will be invoked.
 	EventHandlers []string `mapstructure:"event_handlers"`
 }
+
+// EventScripts returns the list of EventScripts associated with this
+// configuration and specified by the "event_handlers" configuration.
+func (c *Config) EventScripts() ([]EventScript, error) {
+	result := make([]EventScript, 0, len(c.EventHandlers))
+	for _, v := range c.EventHandlers {
+		part, err := ParseEventScript(v)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, part...)
+	}
+
+	return result, nil
+}

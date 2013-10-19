@@ -74,7 +74,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 
 	var bindAddr string
 	var logLevel string
-	var eventScripts []EventScript
+	var eventHandlers []string
 	var nodeName string
 	var nodeRole string
 	var rpcAddr string
@@ -82,14 +82,28 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
 	cmdFlags.StringVar(&bindAddr, "bind", "0.0.0.0", "address to bind listeners to")
-	cmdFlags.Var((*FlagEventScripts)(&eventScripts), "event-script",
-		"script to execute when events occur")
+	cmdFlags.Var((*AppendSliceValue)(&eventHandlers), "event-handler",
+		"command to execute when events occur")
 	cmdFlags.StringVar(&logLevel, "log-level", "INFO", "log level")
 	cmdFlags.StringVar(&nodeName, "node", "", "node name")
 	cmdFlags.StringVar(&nodeRole, "role", "", "role name")
 	cmdFlags.StringVar(&rpcAddr, "rpc-addr", "127.0.0.1:7373",
 		"address to bind RPC listener to")
 	if err := cmdFlags.Parse(args); err != nil {
+		return 1
+	}
+
+	config := Config{
+		NodeName:      nodeName,
+		Role:          nodeRole,
+		BindAddr:      bindAddr,
+		RPCAddr:       rpcAddr,
+		EventHandlers: eventHandlers,
+	}
+
+	eventScripts, err := config.EventScripts()
+	if err != nil {
+		rawUi.Error(err.Error())
 		return 1
 	}
 
@@ -127,22 +141,22 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		return 1
 	}
 
-	config := serf.DefaultConfig()
-	config.MemberlistConfig.BindAddr = bindAddr
-	config.NodeName = nodeName
-	config.Role = nodeRole
+	serfConfig := serf.DefaultConfig()
+	serfConfig.MemberlistConfig.BindAddr = bindAddr
+	serfConfig.NodeName = nodeName
+	serfConfig.Role = nodeRole
 
 	agent := &Agent{
 		EventHandler: &ScriptEventHandler{
 			Self: serf.Member{
-				Name: config.NodeName,
-				Role: config.Role,
+				Name: serfConfig.NodeName,
+				Role: serfConfig.Role,
 			},
 			Scripts: eventScripts,
 		},
 		LogOutput:  logLevelFilter,
 		RPCAddr:    rpcAddr,
-		SerfConfig: config,
+		SerfConfig: serfConfig,
 	}
 
 	ui.Output("Starting Serf agent...")
@@ -153,7 +167,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 
 	ui.Output("Serf agent running!")
 	ui.Info(fmt.Sprintf("Node name: '%s'", config.NodeName))
-	ui.Info(fmt.Sprintf("Bind addr: '%s'", config.MemberlistConfig.BindAddr))
+	ui.Info(fmt.Sprintf("Bind addr: '%s'", config.BindAddr))
 	ui.Info(fmt.Sprintf(" RPC addr: '%s'", rpcAddr))
 	ui.Info("")
 	ui.Output("Log data will now stream in as it occurs:\n")
