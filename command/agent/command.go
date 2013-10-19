@@ -39,7 +39,7 @@ Options:
   -node=hostname           Name of this node. Must be unique in the cluster
   -role=foo                The role of this node, if any. This can be used
                            by event scripts to differentiate different types
-						   of nodes that may be part of the same cluster.
+                           of nodes that may be part of the same cluster.
   -rpc-addr=127.0.0.1:7373 Address to bind the RPC listener.
 
 Event scripts:
