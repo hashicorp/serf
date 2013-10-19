@@ -19,7 +19,7 @@ integ: subnet
 	go list ./... | INTEG_TESTS=yes xargs -n1 go test
 
 subnet:
-	echo ./test/setup_subnet.sh
+	./scripts/setup_test_subnet.sh
 
 web:
 	./scripts/website_run.sh
