@@ -124,6 +124,12 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		nodeName = hostname
 	}
 
+	bindIP, bindPort, err := config.BindAddrParts()
+	if err != nil {
+		rawUi.Error(fmt.Sprintf("Invalid bind address: %s", err))
+		return 1
+	}
+
 	// Setup logging. First create the gated log writer, which will
 	// store logs until we're ready to show them. Then create the level
 	// filter, filtering logs of the specified level.
@@ -142,7 +148,9 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	}
 
 	serfConfig := serf.DefaultConfig()
-	serfConfig.MemberlistConfig.BindAddr = bindAddr
+	serfConfig.MemberlistConfig.BindAddr = bindIP
+	serfConfig.MemberlistConfig.TCPPort = bindPort
+	serfConfig.MemberlistConfig.UDPPort = bindPort
 	serfConfig.NodeName = nodeName
 	serfConfig.Role = nodeRole
 
@@ -167,7 +175,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 
 	ui.Output("Serf agent running!")
 	ui.Info(fmt.Sprintf("Node name: '%s'", config.NodeName))
-	ui.Info(fmt.Sprintf("Bind addr: '%s'", config.BindAddr))
+	ui.Info(fmt.Sprintf("Bind addr: '%s:%d'", bindIP, bindPort))
 	ui.Info(fmt.Sprintf(" RPC addr: '%s'", rpcAddr))
 	ui.Info("")
 	ui.Output("Log data will now stream in as it occurs:\n")
