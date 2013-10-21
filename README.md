@@ -42,6 +42,7 @@ the output of each. Start the first agent:
 ```
 $ serf agent -node=foo -bind-addr=127.0.0.10 -rpc-addr=127.0.0.1:7373
 ...
+```
 
 Start the second agent in another terminal session (while the first is still
 running):
