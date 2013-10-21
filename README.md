@@ -81,6 +81,12 @@ If you force kill an agent, it will eventually (usually within seconds)
 be detected by another member of the cluster which will notify the
 cluster of the node failure.
 
+## Documentation
+
+Full, comprehensive documentation is viewable on the Serf website:
+
+http://www.serfdom.io/docs
+
 ## Developing Serf
 
 If you wish to work on Serf itself, you'll first need [Go](http://golang.org)
