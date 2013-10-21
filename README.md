@@ -5,9 +5,10 @@
 * Mailing list: [Google Groups](https://groups.google.com/group/serfdom/)
 
 Serf is a decentralized solution for service discovery and orchestration
-that is lightweight, highly available, and fault tolerant. Serf runs on
-Linux, Mac OS X, and Windows. An efficient and lightweight gossip
-protocol to communiate with other nodes. Serf can detect node failures
+that is lightweight, highly available, and fault tolerant.
+
+Serf runs on Linux, Mac OS X, and Windows. An efficient and lightweight gossip
+protocol is used to communiate with other nodes. Serf can detect node failures
 and notify the rest of the cluster. An event system is built on top of
 Serf, letting you use Serf's gossip protocol to propagate events such
 as deploys, configuration changes, etc. Serf is completely masterless
