@@ -72,4 +72,6 @@ Custom events come with some trade-offs, however:
 
 * Payload size is limited: Serf gossips via UDP, so the payload must fit
   within a single UDP packet (alongside any other data Serf sends). This
-  limits the potential size of a payload to less than 1 KB.
+  limits the potential size of a payload to less than 1 KB. In practice,
+  Serf limits the payload to a much smaller size.
+

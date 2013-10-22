@@ -34,7 +34,7 @@ environmental variable. The data for a Serf event always comes in via
 stdin, so the script then reads stdin and outputs any data it received.
 
 By sending data to stdin, Serf works extremely well with standard Unix
-tools such as `grep`, `sed`, `awk`, etc. Pipes also work when specifying
+tools such as `grep`, `sed`, `awk`, etc. Shell commands work when specifying
 event handlers, so by using standard Unix methodologies, complex event
 handlers can often be built up without resorting to custom scripts.
 

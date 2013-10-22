@@ -7,16 +7,18 @@ sidebar_current: "gettingstarted-agent"
 # Run the Serf Agent
 
 After Serf is installed, the agent must be run. The agent is a lightweight
-process that runs forever (until told to quit) and maintains cluster membership
+process that runs until told to quit and maintains cluster membership
 and communication. The agent must be run for every node that will be part of
 the cluster.
 
-In some cases, multiple agents will need to be run if you're running multiple
-Serf clusters. For example, you may want to run a separate Serf cluster to
+It is possible to run multiple agents, and thus participate in multiple Serf
+clusters. For example, you may want to run a separate Serf cluster to
 maintain web server membership info for a load balancer from another Serf
 cluster that manages membership of Memcached nodes, but perhaps the web
 servers need to be part of the Memcached cluster too so they can be notified
-when Memcached nodes come online or go offline.
+when Memcached nodes come online or go offline. Other examples include a Serf
+cluster within a datacenter, and a seperate cluster used for cross WAN gossip
+which has more relaxed timing.
 
 ## Starting the Agent
 
@@ -71,7 +73,10 @@ You can use `Ctrl-C` (the interrupt signal) to gracefully halt the agent.
 After interrupting the agent, you should see it leave the cluster gracefully
 and shut down.
 
-By gracefully leaving, Serf would notify other cluster members that the
+By gracefully leaving, Serf notifies other cluster members that the
 node _left_. If you had forcibly killed the agent process, other members
 of the cluster would have detected that the node _failed_. This can be a
-crucial difference depending on what your use case of Serf is.
+crucial difference depending on what your use case of Serf is. Serf will
+automatically try to reconnect to _failed_ nodes, which allows it to recover
+from certain network conditions, while _left_ nodes are no longer contacted.
+
