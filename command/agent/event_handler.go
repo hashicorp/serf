@@ -79,6 +79,7 @@ func (s *EventScript) Valid() bool {
 	case "member-leave":
 	case "member-failed":
 	case "user":
+	case "*":
 	default:
 		return false
 	}

@@ -149,6 +149,7 @@ func TestEventScriptValid(t *testing.T) {
 		{"user", true},
 		{"User", false},
 		{"member", false},
+		{"*", true},
 	}
 
 	for _, tc := range testCases {
