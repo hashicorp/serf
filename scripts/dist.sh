@@ -11,9 +11,9 @@ cd $DIR
 
 # Determine the version that we're building based on the contents
 # of packer/version.go.
-VERSION=$(grep "const Version " main.go | sed -E 's/.*"(.+)"$/\1/')
+VERSION=$(grep "const Version " version.go | sed -E 's/.*"(.+)"$/\1/')
 VERSIONDIR="${VERSION}"
-PREVERSION=$(grep "const VersionPrerelease " main.go | sed -E 's/.*"(.*)"$/\1/')
+PREVERSION=$(grep "const VersionPrerelease " version.go | sed -E 's/.*"(.*)"$/\1/')
 if [ ! -z $PREVERSION ]; then
     PREVERSION="${PREVERSION}.$(date -u +%s)"
     VERSIONDIR="${VERSIONDIR}-${PREVERSION}"
