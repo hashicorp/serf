@@ -6,7 +6,7 @@
 #header {
   color: @white;
   background-color: @black;
-  text-rendering: optimizeLegibility;  
+  text-rendering: optimizeLegibility;
 
   a{
     color: @white;
@@ -15,14 +15,14 @@
   .navbar-brand {
     &.logo{
       padding: 13px 15px;
-      line-height: 0;      
+      line-height: 0;
 
       span{
         display: inline-block;
         width: 52px;
         height: 62px;
         background: url(../images/logo-type-medium.png) 0 0 no-repeat;
-        background-image: -webkit-image-set(url(../images/logo-type-medium.png) 1x, url(../img/logo-type-medium@2x.png) 2x);
+        background-image: -webkit-image-set(url(../images/logo-type-medium.png) 1x, url(../images/logo-type-medium@2x.png) 2x);
         background-size: 52px 64px;
       }
     }
@@ -32,7 +32,7 @@
       line-height: 62px;
       letter-spacing: 14px;
       text-shadow: @text-shadow;
-    }    
+    }
   }
 
   .navbar-nav{
@@ -43,10 +43,10 @@
       letter-spacing: 3px;
     }
   }
-  
+
   .nav > li > a:hover, .nav > li > a:focus {
     background-color: transparent;
-  }  
+  }
 
   .main-links.navbar-nav{
     li + li a::before {
@@ -58,16 +58,16 @@
       line-height: 62px;
       text-shadow: @text-shadow;
     }
-    
+
   }
 
   .buttons.navbar-nav{
     margin-top: 30px;
-    margin-left: 30px;    
+    margin-left: 30px;
     background-color: @red-dark;
     border-radius: @btn-border-radius;
     .box-shadow( @shadow );
-    
+
     li.first{
       border-right: 2px solid @red-darker;
     }
