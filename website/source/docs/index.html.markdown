@@ -1,6 +1,7 @@
 ---
 layout: "docs"
-title: "Documentation"
+page_title: "Documentation"
+sidebar_current: "docs-home"
 ---
 
 # Serf Documentation

@@ -1,0 +1,49 @@
+---
+layout: "simulator"
+page_title: "Convergence Simulator"
+sidebar_current: "docs-internals"
+---
+
+<h1>Serf Convergence Simulator</h1>
+
+<div class="row">
+	<div id="graph"></div>
+</div>
+<div class="row">
+	<div class="col-md-12">
+		<h4>Estimated max bandwidth: <span id="bytes">0</span> kbps/node</h4>
+	</div>
+</div>
+<div class="row">
+	<div class="col-md-6">
+		<h5>Gossip Interval</h5>
+		<p>The gossip interval controls how often messages are gossiped to other nodes</p>
+		<input type="text" id="interval" value="0.2"></input> seconds
+	</div>
+	<div class="col-md-6">
+		<h5>Gossip Fanout</h5>
+		<p>The gossip fanout controls how many nodes we gossip with</p>
+		<input type="text" id="fanout" value="3"></input> nodes
+	</div>
+</div>
+<div class="row">
+	<div class="col-md-6">
+		<h5>Nodes</h5>
+		<p>This controls how many simulated nodes are in the cluster</p>
+		<input type="text" id="nodes" value="30"></input>
+	</div>
+	<div class="col-md-6">
+		<h5>Packet Loss</h5>
+		<p>This controsl the amount of simulated packet loss [0, 100)</p>
+		<input type="text" id="packetloss" value="0"></input> % lost packets
+	</div>
+</div>
+<div class="row">
+	<div class="col-md-6">
+		<h5>Node failures</h5>
+		<p>This controls what percent of simulated nodes are failed</p>
+		<input type="text" id="failed" value="0"></input> % failed
+	</div>
+	<div class="col-md-6">
+	</div>
+</div>
