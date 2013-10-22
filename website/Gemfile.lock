@@ -9,6 +9,7 @@ GEM
       coffee-script-source
       execjs
     coffee-script-source (1.6.3)
+    commonjs (0.2.7)
     compass (0.12.2)
       chunky_png (~> 1.2)
       fssm (>= 0.2.7)
@@ -25,6 +26,8 @@ GEM
     hike (1.2.3)
     i18n (0.6.5)
     kramdown (1.1.0)
+    less (2.4.0)
+      commonjs (~> 0.2.7)
     libv8 (3.16.14.3)
     listen (1.2.3)
       rb-fsevent (>= 0.9.3)
@@ -101,6 +104,7 @@ PLATFORMS
 
 DEPENDENCIES
   highline (~> 1.6.15)
+  less (~> 2.4.0)
   middleman (~> 3.1.5)
   middleman-minify-html (~> 3.1.1)
   rack-contrib (~> 1.1.0)

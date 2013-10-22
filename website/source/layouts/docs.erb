@@ -1,73 +1,59 @@
-<% wrap_layout :inner do %>
-	<% content_for :sidebar do %>
-		<h2>Docs</h2>
-
-		<ul>
-			<li><a href="/docs/installation.html">Installation</a></li>
-			<li><a href="/docs/basics/terminology.html">Terminology</a></li>
-		</ul>
-
-		<ul>
-			<li><h4>Command-Line</h4></li>
-			<li><a href="/docs/command-line/introduction.html">Introduction</a></li>
-			<li><a href="/docs/command-line/build.html">Build</a></li>
-			<li><a href="/docs/command-line/fix.html">Fix</a></li>
-			<li><a href="/docs/command-line/inspect.html">Inspect</a></li>
-			<li><a href="/docs/command-line/validate.html">Validate</a></li>
-			<li><a href="/docs/command-line/machine-readable.html">Machine-Readable Output</a></li>
-		</ul>
-
-		<ul>
-			<li><h4>Templates</h4></li>
-			<li><a href="/docs/templates/introduction.html">Introduction</a></li>
-			<li><a href="/docs/templates/builders.html">Builders</a></li>
-			<li><a href="/docs/templates/provisioners.html">Provisioners</a></li>
-			<li><a href="/docs/templates/post-processors.html">Post-Processors</a></li>
-			<li><a href="/docs/templates/configuration-templates.html">Configuration Templates</a></li>
-			<li><a href="/docs/templates/user-variables.html">User Variables</a></li>
-			<li><a href="/docs/templates/veewee-to-packer.html">Veewee-to-Packer</a></li>
-		</ul>
-
-		<ul>
-			<li><h4>Builders</h4></li>
-			<li><a href="/docs/builders/amazon.html">Amazon EC2 (AMI)</a></li>
-			<li><a href="/docs/builders/digitalocean.html">DigitalOcean</a></li>
-			<li><a href="/docs/builders/openstack.html">OpenStack</a></li>
-			<li><a href="/docs/builders/virtualbox.html">VirtualBox</a></li>
-			<li><a href="/docs/builders/vmware.html">VMware</a></li>
-			<li><a href="/docs/builders/custom.html">Custom</a></li>
-		</ul>
-
-		<ul>
-			<li><h4>Provisioners</h4></li>
-			<li><a href="/docs/provisioners/shell.html">Shell Scripts</a></li>
-			<li><a href="/docs/provisioners/file.html">File Uploads</a></li>
-			<li><a href="/docs/provisioners/chef-solo.html">Chef Solo</a></li>
-			<li><a href="/docs/provisioners/puppet-masterless.html">Puppet</a></li>
-			<li><a href="/docs/provisioners/salt-masterless.html">Salt</a></li>
-			<li><a href="/docs/provisioners/custom.html">Custom</a></li>
-		</ul>
-
-		<ul>
-			<li><h4>Post-Processors</h4></li>
-			<li><a href="/docs/post-processors/vagrant.html">Vagrant</a></li>
-		</ul>
-
-		<ul>
-			<li><h4>Other</h4></li>
-			<li><a href="/docs/other/core-configuration.html">Core Configuration</a></li>
-			<li><a href="/docs/other/debugging.html">Debugging</a></li>
-		</ul>
-
-		<ul>
-			<li><h4>Extend Packer</h4></li>
-			<li><a href="/docs/extend/plugins.html">Packer Plugins</a></li>
-			<li><a href="/docs/extend/developing-plugins.html">Developing Plugins</a></li>
-			<li><a href="/docs/extend/builder.html">Custom Builder</a></li>
-			<li><a href="/docs/extend/command.html">Custom Command</a></li>
-			<li><a href="/docs/extend/post-processor.html">Custom Post-Processor</a></li>
-			<li><a href="/docs/extend/provisioner.html">Custom Provisioner</a></li>
-		</ul>
+<% wrap_layout :layout do %>
+	<div class="container">
+	<div class="col-md-4">
+		<div class="docs-sidebar hidden-print affix-top" role="complementary">
+			<ul class="nav docs-sidenav">
+				<li class="active">
+				<a href="#download">Overview</a>
+				<ul class="nav">
+					<li><a href="#download-compiled">Compiled CSS, JS, and fonts</a></li>
+					<li><a href="#download-additional">Additional downloads</a></li>
+					<li><a href="#download-cdn">Bootstrap CDN</a></li>
+				</ul>
+				</li>
+				<li>
+				<a href="#whats-included">What's included</a>
+				</li>
+				<li>
+				<a href="#template">Basic template</a>
+				</li>
+				<li>
+				<a href="#examples">Examples</a>
+				</li>
+				<li>
+				<a href="#disable-responsive">Disabling responsiveness</a>
+				</li>
+				<li>
+				<a href="#migration">Migrating from 2.x to 3.0</a>
+				<ul class="nav">
+					<li><a href="#migration-classes">Major class changes</a></li>
+					<li><a href="#migration-new">What's new</a></li>
+					<li><a href="#migration-dropped">What's removed</a></li>
+					<li><a href="#migration-notes">Additional notes</a></li>
+				</ul>
+				</li>
+				<li>
+				<a href="#browsers">Browser support</a>
+				</li>
+				<li>
+				<a href="#third-parties">Third party support</a>
+				</li>
+				<li>
+				<a href="#accessibility">Accessibility</a>
+				</li>
+				<li>
+				<a href="#license-faqs">License FAQs</a>
+				</li>
+				<li>
+				<a href="#customizing">Customizing Bootstrap</a>
+				</li>
+			</ul>
+		</div>
+	</div>  <!-- /col-md-3 -->
+	<div class="col-md-8" role="main">
+		<div class="bs-docs-section">
+			<%= yield %>
+		</div>
+	</div>
+</div>
 	<% end %>
-	<%= yield %>
-<% end %>

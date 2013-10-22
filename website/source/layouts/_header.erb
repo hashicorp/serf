@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="">
+<meta name="author" content="">
+<!-- <link rel="shortcut icon" href="../../assets/ico/favicon.png"> -->
+
+<title><%= current_page.data.page_title ? "#{current_page.data.page_title} - " : "" %>Serf</title>
+
+<!-- Bootstrap core CSS -->
+<%= stylesheet_link_tag "bootstrap.min" %>
+<%= stylesheet_link_tag "main" %>
+
+<!-- google fonts -->
+<link href='http://fonts.googleapis.com/css?family=Raleway:200,400,600,800|Open+Sans' rel='stylesheet' type='text/css'>
+
+<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+	<%= javascript_include_tag "html5shiv", "respond.min" %>
+<![endif]-->
+</head>
+<body>
+<div id="header">
+	<div class="container">
+		<a class="navbar-brand logo" href="/">
+			<span></span>
+		</a>
+		<a class="navbar-brand text rls-l" href="/">SERF</a>
+
+		<ul class="buttons nav navbar-nav navbar-right rls-sb">
+			<li class="first"><a href="#">Download</a></li>
+			<li><a href="https://github.com/hashicorp/serf">Github</a></li>
+		</ul>
+
+		<ul class="main-links nav navbar-nav navbar-right rls-sb">
+			<li><a href="/docs">Docs</a></li>
+			<li><a href="/intro">Intro</a></li>
+			<li><a href="/community">Community</a></li>
+		</ul>
+
+	</div>
+</div>
