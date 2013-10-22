@@ -29,7 +29,7 @@ to solve three major problems:
   that load balancer whenever a node comes online or goes offline.
 
 * **Failure detection and recovery**: Serf automatically detects failed nodes within
-  seconds (usually much faster), notifies the rest of the cluster,
+  seconds, notifies the rest of the cluster,
   and executes handler scripts allowing you to handle these events.
   Serf will attempt to recover failed nodes by reconnecting to them
   periodically.

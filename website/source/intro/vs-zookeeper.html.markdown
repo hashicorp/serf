@@ -15,19 +15,23 @@ applications to build complex distributed systems.
 Serf has a radically different architecture based on gossip and provides a
 smaller feature set. Serf only provides membership, failure detection,
 and user events. Serf is designed to operate under network partitions
-and is based on eventual consistency. Designed as a tool, it is friendly
+and embraces eventual consistency. Designed as a tool, it is friendly
 for both system administrators and application developers.
 
 ZooKeeper et al. by contrast are much more complex, and cannot be used directly
 as a tool. Application developers must use libraries to build the features
 they need, although some libraries exist for common patterns. Most failure
 detection schemes built on these systems also have intrinsic scalability issues.
-Heartbeating relies on nodes periodically updating a key with a TTL mechanism,
-requiring N updates/TTL to be processed by a fixed number of nodes. Alternatively,
-ZooKeeper ephemeral nodes require many active connections to be maintained to a few nodes.
+Most naive failure detection schemes depend on heartbeating, which use
+periodic updates and timeouts. These schemes require work linear to
+the number of nodes and place the demand on a fixed number of servers.
+Additionally, the failure detection window is at least as long as the timeout,
+meaning that in many cases failures may not be detected for a long time.
+Additionally, ZooKeeper ephemeral nodes require that many active connections
+be maintained to a few nodes.
 
 The strong consistency provided by these systems is essential for building leader
-election or other types of coordination for distributed systems, but it limits
+election and other types of coordination for distributed systems, but it limits
 their ability to operate under network partitions. At a minimum, if a majority of
 nodes are not available, writes are disallowed. Since a failure is indistinguishable
 from a slow response, the performance of these systems may rapidly degrade
