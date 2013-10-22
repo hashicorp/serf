@@ -133,10 +133,8 @@
         margin-bottom: 30px;
         border-radius: 103px;
         background: @black url(../images/logo-type-medium.png) center center no-repeat;
-        background-image: -webkit-image-set(url(../images/logo-type-medium.png) 1x, url(../images/logo-type-medium@2x.png) 2x);
-        background-size: 72px 94px;
-				.box-shadow( 0px 0px 5px rgba(0, 0, 0, 0.04) );
-
+        .img-retina("../images/logo-type-medium.png", "../images/logo-type-medium@2x.png", "72px", "94px");
+        .box-shadow( 0px 0px 5px rgba(0, 0, 0, 0.04) );
 		}
 	}
 
