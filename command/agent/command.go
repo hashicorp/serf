@@ -32,7 +32,7 @@ Usage: serf agent [options]
 Options:
 
   -bind=0.0.0.0            Address to bind network listeners to
-  -event-script=foo        Script to execute when events occur. This can
+  -event-handler=foo       Script to execute when events occur. This can
                            be specified multiple times. See the event scripts
                            section below for more info.
   -log-level=info          Log level of the agent.
@@ -42,12 +42,12 @@ Options:
                            of nodes that may be part of the same cluster.
   -rpc-addr=127.0.0.1:7373 Address to bind the RPC listener.
 
-Event scripts:
+Event handlers:
 
-  For more information on what event scripts are, please read the
+  For more information on what event handlers are, please read the
   Serf documentation. This section will document how to configure them
   on the command-line. There are three methods of specifying an event
-  script:
+  handler:
 
   - The value can be a plain script, such as "event.sh". In this case,
     Serf will send all events to this script, and you'll be responsible
