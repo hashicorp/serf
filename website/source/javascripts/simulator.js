@@ -86,7 +86,8 @@ var Simulator = Class.$extend({
 		this.graph.series[0].setData(data, false)
 		this.graph.redraw()
 
-		var used = Math.round((this.bytesUsed() / 1024) * 10) / 10
+		var kilobits = this.bytesUsed() * 8
+		var used = Math.round((kilobits / 1024) * 10) / 10
 		this.bytes.html(""+used)
 	}
 })

@@ -14,7 +14,7 @@ per second.
 </p>
 
 <div class="row">
-	<div id="graph"></div>
+    <div id="graph"></div>
 </div>
 <div class="row">
 	<div class="col-md-12">
@@ -25,7 +25,7 @@ per second.
 	<div class="col-md-6">
 		<h5>Gossip Interval</h5>
 		<p>The gossip interval controls how often messages are gossiped to other nodes</p>
-		<input type="text" id="interval" value="0.2">> seconds
+		<input type="text" id="interval" value="0.2"> seconds
 	</div>
 	<div class="col-md-6">
 		<h5>Gossip Fanout</h5>
