@@ -18,6 +18,8 @@ cluster that manages membership of Memcached nodes, but perhaps the web
 servers need to be part of the Memcached cluster too so they can be notified
 when Memcached nodes come online or go offline.
 
+## Starting the Agent
+
 For simplicity, we'll run a single Serf agent right now:
 
 ```
@@ -39,6 +41,31 @@ $ serf agent
 As you can see, the Serf agent has started and has outputted some log
 data. From the log data, you can see that a member has joined the cluster.
 This member is yourself.
+
+## Cluster Members
+
+If you run `serf members` in another terminal, you can see the members of
+the Serf cluster. You should only see one member (yourself). We'll cover
+joining cluters in the next section.
+
+```
+$ serf members
+mitchellh.local    10.0.1.60    alive
+```
+
+This command, along with many others, communicates with a running Serf
+agent via an internal RPC protocol. When starting the Serf agent, you
+may have noticed that it tells you the "RPC addr". This is the address
+that commands such as `serf members` use the communicate with the agent.
+
+By default, RPC listens only on loopback, so it is inaccessible outside
+of your machine for security reasons.
+
+If you're running multiple Serf agents, you'll have to specify
+an `-rpc-addr` to both the agent and any commands so that it doesn't
+collide with other agents.
+
+## Stopping the Agent
 
 You can use `Ctrl-C` (the interrupt signal) to gracefully halt the agent.
 After interrupting the agent, you should see it leave the cluster gracefully
