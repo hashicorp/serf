@@ -1,24 +1,52 @@
 <% wrap_layout :inner do %>
 	<% content_for :sidebar do %>
-		<h2>Intro</h2>
+		<div class="docs-sidebar hidden-print affix-top" role="complementary">
+			<ul class="nav docs-sidenav">
+				<li<%= sidebar_current("what") %>>
+				<a href="/intro/index.html">What is Serf?</a>
+				</li>
 
-		<ul>
-			<li><h4>About</h4></li>
-			<li><a href="/intro/index.html">What is Packer?</a></li>
-			<li><a href="/intro/why.html">Why Use Packer?</a></li>
-			<li><a href="/intro/use-cases.html">Use Cases</a></li>
-			<li><a href="/intro/platforms.html">Supported Platforms</a></li>
-		</ul>
+				<li<%= sidebar_current("use-cases") %>>
+				<a href="/intro/use-cases.html">Use Cases</a>
+				</li>
 
-		<ul>
-			<li><h4>Getting Started</h4></li>
-			<li><a href="/intro/getting-started/setup.html">Install Packer</a></li>
-			<li><a href="/intro/getting-started/build-image.html">Build an Image</a></li>
-			<li><a href="/intro/getting-started/provision.html">Provision</a></li>
-			<li><a href="/intro/getting-started/parallel-builds.html">Parallel Builds</a></li>
-			<li><a href="/intro/getting-started/vagrant.html">Vagrant Boxes</a></li>
-			<li><a href="/intro/getting-started/next.html">Next Steps</a></li>
-		</ul>
+				<li<%= sidebar_current("vs-other") %>>
+				<a href="/intro/vs-other-sw.html">Serf vs. Other Software</a>
+				<ul class="nav">
+					<li>
+					<a href="/intro/vs-zookeeper.html">ZooKeeper, doozerd, etcd</a>
+					</li>
+
+					<li>
+					<a href="/intro/vs-chef-puppet.html">Chef, Puppet, etc.</a>
+					</li>
+
+					<li>
+					<a href="/intro/vs-fabric.html">Fabric</a>
+					</li>
+
+					<li>
+					<a href="/intro/vs-custom.html">Custom Solutions</a>
+					</li>
+				</ul>
+				</li>
+
+				<li<%= sidebar_current("gettingstarted") %>>
+				<a href="/intro/getting-started/install.html">Getting Started</a>
+				<ul class="nav">
+					<li>
+					<a href="/intro/getting-started/install.html">Install Serf</a>
+					</li>
+
+					<li>
+					<a href="/intro/getting-started/agent.html">Run the Agent</a>
+					</li>
+
+				</ul>
+				</li>
+			</ul>
+		</div>
 	<% end %>
+
 	<%= yield %>
 <% end %>

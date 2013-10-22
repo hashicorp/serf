@@ -1,6 +1,5 @@
-<% wrap_layout :layout do %>
-	<div class="container">
-	<div class="col-md-4">
+<% wrap_layout :inner do %>
+	<% content_for :sidebar do %>
 		<div class="docs-sidebar hidden-print affix-top" role="complementary">
 			<ul class="nav docs-sidenav">
 				<li class="active">
@@ -49,11 +48,7 @@
 				</li>
 			</ul>
 		</div>
-	</div>  <!-- /col-md-3 -->
-	<div class="col-md-8" role="main">
-		<div class="bs-docs-section">
-			<%= yield %>
-		</div>
-	</div>
-</div>
+	<% end %>
+
+	<%= yield %>
 	<% end %>
