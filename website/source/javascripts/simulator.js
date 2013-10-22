@@ -51,7 +51,7 @@ var Simulator = Class.$extend({
 	},
 
 	convergenceAtRound: function(x) {
-		var contact = (this.fanout / this.nodes) * (1 - this.packetLoss) * (1 - this.nodeFail)
+		var contact = (this.fanout / this.nodes) * (1 - this.packetLoss) * (1 - this.nodeFail) * 0.5
 		var numInf = this.nodes / (1 + (this.nodes+1) * Math.pow(Math.E, -1*contact*this.nodes*x))
 		return numInf / this.nodes
 	},
