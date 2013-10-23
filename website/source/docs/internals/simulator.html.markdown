@@ -6,11 +6,15 @@ sidebar_current: "docs-internals"
 
 <h1>Serf Convergence Simulator</h1>
 
-<p class="lead">
+<p>
 The graph below shows the expected time to reach various states of convergence
 depending on the settings which are tunable below the graph. Below the graph,
 the estimated maximum bandwidth usage is shown per node in <em>kilobits</em>
 per second.
+</p>
+<p>
+The default values in the boxes are also the default values that Serf
+is configured with, where applicable.
 </p>
 
 <div class="row">
