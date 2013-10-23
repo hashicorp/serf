@@ -93,6 +93,16 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		return 1
 	}
 
+	if nodeName == "" {
+		hostname, err := os.Hostname()
+		if err != nil {
+			rawUi.Error(fmt.Sprintf("Error determining hostname: %s", err))
+			return 1
+		}
+
+		nodeName = hostname
+	}
+
 	config := Config{
 		NodeName:      nodeName,
 		Role:          nodeRole,
@@ -112,16 +122,6 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 			rawUi.Error(fmt.Sprintf("Invalid event script: %s", script.String()))
 			return 1
 		}
-	}
-
-	if nodeName == "" {
-		hostname, err := os.Hostname()
-		if err != nil {
-			rawUi.Error(fmt.Sprintf("Error determining hostname: %s", err))
-			return 1
-		}
-
-		nodeName = hostname
 	}
 
 	bindIP, bindPort, err := config.BindAddrParts()
