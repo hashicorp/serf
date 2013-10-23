@@ -477,7 +477,8 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 
 	// If node was previously in a failed state, then clean up some
 	// internal accounting.
-	if oldStatus == StatusFailed {
+	// TODO(mitchellh): needs tests to verify not reaped
+	if oldStatus == StatusFailed || oldStatus == StatusLeft {
 		s.failedMembers = removeOldMember(s.failedMembers, member.Name)
 		s.leftMembers = removeOldMember(s.leftMembers, member.Name)
 	}
