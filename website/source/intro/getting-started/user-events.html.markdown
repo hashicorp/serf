@@ -33,7 +33,7 @@ If the cluster were made up of multiple members, all of the members
 would have received this event, eventually.
 
 Just like normal Serf events, event handlers can respond to user events.
-So for example if we had a "restart" custom event, we might create an
+For example, if we had a "restart" custom event, we might create an
 event handler that restarts some server when it receives that event.
 
 ## Event Payloads
