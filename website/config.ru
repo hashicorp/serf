@@ -4,10 +4,6 @@ require "rack/contrib/response_headers"
 require "rack/contrib/static_cache"
 require "rack/contrib/try_static"
 
-use Rack::Auth::Basic, "Prerelease" do |username, password|
-  username == 'serfserf' && password == 'serfpassword'
-end
-
 # Properly compress the output if the client can handle it.
 use Rack::Deflater
 
