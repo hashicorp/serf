@@ -603,3 +603,108 @@ func TestMemberStatus_String(t *testing.T) {
 	}()
 	other.String()
 }
+
+func TestSerf_joinLeaveJoin(t *testing.T) {
+	s1Config := testConfig()
+	s1Config.ReapInterval = 10 * time.Second
+	s2Config := testConfig()
+	s2Config.ReapInterval = 10 * time.Second
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	if len(s1.Members()) != 1 {
+		t.Fatalf("s1 members: %d", len(s1.Members()))
+	}
+
+	if len(s2.Members()) != 1 {
+		t.Fatalf("s2 members: %d", len(s2.Members()))
+	}
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	if len(s1.Members()) != 2 {
+		t.Fatalf("s1 members: %d", len(s1.Members()))
+	}
+
+	if len(s2.Members()) != 2 {
+		t.Fatalf("s2 members: %d", len(s2.Members()))
+	}
+
+	// Leave and shutdown
+	err = s2.Leave()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	s2.Shutdown()
+
+	// Give the reaper time to reap nodes
+	time.Sleep(s1Config.MemberlistConfig.ProbeInterval * 5)
+
+	// s1 should see the node as having left
+	mems := s1.Members()
+	anyLeft := false
+	for _, m := range mems {
+		if m.Status == StatusLeft {
+			anyLeft = true
+			break
+		}
+	}
+	if !anyLeft {
+		t.Fatalf("node should have left!")
+	}
+
+	// Bring node 2 back
+	s2, err = Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+
+	testutil.Yield()
+
+	// Re-attempt the join
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Should be back to both members
+	if len(s1.Members()) != 2 {
+		t.Fatalf("s1 members: %d", len(s1.Members()))
+	}
+
+	if len(s2.Members()) != 2 {
+		t.Fatalf("s2 members: %d", len(s2.Members()))
+	}
+
+	// s1 should see the node as alive
+	mems = s1.Members()
+	anyLeft = false
+	for _, m := range mems {
+		if m.Status == StatusLeft {
+			anyLeft = true
+			break
+		}
+	}
+	if anyLeft {
+		t.Fatalf("all nodes should be alive!")
+	}
+}

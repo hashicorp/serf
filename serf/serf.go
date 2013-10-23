@@ -55,6 +55,7 @@ type SerfState int
 
 const (
 	SerfAlive SerfState = iota
+	SerfLeaving
 	SerfLeft
 	SerfShutdown
 )
@@ -255,23 +256,36 @@ func (s *Serf) Join(existing []string) (int, error) {
 
 	// If we joined any nodes, broadcast the join message
 	if num > 0 {
-		// Construct message to update our lamport clock
-		msg := messageJoin{
-			LTime: s.clock.Time(),
-			Node:  s.config.NodeName,
-		}
-		s.clock.Increment()
-
-		// Process update locally
-		s.handleNodeJoinIntent(&msg)
-
 		// Start broadcasting the update
-		if err := s.broadcast(messageJoinType, &msg, nil); err != nil {
+		if err := s.broadcastJoin(s.clock.Time()); err != nil {
 			return num, err
 		}
 	}
 
 	return num, err
+}
+
+// broadcastJoin broadcasts a new join intent with a
+// given clock value. It is used on either join, or if
+// we need to refute an older leave intent. Cannot be called
+// with the memberLock held.
+func (s *Serf) broadcastJoin(ltime LamportTime) error {
+	// Construct message to update our lamport clock
+	msg := messageJoin{
+		LTime: ltime,
+		Node:  s.config.NodeName,
+	}
+	s.clock.Witness(ltime)
+
+	// Process update locally
+	s.handleNodeJoinIntent(&msg)
+
+	// Start broadcasting the update
+	if err := s.broadcast(messageJoinType, &msg, nil); err != nil {
+		s.logger.Printf("[WARN] Failed to broadcast join intent: %v", err)
+		return err
+	}
+	return nil
 }
 
 // Leave gracefully exits the cluster. It is safe to call this multiple
@@ -285,6 +299,14 @@ func (s *Serf) Leave() error {
 	} else if s.state == SerfShutdown {
 		return fmt.Errorf("Leave called after Shutdown")
 	}
+
+	// Moving into a temporary Leaving state, rollback on failure
+	s.state = SerfLeaving
+	defer func() {
+		if s.state != SerfLeft {
+			s.state = SerfAlive
+		}
+	}()
 
 	// Construct the message for the graceful leave
 	msg := messageLeave{
@@ -566,6 +588,14 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 
 	// If the message is old, then it is irrelevant and we can skip it
 	if leaveMsg.LTime <= member.statusLTime {
+		return false
+	}
+
+	// Refute us leaving if we are in the alive state
+	// Must be done in another goroutine since we have the memberLock
+	if leaveMsg.Node == s.config.NodeName && s.state == SerfAlive {
+		s.logger.Printf("[DEBUG] Refuting an older leave intent")
+		go s.broadcastJoin(s.clock.Time())
 		return false
 	}
 
