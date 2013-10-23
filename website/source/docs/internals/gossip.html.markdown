@@ -30,8 +30,7 @@ does a full state sync with the existing member over TCP and begins gossiping it
 existence to the cluster.
 
 Gossip is done over UDP with a configurable but fixed fanout and interval.
-This ensures that network usage is constant with regards to number of nodes, as opposed to
-exponential growth that can occur with traditional heartbeat mechanisms.
+This ensures that network usage is constant with regards to number of nodes.
 Complete state exchanges with a random node are done periodically over
 TCP, but much less often than gossip messages. This increases the likelihood
 that the membership list converges properly since the full state is exchanged
@@ -63,14 +62,13 @@ minor changes, mostly to increase propogation speed and convergence rates.
 The changes from SWIM are noted here:
 
 * Serf does a full state sync over TCP periodically. SWIM only propagates
-  changes over gossip. While both eventually reach convergence, the full state
-  sync increases the likelihood that nodes are fully converged more quickly,
-  at the expense of more bandwidth usage.
+  changes over gossip. While both are eventually consistent, Serf is able to
+  more quickly reach convergence, as well as gracefully recover from network
+  partitions.
 
 * Serf has a dedicated gossip layer separate from the failure detection
   protocol. SWIM only piggybacks gossip messages on top of probe/ack messages.
-  Serf also piggybacks gossip messages on top of probe/ack messages, but
-  also will periodically send out dedicated gossip messages on their own. This
+  Serf uses piggybacking along with dedicated gossip messages. This
   feature lets you have a higher gossip rate (for example once per 200ms)
   and a slower failure detection rate (such as once per second), resulting
   in overall faster convergence rates and data propagation speeds.
@@ -85,7 +83,7 @@ The changes from SWIM are noted here:
 
 On top of the SWIM-based gossip layer, Serf sends some custom message types.
 
-Serf makes heavy use of [lamport clocks](#)
+Serf makes heavy use of [lamport clocks](http://en.wikipedia.org/wiki/Lamport_timestamps)
 to maintain some notion of message ordering despite being eventually
 consistent. Every message sent by Serf contains a lamport clock time.
 
