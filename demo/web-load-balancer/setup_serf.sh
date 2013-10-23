@@ -69,8 +69,8 @@ start on runlevel [2345]
 stop on runlevel [!2345]
 
 exec /usr/local/bin/serf agent \\
-    -event-script "member-join=/usr/local/bin/serf_member_join.sh" \\
-    -event-script "member-leave,member-failed=/usr/local/bin/serf_member_left.sh" \\
+    -event-handler "member-join=/usr/local/bin/serf_member_join.sh" \\
+    -event-handler "member-leave,member-failed=/usr/local/bin/serf_member_left.sh" \\
     -role=${SERF_ROLE} >>/var/log/serf.log 2>&1
 EOF
 sudo mv /tmp/agent.conf /etc/init/serf.conf
