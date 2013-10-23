@@ -9,7 +9,7 @@ sidebar_current: "gettingstarted-install"
 Serf must first be installed on every node that will be a member of a
 Serf cluster. To make installation easy, Serf is distributed as a
 [binary package](/downloads.html) for all supported platforms and
-architectures. This page will not cover how to compiler Serf from
+architectures. This page will not cover how to compile Serf from
 source.
 
 ## Installing Serf
