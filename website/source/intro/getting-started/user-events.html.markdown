@@ -68,7 +68,7 @@ Custom events come with some trade-offs, however:
 * Events are eventually consistent: Because events are delivered over
   gossip, the messages _eventually_ arrive at every node. In theory
   (and anecdotally in practice), the state of the cluster
-  [converges rapidly](#).
+  [converges rapidly](/docs/internals/simulator.html).
 
 * Payload size is limited: Serf gossips via UDP, so the payload must fit
   within a single UDP packet (alongside any other data Serf sends). This

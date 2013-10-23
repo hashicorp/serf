@@ -20,7 +20,7 @@ Serf runs on every major platform: Linux, Mac OS X, and Windows. It is
 extremely lightweight: it uses 5 to 10 MB of resident memory and primarily
 communicates using infrequent UDP messages.
 
-Serf uses an efficient [gossip protocol](#)
+Serf uses an efficient [gossip protocol](/docs/internals/gossip.html)
 to solve three major problems:
 
 * **Membership**: Serf maintains cluster membership lists and is able to
