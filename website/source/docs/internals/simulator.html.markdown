@@ -45,7 +45,7 @@ is configured with, where applicable.
 	</div>
 	<div class="col-md-6">
 		<h5>Packet Loss</h5>
-		<p>This controsl the amount of simulated packet loss [0, 100)</p>
+		<p>This controls the amount of simulated packet loss [0, 100)</p>
 		<input type="text" id="packetloss" value="0"> % lost packets
 	</div>
 </div>
