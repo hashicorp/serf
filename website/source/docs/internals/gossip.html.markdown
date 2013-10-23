@@ -13,6 +13,13 @@ this internal protocol. The gossip protocol is based on
 with a few minor adaptations, mostly to increase propagation speed
 and convergence rate.
 
+<div class="alert alert-block alert-warning">
+<strong>Advanced Topic!</strong> This page covers the technical details of
+the internals of Serf. You don't need to know these details to effectively
+operate and use Serf. These details are documented here for those who wish
+to learn about them without having to go spelunking through the source code.
+</div>
+
 ## SWIM Protocol Overview
 
 Serf begins by joining an existing cluster or starting a new
