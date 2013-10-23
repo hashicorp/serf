@@ -21,6 +21,6 @@ As a next step, the following resources are available:
   guide to all the features of Serf, including technical details about the
   internals of how Serf operates.
 
-* [Examples](#) - The work-in-progress examples folder within the GitHub
+* [Examples](https://github.com/hashicorp/serf/tree/master/demo) - The work-in-progress examples folder within the GitHub
   repository for Serf contains functional examples of various use cases
   of Serf to help you get started with exactly what you need.
