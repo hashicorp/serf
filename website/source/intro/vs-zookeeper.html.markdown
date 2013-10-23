@@ -41,4 +41,4 @@ discovery layer.
 
 Additionally, Serf is not mutually exclusive with any of these strongly
 consistent systems. Instead, they can be used in combination to create systems
-that are more scalable and fault tolerant, without sacraficing features.
+that are more scalable and fault tolerant, without sacrificing features.
