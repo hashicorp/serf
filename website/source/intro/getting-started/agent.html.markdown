@@ -40,7 +40,7 @@ $ serf agent
 2013/10/21 18:57:15 [INFO] agent: Received event: member-join
 ```
 
-As you can see, the Serf agent has started and has outputted some log
+As you can see, the Serf agent has started and has output some log
 data. From the log data, you can see that a member has joined the cluster.
 This member is yourself.
 
