@@ -40,7 +40,7 @@ $ serf agent
 2013/10/21 18:57:15 [INFO] agent: Received event: member-join
 ```
 
-As you can see, the Serf agent has started and has outputted some log
+As you can see, the Serf agent has started and has output some log
 data. From the log data, you can see that a member has joined the cluster.
 This member is yourself.
 
@@ -58,7 +58,7 @@ mitchellh.local    10.0.1.60    alive
 This command, along with many others, communicates with a running Serf
 agent via an internal RPC protocol. When starting the Serf agent, you
 may have noticed that it tells you the "RPC addr". This is the address
-that commands such as `serf members` use the communicate with the agent.
+that commands such as `serf members` use to communicate with the agent.
 
 By default, RPC listens only on loopback, so it is inaccessible outside
 of your machine for security reasons.

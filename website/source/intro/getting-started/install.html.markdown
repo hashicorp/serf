@@ -21,8 +21,8 @@ After downloading Serf, unzip the package. Copy the `serf` binary to
 somewhere on the PATH so that it can be executed. On Unix systems,
 `~/bin` and `/usr/local/bin` are common installation directories,
 depending on if you want to restrict the install to a single user or
-expose it to the entire system. On Windows systems, you can put it where ever
-you'd like.
+expose it to the entire system. On Windows systems, you can put it wherever
+you would like.
 
 ## Verifying the Installation
 

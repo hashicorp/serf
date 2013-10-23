@@ -6,7 +6,7 @@ sidebar_current: "gettingstarted-eventhandlers"
 
 # Event Handlers
 
-We've seen now how to start Serf agents and join them into a cluster.
+We've now seen how to start Serf agents and join them into a cluster.
 While this is cool to see on its own, the true power and utility of Serf
 is being able to react to membership changes and other events that Serf
 invokes. By specifying _event handlers_, Serf will invoke custom scripts
