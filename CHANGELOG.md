@@ -1,3 +1,9 @@
+## 0.1.2 (Unreleased)
+
+BUG FIXES;
+
+  * Nodes that previously left and rejoin won't get stuck in 'leaving' state
+
 ## 0.1.1 (October 23, 2013)
 
 BUG FIXES;
