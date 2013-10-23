@@ -26,3 +26,6 @@ _testmain.go
 
 *.exe
 *.test
+
+# Website
+website/build/
