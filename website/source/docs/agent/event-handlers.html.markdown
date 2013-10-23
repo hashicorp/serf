@@ -1,7 +1,7 @@
 ---
 layout: "docs"
 page_title: "Event Handlers"
-sidebar_current: "docs-agent"
+sidebar_current: "docs-agent-events"
 ---
 
 # Event Handlers

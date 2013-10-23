@@ -1,7 +1,7 @@
 ---
 layout: "docs"
 page_title: "Agent"
-sidebar_current: "docs-agent"
+sidebar_current: "docs-agent-running"
 ---
 
 # Serf Agent

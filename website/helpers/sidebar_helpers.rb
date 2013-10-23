@@ -3,17 +3,10 @@ module SidebarHelpers
   # if the YAML frontmatter matches the expected value.
   def sidebar_current(expected)
     current = current_page.data.sidebar_current
-    if current == expected || sidebar_section == expected
+    if current.start_with?(expected)
       return " class=\"active\""
     else
       return ""
     end
-  end
-
-  # This returns the overall section of the documentation we're on.
-  def sidebar_section
-    current = current_page.data.sidebar_current
-    return "" if !current
-    current.split("-")[0]
   end
 end

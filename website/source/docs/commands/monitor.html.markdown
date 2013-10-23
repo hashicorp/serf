@@ -1,7 +1,7 @@
 ---
 layout: "docs"
 page_title: "Commands: Monitor"
-sidebar_current: "docs-commands"
+sidebar_current: "docs-commands-monitor"
 ---
 
 # Serf Monitor

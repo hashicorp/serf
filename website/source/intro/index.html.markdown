@@ -38,7 +38,8 @@ to solve three major problems:
   These can be used to trigger deploys, propagate configuration, etc.
 
 See the [use cases page](/intro/use-cases.html) for a list of concrete use
-cases built on top of the features Serf provides. See the
-["How Does Serf Work?"](/intro/how-does-serf-work.html) page for in-depth
-technical details on how Serf actually works. Or use the navigation on the
-left to continue to the next section of the introduction guide.
+cases built on top of the features Serf provides. See the page on
+[how Serf compares to other software](/intro/vs-other-sw.html) to see just
+how it fits into your existing infrastructure. Or continue onwards with
+the [getting started guide](/intro/getting-started/install.html) to get
+Serf up and running and see how it works.

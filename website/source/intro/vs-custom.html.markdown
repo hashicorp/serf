@@ -1,7 +1,7 @@
 ---
 layout: "intro"
 page_title: "Serf vs. Custom Solutions"
-sidebar_current: "vs-other"
+sidebar_current: "vs-other-custom"
 ---
 
 # Serf vs. Custom Solutions

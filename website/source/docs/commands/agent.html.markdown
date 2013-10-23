@@ -1,7 +1,7 @@
 ---
 layout: "docs"
 page_title: "Commands: Agent"
-sidebar_current: "docs-commands"
+sidebar_current: "docs-commands-agent"
 ---
 
 # Serf Agent

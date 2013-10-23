@@ -1,7 +1,7 @@
 ---
 layout: "simulator"
 page_title: "Convergence Simulator"
-sidebar_current: "docs-internals"
+sidebar_current: "docs-internals-simulator"
 ---
 
 <h1>Serf Convergence Simulator</h1>

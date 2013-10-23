@@ -1,7 +1,7 @@
 ---
 layout: "docs"
 page_title: "Configuration"
-sidebar_current: "docs-agent"
+sidebar_current: "docs-agent-config"
 ---
 
 # Configuration

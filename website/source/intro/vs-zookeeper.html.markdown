@@ -1,7 +1,7 @@
 ---
 layout: "intro"
 page_title: "Serf vs. ZooKeeper, doozerd, etcd"
-sidebar_current: "vs-other"
+sidebar_current: "vs-other-zk"
 ---
 
 # Serf vs. ZooKeeper, doozerd, etcd

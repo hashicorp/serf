@@ -1,7 +1,7 @@
 ---
 layout: "docs"
 page_title: "Commands: Join"
-sidebar_current: "docs-commands"
+sidebar_current: "docs-commands-join"
 ---
 
 # Serf Join

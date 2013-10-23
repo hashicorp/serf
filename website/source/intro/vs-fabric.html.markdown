@@ -1,7 +1,7 @@
 ---
 layout: "intro"
 page_title: "Serf vs. Fabric"
-sidebar_current: "vs-other"
+sidebar_current: "vs-other-fabric"
 ---
 
 # Serf vs. Fabric

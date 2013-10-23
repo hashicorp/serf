@@ -1,7 +1,7 @@
 ---
 layout: "docs"
 page_title: "Commands: Members"
-sidebar_current: "docs-commands"
+sidebar_current: "docs-commands-members"
 ---
 
 # Serf Members

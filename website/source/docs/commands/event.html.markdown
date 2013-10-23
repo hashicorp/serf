@@ -1,7 +1,7 @@
 ---
 layout: "docs"
 page_title: "Commands: Event"
-sidebar_current: "docs-commands"
+sidebar_current: "docs-commands-event"
 ---
 
 # Serf Event
