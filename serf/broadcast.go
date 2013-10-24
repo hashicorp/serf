@@ -4,6 +4,9 @@ import (
 	"github.com/hashicorp/memberlist"
 )
 
+// Check that broadcast implements the memberlist.Broadcast interface.
+var _ memberlist.Broadcast = &broadcast{}
+
 // broadcast is an implementation of memberlist.Broadcast and is used
 // to manage broadcasts across the memberlist channel that are related
 // only to Serf.
