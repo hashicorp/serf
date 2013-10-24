@@ -1,9 +1,14 @@
 package serf
 
 import (
+	"github.com/hashicorp/memberlist"
 	"testing"
 	"time"
 )
+
+func TestBroadcast_Impl(t *testing.T) {
+	var _ memberlist.Broadcast = &broadcast{}
+}
 
 func TestBroadcastFinished(t *testing.T) {
 	t.Parallel()
