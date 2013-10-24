@@ -8,7 +8,7 @@ Serf is a decentralized solution for service discovery and orchestration
 that is lightweight, highly available, and fault tolerant.
 
 Serf runs on Linux, Mac OS X, and Windows. An efficient and lightweight gossip
-protocol is used to communiate with other nodes. Serf can detect node failures
+protocol is used to communicate with other nodes. Serf can detect node failures
 and notify the rest of the cluster. An event system is built on top of
 Serf, letting you use Serf's gossip protocol to propagate events such
 as deploys, configuration changes, etc. Serf is completely masterless
@@ -37,7 +37,7 @@ setup, each node in your system will run one or more Serf agents (it can
 run multiple agents if you're running multiple cluster types. e.g. web
 servers vs. memcached servers).
 
-Start each Serf agent in a seperate terminal session so that we can see
+Start each Serf agent in a separate terminal session so that we can see
 the output of each. Start the first agent:
 
 ```
