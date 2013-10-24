@@ -74,6 +74,7 @@ func (e *rpcEndpoint) monitorStream(addr string, filter *logutils.LevelFilter) {
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		log.Printf("[ERR] Monitor connect error: %s", err)
+		return
 	}
 	defer conn.Close()
 
