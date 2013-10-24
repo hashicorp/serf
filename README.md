@@ -41,7 +41,7 @@ Start each Serf agent in a seperate terminal session so that we can see
 the output of each. Start the first agent:
 
 ```
-$ serf agent -node=foo -bind-addr=127.0.0.10 -rpc-addr=127.0.0.1:7373
+$ serf agent -node=foo -bind=127.0.0.10 -rpc-addr=127.0.0.1:7373
 ...
 ```
 
@@ -49,7 +49,7 @@ Start the second agent in another terminal session (while the first is still
 running):
 
 ```
-$ serf agent -node=bar -bind-addr=127.0.0.11 -rpc-addr=127.0.0.1:7374
+$ serf agent -node=bar -bind=127.0.0.11 -rpc-addr=127.0.0.1:7374
 ...
 ```
 
