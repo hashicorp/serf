@@ -2,7 +2,8 @@
 
 BUG FIXES;
 
-  * Nodes that previously left and rejoin won't get stuck in 'leaving' state
+  * Nodes that previously left and rejoin won't get stuck in 'leaving' state.
+    [GH-18]
 
 ## 0.1.1 (October 23, 2013)
 
