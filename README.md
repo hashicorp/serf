@@ -71,7 +71,9 @@ to see the members of the Serf cluster:
 
 ```
 $ serf members
-TODO
+foo    127.0.0.10    alive
+bar    127.0.0.11    alive
+...
 ```
 
 At this point, you can ctrl-C or force kill either Serf agent, and they'll
