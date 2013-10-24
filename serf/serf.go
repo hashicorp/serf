@@ -23,8 +23,12 @@ func init() {
 //
 // All functions on the Serf structure are safe to call concurrently.
 type Serf struct {
+	// The clocks for different purposes. These MUST be the first things
+	// in this struct so due to Golang issue #599.
+	clock      LamportClock
+	eventClock LamportClock
+
 	broadcasts    *memberlist.TransmitLimitedQueue
-	clock         *LamportClock // Must not embed for i386!
 	config        *Config
 	failedMembers []*memberState
 	leftMembers   []*memberState
@@ -41,7 +45,6 @@ type Serf struct {
 
 	eventBroadcasts *memberlist.TransmitLimitedQueue
 	eventBuffer     []*userEvents
-	eventClock      *LamportClock // Must not embed for i386!
 	eventLock       sync.RWMutex
 
 	logger     *log.Logger
@@ -178,12 +181,6 @@ func Create(conf *Config) (*Serf, error) {
 
 	// Create a buffer for events
 	serf.eventBuffer = make([]*userEvents, conf.EventBuffer)
-
-	// Create the clocks. We need the clocks to be non-embedded otherwise
-	// they break on i386 systems. This has to do with the alignment of
-	// the counters
-	serf.clock = new(LamportClock)
-	serf.eventClock = new(LamportClock)
 
 	// Ensure our lamport clock is at least 1, so that the default
 	// join LTime of 0 does not cause issues
