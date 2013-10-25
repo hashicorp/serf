@@ -6,6 +6,12 @@ BUG FIXES;
     [GH-18]
   * Fixing alignment issues on i386 for atomic operations [GH-20]
 
+IMPROVEMENTS;
+
+  * Random staggering of periodic routines to avoid cluster-wide synchronization (Memberlist)
+  * Push/Pull timer automatically slows down as cluster grows to avoid congestion (Memberlist)
+
+
 ## 0.1.1 (October 23, 2013)
 
 BUG FIXES;
