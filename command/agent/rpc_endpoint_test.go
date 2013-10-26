@@ -44,8 +44,13 @@ func TestRPCEndpointForceLeave(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	if len(a1.Serf().Members()) != 1 {
-		t.Fatalf("should have 1 members: %#v", a1.Serf().Members())
+	m := a1.Serf().Members()
+	if len(m) != 2 {
+		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
+	}
+
+	if m[1].Status != serf.StatusLeft {
+		t.Fatalf("should be left: %#v", m[1])
 	}
 }
 
