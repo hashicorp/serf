@@ -30,6 +30,10 @@ type Config struct {
 	// calling Members on Serf.
 	EventCh chan<- Event
 
+	// ProtocolVersion is the protocol version to speak. This must be between
+	// ProtocolVersionMin and ProtocolVersionMax.
+	ProtocolVersion uint8
+
 	// BroadcastTimeout is the amount of time to wait for a broadcast
 	// message to be sent to the cluster. Broadcast messages are used for
 	// things like leave messages and force remove messages. If this is not
@@ -139,6 +143,7 @@ func DefaultConfig() *Config {
 		BroadcastTimeout:   5 * time.Second,
 		EventBuffer:        512,
 		LogOutput:          os.Stderr,
+		ProtocolVersion:    ProtocolVersionMin,
 		ReapInterval:       15 * time.Second,
 		RecentIntentBuffer: 128,
 		ReconnectInterval:  30 * time.Second,

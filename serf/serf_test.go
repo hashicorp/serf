@@ -54,6 +54,35 @@ func testMember(t *testing.T, members []Member, name string, status MemberStatus
 	t.Fatalf("node not found: %s", name)
 }
 
+func TestCreate_badProtocolVersion(t *testing.T) {
+	cases := []struct {
+		version uint8
+		err     bool
+	}{
+		{ProtocolVersionMin, false},
+		{ProtocolVersionMax, false},
+		// TODO(mitchellh): uncommon when we're over 0
+		//{ProtocolVersionMin - 1, true},
+		{ProtocolVersionMax + 1, true},
+		{ProtocolVersionMax - 1, false},
+	}
+
+	for _, tc := range cases {
+		c := testConfig()
+		c.ProtocolVersion = tc.version
+		s, err := Create(c)
+		if tc.err && err == nil {
+			t.Errorf("Should've failed with version: %d", tc.version)
+		} else if !tc.err && err != nil {
+			t.Errorf("Version '%d' error: %s", tc.version, err)
+		}
+
+		if err == nil {
+			s.Shutdown()
+		}
+	}
+}
+
 func TestSerf_eventsFailed(t *testing.T) {
 	// Create the s1 config with an event channel so we can listen
 	eventCh := make(chan Event, 4)
