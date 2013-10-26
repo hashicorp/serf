@@ -79,6 +79,16 @@ type Member struct {
 	Addr   net.IP
 	Role   string
 	Status MemberStatus
+
+	// The minimum, maximum, and current values of the protocol versions
+	// and delegate (Serf) protocol versions that each member can understand
+	// or is speaking.
+	ProtocolMin uint8
+	ProtocolMax uint8
+	ProtocolCur uint8
+	DelegateMin uint8
+	DelegateMax uint8
+	DelegateCur uint8
 }
 
 // MemberStatus is the state that a member is in.
@@ -557,6 +567,14 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 		member.Status = StatusAlive
 		member.leaveTime = time.Time{}
 	}
+
+	// Update the protocol versions every time we get an event
+	member.ProtocolMin = n.PMin
+	member.ProtocolMax = n.PMax
+	member.ProtocolCur = n.PCur
+	member.DelegateMin = n.DMin
+	member.DelegateMax = n.DMax
+	member.DelegateCur = n.DCur
 
 	// If node was previously in a failed state, then clean up some
 	// internal accounting.
