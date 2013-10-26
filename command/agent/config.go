@@ -85,3 +85,30 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 
 	return &result, nil
 }
+
+// MergeConfig merges two configurations together to make a single new
+// configuration.
+func MergeConfig(a, b *Config) (*Config, error) {
+	var result Config = *a
+
+	// Copy the strings if they're set
+	if b.NodeName != "" {
+		result.NodeName = b.NodeName
+	}
+	if b.Role != "" {
+		result.Role = b.Role
+	}
+	if b.BindAddr != "" {
+		result.BindAddr = b.BindAddr
+	}
+	if b.RPCAddr != "" {
+		result.RPCAddr = b.RPCAddr
+	}
+
+	// Copy the event handlers
+	result.EventHandlers = make([]string, 0, len(a.EventHandlers)+len(b.EventHandlers))
+	result.EventHandlers = append(result.EventHandlers, a.EventHandlers...)
+	result.EventHandlers = append(result.EventHandlers, b.EventHandlers...)
+
+	return &result, nil
+}

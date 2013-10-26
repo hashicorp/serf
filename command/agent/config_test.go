@@ -75,3 +75,34 @@ func TestDecodeConfig(t *testing.T) {
 		t.Fatalf("bad: %#v", config)
 	}
 }
+
+func TestMergeConfig(t *testing.T) {
+	a := &Config{
+		NodeName:      "foo",
+		Role:          "bar",
+		EventHandlers: []string{"foo"},
+	}
+
+	b := &Config{
+		NodeName:      "bname",
+		EventHandlers: []string{"bar"},
+	}
+
+	c, err := MergeConfig(a, b)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if c.NodeName != "bname" {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if c.Role != "bar" {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	expected := []string{"foo", "bar"}
+	if !reflect.DeepEqual(c.EventHandlers, expected) {
+		t.Fatalf("bad: %#v", c)
+	}
+}
