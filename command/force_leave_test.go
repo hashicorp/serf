@@ -2,9 +2,11 @@ package command
 
 import (
 	"github.com/hashicorp/serf/cli"
+	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestForceLeaveCommand_implements(t *testing.T) {
@@ -25,11 +27,11 @@ func TestForceLeaveCommandRun(t *testing.T) {
 	testutil.Yield()
 
 	// Forcibly shutdown a2 so that it appears "failed" in a1
-	if err := a2.Shutdown(); err != nil {
+	if err := a2.Serf().Shutdown(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	testutil.Yield()
+	time.Sleep(a2.SerfConfig.MemberlistConfig.ProbeInterval * 5)
 
 	c := &ForceLeaveCommand{}
 	args := []string{
@@ -43,8 +45,13 @@ func TestForceLeaveCommandRun(t *testing.T) {
 		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
 	}
 
-	if len(a1.Serf().Members()) != 1 {
-		t.Fatalf("bad: %#v", a1.Serf().Members())
+	m := a1.Serf().Members()
+	if len(m) != 2 {
+		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
+	}
+
+	if m[1].Status != serf.StatusLeft {
+		t.Fatalf("should be left: %#v", m[1])
 	}
 }
 

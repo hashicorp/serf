@@ -19,8 +19,8 @@ func (c *ForceLeaveCommand) Run(args []string, ui cli.Ui) int {
 		return 1
 	}
 
-	addrs := cmdFlags.Args()
-	if len(addrs) != 1 {
+	nodes := cmdFlags.Args()
+	if len(nodes) != 1 {
 		ui.Error("A node name must be specified to force leave.")
 		ui.Error("")
 		ui.Error(c.Help())
@@ -34,7 +34,11 @@ func (c *ForceLeaveCommand) Run(args []string, ui cli.Ui) int {
 	}
 	defer client.Close()
 
-	// TODO(mitchellh): force leave RPC call
+	err = client.ForceLeave(nodes[0])
+	if err != nil {
+		ui.Error(fmt.Sprintf("Error force leaving: %s", err))
+		return 1
+	}
 
 	return 0
 }
