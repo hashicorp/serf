@@ -452,6 +452,21 @@ func TestSerfRemoveFailedNode(t *testing.T) {
 	testMember(t, s3.Members(), s2Config.NodeName, StatusLeft)
 }
 
+func TestSerfRemoveFailedNode_ourself(t *testing.T) {
+	s1Config := testConfig()
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	testutil.Yield()
+
+	if err := s1.RemoveFailedNode("somebody"); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+}
+
 func TestSerfState(t *testing.T) {
 	s1, err := Create(testConfig())
 	if err != nil {

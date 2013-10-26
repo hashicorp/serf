@@ -345,13 +345,19 @@ func (s *Serf) Leave() error {
 	return nil
 }
 
-// hasAliveMembers is called to check for any alive members
+// hasAliveMembers is called to check for any alive members other than
+// ourself.
 func (s *Serf) hasAliveMembers() bool {
 	s.memberLock.RLock()
 	defer s.memberLock.RUnlock()
 
 	hasAlive := false
 	for _, m := range s.members {
+		// Skip ourself, we want to know if OTHER members are alive
+		if m.Name == s.config.NodeName {
+			continue
+		}
+
 		if m.Status == StatusAlive {
 			hasAlive = true
 			break
