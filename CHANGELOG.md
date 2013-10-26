@@ -1,5 +1,10 @@
 ## 0.1.2 (Unreleased)
 
+FEATURES:
+
+  * Can now configure Serf with files or directories of files by specifying
+    the `-config-file` and/or `-config-dir` flags to the agent.
+
 IMPROVEMENTS:
 
   * Random staggering of periodic routines to avoid cluster-wide
