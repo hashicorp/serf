@@ -375,6 +375,8 @@ func (s *Serf) Members() []Member {
 
 // RemoveFailedNode forcibly removes a failed node from the cluster
 // immediately, instead of waiting for the reaper to eventually reclaim it.
+// This also has the effect that Serf will no longer attempt to reconnect
+// to this node.
 func (s *Serf) RemoveFailedNode(node string) error {
 	// Construct the message to broadcast
 	msg := messageLeave{
