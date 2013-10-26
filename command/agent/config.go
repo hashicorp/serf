@@ -12,6 +12,13 @@ import (
 // This is the default port that we use for Serf communication
 const DefaultBindPort int = 7946
 
+// DefaultConfig contains the defaults for configurations.
+var DefaultConfig = &Config{
+	BindAddr: "0.0.0.0",
+	LogLevel: "INFO",
+	RPCAddr:  "127.0.0.1:7373",
+}
+
 // Config is the configuration that can be set for an Agent. Some of these
 // configurations are exposed as command-line flags to `serf agent`, whereas
 // many of the more advanced configurations can only be set by creating
@@ -28,6 +35,9 @@ type Config struct {
 	// and UDP connections. If no port is present in the address, the default
 	// port will be used.
 	BindAddr string `mapstructure:"bind_addr"`
+
+	// LogLevel is the level of the logs to output.
+	LogLevel string `mapstructure:"log_level"`
 
 	// RPCAddr is the address and port to listen on for the agent's RPC
 	// interface.
@@ -88,7 +98,7 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 
 // MergeConfig merges two configurations together to make a single new
 // configuration.
-func MergeConfig(a, b *Config) (*Config, error) {
+func MergeConfig(a, b *Config) *Config {
 	var result Config = *a
 
 	// Copy the strings if they're set
@@ -101,6 +111,9 @@ func MergeConfig(a, b *Config) (*Config, error) {
 	if b.BindAddr != "" {
 		result.BindAddr = b.BindAddr
 	}
+	if b.LogLevel != "" {
+		result.LogLevel = b.LogLevel
+	}
 	if b.RPCAddr != "" {
 		result.RPCAddr = b.RPCAddr
 	}
@@ -110,5 +123,5 @@ func MergeConfig(a, b *Config) (*Config, error) {
 	result.EventHandlers = append(result.EventHandlers, a.EventHandlers...)
 	result.EventHandlers = append(result.EventHandlers, b.EventHandlers...)
 
-	return &result, nil
+	return &result
 }

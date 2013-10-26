@@ -30,43 +30,31 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		Ui:           rawUi,
 	}
 
-	var bindAddr string
-	var logLevel string
-	var eventHandlers []string
-	var nodeName string
-	var nodeRole string
-	var rpcAddr string
-
+	var cmdConfig Config
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
-	cmdFlags.StringVar(&bindAddr, "bind", "0.0.0.0", "address to bind listeners to")
-	cmdFlags.Var((*AppendSliceValue)(&eventHandlers), "event-handler",
+	cmdFlags.StringVar(&cmdConfig.BindAddr, "bind", "", "address to bind listeners to")
+	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.EventHandlers), "event-handler",
 		"command to execute when events occur")
-	cmdFlags.StringVar(&logLevel, "log-level", "INFO", "log level")
-	cmdFlags.StringVar(&nodeName, "node", "", "node name")
-	cmdFlags.StringVar(&nodeRole, "role", "", "role name")
-	cmdFlags.StringVar(&rpcAddr, "rpc-addr", "127.0.0.1:7373",
+	cmdFlags.StringVar(&cmdConfig.LogLevel, "log-level", "", "log level")
+	cmdFlags.StringVar(&cmdConfig.NodeName, "node", "", "node name")
+	cmdFlags.StringVar(&cmdConfig.Role, "role", "", "role name")
+	cmdFlags.StringVar(&cmdConfig.RPCAddr, "rpc-addr", "",
 		"address to bind RPC listener to")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
 
-	if nodeName == "" {
+	config := MergeConfig(DefaultConfig, &cmdConfig)
+
+	if config.NodeName == "" {
 		hostname, err := os.Hostname()
 		if err != nil {
 			rawUi.Error(fmt.Sprintf("Error determining hostname: %s", err))
 			return 1
 		}
 
-		nodeName = hostname
-	}
-
-	config := Config{
-		NodeName:      nodeName,
-		Role:          nodeRole,
-		BindAddr:      bindAddr,
-		RPCAddr:       rpcAddr,
-		EventHandlers: eventHandlers,
+		config.NodeName = hostname
 	}
 
 	eventScripts, err := config.EventScripts()
@@ -96,7 +84,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	}
 
 	logLevelFilter := LevelFilter()
-	logLevelFilter.MinLevel = logutils.LogLevel(strings.ToUpper(logLevel))
+	logLevelFilter.MinLevel = logutils.LogLevel(strings.ToUpper(config.LogLevel))
 	logLevelFilter.Writer = logGate
 	if !ValidateLevelFilter(logLevelFilter) {
 		ui.Error(fmt.Sprintf(
@@ -109,8 +97,8 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	serfConfig.MemberlistConfig.BindAddr = bindIP
 	serfConfig.MemberlistConfig.TCPPort = bindPort
 	serfConfig.MemberlistConfig.UDPPort = bindPort
-	serfConfig.NodeName = nodeName
-	serfConfig.Role = nodeRole
+	serfConfig.NodeName = config.NodeName
+	serfConfig.Role = config.Role
 
 	agent := &Agent{
 		EventHandler: &ScriptEventHandler{
@@ -121,7 +109,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 			Scripts: eventScripts,
 		},
 		LogOutput:  logLevelFilter,
-		RPCAddr:    rpcAddr,
+		RPCAddr:    config.RPCAddr,
 		SerfConfig: serfConfig,
 	}
 
@@ -134,7 +122,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	ui.Output("Serf agent running!")
 	ui.Info(fmt.Sprintf("Node name: '%s'", config.NodeName))
 	ui.Info(fmt.Sprintf("Bind addr: '%s:%d'", bindIP, bindPort))
-	ui.Info(fmt.Sprintf(" RPC addr: '%s'", rpcAddr))
+	ui.Info(fmt.Sprintf(" RPC addr: '%s'", config.RPCAddr))
 	ui.Info("")
 	ui.Output("Log data will now stream in as it occurs:\n")
 	logGate.Flush()

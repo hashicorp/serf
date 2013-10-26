@@ -88,10 +88,7 @@ func TestMergeConfig(t *testing.T) {
 		EventHandlers: []string{"bar"},
 	}
 
-	c, err := MergeConfig(a, b)
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
+	c := MergeConfig(a, b)
 
 	if c.NodeName != "bname" {
 		t.Fatalf("bad: %#v", c)
