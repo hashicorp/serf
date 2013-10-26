@@ -22,48 +22,6 @@ type Command struct {
 	shuttingDown bool
 }
 
-func (c *Command) Help() string {
-	helpText := `
-Usage: serf agent [options]
-
-  Starts the Serf agent and runs until an interrupt is received. The
-  agent represents a single node in a cluster.
-
-Options:
-
-  -bind=0.0.0.0            Address to bind network listeners to
-  -event-handler=foo       Script to execute when events occur. This can
-                           be specified multiple times. See the event scripts
-                           section below for more info.
-  -log-level=info          Log level of the agent.
-  -node=hostname           Name of this node. Must be unique in the cluster
-  -role=foo                The role of this node, if any. This can be used
-                           by event scripts to differentiate different types
-                           of nodes that may be part of the same cluster.
-  -rpc-addr=127.0.0.1:7373 Address to bind the RPC listener.
-
-Event handlers:
-
-  For more information on what event handlers are, please read the
-  Serf documentation. This section will document how to configure them
-  on the command-line. There are three methods of specifying an event
-  handler:
-
-  - The value can be a plain script, such as "event.sh". In this case,
-    Serf will send all events to this script, and you'll be responsible
-    for differentiating between them based on the SERF_EVENT.
-
-  - The value can be in the format of "TYPE=SCRIPT", such as
-    "member-join=join.sh". With this format, Serf will only send events
-    of that type to that script.
-
-  - The value can be in the format of "user:EVENT=SCRIPT", such as
-    "user:deploy=deploy.sh". This means that Serf will only invoke this
-    script in the case of user events named "deploy".
-`
-	return strings.TrimSpace(helpText)
-}
-
 func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	ui := &cli.PrefixedUi{
 		OutputPrefix: "==> ",
@@ -192,10 +150,6 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	return 0
 }
 
-func (c *Command) Synopsis() string {
-	return "Runs a Serf agent"
-}
-
 func (c *Command) startShutdownWatcher(agent *Agent, ui cli.Ui) (graceful <-chan struct{}, forceful <-chan struct{}) {
 	g := make(chan struct{})
 	f := make(chan struct{})
@@ -227,4 +181,50 @@ func (c *Command) startShutdownWatcher(agent *Agent, ui cli.Ui) (graceful <-chan
 	}()
 
 	return
+}
+
+func (c *Command) Synopsis() string {
+	return "Runs a Serf agent"
+}
+
+func (c *Command) Help() string {
+	helpText := `
+Usage: serf agent [options]
+
+  Starts the Serf agent and runs until an interrupt is received. The
+  agent represents a single node in a cluster.
+
+Options:
+
+  -bind=0.0.0.0            Address to bind network listeners to
+  -event-handler=foo       Script to execute when events occur. This can
+                           be specified multiple times. See the event scripts
+                           section below for more info.
+  -log-level=info          Log level of the agent.
+  -node=hostname           Name of this node. Must be unique in the cluster
+  -role=foo                The role of this node, if any. This can be used
+                           by event scripts to differentiate different types
+                           of nodes that may be part of the same cluster.
+  -rpc-addr=127.0.0.1:7373 Address to bind the RPC listener.
+
+Event handlers:
+
+  For more information on what event handlers are, please read the
+  Serf documentation. This section will document how to configure them
+  on the command-line. There are three methods of specifying an event
+  handler:
+
+  - The value can be a plain script, such as "event.sh". In this case,
+    Serf will send all events to this script, and you'll be responsible
+    for differentiating between them based on the SERF_EVENT.
+
+  - The value can be in the format of "TYPE=SCRIPT", such as
+    "member-join=join.sh". With this format, Serf will only send events
+    of that type to that script.
+
+  - The value can be in the format of "user:EVENT=SCRIPT", such as
+    "user:deploy=deploy.sh". This means that Serf will only invoke this
+    script in the case of user events named "deploy".
+`
+	return strings.TrimSpace(helpText)
 }
