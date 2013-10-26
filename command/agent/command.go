@@ -38,6 +38,8 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	cmdFlags.StringVar(&cmdConfig.BindAddr, "bind", "", "address to bind listeners to")
 	cmdFlags.Var((*AppendSliceValue)(&configFiles), "config-file",
 		"json file to read config from")
+	cmdFlags.Var((*AppendSliceValue)(&configFiles), "config-dir",
+		"directory of json files to read")
 	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.EventHandlers), "event-handler",
 		"command to execute when events occur")
 	cmdFlags.StringVar(&cmdConfig.LogLevel, "log-level", "", "log level")
@@ -49,26 +51,18 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		return 1
 	}
 
-	fileConfigs := make([]*Config, len(configFiles))
-	for i, path := range configFiles {
-		config, err := readConfigFile(path)
+	config := DefaultConfig
+	if len(configFiles) > 0 {
+		fileConfig, err := ReadConfigPaths(configFiles)
 		if err != nil {
-			rawUi.Error(fmt.Sprintf("Error reading config file '%s': %s",
-				path, err))
+			rawUi.Error(err.Error())
 			return 1
 		}
 
-		fileConfigs[i] = config
+		config = MergeConfig(config, fileConfig)
 	}
 
-	config := DefaultConfig
-	for _, fc := range fileConfigs {
-		config = MergeConfig(config, fc)
-	}
 	config = MergeConfig(config, &cmdConfig)
-
-	// Set fileConfigs explicitly to nil so that the GC can collect
-	fileConfigs = nil
 
 	if config.NodeName == "" {
 		hostname, err := os.Hostname()
@@ -210,6 +204,10 @@ Options:
   -bind=0.0.0.0            Address to bind network listeners to
   -config-file=foo         Path to a JSON file to read configuration from.
                            This can be specified multiple times.
+  -config-dir=foo          Path to a directory to read configuration files
+                           from. This will read every file ending in ".json"
+						   as configuration in this directory in alphabetical
+						   order.
   -event-handler=foo       Script to execute when events occur. This can
                            be specified multiple times. See the event scripts
                            section below for more info.

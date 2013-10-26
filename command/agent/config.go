@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -127,13 +128,69 @@ func MergeConfig(a, b *Config) *Config {
 	return &result
 }
 
-// readConfigFile reads the config from the given JSON file
-func readConfigFile(path string) (*Config, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
+// ReadConfigPaths reads the paths in the given order to load configurations.
+// The paths can be to files or directories. If the path is a directory,
+// we read one directory deep and read any files ending in ".json" as
+// configuration files.
+func ReadConfigPaths(paths []string) (*Config, error) {
+	result := DefaultConfig
+	for _, path := range paths {
+		f, err := os.Open(path)
+		if err != nil {
+			return nil, fmt.Errorf("Error reading '%s': %s", path, err)
+		}
 
-	return DecodeConfig(f)
+		fi, err := f.Stat()
+		if err != nil {
+			f.Close()
+			return nil, fmt.Errorf("Error reading '%s': %s", path, err)
+		}
+
+		if !fi.IsDir() {
+			config, err := DecodeConfig(f)
+			f.Close()
+
+			if err != nil {
+				return nil, fmt.Errorf("Error decoding '%s': %s", path, err)
+			}
+
+			result = MergeConfig(result, config)
+			continue
+		}
+
+		contents, err := f.Readdir(-1)
+		f.Close()
+		if err != nil {
+			return nil, fmt.Errorf("Error reading '%s': %s", path, err)
+		}
+
+		for _, fi := range contents {
+			// Don't recursively read contents
+			if fi.IsDir() {
+				continue
+			}
+
+			// If it isn't a JSON file, ignore it
+			if !strings.HasSuffix(fi.Name(), ".json") {
+				continue
+			}
+
+			subpath := filepath.Join(path, fi.Name())
+			f, err := os.Open(subpath)
+			if err != nil {
+				return nil, fmt.Errorf("Error reading '%s': %s", subpath, err)
+			}
+
+			config, err := DecodeConfig(f)
+			f.Close()
+
+			if err != nil {
+				return nil, fmt.Errorf("Error decoding '%s': %s", subpath, err)
+			}
+
+			result = MergeConfig(result, config)
+		}
+	}
+
+	return result, nil
 }
