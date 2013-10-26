@@ -133,7 +133,7 @@ func MergeConfig(a, b *Config) *Config {
 // we read one directory deep and read any files ending in ".json" as
 // configuration files.
 func ReadConfigPaths(paths []string) (*Config, error) {
-	result := DefaultConfig
+	result := new(Config)
 	for _, path := range paths {
 		f, err := os.Open(path)
 		if err != nil {
