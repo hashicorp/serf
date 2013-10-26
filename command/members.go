@@ -50,8 +50,8 @@ func (c *MembersCommand) Run(args []string, ui cli.Ui) int {
 
 	if *JSONFormatted != true {
 		for _, member := range members {
-			ui.Output(fmt.Sprintf("%s    %s    %s",
-				member.Name, member.Addr, member.Status))
+			ui.Output(fmt.Sprintf("%s    %s    %s    %s",
+				member.Name, member.Addr, member.Status, member.Role))
 		}
 	} else {
 		jsonMembers, err := json.Marshal(map[string]interface{}{"members": members})
