@@ -3,6 +3,7 @@ package agent
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/serf/serf"
 	"github.com/mitchellh/mapstructure"
 	"io"
 	"net"
@@ -19,6 +20,7 @@ var DefaultConfig = &Config{
 	BindAddr: "0.0.0.0",
 	LogLevel: "INFO",
 	RPCAddr:  "127.0.0.1:7373",
+	Protocol: serf.ProtocolVersionMax,
 }
 
 // Config is the configuration that can be set for an Agent. Some of these
@@ -44,6 +46,9 @@ type Config struct {
 	// RPCAddr is the address and port to listen on for the agent's RPC
 	// interface.
 	RPCAddr string `mapstructure:"rpc_addr"`
+
+	// Protocol is the Serf protocol version to use.
+	Protocol int `mapstructure:"protocol"`
 
 	// StartJoin is a list of addresses to attempt to join when the
 	// agent starts. If Serf is unable to communicate with any of these
@@ -95,9 +100,32 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 		return nil, err
 	}
 
+	// Decode
+	var md mapstructure.Metadata
 	var result Config
-	if err := mapstructure.Decode(raw, &result); err != nil {
+	msdec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Metadata: &md,
+		Result:   &result,
+	})
+	if err != nil {
 		return nil, err
+	}
+
+	if err := msdec.Decode(raw); err != nil {
+		return nil, err
+	}
+
+	// If we never set the protocol, then set it to the default
+	found := false
+	for _, k := range md.Keys {
+		if k == "protocol" {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		result.Protocol = DefaultConfig.Protocol
 	}
 
 	return &result, nil
@@ -120,6 +148,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.LogLevel != "" {
 		result.LogLevel = b.LogLevel
+	}
+	if b.Protocol >= 0 {
+		result.Protocol = b.Protocol
 	}
 	if b.RPCAddr != "" {
 		result.RPCAddr = b.RPCAddr

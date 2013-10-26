@@ -68,6 +68,7 @@ func TestConfigEventScripts(t *testing.T) {
 }
 
 func TestDecodeConfig(t *testing.T) {
+	// Without a protocol
 	input := `{"node_name": "foo"}`
 	config, err := DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
@@ -77,18 +78,39 @@ func TestDecodeConfig(t *testing.T) {
 	if config.NodeName != "foo" {
 		t.Fatalf("bad: %#v", config)
 	}
+
+	if config.Protocol != DefaultConfig.Protocol {
+		t.Fatalf("bad: %#v", config)
+	}
+
+	// With a protocol
+	input = `{"node_name": "foo", "protocol": 7}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.NodeName != "foo" {
+		t.Fatalf("bad: %#v", config)
+	}
+
+	if config.Protocol != 7 {
+		t.Fatalf("bad: %#v", config)
+	}
 }
 
 func TestMergeConfig(t *testing.T) {
 	a := &Config{
 		NodeName:      "foo",
 		Role:          "bar",
+		Protocol:      7,
 		EventHandlers: []string{"foo"},
 		StartJoin:     []string{"foo"},
 	}
 
 	b := &Config{
 		NodeName:      "bname",
+		Protocol:      -1,
 		EventHandlers: []string{"bar"},
 		StartJoin:     []string{"bar"},
 	}
@@ -100,6 +122,10 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	if c.Role != "bar" {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if c.Protocol != 7 {
 		t.Fatalf("bad: %#v", c)
 	}
 

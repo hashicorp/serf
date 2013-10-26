@@ -46,6 +46,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		"address of agent to join on startup")
 	cmdFlags.StringVar(&cmdConfig.LogLevel, "log-level", "", "log level")
 	cmdFlags.StringVar(&cmdConfig.NodeName, "node", "", "node name")
+	cmdFlags.IntVar(&cmdConfig.Protocol, "protocol", -1, "protocol version")
 	cmdFlags.StringVar(&cmdConfig.Role, "role", "", "role name")
 	cmdFlags.StringVar(&cmdConfig.RPCAddr, "rpc-addr", "",
 		"address to bind RPC listener to")
@@ -118,6 +119,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	serfConfig.MemberlistConfig.UDPPort = bindPort
 	serfConfig.NodeName = config.NodeName
 	serfConfig.Role = config.Role
+	serfConfig.ProtocolVersion = uint8(config.Protocol)
 
 	agent := &Agent{
 		EventHandler: &ScriptEventHandler{
@@ -230,6 +232,8 @@ Options:
                            specified multiple times.
   -log-level=info          Log level of the agent.
   -node=hostname           Name of this node. Must be unique in the cluster
+  -protocol=n              Serf protocol version to use. This defaults to
+                           the latest version, but can be set back for upgrades.
   -role=foo                The role of this node, if any. This can be used
                            by event scripts to differentiate different types
                            of nodes that may be part of the same cluster.
