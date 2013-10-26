@@ -23,6 +23,10 @@ func init() {
 			return &command.EventCommand{}, nil
 		},
 
+		"force-leave": func() (cli.Command, error) {
+			return &command.ForceLeaveCommand{}, nil
+		},
+
 		"join": func() (cli.Command, error) {
 			return &command.JoinCommand{}, nil
 		},
