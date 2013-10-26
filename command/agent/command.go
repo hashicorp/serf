@@ -31,9 +31,13 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	}
 
 	var cmdConfig Config
+	var configFiles []string
+
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
 	cmdFlags.StringVar(&cmdConfig.BindAddr, "bind", "", "address to bind listeners to")
+	cmdFlags.Var((*AppendSliceValue)(&configFiles), "config-file",
+		"json file to read config from")
 	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.EventHandlers), "event-handler",
 		"command to execute when events occur")
 	cmdFlags.StringVar(&cmdConfig.LogLevel, "log-level", "", "log level")
@@ -45,7 +49,26 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		return 1
 	}
 
-	config := MergeConfig(DefaultConfig, &cmdConfig)
+	fileConfigs := make([]*Config, len(configFiles))
+	for i, path := range configFiles {
+		config, err := readConfigFile(path)
+		if err != nil {
+			rawUi.Error(fmt.Sprintf("Error reading config file '%s': %s",
+				path, err))
+			return 1
+		}
+
+		fileConfigs[i] = config
+	}
+
+	config := DefaultConfig
+	for _, fc := range fileConfigs {
+		config = MergeConfig(config, fc)
+	}
+	config = MergeConfig(config, &cmdConfig)
+
+	// Set fileConfigs explicitly to nil so that the GC can collect
+	fileConfigs = nil
 
 	if config.NodeName == "" {
 		hostname, err := os.Hostname()
@@ -185,6 +208,8 @@ Usage: serf agent [options]
 Options:
 
   -bind=0.0.0.0            Address to bind network listeners to
+  -config-file=foo         Path to a JSON file to read configuration from.
+                           This can be specified multiple times.
   -event-handler=foo       Script to execute when events occur. This can
                            be specified multiple times. See the event scripts
                            section below for more info.

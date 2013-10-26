@@ -6,6 +6,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"io"
 	"net"
+	"os"
 	"strings"
 )
 
@@ -124,4 +125,15 @@ func MergeConfig(a, b *Config) *Config {
 	result.EventHandlers = append(result.EventHandlers, b.EventHandlers...)
 
 	return &result
+}
+
+// readConfigFile reads the config from the given JSON file
+func readConfigFile(path string) (*Config, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	return DecodeConfig(f)
 }
