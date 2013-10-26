@@ -46,8 +46,8 @@ func (c *MembersCommand) Run(args []string, ui cli.Ui) int {
 	}
 
 	for _, member := range members {
-		ui.Output(fmt.Sprintf("%s    %s    %s",
-			member.Name, member.Addr, member.Status))
+		ui.Output(fmt.Sprintf("%s    %s    %s    %s",
+			member.Name, member.Addr, member.Status, member.Role))
 	}
 
 	return 0
