@@ -2,6 +2,7 @@ package serf
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/memberlist"
@@ -828,6 +829,15 @@ func (s *Serf) checkQueueDepth(limit int, name string, queue *memberlist.Transmi
 			return
 		}
 	}
+}
+
+func (m *Member) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]string{
+		"name": m.Name,
+		"address": m.Addr.String(),
+		"role": m.Role,
+		"status": m.Status.String(),
+	})
 }
 
 // removeOldMember is used to remove an old member from a list of old
