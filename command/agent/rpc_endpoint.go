@@ -34,6 +34,11 @@ type RPCUserEventArgs struct {
 	Payload []byte
 }
 
+// ForceLeave forces a node to leave the cluster.
+func (e *rpcEndpoint) ForceLeave(node string, result *interface{}) error {
+	return e.agent.Serf().RemoveFailedNode(node)
+}
+
 // Join asks the Serf to join another cluster.
 func (e *rpcEndpoint) Join(addrs []string, result *int) (err error) {
 	*result, err = e.agent.Join(addrs)

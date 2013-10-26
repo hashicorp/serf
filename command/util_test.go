@@ -19,6 +19,9 @@ func init() {
 func testAgent(t *testing.T) *agent.Agent {
 	config := serf.DefaultConfig()
 	config.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
+	config.MemberlistConfig.ProbeInterval = 50 * time.Millisecond
+	config.MemberlistConfig.ProbeTimeout = 25 * time.Millisecond
+	config.MemberlistConfig.SuspicionMult = 1
 	config.NodeName = config.MemberlistConfig.BindAddr
 
 	agent := &agent.Agent{

@@ -20,6 +20,10 @@ func (c *RPCClient) Close() error {
 	return c.Client.Close()
 }
 
+func (c *RPCClient) ForceLeave(node string) error {
+	return c.Client.Call("Agent.ForceLeave", node, new(interface{}))
+}
+
 func (c *RPCClient) Join(addrs []string) (n int, err error) {
 	err = c.Client.Call("Agent.Join", addrs, &n)
 	return

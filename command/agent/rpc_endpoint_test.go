@@ -10,6 +10,50 @@ import (
 	"testing"
 )
 
+func TestRPCEndpointForceLeave(t *testing.T) {
+	a1 := testAgent()
+	a2 := testAgent()
+	defer a1.Shutdown()
+	defer a2.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if err := a2.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	s2Addr := a2.SerfConfig.MemberlistConfig.BindAddr
+	if _, err := a1.Join([]string{s2Addr}); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	if err := a2.Shutdown(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	e := &rpcEndpoint{agent: a1}
+	if err := e.ForceLeave(a2.SerfConfig.NodeName, new(interface{})); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	m := a1.Serf().Members()
+	if len(m) != 2 {
+		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
+	}
+
+	if m[1].Status != serf.StatusLeft {
+		t.Fatalf("should be left: %#v", m[1])
+	}
+}
+
 func TestRPCEndpointJoin(t *testing.T) {
 	a1 := testAgent()
 	a2 := testAgent()
