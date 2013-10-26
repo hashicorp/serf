@@ -1,7 +1,10 @@
 package agent
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
+	"io"
 	"net"
 	"strings"
 )
@@ -64,4 +67,21 @@ func (c *Config) EventScripts() ([]EventScript, error) {
 	}
 
 	return result, nil
+}
+
+// DecodeConfig reads the configuration from the given reader in JSON
+// format and decodes it into a proper Config structure.
+func DecodeConfig(r io.Reader) (*Config, error) {
+	var raw interface{}
+	dec := json.NewDecoder(r)
+	if err := dec.Decode(&raw); err != nil {
+		return nil, err
+	}
+
+	var result Config
+	if err := mapstructure.Decode(raw, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }

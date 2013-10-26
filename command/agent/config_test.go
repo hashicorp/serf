@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 )
@@ -60,5 +61,17 @@ func TestConfigEventScripts(t *testing.T) {
 
 	if !reflect.DeepEqual(result, expected) {
 		t.Fatalf("bad: %#v", result)
+	}
+}
+
+func TestDecodeConfig(t *testing.T) {
+	input := `{"node_name": "foo"}`
+	config, err := DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.NodeName != "foo" {
+		t.Fatalf("bad: %#v", config)
 	}
 }
