@@ -7,8 +7,20 @@ sidebar_current: "docs-agent-config"
 # Configuration
 
 The agent has various configuration options that can be specified via
-the command-line. All of the configurations are completely optional,
-and their defaults will be specified with their description below:
+the command-line or via configuration files. All of the configuration
+options are completely optional and their defaults will be specified
+with their descriptions.
+
+When loading configuration, Serf loads the configuration from files
+and directories in the order specified. Configuration specified later
+will be merged into configuration specified earlier. In most cases,
+"merge" means that the later version will override the earlier. But in
+some cases, such as event handlers, merging just appends the handlers.
+The exact merging behavior will be specified.
+
+## Command-line Options
+
+The options below are all specified on the command-line.
 
 * `-bind` - The address that Serf will bind to for communication with
   other Serf nodes. By default this is "0.0.0.0:7946". All Serf nodes
@@ -17,6 +29,18 @@ and their defaults will be specified with their description below:
   have any firewalls be sure to allow both protocols. If this
   configuration value is changed and no port is specified, the default of
   "7946" will be used.
+
+* `-config-file` - A configuration file to load. For more information on
+  the format of this file, read the "Configuration Files" section below.
+  This option can be specified multiple times to load multiple configuration
+  files. If it is specified multiple times, configuration files loaded later
+  will merge with configuration files loaded earlier, with the later values
+  overriding the earlier values.
+
+* `-config-dir` - A directory of configuration files to load. Serf will
+  load all files in this directory ending in ".json" as configuration files
+  in alphabetical order. For more information on the format of the configuration
+  files, see the "Configuration Files" section below.
 
 * `-event-handler` - Adds an event handler that Serf will invoke for
   events. This flag can be specified multiple times to define multiple
@@ -44,3 +68,42 @@ and their defaults will be specified with their description below:
   RPC server. By default this is "127.0.0.1:7373", allowing only loopback
   connections. The RPC address is used by other Serf commands, such as
   `serf members`, in order to query a running Serf agent.
+
+## Configuration Files
+
+In addition to the command-line options, configuration can be put into
+files. This may be easier in certain situations, for example when Serf is
+being configured using a configuration management system.
+
+The configuration files are JSON formatted, making them easily readable
+and editable by both humans and computers. The configuration is formatted
+at a single JSON object with configuration within it.
+
+#### Example Configuration File
+
+<pre class="prettyprint lang-json">
+{
+  "role": "load-balancer",
+
+  "event_handlers": [
+    "handle.sh",
+    "user:deploy=deploy.sh"
+  ]
+}
+</pre>
+
+#### Configuration Key Reference
+
+* `node_name` - Equivalent to the `-node` command-line flag.
+
+* `role` - Equivalent to the `-role` command-line flag.
+
+* `bind_addr` - Equivalent to the `-bind-addr` command-line flag.
+
+* `log_level` - Equivalent to the `-log-level` command-line flag.
+
+* `rpc_addr` - Equivalent to the `-rpc-addr` command-line flag.
+
+* `event_handlers` - An array of strings specifying the event handlers.
+  The format of the strings is equivalent to the format specified for
+  the `-event-handler` command-line flag.
