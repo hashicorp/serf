@@ -223,8 +223,8 @@ Options:
                            This can be specified multiple times.
   -config-dir=foo          Path to a directory to read configuration files
                            from. This will read every file ending in ".json"
-						   as configuration in this directory in alphabetical
-						   order.
+                           as configuration in this directory in alphabetical
+                           order.
   -event-handler=foo       Script to execute when events occur. This can
                            be specified multiple times. See the event scripts
                            section below for more info.
