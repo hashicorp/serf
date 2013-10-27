@@ -6,6 +6,8 @@ FEATURES:
     the `-config-file` and/or `-config-dir` flags to the agent.
   * New command `serf force-leave` can be used to force a "failed" node
     to the "left" state.
+  * Serf now supports message encryption and verification so that it can
+    be used on untrusted networks [GH-25]
 
 IMPROVEMENTS:
 
@@ -13,6 +15,7 @@ IMPROVEMENTS:
     synchronization
   * Push/Pull timer automatically slows down as cluster grows to avoid
     congestion
+  * Messages are compressed to reduce bandwidth utilization
 
 BUG FIXES:
 
