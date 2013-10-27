@@ -45,6 +45,11 @@ type Config struct {
 	// interface.
 	RPCAddr string `mapstructure:"rpc_addr"`
 
+	// StartJoin is a list of addresses to attempt to join when the
+	// agent starts. If Serf is unable to communicate with any of these
+	// addresses, then the agent will error and exit.
+	StartJoin []string `mapstructure:"start_join"`
+
 	// EventHandlers is a list of event handlers that will be invoked.
 	EventHandlers []string `mapstructure:"event_handlers"`
 }
@@ -124,6 +129,11 @@ func MergeConfig(a, b *Config) *Config {
 	result.EventHandlers = make([]string, 0, len(a.EventHandlers)+len(b.EventHandlers))
 	result.EventHandlers = append(result.EventHandlers, a.EventHandlers...)
 	result.EventHandlers = append(result.EventHandlers, b.EventHandlers...)
+
+	// Copy the start join addresses
+	result.StartJoin = make([]string, 0, len(a.StartJoin)+len(b.StartJoin))
+	result.StartJoin = append(result.StartJoin, a.StartJoin...)
+	result.StartJoin = append(result.StartJoin, b.StartJoin...)
 
 	return &result
 }
