@@ -16,9 +16,11 @@ IMPROVEMENTS:
   * Push/Pull timer automatically slows down as cluster grows to avoid
     congestion
   * Messages are compressed to reduce bandwidth utilization
+  * `serf members` now provides node roles in output
 
 BUG FIXES:
 
+  * Windows event handlers are fixed [GH-37]
   * Nodes that previously left and rejoin won't get stuck in 'leaving' state.
     [GH-18]
   * Fixing alignment issues on i386 for atomic operations [GH-20]
