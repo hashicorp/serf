@@ -42,6 +42,8 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		"directory of json files to read")
 	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.EventHandlers), "event-handler",
 		"command to execute when events occur")
+	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.StartJoin), "join",
+		"address of agent to join on startup")
 	cmdFlags.StringVar(&cmdConfig.LogLevel, "log-level", "", "log level")
 	cmdFlags.StringVar(&cmdConfig.NodeName, "node", "", "node name")
 	cmdFlags.StringVar(&cmdConfig.Role, "role", "", "role name")
@@ -135,11 +137,24 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		ui.Error(err.Error())
 		return 1
 	}
+	defer agent.Shutdown()
 
 	ui.Output("Serf agent running!")
 	ui.Info(fmt.Sprintf("Node name: '%s'", config.NodeName))
 	ui.Info(fmt.Sprintf("Bind addr: '%s:%d'", bindIP, bindPort))
 	ui.Info(fmt.Sprintf(" RPC addr: '%s'", config.RPCAddr))
+
+	if len(config.StartJoin) > 0 {
+		ui.Output("Joining cluster...")
+		n, err := agent.Join(config.StartJoin)
+		if err != nil {
+			ui.Error(err.Error())
+			return 1
+		}
+
+		ui.Info(fmt.Sprintf("Join completed. Synced with %d initial agents", n))
+	}
+
 	ui.Info("")
 	ui.Output("Log data will now stream in as it occurs:\n")
 	logGate.Flush()
@@ -211,6 +226,8 @@ Options:
   -event-handler=foo       Script to execute when events occur. This can
                            be specified multiple times. See the event scripts
                            section below for more info.
+  -join=addr               An initial agent to join with. This flag can be
+                           specified multiple times.
   -log-level=info          Log level of the agent.
   -node=hostname           Name of this node. Must be unique in the cluster
   -role=foo                The role of this node, if any. This can be used
