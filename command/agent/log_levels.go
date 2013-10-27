@@ -9,7 +9,7 @@ import (
 // levels that we use.
 func LevelFilter() *logutils.LevelFilter {
 	return &logutils.LevelFilter{
-		Levels:   []logutils.LogLevel{"DEBUG", "INFO", "WARN", "ERR"},
+		Levels:   []logutils.LogLevel{"TRACE", "DEBUG", "INFO", "WARN", "ERR"},
 		MinLevel: "INFO",
 		Writer:   ioutil.Discard,
 	}
