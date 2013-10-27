@@ -12,6 +12,7 @@ BUG FIXES:
   * Nodes that previously left and rejoin won't get stuck in 'leaving' state.
     [GH-18]
   * Fixing alignment issues on i386 for atomic operations [GH-20]
+  * "trace" log level works [GH-31]
 
 ## 0.1.1 (October 23, 2013)
 
