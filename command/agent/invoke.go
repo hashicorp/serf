@@ -7,7 +7,12 @@ import (
 	"io"
 	"log"
 	"os/exec"
+	"runtime"
 	"strings"
+)
+
+const (
+	windows = "windows"
 )
 
 // invokeEventScript will execute the given event script with the given
@@ -21,7 +26,18 @@ import (
 // the various stdin functions below for more information.
 func invokeEventScript(logger *log.Logger, script string, self serf.Member, event serf.Event) error {
 	var output bytes.Buffer
-	cmd := exec.Command("/bin/sh", "-c", script)
+
+	// Determine the shell invocation based on OS
+	var shell, flag string
+	if runtime.GOOS == windows {
+		shell = "cmd"
+		flag = "/C"
+	} else {
+		shell = "/bin/sh"
+		flag = "-c"
+	}
+
+	cmd := exec.Command(shell, flag, script)
 	cmd.Args[0] = "serf-event"
 	cmd.Env = append(cmd.Env,
 		"SERF_EVENT="+event.EventType().String(),
