@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/hashicorp/serf/cli"
+	"github.com/hashicorp/serf/serf"
 )
 
 // VersionCommand is a Command implementation prints the version.
@@ -29,6 +30,8 @@ func (c *VersionCommand) Run(_ []string, ui cli.Ui) int {
 	}
 
 	ui.Output(versionString.String())
+	ui.Output(fmt.Sprintf("Agent Protocol: %d (Understands back to: %d)",
+		serf.ProtocolVersionMax, serf.ProtocolVersionMin))
 	return 0
 }
 
