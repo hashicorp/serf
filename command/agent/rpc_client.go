@@ -50,7 +50,7 @@ func (c *RPCClient) Monitor(level logutils.LogLevel, ch chan<- string, done <-ch
 	var lock sync.Mutex
 	internalDone := make(chan struct{})
 
-	l, err := net.Listen("tcp", "0.0.0.0:0")
+	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return err
 	}
