@@ -45,6 +45,7 @@ type Serf struct {
 
 	eventBroadcasts *memberlist.TransmitLimitedQueue
 	eventBuffer     []*userEvents
+	eventMinTime    LamportTime
 	eventLock       sync.RWMutex
 
 	logger     *log.Logger
@@ -678,6 +679,11 @@ func (s *Serf) handleUserEvent(eventMsg *messageUserEvent) bool {
 
 	s.eventLock.Lock()
 	defer s.eventLock.Unlock()
+
+	// Ignore if it is before our minimum event time
+	if eventMsg.LTime < s.eventMinTime {
+		return false
+	}
 
 	// Check if this message is too old
 	curTime := s.eventClock.Time()
