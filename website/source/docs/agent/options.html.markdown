@@ -62,6 +62,10 @@ The options below are all specified on the command-line.
 * `-node` - The name of this node in the cluster. This must be unique within
   the cluster. By default this is the hostname of the machine.
 
+* `-protocol` - The Serf protocol version to use. This details to the latest
+  version. This should be set only when [upgrading](/docs/upgrading.html).
+  You can view the protocol versions supported by Serf by running `serf -v`.
+
 * `-role` - The role of this node, if any. By default this is blank or empty.
   The role can be used by events in order to differentiate members of a
   cluster that may have different functional roles. For example, if you're
@@ -106,6 +110,8 @@ at a single JSON object with configuration within it.
 * `bind_addr` - Equivalent to the `-bind-addr` command-line flag.
 
 * `log_level` - Equivalent to the `-log-level` command-line flag.
+
+* `protocol` - Equivalent to the `-protocol` command-line flag.
 
 * `rpc_addr` - Equivalent to the `-rpc-addr` command-line flag.
 
