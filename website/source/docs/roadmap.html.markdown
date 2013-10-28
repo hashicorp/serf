@@ -24,12 +24,6 @@ features or changes that aren't listed here.
 
 ## Roadmap
 
-* **Gossip message security**. In the very near term, we'll be adding
-  encryption and signing to gossip-based messages, so that a bad actor
-  that may know the address of your Serf cluster can't artifically inject
-  messages into the cluster. Note that in most cases, this isn't an issue
-  since you can protect your cluster with basic firewalls.
-
 * **More fine-grained configuration**. The current release of Serf doesn't
   give you fine-grained control over many of the tunables of the gossip
   layer. A future version of Serf will allow you to modify these tunables
