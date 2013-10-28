@@ -48,6 +48,11 @@ The options below are all specified on the command-line.
   [event handler page](/docs/agent/event-handlers.html) for more details on
   event handlers as well as a syntax for filtering event handlers by event.
 
+* `-join` - Address of another agent to join upon starting up. This can be
+  specified multiple times to specify multiple agents to join. If Serf is
+  unable to join with any of the specified addresses, agent startup will
+  fail. By default, the agent won't join any nodes when it starts up.
+
 * `-log-level` - The level of logging to show after the Serf agent has
   started. This defaults to "info". The available log levels are "trace",
   "debug", "info", "warn", "err". This is the log level that will be shown
@@ -107,3 +112,6 @@ at a single JSON object with configuration within it.
 * `event_handlers` - An array of strings specifying the event handlers.
   The format of the strings is equivalent to the format specified for
   the `-event-handler` command-line flag.
+
+* `start_join` - An array of strings specifying addresses of nodes to
+  join upon startup.

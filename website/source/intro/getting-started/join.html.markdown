@@ -95,6 +95,9 @@ agents gossip with each other to propagate full membership information.
 </p>
 </div>
 
+In addition to using `serf join` you can use the `-join` flag on
+`serf agent` to join a cluster as part of starting up the agent.
+
 ## Leaving a Cluster
 
 To leave the cluster, you can either gracefully quit an agent (using
