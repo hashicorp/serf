@@ -8,6 +8,8 @@ FEATURES:
     to the "left" state.
   * Serf now supports message encryption and verification so that it can
     be used on untrusted networks [GH-25]
+  * The `-join` flag on `serf agent` can be used to join a cluster when
+    starting an agent. [GH-42]
 
 IMPROVEMENTS:
 
