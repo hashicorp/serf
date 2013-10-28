@@ -84,11 +84,13 @@ func TestMergeConfig(t *testing.T) {
 		NodeName:      "foo",
 		Role:          "bar",
 		EventHandlers: []string{"foo"},
+		StartJoin:     []string{"foo"},
 	}
 
 	b := &Config{
 		NodeName:      "bname",
 		EventHandlers: []string{"bar"},
+		StartJoin:     []string{"bar"},
 	}
 
 	c := MergeConfig(a, b)
@@ -103,6 +105,10 @@ func TestMergeConfig(t *testing.T) {
 
 	expected := []string{"foo", "bar"}
 	if !reflect.DeepEqual(c.EventHandlers, expected) {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if !reflect.DeepEqual(c.StartJoin, expected) {
 		t.Fatalf("bad: %#v", c)
 	}
 }

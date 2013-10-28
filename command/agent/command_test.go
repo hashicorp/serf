@@ -103,3 +103,61 @@ func TestCommandRun_rpc(t *testing.T) {
 		t.Fatalf("bad: %#v", members)
 	}
 }
+
+func TestCommandRun_join(t *testing.T) {
+	a1 := testAgent()
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer a1.Shutdown()
+
+	doneCh := make(chan struct{})
+	shutdownCh := make(chan struct{})
+	defer func() {
+		close(shutdownCh)
+		<-doneCh
+	}()
+
+	c := &Command{
+		ShutdownCh: shutdownCh,
+	}
+
+	args := []string{
+		"-bind", testutil.GetBindAddr().String(),
+		"-join", a1.SerfConfig.MemberlistConfig.BindAddr,
+	}
+
+	go func() {
+		code := c.Run(args, new(cli.MockUi))
+		if code != 0 {
+			log.Printf("bad: %d", code)
+		}
+
+		close(doneCh)
+	}()
+
+	testutil.Yield()
+
+	if len(a1.Serf().Members()) != 2 {
+		t.Fatalf("bad: %#v", a1.Serf().Members())
+	}
+}
+
+func TestCommandRun_joinFail(t *testing.T) {
+	shutdownCh := make(chan struct{})
+	defer close(shutdownCh)
+
+	c := &Command{
+		ShutdownCh: shutdownCh,
+	}
+
+	args := []string{
+		"-bind", testutil.GetBindAddr().String(),
+		"-join", testutil.GetBindAddr().String(),
+	}
+
+	code := c.Run(args, new(cli.MockUi))
+	if code == 0 {
+		t.Fatal("should fail")
+	}
+}
