@@ -93,7 +93,7 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 	return msgs
 }
 
-func (d *delegate) LocalState() []byte {
+func (d *delegate) LocalState(join bool) []byte {
 	d.serf.memberLock.RLock()
 	defer d.serf.memberLock.RUnlock()
 	d.serf.eventLock.RLock()
@@ -127,7 +127,7 @@ func (d *delegate) LocalState() []byte {
 	return buf
 }
 
-func (d *delegate) MergeRemoteState(buf []byte) {
+func (d *delegate) MergeRemoteState(buf []byte, isJoin bool) {
 	// Check the message type
 	if messageType(buf[0]) != messagePushPullType {
 		d.serf.logger.Printf("[ERR] serf: Remote state has bad type prefix: %v", buf[0])
