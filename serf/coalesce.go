@@ -4,111 +4,68 @@ import (
 	"time"
 )
 
-type coalesceEvent struct {
-	Type   EventType
-	Member *Member
+// coalescer is a simple interface that must be implemented to be
+// used inside of a coalesceLoop
+type coalescer interface {
+	// Can the coalescer handle this event, if not it is
+	// directly passed through to the destination channel
+	Handle(Event) bool
+
+	// Invoked to coalesce the given event
+	Coalesce(Event)
+
+	// Invoked to flush the coalesced events
+	Flush(outChan chan<- Event)
 }
 
-// coalescedEventCh returns an event channel where the events are coalesced
-// over a period of time. This helps lower the number of events that are
-// fired in the case where many nodes share similar events at one time.
-// Examples where this is possible are if many new nodes are brought online
-// at one time, events will be coalesced together into one event.
-func coalescedEventCh(outCh chan<- Event, shutdownCh <-chan struct{},
-	coalescePeriod time.Duration, quiescentPeriod time.Duration) chan<- Event {
-	eventCh := make(chan Event, 1024)
-	go coalescer(eventCh, outCh, shutdownCh, coalescePeriod, quiescentPeriod)
-	return eventCh
-}
-
-// coalescer is the function that actually does the coalescence work.
-// This function runs in a goroutine, processing events until the
-// shutdown channel sends a message.
-func coalescer(eventCh <-chan Event, newCh chan<- Event, shutdownCh <-chan struct{},
-	coalescePeriod time.Duration, quiescentPeriod time.Duration) {
+// coalesceLoop is a simple long-running routine that manages the high-level
+// flow of coalescing based on quiescence and a maximum quantum period.
+func coalesceLoop(inCh <-chan Event, outCh chan<- Event, shutdownCh <-chan struct{},
+	coalescePeriod time.Duration, quiescentPeriod time.Duration, c coalescer) {
 	var quiescent <-chan time.Time
 	var quantum <-chan time.Time
-
-	lastEvents := make(map[string]EventType)
-	latestEvents := make(map[string]coalesceEvent)
 	shutdown := false
 
-	for {
-		coalesce := false
+INGEST:
+	// Reset the timers
+	quantum = nil
+	quiescent = nil
 
+	for {
 		select {
-		case rawEvent := <-eventCh:
-			// Ignore any non-member related events
-			eventType := rawEvent.EventType()
-			if eventType != EventMemberJoin && eventType != EventMemberLeave && eventType != EventMemberFailed {
-				newCh <- rawEvent
+		case e := <-inCh:
+			// Ignore any non handled events
+			if !c.Handle(e) {
+				outCh <- e
 				continue
 			}
 
-			// Cast to a member event
-			e := rawEvent.(MemberEvent)
-
-			// Start a new quantum if we need to and update the quiescent
-			// timer.
+			// Start a new quantum if we need to
+			// and restart the quiescent timer
 			if quantum == nil {
 				quantum = time.After(coalescePeriod)
 			}
 			quiescent = time.After(quiescentPeriod)
 
-			for _, m := range e.Members {
-				latestEvents[m.Name] = coalesceEvent{
-					Type:   e.Type,
-					Member: &m,
-				}
-			}
+			// Coalesce the event
+			c.Coalesce(e)
+
 		case <-quantum:
-			coalesce = true
+			goto FLUSH
 		case <-quiescent:
-			coalesce = true
+			goto FLUSH
 		case <-shutdownCh:
-			// Make sure we coalesce one last time and then shut down
-			coalesce = true
+			goto FLUSH
 			shutdown = true
 		}
+	}
 
-		if !coalesce {
-			continue
-		}
+FLUSH:
+	// Flush the coalesced events
+	c.Flush(outCh)
 
-		// Reset the timers
-		quantum = nil
-		quiescent = nil
-
-		// Coalesce the various events we got into a single set of events.
-		events := make(map[EventType]*MemberEvent)
-		for name, cevent := range latestEvents {
-			previous, ok := lastEvents[name]
-
-			// If we sent the same event before, then ignore
-			if ok && previous == cevent.Type {
-				continue
-			}
-
-			// Update our last event
-			lastEvents[name] = cevent.Type
-
-			// Add it to our event
-			newEvent, ok := events[cevent.Type]
-			if !ok {
-				newEvent = &MemberEvent{Type: cevent.Type}
-				events[cevent.Type] = newEvent
-			}
-			newEvent.Members = append(newEvent.Members, *cevent.Member)
-		}
-
-		// Send out those events
-		for _, event := range events {
-			newCh <- *event
-		}
-
-		// If we were told to shutdown, then exit now
-		if shutdown {
-			break
-		}
+	// Restart ingestion if we are not done
+	if !shutdown {
+		goto INGEST
 	}
 }

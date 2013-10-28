@@ -158,7 +158,7 @@ func Create(conf *Config) (*Serf, error) {
 
 	if conf.CoalescePeriod > 0 && conf.EventCh != nil {
 		// Event coalescence is enabled, setup the channel.
-		conf.EventCh = coalescedEventCh(conf.EventCh, serf.shutdownCh,
+		conf.EventCh = coalescedMemberEventCh(conf.EventCh, serf.shutdownCh,
 			conf.CoalescePeriod, conf.QuiescentPeriod)
 	}
 

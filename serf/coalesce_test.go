@@ -1,67 +1,76 @@
 package serf
 
 import (
+	"fmt"
 	"reflect"
-	"sort"
 	"testing"
 	"time"
 )
 
+// Mock EventCounter type
+const EventCounter EventType = 9000
+
+type counterEvent struct {
+	delta int
+}
+
+func (c counterEvent) EventType() EventType {
+	return EventCounter
+}
+func (c counterEvent) String() string {
+	return fmt.Sprintf("CounterEvent %d", c.delta)
+}
+
+// Mock coalescer
+type mockCoalesce struct {
+	value int
+}
+
+func (c *mockCoalesce) Handle(e Event) bool {
+	return e.EventType() == EventCounter
+}
+
+func (c *mockCoalesce) Coalesce(e Event) {
+	c.value += e.(counterEvent).delta
+}
+
+func (c *mockCoalesce) Flush(outChan chan<- Event) {
+	outChan <- counterEvent{c.value}
+	c.value = 0
+}
+
 func testCoalescer(cPeriod, qPeriod time.Duration) (chan<- Event, <-chan Event, chan<- struct{}) {
-	if cPeriod == 0 {
-		cPeriod = 10 * time.Millisecond
-	}
-
-	if qPeriod == 0 {
-		qPeriod = 5 * time.Millisecond
-	}
-
+	in := make(chan Event, 64)
 	out := make(chan Event)
 	shutdown := make(chan struct{})
-	in := coalescedEventCh(out, shutdown, cPeriod, qPeriod)
+	c := &mockCoalesce{}
+	go coalesceLoop(in, out, shutdown, cPeriod, qPeriod, c)
 	return in, out, shutdown
 }
 
 func TestCoalescer_basic(t *testing.T) {
-	in, out, shutdown := testCoalescer(0, time.Second)
+	in, out, shutdown := testCoalescer(5*time.Millisecond, time.Second)
 	defer close(shutdown)
 
 	send := []Event{
-		MemberEvent{
-			Type:    EventMemberJoin,
-			Members: []Member{Member{Name: "foo"}},
-		},
-		MemberEvent{
-			Type:    EventMemberLeave,
-			Members: []Member{Member{Name: "foo"}},
-		},
-		MemberEvent{
-			Type:    EventMemberLeave,
-			Members: []Member{Member{Name: "bar"}},
-		},
+		counterEvent{1},
+		counterEvent{39},
+		counterEvent{2},
 	}
-
 	for _, e := range send {
 		in <- e
 	}
 
 	select {
 	case e := <-out:
-		if e.EventType() != EventMemberLeave {
-			t.Fatalf("expected leave, got: %d", e.EventType())
+		if e.EventType() != EventCounter {
+			t.Fatalf("expected counter, got: %d", e.EventType())
 		}
 
-		if len(e.(MemberEvent).Members) != 2 {
-			t.Fatalf("should have two members: %d", len(e.(MemberEvent).Members))
+		if e.(counterEvent).delta != 42 {
+			t.Fatalf("bad: %#v", e)
 		}
 
-		expected := []string{"bar", "foo"}
-		names := []string{e.(MemberEvent).Members[0].Name, e.(MemberEvent).Members[1].Name}
-		sort.Strings(names)
-
-		if !reflect.DeepEqual(expected, names) {
-			t.Fatalf("bad: %#v", names)
-		}
 	case <-time.After(50 * time.Millisecond):
 		t.Fatalf("timeout")
 	}
@@ -75,40 +84,22 @@ func TestCoalescer_quiescent(t *testing.T) {
 	defer close(shutdown)
 
 	send := []Event{
-		MemberEvent{
-			Type:    EventMemberJoin,
-			Members: []Member{Member{Name: "foo"}},
-		},
-		MemberEvent{
-			Type:    EventMemberLeave,
-			Members: []Member{Member{Name: "foo"}},
-		},
-		MemberEvent{
-			Type:    EventMemberLeave,
-			Members: []Member{Member{Name: "bar"}},
-		},
+		counterEvent{1},
+		counterEvent{39},
+		counterEvent{2},
 	}
-
 	for _, e := range send {
 		in <- e
 	}
 
 	select {
 	case e := <-out:
-		if e.EventType() != EventMemberLeave {
-			t.Fatalf("expected leave, got: %d", e.EventType())
+		if e.EventType() != EventCounter {
+			t.Fatalf("expected counter, got: %d", e.EventType())
 		}
 
-		if len(e.(MemberEvent).Members) != 2 {
-			t.Fatalf("should have two members: %d", len(e.(MemberEvent).Members))
-		}
-
-		expected := []string{"bar", "foo"}
-		names := []string{e.(MemberEvent).Members[0].Name, e.(MemberEvent).Members[1].Name}
-		sort.Strings(names)
-
-		if !reflect.DeepEqual(expected, names) {
-			t.Fatalf("bad: %#v", names)
+		if e.(counterEvent).delta != 42 {
+			t.Fatalf("bad: %#v", e)
 		}
 	case <-time.After(50 * time.Millisecond):
 		t.Fatalf("timeout")
