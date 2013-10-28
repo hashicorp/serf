@@ -729,6 +729,7 @@ func (s *Serf) handleUserEvent(eventMsg *messageUserEvent) bool {
 
 	if s.config.EventCh != nil {
 		s.config.EventCh <- UserEvent{
+			LTime:   eventMsg.LTime,
 			Name:    eventMsg.Name,
 			Payload: eventMsg.Payload,
 		}
