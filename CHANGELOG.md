@@ -22,7 +22,8 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
-  * Windows event handlers are fixed [GH-37]
+  * Event handlers work on Windows now by executing commands through
+    `cmd /C` [GH-37]
   * Nodes that previously left and rejoin won't get stuck in 'leaving' state.
     [GH-18]
   * Fixing alignment issues on i386 for atomic operations [GH-20]
