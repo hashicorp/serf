@@ -156,10 +156,16 @@ func Create(conf *Config) (*Serf, error) {
 		state:      SerfAlive,
 	}
 
-	if conf.CoalescePeriod > 0 && conf.EventCh != nil {
-		// Event coalescence is enabled, setup the channel.
+	// Check if serf member event coalescing is enabled
+	if conf.CoalescePeriod > 0 && conf.QuiescentPeriod > 0 && conf.EventCh != nil {
 		conf.EventCh = coalescedMemberEventCh(conf.EventCh, serf.shutdownCh,
 			conf.CoalescePeriod, conf.QuiescentPeriod)
+	}
+
+	// Check if user event coalescing is enabled
+	if conf.EventCoalescePeriod > 0 && conf.EventQuiescentPeriod > 0 && conf.EventCh != nil {
+		conf.EventCh = coalescedUserEventCh(conf.EventCh, serf.shutdownCh,
+			conf.EventCoalescePeriod, conf.EventQuiescentPeriod)
 	}
 
 	// Setup the broadcast queue, which we use to send our own custom
