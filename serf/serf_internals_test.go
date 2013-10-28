@@ -24,7 +24,7 @@ func TestSerf_joinLeave_ltime(t *testing.T) {
 
 	testutil.Yield()
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}

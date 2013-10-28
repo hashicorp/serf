@@ -171,6 +171,17 @@ func (d *delegate) MergeRemoteState(buf []byte, isJoin bool) {
 		d.serf.handleNodeJoinIntent(&join)
 	}
 
+	// If we are doing a join, and eventJoinIgnore is set
+	// then we set the eventMinTime to the EventLTime. This
+	// prevents any of the incoming events from being processed
+	if isJoin && d.serf.eventJoinIgnore {
+		d.serf.eventLock.Lock()
+		if pp.EventLTime > d.serf.eventMinTime {
+			d.serf.eventMinTime = pp.EventLTime
+		}
+		d.serf.eventLock.Unlock()
+	}
+
 	// Process all the events
 	userEvent := messageUserEvent{}
 	for _, events := range pp.Events {

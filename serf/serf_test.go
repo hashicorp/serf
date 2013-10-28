@@ -77,7 +77,7 @@ func TestSerf_eventsFailed(t *testing.T) {
 
 	testutil.Yield()
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -118,7 +118,7 @@ func TestSerf_eventsJoin(t *testing.T) {
 
 	testutil.Yield()
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -152,7 +152,7 @@ func TestSerf_eventsLeave(t *testing.T) {
 
 	testutil.Yield()
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -193,7 +193,7 @@ func TestSerf_eventsUser(t *testing.T) {
 
 	testutil.Yield()
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -265,7 +265,7 @@ func TestSerf_joinLeave(t *testing.T) {
 		t.Fatalf("s2 members: %d", len(s2.Members()))
 	}
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -321,7 +321,7 @@ func TestSerf_reconnect(t *testing.T) {
 
 	testutil.Yield()
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -370,7 +370,7 @@ func TestSerf_role(t *testing.T) {
 	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -420,12 +420,12 @@ func TestSerfRemoveFailedNode(t *testing.T) {
 	defer s2.Shutdown()
 	defer s3.Shutdown()
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr})
+	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -646,7 +646,7 @@ func TestSerf_joinLeaveJoin(t *testing.T) {
 		t.Fatalf("s2 members: %d", len(s2.Members()))
 	}
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -694,7 +694,7 @@ func TestSerf_joinLeaveJoin(t *testing.T) {
 	testutil.Yield()
 
 	// Re-attempt the join
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr})
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -722,4 +722,52 @@ func TestSerf_joinLeaveJoin(t *testing.T) {
 	if anyLeft {
 		t.Fatalf("all nodes should be alive!")
 	}
+}
+
+func TestSerf_Join_IgnoreOld(t *testing.T) {
+	// Create the s1 config with an event channel so we can listen
+	eventCh := make(chan Event, 4)
+	s1Config := testConfig()
+	s2Config := testConfig()
+	s2Config.EventCh = eventCh
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	defer s1.Shutdown()
+	defer s2.Shutdown()
+
+	testutil.Yield()
+
+	// Fire a user event
+	if err := s1.UserEvent("event!", []byte("test")); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Fire a user event
+	if err := s1.UserEvent("second", []byte("foobar")); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// join with ignoreOld set to true! should not get events
+	_, err = s2.Join([]string{s1Config.MemberlistConfig.BindAddr}, true)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// check the events to make sure we got nothing
+	testUserEvents(t, eventCh, []string{}, [][]byte{})
 }

@@ -50,7 +50,10 @@ func testUserEvents(t *testing.T, ch <-chan Event, expectedName []string, expect
 TESTEVENTLOOP:
 	for {
 		select {
-		case r := <-ch:
+		case r, ok := <-ch:
+			if !ok {
+				break TESTEVENTLOOP
+			}
 			u, ok := r.(UserEvent)
 			if !ok {
 				continue

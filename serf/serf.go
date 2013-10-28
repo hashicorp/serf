@@ -45,6 +45,7 @@ type Serf struct {
 
 	eventBroadcasts *memberlist.TransmitLimitedQueue
 	eventBuffer     []*userEvents
+	eventJoinIgnore bool
 	eventMinTime    LamportTime
 	eventLock       sync.RWMutex
 
@@ -247,8 +248,9 @@ func (s *Serf) UserEvent(name string, payload []byte) error {
 
 // Join joins an existing Serf cluster. Returns the number of nodes
 // successfully contacted. The returned error will be non-nil only in the
-// case that no nodes could be contacted.
-func (s *Serf) Join(existing []string) (int, error) {
+// case that no nodes could be contacted. If ignoreOld is true, then any
+// user messages sent prior to the join will be ignored.
+func (s *Serf) Join(existing []string, ignoreOld bool) (int, error) {
 	s.stateLock.Lock()
 	defer s.stateLock.Unlock()
 
@@ -256,6 +258,16 @@ func (s *Serf) Join(existing []string) (int, error) {
 		return 0, fmt.Errorf("Serf can't Join after Shutdown")
 	}
 
+	// Ignore any events from a potential join. This is safe since we hold
+	// the stateLock and nobody else can be doing a Join
+	if ignoreOld {
+		s.eventJoinIgnore = true
+		defer func() {
+			s.eventJoinIgnore = false
+		}()
+	}
+
+	// Have memberlist attempt to join
 	num, err := s.memberlist.Join(existing)
 
 	// If we joined any nodes, broadcast the join message

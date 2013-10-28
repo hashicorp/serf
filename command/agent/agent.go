@@ -57,7 +57,7 @@ func (a *Agent) Join(addrs []string) (n int, err error) {
 	a.once.Do(a.init)
 
 	a.logger.Printf("[INFO] Agent joining: %v", addrs)
-	n, err = a.serf.Join(addrs)
+	n, err = a.serf.Join(addrs, false)
 	return
 }
 
