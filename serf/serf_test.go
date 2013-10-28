@@ -201,14 +201,14 @@ func TestSerf_eventsUser(t *testing.T) {
 	testutil.Yield()
 
 	// Fire a user event
-	if err := s1.UserEvent("event!", []byte("test")); err != nil {
+	if err := s1.UserEvent("event!", []byte("test"), false); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
 	testutil.Yield()
 
 	// Fire a user event
-	if err := s1.UserEvent("second", []byte("foobar")); err != nil {
+	if err := s1.UserEvent("second", []byte("foobar"), false); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
@@ -232,7 +232,7 @@ func TestSerf_eventsUser_sizeLimit(t *testing.T) {
 
 	name := "this is too large an event"
 	payload := make([]byte, UserEventSizeLimit)
-	err = s1.UserEvent(name, payload)
+	err = s1.UserEvent(name, payload, false)
 	if strings.HasPrefix(err.Error(), "user event exceeds limit of ") {
 		t.Fatalf("should get size limit error")
 	}
@@ -747,14 +747,14 @@ func TestSerf_Join_IgnoreOld(t *testing.T) {
 	testutil.Yield()
 
 	// Fire a user event
-	if err := s1.UserEvent("event!", []byte("test")); err != nil {
+	if err := s1.UserEvent("event!", []byte("test"), false); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
 	testutil.Yield()
 
 	// Fire a user event
-	if err := s1.UserEvent("second", []byte("foobar")); err != nil {
+	if err := s1.UserEvent("second", []byte("foobar"), false); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 

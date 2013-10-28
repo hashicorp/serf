@@ -223,8 +223,10 @@ func Create(conf *Config) (*Serf, error) {
 
 // UserEvent is used to broadcast a custom user event with a given
 // name and payload. The events must be fairly small, and if the
-// size limit is exceeded and error will be returned.
-func (s *Serf) UserEvent(name string, payload []byte) error {
+// size limit is exceeded and error will be returned. If coalesce is enabled,
+// nodes are allowed to coalesce this event. Coalescing is only available
+// starting in v0.2
+func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
 	// Check the size limit
 	if len(name)+len(payload) > UserEventSizeLimit {
 		return fmt.Errorf("user event payload exceeds limit of %d bytes", UserEventSizeLimit)
@@ -235,6 +237,7 @@ func (s *Serf) UserEvent(name string, payload []byte) error {
 		LTime:   s.eventClock.Time(),
 		Name:    name,
 		Payload: payload,
+		CC:      coalesce,
 	}
 	s.eventClock.Increment()
 
@@ -735,9 +738,10 @@ func (s *Serf) handleUserEvent(eventMsg *messageUserEvent) bool {
 
 	if s.config.EventCh != nil {
 		s.config.EventCh <- UserEvent{
-			LTime:   eventMsg.LTime,
-			Name:    eventMsg.Name,
-			Payload: eventMsg.Payload,
+			LTime:    eventMsg.LTime,
+			Name:     eventMsg.Name,
+			Payload:  eventMsg.Payload,
+			Coalesce: eventMsg.CC,
 		}
 	}
 	return true

@@ -65,9 +65,10 @@ func (m MemberEvent) String() string {
 // UserEvent is the struct used for events that are triggered
 // by the user and are not related to members
 type UserEvent struct {
-	LTime   LamportTime
-	Name    string
-	Payload []byte
+	LTime    LamportTime
+	Name     string
+	Payload  []byte
+	Coalesce bool
 }
 
 func (u UserEvent) EventType() EventType {

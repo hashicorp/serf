@@ -56,7 +56,7 @@ func TestDelegate_LocalState(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	err = s1.UserEvent("test", []byte("test"))
+	err = s1.UserEvent("test", []byte("test"), false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}

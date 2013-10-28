@@ -199,7 +199,7 @@ func (a *Agent) Start() error {
 func (a *Agent) UserEvent(name string, payload []byte) error {
 	a.logger.Printf("Requesting user event send: %s %#v",
 		name, string(payload))
-	return a.serf.UserEvent(name, payload)
+	return a.serf.UserEvent(name, payload, false)
 }
 
 func (a *Agent) storeLog(v string) {

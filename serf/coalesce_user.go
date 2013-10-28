@@ -34,7 +34,14 @@ func newUserEventCoalescer() *userEventCoalescer {
 }
 
 func (c *userEventCoalescer) Handle(e Event) bool {
-	return e.EventType() == EventUser
+	// Only handle EventUser messages
+	if e.EventType() != EventUser {
+		return false
+	}
+
+	// Check if coalescing is enabled
+	user := e.(UserEvent)
+	return user.Coalesce
 }
 
 func (c *userEventCoalescer) Coalesce(e Event) {

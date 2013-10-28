@@ -45,6 +45,7 @@ type messageUserEvent struct {
 	LTime   LamportTime
 	Name    string
 	Payload []byte
+	CC      bool // "Can Coalesce". Zero value is compatible with Serf 0.1
 }
 
 func decodeMessage(buf []byte, out interface{}) error {

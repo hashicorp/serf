@@ -10,22 +10,26 @@ func TestUserEventCoalesce_Basic(t *testing.T) {
 
 	send := []Event{
 		UserEvent{
-			LTime: 1,
-			Name:  "foo",
+			LTime:    1,
+			Name:     "foo",
+			Coalesce: true,
 		},
 		UserEvent{
-			LTime: 2,
-			Name:  "foo",
+			LTime:    2,
+			Name:     "foo",
+			Coalesce: true,
 		},
 		UserEvent{
-			LTime:   2,
-			Name:    "bar",
-			Payload: []byte("test1"),
+			LTime:    2,
+			Name:     "bar",
+			Payload:  []byte("test1"),
+			Coalesce: true,
 		},
 		UserEvent{
-			LTime:   2,
-			Name:    "bar",
-			Payload: []byte("test2"),
+			LTime:    2,
+			Name:     "bar",
+			Payload:  []byte("test2"),
+			Coalesce: true,
 		},
 	}
 
@@ -79,6 +83,7 @@ func TestUserEventCoalesce_passThrough(t *testing.T) {
 
 	send := []Event{
 		MemberEvent{},
+		UserEvent{Coalesce: false},
 	}
 
 	for _, e := range send {
