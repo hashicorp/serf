@@ -10,7 +10,6 @@ FEATURES:
     be used on untrusted networks [GH-25]
   * The `-join` flag on `serf agent` can be used to join a cluster when
     starting an agent. [GH-42]
-  * Serf now requires [Go](http://golang.org) 1.2+ when building from source.
 
 IMPROVEMENTS:
 
