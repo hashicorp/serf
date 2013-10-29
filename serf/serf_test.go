@@ -425,6 +425,22 @@ func TestSerf_role(t *testing.T) {
 	}
 }
 
+func TestSerfProtocolVersion(t *testing.T) {
+	config := testConfig()
+	config.ProtocolVersion = ProtocolVersionMax
+
+	s1, err := Create(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	actual := s1.ProtocolVersion()
+	if actual != ProtocolVersionMax {
+		t.Fatalf("bad: %#v", actual)
+	}
+}
+
 func TestSerfRemoveFailedNode(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()

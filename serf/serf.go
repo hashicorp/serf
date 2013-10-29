@@ -259,6 +259,12 @@ func Create(conf *Config) (*Serf, error) {
 	return serf, nil
 }
 
+// ProtocolVersion returns the current protocol version in use by Serf.
+// This is the Serf protocol version, not the memberlist protocol version.
+func (s *Serf) ProtocolVersion() uint8 {
+	return s.config.ProtocolVersion
+}
+
 // UserEvent is used to broadcast a custom user event with a given
 // name and payload. The events must be fairly small, and if the
 // size limit is exceeded and error will be returned. If coalesce is enabled,
