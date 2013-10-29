@@ -55,7 +55,7 @@ you'd like; it is up to the event handler to use it in some meaningful way.
 
 Custom events are delivered using the Serf gossip layer. The benefits of
 this approach is that you get completely decentralized messaging across
-your entire cluster that is fault tolerant. Event if a node is down, it will
+your entire cluster that is fault tolerant. Even if a node is down, it will
 eventually receive that event message.
 
 Due to the mechanics of gossip, custom
