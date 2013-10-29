@@ -27,19 +27,16 @@ func (l *LamportClock) Increment() LamportTime {
 // Witness is called to update our local clock if necessary after
 // witnessing a clock value received from another process
 func (l *LamportClock) Witness(v LamportTime) {
-WITNESS:
-	// If the other value is old, we do not need to do anything
-	cur := atomic.LoadUint64(&l.counter)
 	other := uint64(v)
-	if other < cur {
-		return
-	}
-
-	// Ensure that our local clock is at least one ahead.
-	if !atomic.CompareAndSwapUint64(&l.counter, cur, other+1) {
+	for {
+		// If the other value is old, we do not need to do anything.
+		// Otherwise, ensure that our local clock is at least one ahead.
+		if cur := atomic.LoadUint64(&l.counter); other < cur ||
+			atomic.CompareAndSwapUint64(&l.counter, cur, other+1) {
+			return
+		}
 		// The CAS failed, so we just retry. Eventually our CAS should
 		// succeed or a future witness will pass us by and our witness
 		// will end.
-		goto WITNESS
 	}
 }
