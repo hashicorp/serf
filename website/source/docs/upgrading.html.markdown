@@ -20,13 +20,16 @@ below, assume you're running version A of Serf, and then version B comes out.
 
 1. On each node, install version B of Serf.
 
-2. Shut down version A, and start version B with the `-protocol=previous`
-   flag.
+2. Shut down version A, and start version B with the `-protocol=PREVIOUS`
+   flag, where "PREVIOUS" is the protocol version of version A (which can
+   be discovered by running `serf -v` or `serf members -detailed).
 
 3. Once all nodes are running version B, go through every node and restart
    the version B agent _without_ the `-protocol` flag.
 
 4. Done! You're now running the latest Serf agent speaking the latest protocol.
+   You can verify this is the case by running `serf members -detailed` to
+   make sure all members are speaking the same, latest protocol version.
 
 The key to making this work is the [protocol compatibility](/docs/compatibility.html)
 of Serf. The protocol version system is discussed below.
