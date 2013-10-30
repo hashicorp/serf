@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -37,6 +38,34 @@ func TestConfigBindAddrParts(t *testing.T) {
 			t.Errorf("%s: Got port %d", tc.Value, port)
 			continue
 		}
+	}
+}
+
+func TestConfigEncryptBytes(t *testing.T) {
+	// Test with some input
+	src := []byte("abc")
+	c := &Config{
+		EncryptKey: base64.StdEncoding.EncodeToString(src),
+	}
+
+	result, err := c.EncryptBytes()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !bytes.Equal(src, result) {
+		t.Fatalf("bad: %#v", result)
+	}
+
+	// Test with no input
+	c = &Config{}
+	result, err = c.EncryptBytes()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if len(result) > 0 {
+		t.Fatalf("bad: %#v", result)
 	}
 }
 

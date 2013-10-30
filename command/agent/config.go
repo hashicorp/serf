@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/serf/serf"
@@ -40,6 +41,13 @@ type Config struct {
 	// port will be used.
 	BindAddr string `mapstructure:"bind_addr"`
 
+	// EncryptKey is the secret key to use for encrypting communication
+	// traffic for Serf. The secret key must be exactly 16-bytes, base64
+	// encoded. The easiest way to do this on Unix machines is this command:
+	// "head -c16 /dev/urandom | base64". If this is not specified, the
+	// traffic will not be encrypted.
+	EncryptKey string `mapstructure:"encrypt_key"`
+
 	// LogLevel is the level of the logs to output.
 	LogLevel string `mapstructure:"log_level"`
 
@@ -73,6 +81,11 @@ func (c *Config) BindAddrParts() (string, int, error) {
 	}
 
 	return addr.IP.String(), addr.Port, nil
+}
+
+// EncryptBytes returns the encryption key configured.
+func (c *Config) EncryptBytes() ([]byte, error) {
+	return base64.StdEncoding.DecodeString(c.EncryptKey)
 }
 
 // EventScripts returns the list of EventScripts associated with this

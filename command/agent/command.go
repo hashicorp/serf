@@ -40,6 +40,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		"json file to read config from")
 	cmdFlags.Var((*AppendSliceValue)(&configFiles), "config-dir",
 		"directory of json files to read")
+	cmdFlags.StringVar(&cmdConfig.EncryptKey, "encrypt", "", "encryption key")
 	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.EventHandlers), "event-handler",
 		"command to execute when events occur")
 	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.StartJoin), "join",
