@@ -8,7 +8,8 @@ import (
 	"strings"
 )
 
-// KeygenCommand is a Command implementation prints the version.
+// KeygenCommand is a Command implementation that generates an encryption
+// key for use in `serf agent`.
 type KeygenCommand struct{}
 
 func (c *KeygenCommand) Run(_ []string, ui cli.Ui) int {
