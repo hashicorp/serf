@@ -42,6 +42,11 @@ The options below are all specified on the command-line.
   in alphabetical order. For more information on the format of the configuration
   files, see the "Configuration Files" section below.
 
+* `-encrypt` - Specifies the secret key to use for encryption of Serf
+  network traffic. This key must be 16-bytes that are base64 encoded. The
+  easiest way to create an encryption key is to use `serf keygen`. All
+  nodes within a cluster must share the same encryption key to communicate.
+
 * `-event-handler` - Adds an event handler that Serf will invoke for
   events. This flag can be specified multiple times to define multiple
   event handlers. By default no event handlers are registered. See the
@@ -108,6 +113,8 @@ at a single JSON object with configuration within it.
 * `role` - Equivalent to the `-role` command-line flag.
 
 * `bind_addr` - Equivalent to the `-bind-addr` command-line flag.
+
+* `encrypt_key` - Equivalent to the `-encrypt` command-line flag.
 
 * `log_level` - Equivalent to the `-log-level` command-line flag.
 

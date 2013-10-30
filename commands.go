@@ -31,6 +31,10 @@ func init() {
 			return &command.JoinCommand{}, nil
 		},
 
+		"keygen": func() (cli.Command, error) {
+			return &command.KeygenCommand{}, nil
+		},
+
 		"members": func() (cli.Command, error) {
 			return &command.MembersCommand{}, nil
 		},
