@@ -7,6 +7,18 @@ import (
 	"time"
 )
 
+// ProtocolVersionMap is the mapping of Serf delegate protocol versions
+// to memberlist protocol versions. We mask the memberlist protocols using
+// our own protocol version.
+var ProtocolVersionMap map[uint8]uint8
+
+func init() {
+	ProtocolVersionMap = map[uint8]uint8{
+		1: 1,
+		0: 0,
+	}
+}
+
 // Config is the configuration for creating a Serf instance.
 type Config struct {
 	// The name of this node. This must be unique in the cluster. If this

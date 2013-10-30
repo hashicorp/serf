@@ -228,15 +228,7 @@ func Create(conf *Config) (*Serf, error) {
 	conf.MemberlistConfig.DelegateProtocolMin = ProtocolVersionMin
 	conf.MemberlistConfig.DelegateProtocolMax = ProtocolVersionMax
 	conf.MemberlistConfig.Name = conf.NodeName
-
-	// Map our protocol version down to a proper memberlist protocol
-	// version.
-	switch conf.ProtocolVersion {
-	case 1:
-		conf.MemberlistConfig.ProtocolVersion = 1
-	case 0:
-		conf.MemberlistConfig.ProtocolVersion = 0
-	}
+	conf.MemberlistConfig.ProtocolVersion = ProtocolVersionMap[conf.ProtocolVersion]
 
 	// Create the underlying memberlist that will manage membership
 	// and failure detection for the Serf instance.
