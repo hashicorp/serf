@@ -97,6 +97,12 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 		return 1
 	}
 
+	encryptKey, err := config.EncryptBytes()
+	if err != nil {
+		rawUi.Error(fmt.Sprintf("Invalid encryption key: %s", err))
+		return 1
+	}
+
 	// Setup logging. First create the gated log writer, which will
 	// store logs until we're ready to show them. Then create the level
 	// filter, filtering logs of the specified level.
@@ -118,6 +124,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	serfConfig.MemberlistConfig.BindAddr = bindIP
 	serfConfig.MemberlistConfig.TCPPort = bindPort
 	serfConfig.MemberlistConfig.UDPPort = bindPort
+	serfConfig.MemberlistConfig.SecretKey = encryptKey
 	serfConfig.NodeName = config.NodeName
 	serfConfig.Role = config.Role
 	serfConfig.ProtocolVersion = uint8(config.Protocol)
@@ -226,6 +233,8 @@ Options:
                            from. This will read every file ending in ".json"
                            as configuration in this directory in alphabetical
                            order.
+  -encrypt=foo             Key for encrypting network traffic within Serf.
+                           Must be a base64-encoded 16-byte key.
   -event-handler=foo       Script to execute when events occur. This can
                            be specified multiple times. See the event scripts
                            section below for more info.

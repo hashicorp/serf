@@ -140,6 +140,7 @@ func TestMergeConfig(t *testing.T) {
 	b := &Config{
 		NodeName:      "bname",
 		Protocol:      -1,
+		EncryptKey:    "foo",
 		EventHandlers: []string{"bar"},
 		StartJoin:     []string{"bar"},
 	}
@@ -156,6 +157,10 @@ func TestMergeConfig(t *testing.T) {
 
 	if c.Protocol != 7 {
 		t.Fatalf("bad: %#v", c)
+	}
+
+	if c.EncryptKey != "foo" {
+		t.Fatalf("bad: %#v", c.EncryptKey)
 	}
 
 	expected := []string{"foo", "bar"}

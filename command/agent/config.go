@@ -159,6 +159,9 @@ func MergeConfig(a, b *Config) *Config {
 	if b.BindAddr != "" {
 		result.BindAddr = b.BindAddr
 	}
+	if b.EncryptKey != "" {
+		result.EncryptKey = b.EncryptKey
+	}
 	if b.LogLevel != "" {
 		result.LogLevel = b.LogLevel
 	}
