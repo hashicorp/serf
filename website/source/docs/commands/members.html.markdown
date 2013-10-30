@@ -22,6 +22,9 @@ Usage: `serf members [options]`
 
 The command-line flags are all optional. The list of available flags are:
 
+* `-detailed` - Will show additional information per member, such as the
+  protocol version that each can understand and that each is speaking.
+
 * `-rpc-addr` - Address to the RPC server of the agent you want to contact
   to send this command. If this isn't specified, the command will contact
   "127.0.0.1:7373" which is the default RPC address of a Serf agent.

@@ -12,6 +12,14 @@ import (
 	"time"
 )
 
+// These are the protocol versions that Serf can _understand_. These are
+// Serf-level protocol versions that are passed down as the delegate
+// version to memberlist below.
+const (
+	ProtocolVersionMin uint8 = 0
+	ProtocolVersionMax       = 1
+)
+
 func init() {
 	// Seed the random number generator
 	rand.Seed(time.Now().UnixNano())
@@ -71,6 +79,16 @@ type Member struct {
 	Addr   net.IP
 	Role   string
 	Status MemberStatus
+
+	// The minimum, maximum, and current values of the protocol versions
+	// and delegate (Serf) protocol versions that each member can understand
+	// or is speaking.
+	ProtocolMin uint8
+	ProtocolMax uint8
+	ProtocolCur uint8
+	DelegateMin uint8
+	DelegateMax uint8
+	DelegateCur uint8
 }
 
 // MemberStatus is the state that a member is in.
@@ -148,6 +166,14 @@ const (
 // After calling this function, the configuration should no longer be used
 // or modified by the caller.
 func Create(conf *Config) (*Serf, error) {
+	if conf.ProtocolVersion < ProtocolVersionMin {
+		return nil, fmt.Errorf("Protocol version '%d' too low. Must be in range: [%d, %d]",
+			conf.ProtocolVersion, ProtocolVersionMin, ProtocolVersionMax)
+	} else if conf.ProtocolVersion > ProtocolVersionMax {
+		return nil, fmt.Errorf("Protocol version '%d' too high. Must be in range: [%d, %d]",
+			conf.ProtocolVersion, ProtocolVersionMin, ProtocolVersionMax)
+	}
+
 	serf := &Serf{
 		config:     conf,
 		logger:     log.New(conf.LogOutput, "", log.LstdFlags),
@@ -198,7 +224,11 @@ func Create(conf *Config) (*Serf, error) {
 	// Modify the memberlist configuration with keys that we set
 	conf.MemberlistConfig.Events = &eventDelegate{serf: serf}
 	conf.MemberlistConfig.Delegate = &delegate{serf: serf}
+	conf.MemberlistConfig.DelegateProtocolVersion = conf.ProtocolVersion
+	conf.MemberlistConfig.DelegateProtocolMin = ProtocolVersionMin
+	conf.MemberlistConfig.DelegateProtocolMax = ProtocolVersionMax
 	conf.MemberlistConfig.Name = conf.NodeName
+	conf.MemberlistConfig.ProtocolVersion = ProtocolVersionMap[conf.ProtocolVersion]
 
 	// Create the underlying memberlist that will manage membership
 	// and failure detection for the Serf instance.
@@ -219,6 +249,12 @@ func Create(conf *Config) (*Serf, error) {
 		serf.eventBroadcasts, serf.shutdownCh)
 
 	return serf, nil
+}
+
+// ProtocolVersion returns the current protocol version in use by Serf.
+// This is the Serf protocol version, not the memberlist protocol version.
+func (s *Serf) ProtocolVersion() uint8 {
+	return s.config.ProtocolVersion
 }
 
 // UserEvent is used to broadcast a custom user event with a given
@@ -529,6 +565,14 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 		member.Status = StatusAlive
 		member.leaveTime = time.Time{}
 	}
+
+	// Update the protocol versions every time we get an event
+	member.ProtocolMin = n.PMin
+	member.ProtocolMax = n.PMax
+	member.ProtocolCur = n.PCur
+	member.DelegateMin = n.DMin
+	member.DelegateMax = n.DMax
+	member.DelegateCur = n.DCur
 
 	// If node was previously in a failed state, then clean up some
 	// internal accounting.

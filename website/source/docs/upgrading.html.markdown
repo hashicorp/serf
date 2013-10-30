@@ -1,46 +1,67 @@
 ---
 layout: "docs"
 page_title: "Upgrading Serf"
-sidebar_current: "docs-upgrading"
+sidebar_current: "docs-upgrading-upgrading"
 ---
 
-# Upgrading and Compatibility
+# Upgrading Serf
 
 Serf is meant to be a long-running agent on any nodes participating in a
 Serf cluster. These nodes consistently communicate with each other. As such,
 protocol level compatibility and ease of upgrades is an important thing to
-keep in mind when using Serf. This page documents our policy on upgrades,
-protocol changes, etc.
+keep in mind when using Serf.
 
-## Protocol Compability
-
-As of this writing, version 0.1.x of Serf is the released version. Version
-0.1.x has no notion of protocol level versioning. Version 0.2.0 of Serf
-_will_ introduce versioning at the protocol level. Therefore, it is
-important to know that **version 0.2.0 nodes will be incompatible with
-prior versions**.
-
-However, from 0.2.0 onwards, we will maintain compatibility between
-_two_ versions, after which we'll remove that compatibility. The transitionary
-version will warn when it receives messages that are deprecated. To make this
-concrete, here is an example:
-
-* Version A is released.
-* Version B is released with protocol changes.
-  Version B is still compatible with A, understanding messages from both
-  A and B. It will warn when it receives a message from A, but will otherwise
-  work.
-* Version C is released. Version C can only communicate using the new
-  protocol changes that B introduced, and can no longer communicate with A.
-  The behavior of nodes still running the version A agent is no longer defined.
+This page documents how to upgrade Serf when a new version is released.
 
 ## Upgrading Serf
 
-Upgrading Serf is simple:
+In short, upgrading Serf is a short series of easy steps. For the steps
+below, assume you're running version A of Serf, and then version B comes out.
 
-1. Stop the old agent.
-2. Start the new agent.
+1. On each node, install version B of Serf.
 
-Due to the protocol compatibility guarantees made above, this will just work.
-The one caveat is that the node will momentarily appear to "leave" the cluster
-before quickly rejoining.
+2. Shut down version A, and start version B with the `-protocol=PREVIOUS`
+   flag, where "PREVIOUS" is the protocol version of version A (which can
+   be discovered by running `serf -v` or `serf members -detailed).
+
+3. Once all nodes are running version B, go through every node and restart
+   the version B agent _without_ the `-protocol` flag.
+
+4. Done! You're now running the latest Serf agent speaking the latest protocol.
+   You can verify this is the case by running `serf members -detailed` to
+   make sure all members are speaking the same, latest protocol version.
+
+The key to making this work is the [protocol compatibility](/docs/compatibility.html)
+of Serf. The protocol version system is discussed below.
+
+## Protocol Versions
+
+By default, Serf agents speak the latest protocol they can. However, each
+new version of Serf is also able to speak the previous protocol, if there
+were any protocol changes.
+
+You can see what protocol versions your version of Serf understands by
+running `serf -v`. You'll see output similar to that below:
+
+```
+$ serf -v
+Serf v0.2.0
+Agent Protocol: 1 (Understands back to: 0)
+```
+
+This says the version of Serf as well as the latest protocol version (1,
+in this case). It also says the earliest protocol version that this Serf
+agent can understand (0, in this case).
+
+By specifying the `-protocol` flag on `serf agent`, you can tell the
+Serf agent to speak any protocol version that it can understand. This
+only specifies the protocol version to _speak_. Every Serf agent can
+always understand the entire range of protocol versions it claims to
+on `serf -v`.
+
+<div class="alert alert-block alert-warning">
+<strong>By running a previous protocol version</strong>, some features
+of Serf, especially newer features, may not be available. If this is the
+case, Serf will typically warn you. In general, you should always upgrade
+your cluster so that you can run the latest protocol version.
+</div>
