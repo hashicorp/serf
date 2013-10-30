@@ -20,7 +20,7 @@ operate and use Serf. These details are documented here for those who wish
 to learn about them without having to go spelunking through the source code.
 </div>
 
-# Security Primitives
+## Security Primitives
 
 The Serf security model is built on around a symmetric key, or shared secret system.
 All members of the Serf cluster must be provided the shared secret ahead of time.
@@ -37,12 +37,12 @@ AES is used with the [Galois Counter Mode (GCM)](http://en.wikipedia.org/wiki/Ga
 using a randomly generated nonce. The use of GCM provides message integrity,
 as the ciphertext is suffixed with a 'tag' that is used to verify integrity.
 
-# Message Format
+## Message Format
 
 In the previous section we described the crypto primitives that are used. In this
 section we cover how messages are framed on the wire and interpretted.
 
-## UDP Message Format
+### UDP Message Format
 
 UDP messages do not require any framing since they are packet oriented. This
 allows the message to be simple and saves space. The format is as follows:
@@ -59,7 +59,7 @@ Once we receive a packet, we first verify the GCM tag, and only on verification,
 decrypt the payload. The version byte is provided to allow future versions to
 change the algorithm they use. It is currently always set to 0.
 
-## TCP Message Format
+### TCP Message Format
 
 TCP provides a stream abstraction and therefor we must provide our own framing.
 This intoduces a potential attack vector since we cannot verify the tag
@@ -79,7 +79,7 @@ operation.
 Once this is verified, we determine the message length and if it is less than our limit,.
 After the entire message is received, the tag is used to verify the entire message.
 
-# Threat Model
+## Threat Model
 
 The following are the various parts of our threat model:
 
@@ -103,7 +103,7 @@ Our goal is not to protect top secret data but to provide a "reasonable"
 level of security that would require an attacker to commit a considerable
 amount of resources to defeat.
 
-# Future Roadmap
+## Future Roadmap
 
 Eventually, Serf will be able to use the versioning byte to support
 different encryption algorithms. These could be configured at the
