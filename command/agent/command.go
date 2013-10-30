@@ -153,6 +153,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	ui.Info(fmt.Sprintf("Node name: '%s'", config.NodeName))
 	ui.Info(fmt.Sprintf("Bind addr: '%s:%d'", bindIP, bindPort))
 	ui.Info(fmt.Sprintf(" RPC addr: '%s'", config.RPCAddr))
+	ui.Info(fmt.Sprintf("Encrypted: %#v", config.EncryptKey != ""))
 
 	if len(config.StartJoin) > 0 {
 		ui.Output("Joining cluster...")
