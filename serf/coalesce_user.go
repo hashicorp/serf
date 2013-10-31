@@ -22,15 +22,11 @@ type userEventCoalescer struct {
 func coalescedUserEventCh(outCh chan<- Event, shutdownCh <-chan struct{},
 	cPeriod time.Duration, qPeriod time.Duration) chan<- Event {
 	inCh := make(chan Event, 1024)
-	c := newUserEventCoalescer()
-	go coalesceLoop(inCh, outCh, shutdownCh, cPeriod, qPeriod, c)
-	return inCh
-}
-
-func newUserEventCoalescer() *userEventCoalescer {
-	return &userEventCoalescer{
+	c := &userEventCoalescer{
 		events: make(map[string]*latestUserEvents),
 	}
+	go coalesceLoop(inCh, outCh, shutdownCh, cPeriod, qPeriod, c)
+	return inCh
 }
 
 func (c *userEventCoalescer) Handle(e Event) bool {

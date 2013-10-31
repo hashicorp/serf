@@ -3,10 +3,15 @@ package serf
 import (
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestUserEventCoalesce_Basic(t *testing.T) {
-	c := newUserEventCoalescer()
+	outCh := make(chan Event)
+	shutdownCh := make(chan struct{})
+	defer close(shutdownCh)
+	inCh := coalescedUserEventCh(outCh, shutdownCh,
+		5*time.Millisecond, 5*time.Millisecond)
 
 	send := []Event{
 		UserEvent{
@@ -34,19 +39,15 @@ func TestUserEventCoalesce_Basic(t *testing.T) {
 	}
 
 	for _, e := range send {
-		if !c.Handle(e) {
-			t.Fatalf("Expected event to be handled: %v", e)
-		}
-		c.Coalesce(e)
+		inCh <- e
 	}
 
-	out := make(chan Event, 64)
-	c.Flush(out)
-
 	var gotFoo, gotBar1, gotBar2 bool
-	for i := 0; i < 3; i++ {
+	timeout := time.After(10 * time.Millisecond)
+USEREVENTFORLOOP:
+	for {
 		select {
-		case e := <-out:
+		case e := <-outCh:
 			ue := e.(UserEvent)
 			switch ue.Name {
 			case "foo":
@@ -64,12 +65,9 @@ func TestUserEventCoalesce_Basic(t *testing.T) {
 				if reflect.DeepEqual(ue.Payload, []byte("test2")) {
 					gotBar2 = true
 				}
-			default:
-				t.Fatalf("Bad msg %#v", ue)
 			}
-
-		default:
-			t.Fatalf("should have message")
+		case <-timeout:
+			break USEREVENTFORLOOP
 		}
 	}
 
@@ -79,16 +77,21 @@ func TestUserEventCoalesce_Basic(t *testing.T) {
 }
 
 func TestUserEventCoalesce_passThrough(t *testing.T) {
-	c := newUserEventCoalescer()
-
-	send := []Event{
-		MemberEvent{},
-		UserEvent{Coalesce: false},
+	cases := []struct {
+		e      Event
+		handle bool
+	}{
+		{UserEvent{Coalesce: false}, false},
+		{UserEvent{Coalesce: true}, true},
+		{MemberEvent{Type: EventMemberJoin}, false},
+		{MemberEvent{Type: EventMemberLeave}, false},
+		{MemberEvent{Type: EventMemberFailed}, false},
 	}
 
-	for _, e := range send {
-		if c.Handle(e) {
-			t.Fatalf("unexpected handle: %#v", e)
+	for _, tc := range cases {
+		c := &userEventCoalescer{}
+		if tc.handle != c.Handle(tc.e) {
+			t.Fatalf("bad: %#v", tc.e)
 		}
 	}
 }
