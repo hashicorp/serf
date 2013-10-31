@@ -22,6 +22,12 @@ type rpcEndpoint struct {
 	agent *Agent
 }
 
+// RPCJoinArgs are the args for the Join RPC call.
+type RPCJoinArgs struct {
+	Addrs     []string
+	IgnoreOld bool
+}
+
 // RPCMonitorArgs are the args for the Monitor RPC call.
 type RPCMonitorArgs struct {
 	CallbackAddr string
@@ -40,8 +46,8 @@ func (e *rpcEndpoint) ForceLeave(node string, result *interface{}) error {
 }
 
 // Join asks the Serf to join another cluster.
-func (e *rpcEndpoint) Join(addrs []string, result *int) (err error) {
-	*result, err = e.agent.Join(addrs)
+func (e *rpcEndpoint) Join(args RPCJoinArgs, result *int) (err error) {
+	*result, err = e.agent.Join(args.Addrs, args.IgnoreOld)
 	return
 }
 

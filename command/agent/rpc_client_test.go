@@ -60,7 +60,7 @@ func TestRPCClientForceLeave(t *testing.T) {
 	testutil.Yield()
 
 	s2Addr := a2.SerfConfig.MemberlistConfig.BindAddr
-	if _, err := a1.Join([]string{s2Addr}); err != nil {
+	if _, err := a1.Join([]string{s2Addr}, false); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
@@ -103,7 +103,7 @@ func TestRPCClientJoin(t *testing.T) {
 
 	testutil.Yield()
 
-	n, err := client.Join([]string{a2.SerfConfig.MemberlistConfig.BindAddr})
+	n, err := client.Join([]string{a2.SerfConfig.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -139,7 +139,7 @@ func TestRPCClientMembers(t *testing.T) {
 		t.Fatalf("bad: %#v", mem)
 	}
 
-	_, err = client.Join([]string{a2.SerfConfig.MemberlistConfig.BindAddr})
+	_, err = client.Join([]string{a2.SerfConfig.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -227,7 +227,7 @@ func TestRPCClientMonitor(t *testing.T) {
 	drainEventCh(eventCh)
 
 	// Join a bad thing to generate more events
-	a1.Join(nil)
+	a1.Join(nil, false)
 
 	testutil.Yield()
 

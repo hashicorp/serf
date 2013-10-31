@@ -27,7 +27,7 @@ func TestRPCEndpointForceLeave(t *testing.T) {
 	testutil.Yield()
 
 	s2Addr := a2.SerfConfig.MemberlistConfig.BindAddr
-	if _, err := a1.Join([]string{s2Addr}); err != nil {
+	if _, err := a1.Join([]string{s2Addr}, false); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
@@ -71,8 +71,11 @@ func TestRPCEndpointJoin(t *testing.T) {
 	e := &rpcEndpoint{agent: a1}
 
 	var n int
-	s2Addr := a2.SerfConfig.MemberlistConfig.BindAddr
-	err := e.Join([]string{s2Addr}, &n)
+	args := RPCJoinArgs{
+		Addrs: []string{a2.SerfConfig.MemberlistConfig.BindAddr},
+	}
+
+	err := e.Join(args, &n)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -174,7 +177,7 @@ DRAIN:
 	}
 
 	// Do a join to trigger more log messages. It should stream it.
-	a1.Join(nil)
+	a1.Join(nil, false)
 
 	testutil.Yield()
 

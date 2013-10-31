@@ -46,7 +46,7 @@ func TestAgent_events(t *testing.T) {
 		t.Fatalf("bad: %d", len(prev))
 	}
 
-	a1.Join(nil)
+	a1.Join(nil, false)
 
 	select {
 	case e := <-eventsCh:

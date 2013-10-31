@@ -53,11 +53,11 @@ const (
 )
 
 // Join asks the Serf instance to join. See the Serf.Join function.
-func (a *Agent) Join(addrs []string) (n int, err error) {
+func (a *Agent) Join(addrs []string, ignoreOld bool) (n int, err error) {
 	a.once.Do(a.init)
 
 	a.logger.Printf("[INFO] Agent joining: %v", addrs)
-	n, err = a.serf.Join(addrs, false)
+	n, err = a.serf.Join(addrs, ignoreOld)
 	return
 }
 
