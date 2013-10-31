@@ -129,10 +129,10 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	serfConfig.NodeName = config.NodeName
 	serfConfig.Role = config.Role
 	serfConfig.ProtocolVersion = uint8(config.Protocol)
-	serfConfig.CoalescePeriod = 2 * time.Second
-	serfConfig.QuiescentPeriod = 500 * time.Millisecond
-	serfConfig.UserCoalescePeriod = 2 * time.Second
-	serfConfig.UserQuiescentPeriod = 500 * time.Millisecond
+	serfConfig.CoalescePeriod = 3 * time.Second
+	serfConfig.QuiescentPeriod = time.Second
+	serfConfig.UserCoalescePeriod = 3 * time.Second
+	serfConfig.UserQuiescentPeriod = time.Second
 
 	agent := &Agent{
 		EventHandler: &ScriptEventHandler{
