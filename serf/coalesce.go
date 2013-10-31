@@ -64,8 +64,8 @@ INGEST:
 		case <-quiescent:
 			goto FLUSH
 		case <-shutdownCh:
-			goto FLUSH
 			shutdown = true
+			goto FLUSH
 		}
 	}
 
