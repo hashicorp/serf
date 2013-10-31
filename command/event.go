@@ -70,6 +70,8 @@ func (c *EventCommand) Run(args []string, ui cli.Ui) int {
 		return 1
 	}
 
+	ui.Output(fmt.Sprintf("Event '%s' dispatched! Coalescing enabled: %#v",
+		event, coalesce))
 	return 0
 }
 
