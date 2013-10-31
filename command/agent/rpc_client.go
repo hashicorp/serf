@@ -24,8 +24,13 @@ func (c *RPCClient) ForceLeave(node string) error {
 	return c.Client.Call("Agent.ForceLeave", node, new(interface{}))
 }
 
-func (c *RPCClient) Join(addrs []string) (n int, err error) {
-	err = c.Client.Call("Agent.Join", addrs, &n)
+func (c *RPCClient) Join(addrs []string, ignoreOld bool) (n int, err error) {
+	args := RPCJoinArgs{
+		Addrs:     addrs,
+		IgnoreOld: ignoreOld,
+	}
+
+	err = c.Client.Call("Agent.Join", args, &n)
 	return
 }
 

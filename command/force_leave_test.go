@@ -19,7 +19,7 @@ func TestForceLeaveCommandRun(t *testing.T) {
 	defer a1.Shutdown()
 	defer a2.Shutdown()
 
-	_, err := a1.Join([]string{a2.SerfConfig.MemberlistConfig.BindAddr})
+	_, err := a1.Join([]string{a2.SerfConfig.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}

@@ -31,7 +31,19 @@ command will fail only if Serf was unable to join with any.
 
 The command-line flags are all optional. The list of available flags are:
 
+* `-replay` - If set, old user events from the past will be replayed for the
+  agent/cluster that is joining. Otherwise, past events will be ignored.
+
 * `-rpc-addr` - Address to the RPC server of the agent you want to contact
   to send this command. If this isn't specified, the command will contact
   "127.0.0.1:7373" which is the default RPC address of a Serf agent.
 
+## Replaying User Events
+
+When joining a cluster, the past events that were sent to the cluster are
+usually ignored. However, if you specify the `-replay` flag, then past events
+will be replayed on the joining cluster.
+
+Note that only a fixed amount of past events are stored. At the time of writing
+this documentation, that fixed amount is 1024 events. Therefore, if you replay
+events, you'll only receive the past 1024 events (if there are that many).
