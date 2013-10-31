@@ -35,10 +35,11 @@ func (c *RPCClient) Members() ([]serf.Member, error) {
 	return result, err
 }
 
-func (c *RPCClient) UserEvent(name string, payload []byte) error {
+func (c *RPCClient) UserEvent(name string, payload []byte, coalesce bool) error {
 	return c.Client.Call("Agent.UserEvent", RPCUserEventArgs{
-		Name:    name,
-		Payload: payload,
+		Name:     name,
+		Payload:  payload,
+		Coalesce: coalesce,
 	}, new(interface{}))
 }
 

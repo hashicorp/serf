@@ -170,7 +170,7 @@ func TestRPCClientUserEvent(t *testing.T) {
 
 	testutil.Yield()
 
-	if err := client.UserEvent("deploy", []byte("foo")); err != nil {
+	if err := client.UserEvent("deploy", []byte("foo"), false); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 

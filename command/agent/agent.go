@@ -196,10 +196,10 @@ func (a *Agent) Start() error {
 }
 
 // UserEvent sends a UserEvent on Serf, see Serf.UserEvent.
-func (a *Agent) UserEvent(name string, payload []byte) error {
-	a.logger.Printf("Requesting user event send: %s %#v",
-		name, string(payload))
-	return a.serf.UserEvent(name, payload, false)
+func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
+	a.logger.Printf("Requesting user event send: %s. Coalesced: %#v. Payload: %#v",
+		name, coalesce, string(payload))
+	return a.serf.UserEvent(name, payload, coalesce)
 }
 
 func (a *Agent) storeLog(v string) {

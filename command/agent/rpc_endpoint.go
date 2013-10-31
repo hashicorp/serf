@@ -30,8 +30,9 @@ type RPCMonitorArgs struct {
 
 // RPCUserEventArgs are the args for the user event RPC call.
 type RPCUserEventArgs struct {
-	Name    string
-	Payload []byte
+	Name     string
+	Payload  []byte
+	Coalesce bool
 }
 
 // ForceLeave forces a node to leave the cluster.
@@ -72,7 +73,7 @@ func (e *rpcEndpoint) Monitor(args RPCMonitorArgs, result *interface{}) error {
 
 // UserEvent requests the agent to send a user event.
 func (e *rpcEndpoint) UserEvent(args RPCUserEventArgs, result *interface{}) error {
-	return e.agent.UserEvent(args.Name, args.Payload)
+	return e.agent.UserEvent(args.Name, args.Payload, args.Coalesce)
 }
 
 func (e *rpcEndpoint) monitorStream(addr string, filter *logutils.LevelFilter) {
