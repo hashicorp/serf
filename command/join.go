@@ -20,14 +20,18 @@ Usage: serf join [options] address ...
 
 Options:
 
+  -replay                   Replay past user events.
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
 `
 	return strings.TrimSpace(helpText)
 }
 
 func (c *JoinCommand) Run(args []string, ui cli.Ui) int {
+	var replayEvents bool
+
 	cmdFlags := flag.NewFlagSet("join", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
+	cmdFlags.BoolVar(&replayEvents, "replay", false, "replay")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
@@ -48,7 +52,7 @@ func (c *JoinCommand) Run(args []string, ui cli.Ui) int {
 	}
 	defer client.Close()
 
-	n, err := client.Join(addrs)
+	n, err := client.Join(addrs, !replayEvents)
 	if err != nil {
 		ui.Error(fmt.Sprintf("Error joining the cluster: %s", err))
 		return 1
