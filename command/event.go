@@ -19,14 +19,21 @@ Usage: serf event [options] name payload
 
 Options:
 
+  -coalesce=true/false      Whether this event can be coalesced. This means
+                            that repeated events of the same name within a
+                            short period of time are ignored, except the last
+                            one received. Default is true.
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
 `
 	return strings.TrimSpace(helpText)
 }
 
 func (c *EventCommand) Run(args []string, ui cli.Ui) int {
+	var coalesce bool
+
 	cmdFlags := flag.NewFlagSet("event", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
+	cmdFlags.BoolVar(&coalesce, "coalesce", true, "coalesce")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
@@ -58,11 +65,13 @@ func (c *EventCommand) Run(args []string, ui cli.Ui) int {
 	}
 	defer client.Close()
 
-	if err := client.UserEvent(event, payload); err != nil {
+	if err := client.UserEvent(event, payload, coalesce); err != nil {
 		ui.Error(fmt.Sprintf("Error sending event: %s", err))
 		return 1
 	}
 
+	ui.Output(fmt.Sprintf("Event '%s' dispatched! Coalescing enabled: %#v",
+		event, coalesce))
 	return 0
 }
 

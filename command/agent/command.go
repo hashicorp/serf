@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Command is a Command implementation that runs a Serf agent.
@@ -128,6 +129,10 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	serfConfig.NodeName = config.NodeName
 	serfConfig.Role = config.Role
 	serfConfig.ProtocolVersion = uint8(config.Protocol)
+	serfConfig.CoalescePeriod = 2 * time.Second
+	serfConfig.QuiescentPeriod = 500 * time.Millisecond
+	serfConfig.UserCoalescePeriod = 2 * time.Second
+	serfConfig.UserQuiescentPeriod = 500 * time.Millisecond
 
 	agent := &Agent{
 		EventHandler: &ScriptEventHandler{

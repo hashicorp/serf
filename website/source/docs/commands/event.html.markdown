@@ -22,6 +22,21 @@ Ultimately, `serf event` is used to send custom events of your choosing
 that you can respond to in _any way_ you want. The power in Serf's custom
 events is the scalability over other systems.
 
+## Usage
+
+Usage: `serf event [options] name [payload]`
+
+The following command-line options are available for this command.
+Every option is optional:
+
+* `-coalesce=true/false` - Sets whether or not this event can be coalesced
+  by Serf. By default this is set to true. Read the section on event
+  coalescing for more information on what this means.
+
+* `-rpc-addr` - Address to the RPC server of the agent you want to contact
+  to send this command. If this isn't specified, the command will contact
+  "127.0.0.1:7373" which is the default RPC address of a Serf agent.
+
 ## Sending an Event
 
 To send an event, use `serf event NAME` where NAME is the name of the
@@ -39,12 +54,23 @@ The events can be handled by registering an
 documentation for how the user event is dispatched is all contained within
 that linked page.
 
-## Options
+## Event Coalescing
 
-The following command-line options are available for this command.
-Every option is optional:
+By default, Serf coalesces events of the same name within a short time
+period. This means that if many events of the same name are received within
+a short amount of time, the event handler is only invoked once, with the
+last event of that name received during that time period.
 
-* `-rpc-addr` - Address to the RPC server of the agent you want to contact
-  to send this command. If this isn't specified, the command will contact
-  "127.0.0.1:7373" which is the default RPC address of a Serf agent.
+Event coalescense works great for idempotent events such as "restart" or
+events where only the last value in the payload really matters, like the
+commit in a "deploy" event. In these cases, things just work.
 
+Some events, however, shouldn't be coalesced. For example, if you had
+an event "queue" that queues some item, then you want to make sure all
+of those events are seen, even if many are sent in a short period of time.
+In this case, the `-coalesce=false` flag should be passed to the
+`serf event` command.
+
+If you send some events of the same name with coalescence enabled and some
+without, then only the events that have coalescing enabled will actually
+coalesce. The others will always be delivered.
