@@ -4,7 +4,6 @@ FEATURES:
 
   * Protocol versioning features so that upgrades can be done safely.
     See the website on upgrading Serf for more info.
-  * Network traffic between Serf agents can now be encrypted.
   * Can now configure Serf with files or directories of files by specifying
     the `-config-file` and/or `-config-dir` flags to the agent.
   * New command `serf force-leave` can be used to force a "failed" node
