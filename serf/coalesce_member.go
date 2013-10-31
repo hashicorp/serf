@@ -22,16 +22,13 @@ type memberEventCoalescer struct {
 func coalescedMemberEventCh(outCh chan<- Event, shutdownCh <-chan struct{},
 	coalescePeriod time.Duration, quiescentPeriod time.Duration) chan<- Event {
 	inCh := make(chan Event, 1024)
-	me := newMemberEventCoalescer()
-	go coalesceLoop(inCh, outCh, shutdownCh, coalescePeriod, quiescentPeriod, me)
-	return inCh
-}
-
-func newMemberEventCoalescer() *memberEventCoalescer {
-	return &memberEventCoalescer{
+	c := &memberEventCoalescer{
 		lastEvents:   make(map[string]EventType),
 		latestEvents: make(map[string]coalesceEvent),
 	}
+
+	go coalesceLoop(inCh, outCh, shutdownCh, coalescePeriod, quiescentPeriod, c)
+	return inCh
 }
 
 func (c *memberEventCoalescer) Handle(e Event) bool {

@@ -4,10 +4,15 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+	"time"
 )
 
 func TestMemberEventCoalesce_Basic(t *testing.T) {
-	c := newMemberEventCoalescer()
+	outCh := make(chan Event)
+	shutdownCh := make(chan struct{})
+	defer close(shutdownCh)
+	inCh := coalescedMemberEventCh(outCh, shutdownCh,
+		5*time.Millisecond, 5*time.Millisecond)
 
 	send := []Event{
 		MemberEvent{
@@ -25,50 +30,60 @@ func TestMemberEventCoalesce_Basic(t *testing.T) {
 	}
 
 	for _, e := range send {
-		if !c.Handle(e) {
-			t.Fatalf("Expected event to be handled: %v", e)
-		}
-		c.Coalesce(e)
+		inCh <- e
 	}
 
-	out := make(chan Event, 64)
-	c.Flush(out)
+	events := make(map[EventType]Event)
+	timeout := time.After(10 * time.Millisecond)
 
-	select {
-	case e := <-out:
-		if e.EventType() != EventMemberLeave {
-			t.Fatalf("expected leave, got: %d", e.EventType())
+MEMBEREVENTFORLOOP:
+	for {
+		select {
+		case e := <-outCh:
+			events[e.EventType()] = e
+		case <-timeout:
+			break MEMBEREVENTFORLOOP
 		}
+	}
 
-		if len(e.(MemberEvent).Members) != 2 {
-			t.Fatalf("should have two members: %d", len(e.(MemberEvent).Members))
+	if len(events) != 1 {
+		t.Fatalf("bad: %#v", events)
+	}
+
+	if e, ok := events[EventMemberLeave]; !ok {
+		t.Fatalf("bad: %#v", events)
+	} else {
+		me := e.(MemberEvent)
+
+		if len(me.Members) != 2 {
+			t.Fatalf("bad: %#v", me)
 		}
 
 		expected := []string{"bar", "foo"}
-		names := []string{e.(MemberEvent).Members[0].Name, e.(MemberEvent).Members[1].Name}
+		names := []string{me.Members[0].Name, me.Members[1].Name}
 		sort.Strings(names)
 
 		if !reflect.DeepEqual(expected, names) {
 			t.Fatalf("bad: %#v", names)
 		}
-	default:
-		t.Fatalf("should have message")
 	}
 }
 
 func TestMemberEventCoalesce_passThrough(t *testing.T) {
-	c := newMemberEventCoalescer()
-
-	send := []Event{
-		UserEvent{
-			Name:    "test",
-			Payload: []byte("foo"),
-		},
+	cases := []struct {
+		e      Event
+		handle bool
+	}{
+		{UserEvent{}, false},
+		{MemberEvent{Type: EventMemberJoin}, true},
+		{MemberEvent{Type: EventMemberLeave}, true},
+		{MemberEvent{Type: EventMemberFailed}, true},
 	}
 
-	for _, e := range send {
-		if c.Handle(e) {
-			t.Fatalf("unexpected handle: %#v", e)
+	for _, tc := range cases {
+		c := &memberEventCoalescer{}
+		if tc.handle != c.Handle(tc.e) {
+			t.Fatalf("bad: %#v", tc.e)
 		}
 	}
 }
