@@ -194,13 +194,13 @@ func Create(conf *Config) (*Serf, error) {
 	}
 
 	// Check if user event coalescing is enabled
-	if conf.EventCoalescePeriod > 0 && conf.EventQuiescentPeriod > 0 && conf.EventCh != nil {
+	if conf.UserCoalescePeriod > 0 && conf.UserQuiescentPeriod > 0 && conf.EventCh != nil {
 		c := &userEventCoalescer{
 			events: make(map[string]*latestUserEvents),
 		}
 
 		conf.EventCh = coalescedEventCh(conf.EventCh, serf.shutdownCh,
-			conf.EventCoalescePeriod, conf.EventQuiescentPeriod, c)
+			conf.UserCoalescePeriod, conf.UserQuiescentPeriod, c)
 	}
 
 	// Setup the broadcast queue, which we use to send our own custom

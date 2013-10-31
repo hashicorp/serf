@@ -78,8 +78,8 @@ type Config struct {
 	// The settings below relate to Serf's user event coalescing feature.
 	// The settings operate like above but only affect user messages and
 	// not the Member* messages that Serf generates.
-	EventCoalescePeriod  time.Duration
-	EventQuiescentPeriod time.Duration
+	UserCoalescePeriod  time.Duration
+	UserQuiescentPeriod time.Duration
 
 	// The settings below relate to Serf keeping track of recently
 	// failed/left nodes and attempting reconnects.
