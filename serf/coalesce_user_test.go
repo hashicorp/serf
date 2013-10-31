@@ -7,7 +7,7 @@ import (
 )
 
 func TestUserEventCoalesce_Basic(t *testing.T) {
-	outCh := make(chan Event)
+	outCh := make(chan Event, 64)
 	shutdownCh := make(chan struct{})
 	defer close(shutdownCh)
 
