@@ -157,7 +157,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 
 	if len(config.StartJoin) > 0 {
 		ui.Output("Joining cluster...")
-		n, err := agent.Join(config.StartJoin, false)
+		n, err := agent.Join(config.StartJoin, true)
 		if err != nil {
 			ui.Error(err.Error())
 			return 1
