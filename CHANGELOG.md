@@ -21,6 +21,10 @@ IMPROVEMENTS:
     congestion
   * Messages are compressed to reduce bandwidth utilization
   * `serf members` now provides node roles in output
+  * Joining a cluster will no longer replay all the old events by default,
+    but it can using the `-replay` flag.
+  * User events are coalesced by default, meaning duplicate events (by name)
+    within a short period of time are merged. [GH-8]
 
 BUG FIXES:
 
