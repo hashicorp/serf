@@ -10,8 +10,13 @@ func TestUserEventCoalesce_Basic(t *testing.T) {
 	outCh := make(chan Event)
 	shutdownCh := make(chan struct{})
 	defer close(shutdownCh)
-	inCh := coalescedUserEventCh(outCh, shutdownCh,
-		5*time.Millisecond, 5*time.Millisecond)
+
+	c := &userEventCoalescer{
+		events: make(map[string]*latestUserEvents),
+	}
+
+	inCh := coalescedEventCh(outCh, shutdownCh,
+		5*time.Millisecond, 5*time.Millisecond, c)
 
 	send := []Event{
 		UserEvent{

@@ -18,6 +18,15 @@ type coalescer interface {
 	Flush(outChan chan<- Event)
 }
 
+// coalescedEventCh returns an event channel where the events are coalesced
+// using the given coalescer.
+func coalescedEventCh(outCh chan<- Event, shutdownCh <-chan struct{},
+	cPeriod time.Duration, qPeriod time.Duration, c coalescer) chan<- Event {
+	inCh := make(chan Event, 1024)
+	go coalesceLoop(inCh, outCh, shutdownCh, cPeriod, qPeriod, c)
+	return inCh
+}
+
 // coalesceLoop is a simple long-running routine that manages the high-level
 // flow of coalescing based on quiescence and a maximum quantum period.
 func coalesceLoop(inCh <-chan Event, outCh chan<- Event, shutdownCh <-chan struct{},

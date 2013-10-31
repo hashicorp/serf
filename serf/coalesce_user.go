@@ -1,9 +1,5 @@
 package serf
 
-import (
-	"time"
-)
-
 type latestUserEvents struct {
 	LTime  LamportTime
 	Events []Event
@@ -12,21 +8,6 @@ type latestUserEvents struct {
 type userEventCoalescer struct {
 	// Maps an event name into the latest versions
 	events map[string]*latestUserEvents
-}
-
-// coalescedUserEventCh returns an event channel where user events are coalesced
-// over a period of time. This helps lower the number of events that are
-// fired in the case where many nodes fire events at one time. We coalesce by
-// selecting the event with the highest lamport time for a given event name.
-// If multiple events exist for a given lamport time, all of them will be returned
-func coalescedUserEventCh(outCh chan<- Event, shutdownCh <-chan struct{},
-	cPeriod time.Duration, qPeriod time.Duration) chan<- Event {
-	inCh := make(chan Event, 1024)
-	c := &userEventCoalescer{
-		events: make(map[string]*latestUserEvents),
-	}
-	go coalesceLoop(inCh, outCh, shutdownCh, cPeriod, qPeriod, c)
-	return inCh
 }
 
 func (c *userEventCoalescer) Handle(e Event) bool {

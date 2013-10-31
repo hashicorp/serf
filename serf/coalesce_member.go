@@ -1,9 +1,5 @@
 package serf
 
-import (
-	"time"
-)
-
 type coalesceEvent struct {
 	Type   EventType
 	Member *Member
@@ -12,23 +8,6 @@ type coalesceEvent struct {
 type memberEventCoalescer struct {
 	lastEvents   map[string]EventType
 	latestEvents map[string]coalesceEvent
-}
-
-// coalescedMemberEventCh returns an event channel where member events are coalesced
-// over a period of time. This helps lower the number of events that are
-// fired in the case where many nodes share similar events at one time.
-// Examples where this is possible are if many new nodes are brought online
-// at one time, events will be coalesced together into one event.
-func coalescedMemberEventCh(outCh chan<- Event, shutdownCh <-chan struct{},
-	coalescePeriod time.Duration, quiescentPeriod time.Duration) chan<- Event {
-	inCh := make(chan Event, 1024)
-	c := &memberEventCoalescer{
-		lastEvents:   make(map[string]EventType),
-		latestEvents: make(map[string]coalesceEvent),
-	}
-
-	go coalesceLoop(inCh, outCh, shutdownCh, coalescePeriod, quiescentPeriod, c)
-	return inCh
 }
 
 func (c *memberEventCoalescer) Handle(e Event) bool {

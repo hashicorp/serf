@@ -11,8 +11,14 @@ func TestMemberEventCoalesce_Basic(t *testing.T) {
 	outCh := make(chan Event)
 	shutdownCh := make(chan struct{})
 	defer close(shutdownCh)
-	inCh := coalescedMemberEventCh(outCh, shutdownCh,
-		5*time.Millisecond, 5*time.Millisecond)
+
+	c := &memberEventCoalescer{
+		lastEvents:   make(map[string]EventType),
+		latestEvents: make(map[string]coalesceEvent),
+	}
+
+	inCh := coalescedEventCh(outCh, shutdownCh,
+		5*time.Millisecond, 5*time.Millisecond, c)
 
 	send := []Event{
 		MemberEvent{
