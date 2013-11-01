@@ -14,9 +14,11 @@ method of this encryption is described on the
 
 Enabling encryption only requires that you set an encryption key when
 starting the Serf agent. The key can be set using the `-encrypt` flag
-on `serf agent`. The key must be 16-bytes that are base64 encoded. The
-easiest method to obtain a cryptographically suitable key is by
-using `serf keygen`.
+on `serf agent` or by setting the `encrypt_key` in a configuration file.
+It is advisable to put the key in a configuration file to avoid other uses
+from being able to discover it by inspecting running processes.
+The key must be 16-bytes that are base64 encoded. The easiest method to
+obtain a cryptographically suitable key is by using `serf keygen`.
 
 ```
 $ serf keygen
