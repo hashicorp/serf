@@ -8,7 +8,7 @@ sidebar_current: "docs-agent-encryption"
 
 The Serf agent supports encrypting all of its network traffic. The exact
 method of this encryption is described on the
-[encryption internals page](/docs/internals/encryption.html).
+[encryption internals page](/docs/internals/security.html).
 
 ## Enabling Encryption
 
