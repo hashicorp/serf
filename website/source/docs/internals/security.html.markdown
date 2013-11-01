@@ -52,7 +52,7 @@ allows the message to be simple and saves space. The format is as follows:
     -------------------------------------------------------------------
 
 The UDP message has a minimum overhead of 29 bytes, and up to an additional
-15 bytes of padding or 44 bytes. Tampering or bit corruption will cause the
+16 bytes of padding or 45 bytes. Tampering or bit corruption will cause the
 GCM tag verification to fail.
 
 Once we receive a packet, we first verify the GCM tag, and only on verification,
@@ -69,7 +69,7 @@ an malicious attacker from being able to send enough data to cause a Denial of S
 
 The TCP format is similar to the UDP format, but prepends the message with
 a message type byte (similar to other Serf messages). It also adds a 4 byte length
-field, encoded in Big Endian format. This increases its maximum overhead to 49 bytes.
+field, encoded in Big Endian format. This increases its maximum overhead to 50 bytes.
 
 When we first receive a TCP encrypted message, we check the message type. If any
 party has encryption enabled, the other party must as well. Otherwise we are vulnerable
