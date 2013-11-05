@@ -1,8 +1,8 @@
 package agent
 
 import (
-	"github.com/hashicorp/serf/cli"
 	"github.com/hashicorp/serf/testutil"
+	"github.com/mitchellh/cli"
 	"log"
 	"net/rpc"
 	"testing"
@@ -10,30 +10,27 @@ import (
 )
 
 func TestCommand_implements(t *testing.T) {
-	var raw interface{}
-	raw = &Command{}
-	if _, ok := raw.(cli.Command); !ok {
-		t.Fatal("should be a Command")
-	}
+	var _ cli.Command = new(Command)
 }
 
 func TestCommandRun(t *testing.T) {
 	shutdownCh := make(chan struct{})
 	defer close(shutdownCh)
 
+	ui := new(cli.MockUi)
 	c := &Command{
 		ShutdownCh: shutdownCh,
+		Ui:         ui,
 	}
 
 	args := []string{
 		"-bind", testutil.GetBindAddr().String(),
 		"-rpc-addr", getRPCAddr(),
 	}
-	ui := new(cli.MockUi)
 
 	resultCh := make(chan int)
 	go func() {
-		resultCh <- c.Run(args, ui)
+		resultCh <- c.Run(args)
 	}()
 
 	testutil.Yield()
@@ -68,6 +65,7 @@ func TestCommandRun_rpc(t *testing.T) {
 
 	c := &Command{
 		ShutdownCh: shutdownCh,
+		Ui:         new(cli.MockUi),
 	}
 
 	rpcAddr := getRPCAddr()
@@ -77,7 +75,7 @@ func TestCommandRun_rpc(t *testing.T) {
 	}
 
 	go func() {
-		code := c.Run(args, new(cli.MockUi))
+		code := c.Run(args)
 		if code != 0 {
 			log.Printf("bad: %d", code)
 		}
@@ -120,6 +118,7 @@ func TestCommandRun_join(t *testing.T) {
 
 	c := &Command{
 		ShutdownCh: shutdownCh,
+		Ui:         new(cli.MockUi),
 	}
 
 	args := []string{
@@ -128,7 +127,7 @@ func TestCommandRun_join(t *testing.T) {
 	}
 
 	go func() {
-		code := c.Run(args, new(cli.MockUi))
+		code := c.Run(args)
 		if code != 0 {
 			log.Printf("bad: %d", code)
 		}
@@ -149,6 +148,7 @@ func TestCommandRun_joinFail(t *testing.T) {
 
 	c := &Command{
 		ShutdownCh: shutdownCh,
+		Ui:         new(cli.MockUi),
 	}
 
 	args := []string{
@@ -156,7 +156,7 @@ func TestCommandRun_joinFail(t *testing.T) {
 		"-join", testutil.GetBindAddr().String(),
 	}
 
-	code := c.Run(args, new(cli.MockUi))
+	code := c.Run(args)
 	if code == 0 {
 		t.Fatal("should fail")
 	}
