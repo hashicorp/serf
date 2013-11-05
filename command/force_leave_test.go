@@ -1,9 +1,9 @@
 package command
 
 import (
-	"github.com/hashicorp/serf/cli"
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
+	"github.com/mitchellh/cli"
 	"strings"
 	"testing"
 	"time"
@@ -33,14 +33,14 @@ func TestForceLeaveCommandRun(t *testing.T) {
 
 	time.Sleep(a2.SerfConfig.MemberlistConfig.ProbeInterval * 5)
 
-	c := &ForceLeaveCommand{}
+	ui := new(cli.MockUi)
+	c := &ForceLeaveCommand{Ui: ui}
 	args := []string{
 		"-rpc-addr=" + a1.RPCAddr,
 		a2.SerfConfig.NodeName,
 	}
-	ui := new(cli.MockUi)
 
-	code := c.Run(args, ui)
+	code := c.Run(args)
 	if code != 0 {
 		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
 	}
@@ -56,11 +56,11 @@ func TestForceLeaveCommandRun(t *testing.T) {
 }
 
 func TestForceLeaveCommandRun_noAddrs(t *testing.T) {
-	c := &ForceLeaveCommand{}
-	args := []string{"-rpc-addr=foo"}
 	ui := new(cli.MockUi)
+	c := &ForceLeaveCommand{Ui: ui}
+	args := []string{"-rpc-addr=foo"}
 
-	code := c.Run(args, ui)
+	code := c.Run(args)
 	if code != 1 {
 		t.Fatalf("bad: %d", code)
 	}

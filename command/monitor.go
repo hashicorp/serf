@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/hashicorp/logutils"
-	"github.com/hashicorp/serf/cli"
+	"github.com/mitchellh/cli"
 	"strings"
 	"sync"
 )
@@ -13,6 +13,7 @@ import (
 // Serf agent what members are part of the cluster currently.
 type MonitorCommand struct {
 	ShutdownCh <-chan struct{}
+	Ui         cli.Ui
 
 	lock     sync.Mutex
 	quitting bool
@@ -36,10 +37,10 @@ Options:
 	return strings.TrimSpace(helpText)
 }
 
-func (c *MonitorCommand) Run(args []string, ui cli.Ui) int {
+func (c *MonitorCommand) Run(args []string) int {
 	var logLevel string
 	cmdFlags := flag.NewFlagSet("monitor", flag.ContinueOnError)
-	cmdFlags.Usage = func() { ui.Output(c.Help()) }
+	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.StringVar(&logLevel, "log-level", "INFO", "log level")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
@@ -48,7 +49,7 @@ func (c *MonitorCommand) Run(args []string, ui cli.Ui) int {
 
 	client, err := RPCClient(*rpcAddr)
 	if err != nil {
-		ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
+		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
 		return 1
 	}
 	defer client.Close()
@@ -56,7 +57,7 @@ func (c *MonitorCommand) Run(args []string, ui cli.Ui) int {
 	eventCh := make(chan string)
 	doneCh := make(chan struct{})
 	if err := client.Monitor(logutils.LogLevel(logLevel), eventCh, doneCh); err != nil {
-		ui.Error(fmt.Sprintf("Error starting monitor: %s", err))
+		c.Ui.Error(fmt.Sprintf("Error starting monitor: %s", err))
 		return 1
 	}
 
@@ -64,14 +65,14 @@ func (c *MonitorCommand) Run(args []string, ui cli.Ui) int {
 	go func() {
 		defer close(eventDoneCh)
 		for e := range eventCh {
-			ui.Info(e)
+			c.Ui.Info(e)
 		}
 
 		c.lock.Lock()
 		defer c.lock.Unlock()
 		if !c.quitting {
-			ui.Info("")
-			ui.Output("Remote side ended the monitor! This usually means that the\n" +
+			c.Ui.Info("")
+			c.Ui.Output("Remote side ended the monitor! This usually means that the\n" +
 				"remote side has exited or crashed.")
 		}
 	}()

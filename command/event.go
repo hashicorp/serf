@@ -3,13 +3,15 @@ package command
 import (
 	"flag"
 	"fmt"
-	"github.com/hashicorp/serf/cli"
+	"github.com/mitchellh/cli"
 	"strings"
 )
 
 // EventCommand is a Command implementation that queries a running
 // Serf agent what members are part of the cluster currently.
-type EventCommand struct{}
+type EventCommand struct {
+	Ui cli.Ui
+}
 
 func (c *EventCommand) Help() string {
 	helpText := `
@@ -28,11 +30,11 @@ Options:
 	return strings.TrimSpace(helpText)
 }
 
-func (c *EventCommand) Run(args []string, ui cli.Ui) int {
+func (c *EventCommand) Run(args []string) int {
 	var coalesce bool
 
 	cmdFlags := flag.NewFlagSet("event", flag.ContinueOnError)
-	cmdFlags.Usage = func() { ui.Output(c.Help()) }
+	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.BoolVar(&coalesce, "coalesce", true, "coalesce")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
@@ -41,14 +43,14 @@ func (c *EventCommand) Run(args []string, ui cli.Ui) int {
 
 	args = cmdFlags.Args()
 	if len(args) < 1 {
-		ui.Error("An event name must be specified.")
-		ui.Error("")
-		ui.Error(c.Help())
+		c.Ui.Error("An event name must be specified.")
+		c.Ui.Error("")
+		c.Ui.Error(c.Help())
 		return 1
 	} else if len(args) > 2 {
-		ui.Error("Too many command line arguments. Only a name and payload must be specified.")
-		ui.Error("")
-		ui.Error(c.Help())
+		c.Ui.Error("Too many command line arguments. Only a name and payload must be specified.")
+		c.Ui.Error("")
+		c.Ui.Error(c.Help())
 		return 1
 	}
 
@@ -60,17 +62,17 @@ func (c *EventCommand) Run(args []string, ui cli.Ui) int {
 
 	client, err := RPCClient(*rpcAddr)
 	if err != nil {
-		ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
+		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
 		return 1
 	}
 	defer client.Close()
 
 	if err := client.UserEvent(event, payload, coalesce); err != nil {
-		ui.Error(fmt.Sprintf("Error sending event: %s", err))
+		c.Ui.Error(fmt.Sprintf("Error sending event: %s", err))
 		return 1
 	}
 
-	ui.Output(fmt.Sprintf("Event '%s' dispatched! Coalescing enabled: %#v",
+	c.Ui.Output(fmt.Sprintf("Event '%s' dispatched! Coalescing enabled: %#v",
 		event, coalesce))
 	return 0
 }

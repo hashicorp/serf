@@ -3,13 +3,15 @@ package command
 import (
 	"flag"
 	"fmt"
-	"github.com/hashicorp/serf/cli"
+	"github.com/mitchellh/cli"
 	"strings"
 )
 
 // JoinCommand is a Command implementation that tells a running Serf
 // agent to join another.
-type JoinCommand struct{}
+type JoinCommand struct {
+	Ui cli.Ui
+}
 
 func (c *JoinCommand) Help() string {
 	helpText := `
@@ -26,11 +28,11 @@ Options:
 	return strings.TrimSpace(helpText)
 }
 
-func (c *JoinCommand) Run(args []string, ui cli.Ui) int {
+func (c *JoinCommand) Run(args []string) int {
 	var replayEvents bool
 
 	cmdFlags := flag.NewFlagSet("join", flag.ContinueOnError)
-	cmdFlags.Usage = func() { ui.Output(c.Help()) }
+	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.BoolVar(&replayEvents, "replay", false, "replay")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
@@ -39,26 +41,26 @@ func (c *JoinCommand) Run(args []string, ui cli.Ui) int {
 
 	addrs := cmdFlags.Args()
 	if len(addrs) == 0 {
-		ui.Error("At least one address to join must be specified.")
-		ui.Error("")
-		ui.Error(c.Help())
+		c.Ui.Error("At least one address to join must be specified.")
+		c.Ui.Error("")
+		c.Ui.Error(c.Help())
 		return 1
 	}
 
 	client, err := RPCClient(*rpcAddr)
 	if err != nil {
-		ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
+		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
 		return 1
 	}
 	defer client.Close()
 
 	n, err := client.Join(addrs, !replayEvents)
 	if err != nil {
-		ui.Error(fmt.Sprintf("Error joining the cluster: %s", err))
+		c.Ui.Error(fmt.Sprintf("Error joining the cluster: %s", err))
 		return 1
 	}
 
-	ui.Output(fmt.Sprintf(
+	c.Ui.Output(fmt.Sprintf(
 		"Successfully joined cluster by contacting %d nodes.", n))
 	return 0
 }

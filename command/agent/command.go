@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/hashicorp/logutils"
-	"github.com/hashicorp/serf/cli"
 	"github.com/hashicorp/serf/serf"
+	"github.com/mitchellh/cli"
 	"os"
 	"strings"
 	"sync"
@@ -18,17 +18,18 @@ import (
 // exit.
 type Command struct {
 	ShutdownCh <-chan struct{}
+	Ui         cli.Ui
 
 	lock         sync.Mutex
 	shuttingDown bool
 }
 
-func (c *Command) Run(args []string, rawUi cli.Ui) int {
+func (c *Command) Run(args []string) int {
 	ui := &cli.PrefixedUi{
 		OutputPrefix: "==> ",
 		InfoPrefix:   "    ",
 		ErrorPrefix:  "==> ",
-		Ui:           rawUi,
+		Ui:           c.Ui,
 	}
 
 	var cmdConfig Config
@@ -60,7 +61,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	if len(configFiles) > 0 {
 		fileConfig, err := ReadConfigPaths(configFiles)
 		if err != nil {
-			rawUi.Error(err.Error())
+			c.Ui.Error(err.Error())
 			return 1
 		}
 
@@ -72,7 +73,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	if config.NodeName == "" {
 		hostname, err := os.Hostname()
 		if err != nil {
-			rawUi.Error(fmt.Sprintf("Error determining hostname: %s", err))
+			c.Ui.Error(fmt.Sprintf("Error determining hostname: %s", err))
 			return 1
 		}
 
@@ -81,26 +82,26 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 
 	eventScripts, err := config.EventScripts()
 	if err != nil {
-		rawUi.Error(err.Error())
+		c.Ui.Error(err.Error())
 		return 1
 	}
 
 	for _, script := range eventScripts {
 		if !script.Valid() {
-			rawUi.Error(fmt.Sprintf("Invalid event script: %s", script.String()))
+			c.Ui.Error(fmt.Sprintf("Invalid event script: %s", script.String()))
 			return 1
 		}
 	}
 
 	bindIP, bindPort, err := config.BindAddrParts()
 	if err != nil {
-		rawUi.Error(fmt.Sprintf("Invalid bind address: %s", err))
+		c.Ui.Error(fmt.Sprintf("Invalid bind address: %s", err))
 		return 1
 	}
 
 	encryptKey, err := config.EncryptBytes()
 	if err != nil {
-		rawUi.Error(fmt.Sprintf("Invalid encryption key: %s", err))
+		c.Ui.Error(fmt.Sprintf("Invalid encryption key: %s", err))
 		return 1
 	}
 
@@ -108,7 +109,7 @@ func (c *Command) Run(args []string, rawUi cli.Ui) int {
 	// store logs until we're ready to show them. Then create the level
 	// filter, filtering logs of the specified level.
 	logGate := &GatedWriter{
-		Writer: &cli.UiWriter{Ui: rawUi},
+		Writer: &cli.UiWriter{Ui: c.Ui},
 	}
 
 	logLevelFilter := LevelFilter()

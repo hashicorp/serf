@@ -1,7 +1,7 @@
 package command
 
 import (
-	"github.com/hashicorp/serf/cli"
+	"github.com/mitchellh/cli"
 	"strings"
 	"testing"
 )
@@ -16,14 +16,14 @@ func TestJoinCommandRun(t *testing.T) {
 	defer a1.Shutdown()
 	defer a2.Shutdown()
 
-	c := &JoinCommand{}
+	ui := new(cli.MockUi)
+	c := &JoinCommand{Ui: ui}
 	args := []string{
 		"-rpc-addr=" + a1.RPCAddr,
 		a2.SerfConfig.MemberlistConfig.BindAddr,
 	}
-	ui := new(cli.MockUi)
 
-	code := c.Run(args, ui)
+	code := c.Run(args)
 	if code != 0 {
 		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
 	}
@@ -34,11 +34,11 @@ func TestJoinCommandRun(t *testing.T) {
 }
 
 func TestJoinCommandRun_noAddrs(t *testing.T) {
-	c := &JoinCommand{}
-	args := []string{"-rpc-addr=foo"}
 	ui := new(cli.MockUi)
+	c := &JoinCommand{Ui: ui}
+	args := []string{"-rpc-addr=foo"}
 
-	code := c.Run(args, ui)
+	code := c.Run(args)
 	if code != 1 {
 		t.Fatalf("bad: %d", code)
 	}

@@ -3,17 +3,19 @@ package command
 import (
 	"flag"
 	"fmt"
-	"github.com/hashicorp/serf/cli"
+	"github.com/mitchellh/cli"
 	"strings"
 )
 
 // ForceLeaveCommand is a Command implementation that tells a running Serf
 // to force a member to enter the "left" state.
-type ForceLeaveCommand struct{}
+type ForceLeaveCommand struct {
+	Ui cli.Ui
+}
 
-func (c *ForceLeaveCommand) Run(args []string, ui cli.Ui) int {
+func (c *ForceLeaveCommand) Run(args []string) int {
 	cmdFlags := flag.NewFlagSet("join", flag.ContinueOnError)
-	cmdFlags.Usage = func() { ui.Output(c.Help()) }
+	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
@@ -21,22 +23,22 @@ func (c *ForceLeaveCommand) Run(args []string, ui cli.Ui) int {
 
 	nodes := cmdFlags.Args()
 	if len(nodes) != 1 {
-		ui.Error("A node name must be specified to force leave.")
-		ui.Error("")
-		ui.Error(c.Help())
+		c.Ui.Error("A node name must be specified to force leave.")
+		c.Ui.Error("")
+		c.Ui.Error(c.Help())
 		return 1
 	}
 
 	client, err := RPCClient(*rpcAddr)
 	if err != nil {
-		ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
+		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
 		return 1
 	}
 	defer client.Close()
 
 	err = client.ForceLeave(nodes[0])
 	if err != nil {
-		ui.Error(fmt.Sprintf("Error force leaving: %s", err))
+		c.Ui.Error(fmt.Sprintf("Error force leaving: %s", err))
 		return 1
 	}
 
