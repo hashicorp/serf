@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/hashicorp/serf/cli"
+	"github.com/mitchellh/cli"
 	"io/ioutil"
 	"log"
 	"os"
@@ -31,7 +31,6 @@ func realMain() int {
 	cli := &cli.CLI{
 		Args:     args,
 		Commands: Commands,
-		Ui:       &cli.BasicUi{Writer: os.Stdout},
 	}
 
 	exitCode, err := cli.Run()

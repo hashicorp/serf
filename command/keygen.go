@@ -4,27 +4,29 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"github.com/hashicorp/serf/cli"
+	"github.com/mitchellh/cli"
 	"strings"
 )
 
 // KeygenCommand is a Command implementation that generates an encryption
 // key for use in `serf agent`.
-type KeygenCommand struct{}
+type KeygenCommand struct {
+	Ui cli.Ui
+}
 
-func (c *KeygenCommand) Run(_ []string, ui cli.Ui) int {
+func (c *KeygenCommand) Run(_ []string) int {
 	key := make([]byte, 16)
 	n, err := rand.Reader.Read(key)
 	if err != nil {
-		ui.Error(fmt.Sprintf("Error reading random data: %s", err))
+		c.Ui.Error(fmt.Sprintf("Error reading random data: %s", err))
 		return 1
 	}
 	if n != 16 {
-		ui.Error(fmt.Sprintf("Couldn't read enough entropy. Generate more entropy!"))
+		c.Ui.Error(fmt.Sprintf("Couldn't read enough entropy. Generate more entropy!"))
 		return 1
 	}
 
-	ui.Output(base64.StdEncoding.EncodeToString(key))
+	c.Ui.Output(base64.StdEncoding.EncodeToString(key))
 	return 0
 }
 

@@ -1,7 +1,7 @@
 package command
 
 import (
-	"github.com/hashicorp/serf/cli"
+	"github.com/mitchellh/cli"
 	"strings"
 	"testing"
 )
@@ -11,11 +11,11 @@ func TestEventCommand_implements(t *testing.T) {
 }
 
 func TestEventCommandRun_noEvent(t *testing.T) {
-	c := &EventCommand{}
-	args := []string{"-rpc-addr=foo"}
 	ui := new(cli.MockUi)
+	c := &EventCommand{Ui: ui}
+	args := []string{"-rpc-addr=foo"}
 
-	code := c.Run(args, ui)
+	code := c.Run(args)
 	if code != 1 {
 		t.Fatalf("bad: %d", code)
 	}
@@ -26,11 +26,11 @@ func TestEventCommandRun_noEvent(t *testing.T) {
 }
 
 func TestEventCommandRun_tooMany(t *testing.T) {
-	c := &EventCommand{}
-	args := []string{"-rpc-addr=foo", "foo", "bar", "baz"}
 	ui := new(cli.MockUi)
+	c := &EventCommand{Ui: ui}
+	args := []string{"-rpc-addr=foo", "foo", "bar", "baz"}
 
-	code := c.Run(args, ui)
+	code := c.Run(args)
 	if code != 1 {
 		t.Fatalf("bad: %d", code)
 	}

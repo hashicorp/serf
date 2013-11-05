@@ -3,8 +3,8 @@ package command
 import (
 	"bytes"
 	"fmt"
-	"github.com/hashicorp/serf/cli"
 	"github.com/hashicorp/serf/serf"
+	"github.com/mitchellh/cli"
 )
 
 // VersionCommand is a Command implementation prints the version.
@@ -12,13 +12,14 @@ type VersionCommand struct {
 	Revision          string
 	Version           string
 	VersionPrerelease string
+	Ui                cli.Ui
 }
 
 func (c *VersionCommand) Help() string {
 	return ""
 }
 
-func (c *VersionCommand) Run(_ []string, ui cli.Ui) int {
+func (c *VersionCommand) Run(_ []string) int {
 	var versionString bytes.Buffer
 	fmt.Fprintf(&versionString, "Serf v%s", c.Version)
 	if c.VersionPrerelease != "" {
@@ -29,8 +30,8 @@ func (c *VersionCommand) Run(_ []string, ui cli.Ui) int {
 		}
 	}
 
-	ui.Output(versionString.String())
-	ui.Output(fmt.Sprintf("Agent Protocol: %d (Understands back to: %d)",
+	c.Ui.Output(versionString.String())
+	c.Ui.Output(fmt.Sprintf("Agent Protocol: %d (Understands back to: %d)",
 		serf.ProtocolVersionMax, serf.ProtocolVersionMin))
 	return 0
 }

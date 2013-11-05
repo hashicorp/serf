@@ -1,7 +1,7 @@
 package command
 
 import (
-	"github.com/hashicorp/serf/cli"
+	"github.com/mitchellh/cli"
 	"strings"
 	"testing"
 )
@@ -14,11 +14,11 @@ func TestMembersCommandRun(t *testing.T) {
 	a1 := testAgent(t)
 	defer a1.Shutdown()
 
-	c := &MembersCommand{}
-	args := []string{"-rpc-addr=" + a1.RPCAddr}
 	ui := new(cli.MockUi)
+	c := &MembersCommand{Ui: ui}
+	args := []string{"-rpc-addr=" + a1.RPCAddr}
 
-	code := c.Run(args, ui)
+	code := c.Run(args)
 	if code != 0 {
 		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
 	}
