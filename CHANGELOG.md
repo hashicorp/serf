@@ -1,6 +1,7 @@
-## 0.2.1 (unreleased)
+## 0.2.1 (November 6, 2013)
 
 BUG FIXES:
+
   * Member role and address not updated on re-join [GH-58]
 
 ## 0.2.0 (November 1, 2013)
