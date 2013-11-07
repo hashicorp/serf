@@ -563,8 +563,6 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 		// Check if we have a leave intent
 		if leave := recentIntent(s.recentLeave, n.Name); leave != nil {
 			if leave.LTime > member.statusLTime {
-				member.Addr = net.IP(n.Addr)
-				member.Role = string(n.Meta)
 				member.Status = StatusLeaving
 				member.statusLTime = leave.LTime
 			}
@@ -575,6 +573,8 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 		oldStatus = member.Status
 		member.Status = StatusAlive
 		member.leaveTime = time.Time{}
+		member.Addr = net.IP(n.Addr)
+		member.Role = string(n.Meta)
 	}
 
 	// Update the protocol versions every time we get an event
