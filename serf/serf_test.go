@@ -326,6 +326,86 @@ func TestSerf_joinLeave(t *testing.T) {
 	}
 }
 
+// Bug: GH-58
+func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
+	s1Config := testConfig()
+	s2Config := testConfig()
+	s2Config.Role = "foo"
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	defer s1.Shutdown()
+	defer s2.Shutdown()
+
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	err = s2.Leave()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if err := s2.Shutdown(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Make s3 look just like s2, but create a new node with a new role
+	s3Config := testConfig()
+	s3Config.MemberlistConfig.BindAddr = s2Config.MemberlistConfig.BindAddr
+	s3Config.NodeName = s2Config.NodeName
+	s3Config.Role = "bar"
+
+	s3, err := Create(s3Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s3.Shutdown()
+
+	_, err = s3.Join([]string{s1Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	members := s1.Members()
+	if len(members) != 2 {
+		t.Fatalf("s1 members: %d", len(s1.Members()))
+	}
+
+	var member *Member = nil
+	for _, m := range members {
+		if m.Name == s3Config.NodeName {
+			member = &m
+			break
+		}
+	}
+
+	if member == nil {
+		t.Fatalf("couldn't find member")
+	}
+
+	if member.Role != s3Config.Role {
+		t.Fatalf("bad role: %s", member.Role)
+	}
+}
+
 func TestSerf_reconnect(t *testing.T) {
 	eventCh := make(chan Event, 64)
 	s1Config := testConfig()
