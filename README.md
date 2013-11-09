@@ -37,6 +37,9 @@ setup, each node in your system will run one or more Serf agents (it can
 run multiple agents if you're running multiple cluster types. e.g. web
 servers vs. memcached servers).
 
+Mac OS X users: an extra step is needed on your platform, 
+[follow the tutorial here](http://www.serfdom.io/intro/getting-started/join.html).
+
 Start each Serf agent in a separate terminal session so that we can see
 the output of each. Start the first agent:
 
