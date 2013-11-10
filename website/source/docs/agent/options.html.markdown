@@ -112,7 +112,7 @@ at a single JSON object with configuration within it.
 
 * `role` - Equivalent to the `-role` command-line flag.
 
-* `bind_addr` - Equivalent to the `-bind-addr` command-line flag.
+* `bind` - Equivalent to the `-bind` command-line flag.
 
 * `encrypt_key` - Equivalent to the `-encrypt` command-line flag.
 

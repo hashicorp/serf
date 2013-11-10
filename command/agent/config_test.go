@@ -126,6 +126,17 @@ func TestDecodeConfig(t *testing.T) {
 	if config.Protocol != 7 {
 		t.Fatalf("bad: %#v", config)
 	}
+
+	// A bind addr
+	input = `{"bind": "127.0.0.2"}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.BindAddr != "127.0.0.2" {
+		t.Fatalf("bad: %#v", config)
+	}
 }
 
 func TestMergeConfig(t *testing.T) {
