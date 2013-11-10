@@ -39,7 +39,7 @@ type Config struct {
 	// will bind to. Serf will use this address to bind to for both TCP
 	// and UDP connections. If no port is present in the address, the default
 	// port will be used.
-	BindAddr string `mapstructure:"bind_addr"`
+	BindAddr string `mapstructure:"bind"`
 
 	// EncryptKey is the secret key to use for encrypting communication
 	// traffic for Serf. The secret key must be exactly 16-bytes, base64
