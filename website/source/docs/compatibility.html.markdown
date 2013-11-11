@@ -24,3 +24,20 @@ can be upgraded without cluster disruption.
 This compatibility guarantee makes it possible to upgrade Serf agents one
 at a time, one version at a time. For more details on the specifics of
 upgrading, see the [upgrading page](/docs/upgrading.html).
+
+## Protocol Compatibility Table
+
+<table>
+<tr>
+<th>Version</th>
+<th>Protocol Compatibility</th>
+</tr>
+<tr>
+<td>0.1.X</td>
+<td>0</td>
+</tr>
+<tr>
+<td>0.2.X</td>
+<td>0, 1</td>
+</tr>
+</table>
