@@ -19,10 +19,20 @@ while read line; do
 done
 `
 
+const userEventScript = `#!/bin/sh
+RESULT_FILE="%s"
+echo $SERF_SELF_NAME $SERF_SELF_ROLE >>${RESULT_FILE}
+echo $SERF_EVENT $SERF_USER_EVENT "$@" >>${RESULT_FILE}
+echo $SERF_EVENT $SERF_USER_LTIME "$@" >>${RESULT_FILE}
+while read line; do
+	printf "${line}\n" >>${RESULT_FILE}
+done
+`
+
 // testEventScript creates an event script that can be used with the
 // agent. It returns the path to the event script itself and a path to
 // the file that will contain the events that that script receives.
-func testEventScript(t *testing.T) (string, string) {
+func testEventScript(t *testing.T, script string) (string, string) {
 	scriptFile, err := ioutil.TempFile("", "serf")
 	if err != nil {
 		t.Fatalf("err: %s", err)
@@ -40,7 +50,7 @@ func testEventScript(t *testing.T) (string, string) {
 	defer resultFile.Close()
 
 	_, err = scriptFile.Write([]byte(
-		fmt.Sprintf(eventScript, resultFile.Name())))
+		fmt.Sprintf(script, resultFile.Name())))
 	if err != nil {
 		t.Fatalf("err: %s")
 	}
@@ -49,7 +59,7 @@ func testEventScript(t *testing.T) (string, string) {
 }
 
 func TestScriptEventHandler(t *testing.T) {
-	script, results := testEventScript(t)
+	script, results := testEventScript(t, eventScript)
 
 	h := &ScriptEventHandler{
 		Self: serf.Member{
@@ -87,6 +97,46 @@ func TestScriptEventHandler(t *testing.T) {
 	}
 
 	expected := "ourname ourrole\nmember-join\nfoo\t1.2.3.4\tbar\n"
+	if string(result) != expected {
+		t.Fatalf("bad: %#v. Expected: %#v", string(result), expected)
+	}
+}
+
+func TestScriptUserEventHandler(t *testing.T) {
+	script, results := testEventScript(t, userEventScript)
+
+	h := &ScriptEventHandler{
+		Self: serf.Member{
+			Name: "ourname",
+			Role: "ourrole",
+		},
+		Scripts: []EventScript{
+			{
+				Event:  "*",
+				Script: script,
+			},
+		},
+	}
+
+	userEvent := serf.UserEvent{
+		LTime:    1,
+		Name:     "baz",
+		Payload:  []byte("foobar"),
+		Coalesce: true,
+	}
+
+	discardLogger := log.New(os.Stderr, "", log.LstdFlags)
+	err := h.HandleEvent(discardLogger, userEvent)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	result, err := ioutil.ReadFile(results)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	expected := "ourname ourrole\nuser baz\nuser 1\n"
 	if string(result) != expected {
 		t.Fatalf("bad: %#v. Expected: %#v", string(result), expected)
 	}

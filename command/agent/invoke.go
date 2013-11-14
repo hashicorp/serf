@@ -57,6 +57,7 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 		go memberEventStdin(logger, stdin, &e)
 	case serf.UserEvent:
 		cmd.Env = append(cmd.Env, "SERF_USER_EVENT="+e.Name)
+		cmd.Env = append(cmd.Env, fmt.Sprintf("SERF_USER_LTIME=%d", e.LTime))
 		go userEventStdin(logger, stdin, &e)
 	default:
 		return fmt.Errorf("Unknown event type: %s", event.EventType().String())
