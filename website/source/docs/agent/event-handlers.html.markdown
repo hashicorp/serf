@@ -32,7 +32,7 @@ variables:
 * `SERF_USER_EVENT` is the name of the user event type if `SERF_EVENT` is
   "user".
 
-* `SERF_LAMPORT_TIME` is the `LamportTime` of the user event if `SERF_EVENT`
+* `SERF_USER_LTIME` is the `LamportTime` of the user event if `SERF_EVENT`
   is "user".
 
 In addition to these environmental variables, the data for an event is passed

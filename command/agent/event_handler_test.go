@@ -23,7 +23,7 @@ const userEventScript = `#!/bin/sh
 RESULT_FILE="%s"
 echo $SERF_SELF_NAME $SERF_SELF_ROLE >>${RESULT_FILE}
 echo $SERF_EVENT $SERF_USER_EVENT "$@" >>${RESULT_FILE}
-echo $SERF_EVENT $SERF_LAMPORT_TIME "$@" >>${RESULT_FILE}
+echo $SERF_EVENT $SERF_USER_LTIME "$@" >>${RESULT_FILE}
 while read line; do
 	printf "${line}\n" >>${RESULT_FILE}
 done
