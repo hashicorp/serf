@@ -67,7 +67,7 @@ The options below are all specified on the command-line.
 * `-node` - The name of this node in the cluster. This must be unique within
   the cluster. By default this is the hostname of the machine.
 
-* `-protocol` - The Serf protocol version to use. This details to the latest
+* `-protocol` - The Serf protocol version to use. This defaults to the latest
   version. This should be set only when [upgrading](/docs/upgrading.html).
   You can view the protocol versions supported by Serf by running `serf -v`.
 
