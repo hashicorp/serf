@@ -98,7 +98,7 @@ The gossip mechanism used by Serf relies on sending messages to random
 members, so an attacker can record all destinations and determine all
 members of the cluster.
 
-As with most security systems, no system is unbreakable.
+When designing security into a system you design it to fit the threat model.
 Our goal is not to protect top secret data but to provide a "reasonable"
 level of security that would require an attacker to commit a considerable
 amount of resources to defeat.
