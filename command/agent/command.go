@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/serf"
 	"github.com/mitchellh/cli"
+	"net"
 	"os"
 	"strings"
 	"sync"
@@ -154,9 +155,10 @@ func (c *Command) Run(args []string) int {
 	}
 	defer agent.Shutdown()
 
+	bindAddr := (&net.TCPAddr{IP: net.ParseIP(bindIP), Port: bindPort}).String()
 	ui.Output("Serf agent running!")
 	ui.Info(fmt.Sprintf("Node name: '%s'", config.NodeName))
-	ui.Info(fmt.Sprintf("Bind addr: '%s:%d'", bindIP, bindPort))
+	ui.Info(fmt.Sprintf("Bind addr: '%s'", bindAddr))
 	ui.Info(fmt.Sprintf(" RPC addr: '%s'", config.RPCAddr))
 	ui.Info(fmt.Sprintf("Encrypted: %#v", config.EncryptKey != ""))
 
