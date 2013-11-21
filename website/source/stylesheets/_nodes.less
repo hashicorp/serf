@@ -1,0 +1,53 @@
+//
+// Node animation
+// --------------------------------------------------
+
+
+#node-canvas{
+    position: absolute;
+    top: 0;
+    width: 1400px;
+    background-color: transparent;
+
+    rect {
+        fill: none;
+        pointer-events: all;
+    }
+
+    .node {
+        /*fill: #a7a7a7;*/
+        fill: #939393;
+        stroke: #a7a7a7;  
+        z-index: 100;
+        transition-property: stroke fill;
+        transition-duration: 1s;  
+    }
+
+    .node.active {
+        /*fill: #bbb;  */
+        stroke: #bbb;  
+        transition-property: stroke  fill;
+        transition-duration: 2s;  
+    }
+
+    .cursor {
+        fill: none;
+        stroke: brown;
+        pointer-events: none;
+    }
+
+    .link {
+        stroke: #999;
+        stroke-width: 1.5;
+        z-index: 0;
+        transition-property: stroke;
+        transition-duration: 1s;
+    }
+
+    .link.active{
+        stroke: #bbb;
+        transition-property: stroke;
+        transition-duration: 1s;
+    }  
+}
+

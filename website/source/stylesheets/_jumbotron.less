@@ -4,6 +4,7 @@
 
 
 #jumbotron {
+  position: relative;
   height: @jumbotron-height;
   color: @jumbotron-color;
   background-color:  @gray-light;
@@ -24,6 +25,12 @@
           background:  transparent url( ../images/logo-circle-logo@2x.png ) 0 0 no-repeat;
           background-size: 726px 454px;
           z-index: 20;
+          pointer-events: none;
+      }
+
+      .col-lg-5{
+          z-index: 20;
+          pointer-events: none;   
       }
 
       h2{
