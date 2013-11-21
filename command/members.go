@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/mitchellh/cli"
+	"net"
 	"strings"
 )
 
@@ -52,8 +53,9 @@ func (c *MembersCommand) Run(args []string) int {
 	}
 
 	for _, member := range members {
+		addr := net.TCPAddr{IP: member.Addr, Port: int(member.Port)}
 		c.Ui.Output(fmt.Sprintf("%s    %s    %s    %s",
-			member.Name, member.Addr, member.Status, member.Role))
+			member.Name, addr.String(), member.Status, member.Role))
 
 		if detailed {
 			c.Ui.Output(fmt.Sprintf("    Protocol Version: %d",
