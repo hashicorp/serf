@@ -71,10 +71,18 @@ type Config struct {
 // used to configure Serf.
 func (c *Config) BindAddrParts() (string, int, error) {
 	checkAddr := c.BindAddr
-	if !strings.Contains(checkAddr, ":") {
-		checkAddr += fmt.Sprintf(":%d", DefaultBindPort)
+
+START:
+	_, _, err := net.SplitHostPort(checkAddr)
+	if ae, ok := err.(*net.AddrError); ok && ae.Err == "missing port in address" {
+		checkAddr = fmt.Sprintf("%s:%d", checkAddr, DefaultBindPort)
+		goto START
+	}
+	if err != nil {
+		return "", 0, err
 	}
 
+	// Get the address
 	addr, err := net.ResolveTCPAddr("tcp", checkAddr)
 	if err != nil {
 		return "", 0, err
