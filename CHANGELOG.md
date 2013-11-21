@@ -1,6 +1,12 @@
-## 0.2.2 (unreleased)
+## 0.3.0 (unreleased)
 
+IMPROVEMENTS:
 
+  * Memberlist encryption overhead has been reduced
+
+BUG FIXES:
+
+  * IPv6 addresses can be bound to [GH-72]
 
 ## 0.2.1 (November 6, 2013)
 
