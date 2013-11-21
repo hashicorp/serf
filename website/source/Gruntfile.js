@@ -12,6 +12,7 @@ module.exports = function(grunt) {
     		src: 	[	
                 'javascripts/app/app.js',
                 'javascripts/app/util.js',
+                'javascripts/app/home.js',
                 'javascripts/app/nodes.js'
     					],
 

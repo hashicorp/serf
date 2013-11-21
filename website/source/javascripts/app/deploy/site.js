@@ -9,7 +9,12 @@ var Serf = (function() {
 	}
 
 	function initHome() {
-		Serf.Nodes.init(); 
+		if(!Serf.Util.isMobile){
+			Serf.Nodes.init(); 	
+		}else{
+			Serf.Home.mobileHero();
+		}
+		
 	}
   
   	//api
@@ -24,6 +29,23 @@ var Serf = Serf || {};
 
 (function () {
 
+	//check for mobile user agents
+	var isMobile = (function(){
+		 if( navigator.userAgent.match(/Android/i)
+		 || navigator.userAgent.match(/webOS/i)
+		 || navigator.userAgent.match(/iPhone/i)
+		 //|| navigator.userAgent.match(/iPad/i)
+		 || navigator.userAgent.match(/iPod/i)
+		 || navigator.userAgent.match(/BlackBerry/i)
+		 || navigator.userAgent.match(/Windows Phone/i)
+		 ){
+			return true;
+		  }
+		 else {
+		    return false;
+		  }
+    })()
+
     // calls the given function if the given classname is found
     function runIfClassNamePresent(selector, initFunction) {
         var elms = document.getElementsByClassName(selector);
@@ -33,7 +55,24 @@ var Serf = Serf || {};
     }
 
     Serf.Util = {};
+    Serf.Util.isMobile = isMobile;
     Serf.Util.runIfClassNamePresent = runIfClassNamePresent;
+
+})();;//
+// home.js
+//
+var Serf = Serf || {};
+
+(function () {
+
+    // calls the given function if the given classname is found
+    function mobileHero() {
+    	var jumbo = document.getElementById('jumbotron');
+    	jumbo.className = jumbo.className + ' mobile-hero';
+    }
+
+    Serf.Home = {};
+    Serf.Home.mobileHero = mobileHero;
 
 })();;//
 // node.js

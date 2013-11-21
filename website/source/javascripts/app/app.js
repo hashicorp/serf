@@ -9,7 +9,12 @@ var Serf = (function() {
 	}
 
 	function initHome() {
-		Serf.Nodes.init(); 
+		if(!Serf.Util.isMobile){
+			Serf.Nodes.init(); 	
+		}else{
+			Serf.Home.mobileHero();
+		}
+		
 	}
   
   	//api
