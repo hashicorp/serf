@@ -124,8 +124,7 @@ func (c *Command) Run(args []string) int {
 
 	serfConfig := serf.DefaultConfig()
 	serfConfig.MemberlistConfig.BindAddr = bindIP
-	serfConfig.MemberlistConfig.TCPPort = bindPort
-	serfConfig.MemberlistConfig.UDPPort = bindPort
+	serfConfig.MemberlistConfig.Port = bindPort
 	serfConfig.MemberlistConfig.SecretKey = encryptKey
 	serfConfig.NodeName = config.NodeName
 	serfConfig.Role = config.Role
