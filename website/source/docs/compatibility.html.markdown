@@ -12,8 +12,8 @@ compatibility, this page makes it clear on our promise to keeping different
 Serf versions compatible with each other.
 
 We promise that every subsequent release of Serf will remain backwards
-compatible with _at least_ one prior version. Concretely: version 0.3 can
-speak to 0.2 (and vice versa), but may not be able to speak to 0.1.
+compatible with _at least_ one prior version. Concretely: version 0.5 can
+speak to 0.4 (and vice versa), but may not be able to speak to 0.1.
 
 The backwards compatibility must be explicitly enabled: Serf agents by
 default will speak the latest protocol, but can be configured to speak earlier
@@ -39,5 +39,9 @@ upgrading, see the [upgrading page](/docs/upgrading.html).
 <tr>
 <td>0.2.X</td>
 <td>0, 1</td>
+</tr>
+<tr>
+<td>0.3.X</td>
+<td>0, 1, 2</td>
 </tr>
 </table>
