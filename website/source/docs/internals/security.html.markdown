@@ -30,8 +30,7 @@ To support confidentiality, all messages are encrypted using the
 [AES-128 standard](http://en.wikipedia.org/wiki/Advanced_Encryption_Standard). The
 AES standard is considered one of the most secure and modern encryption standards.
 Additionally, it is a fast algorithm, and modern CPUs provide hardware instructions to
-make encryption and decryption very lightweight. Because AES works on block sizes of
-16 bytes, we make use of the [PKCS7 padding algorithm](http://tools.ietf.org/html/rfc2315#section-10.3).
+make encryption and decryption very lightweight.
 
 AES is used with the [Galois Counter Mode (GCM)](http://en.wikipedia.org/wiki/Galois/Counter_Mode),
 using a randomly generated nonce. The use of GCM provides message integrity,
@@ -51,9 +50,8 @@ allows the message to be simple and saves space. The format is as follows:
     | Version (byte) | Nonce (12 bytes) | CipherText | Tag (16 bytes) |
     -------------------------------------------------------------------
 
-The UDP message has a minimum overhead of 29 bytes, and up to an additional
-16 bytes of padding or 45 bytes. Tampering or bit corruption will cause the
-GCM tag verification to fail.
+The UDP message has an overhead of 29 bytes per message.
+Tampering or bit corruption will cause the GCM tag verification to fail.
 
 Once we receive a packet, we first verify the GCM tag, and only on verification,
 decrypt the payload. The version byte is provided to allow future versions to
@@ -69,7 +67,7 @@ an malicious attacker from being able to send enough data to cause a Denial of S
 
 The TCP format is similar to the UDP format, but prepends the message with
 a message type byte (similar to other Serf messages). It also adds a 4 byte length
-field, encoded in Big Endian format. This increases its maximum overhead to 50 bytes.
+field, encoded in Big Endian format. This increases its maximum overhead to 33 bytes.
 
 When we first receive a TCP encrypted message, we check the message type. If any
 party has encryption enabled, the other party must as well. Otherwise we are vulnerable
