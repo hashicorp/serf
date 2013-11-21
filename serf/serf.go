@@ -17,7 +17,7 @@ import (
 // version to memberlist below.
 const (
 	ProtocolVersionMin uint8 = 0
-	ProtocolVersionMax       = 1
+	ProtocolVersionMax       = 2
 )
 
 func init() {
@@ -77,6 +77,7 @@ const (
 type Member struct {
 	Name   string
 	Addr   net.IP
+	Port   uint16
 	Role   string
 	Status MemberStatus
 
@@ -550,6 +551,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 			Member: Member{
 				Name:   n.Name,
 				Addr:   net.IP(n.Addr),
+				Port:   n.Port,
 				Role:   string(n.Meta),
 				Status: StatusAlive,
 			},
@@ -574,6 +576,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 		member.Status = StatusAlive
 		member.leaveTime = time.Time{}
 		member.Addr = net.IP(n.Addr)
+		member.Port = n.Port
 		member.Role = string(n.Meta)
 	}
 
