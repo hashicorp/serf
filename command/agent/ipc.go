@@ -102,6 +102,23 @@ type membersResponse struct {
 	Members []serf.Member
 }
 
+type monitorRequest struct {
+	Command  string
+	Seq      int
+	LogLevel string
+}
+
+type streamRequest struct {
+	Command string
+	Seq     int
+	Type    string
+}
+
+type stopStreamRequest struct {
+	Command string
+	Seq     int
+}
+
 type errorSeqResponse struct {
 	Seq   int
 	Error string
@@ -290,6 +307,15 @@ func (i *AgentIPC) handleRequest(client *IPCClient, req map[string]interface{}) 
 	case membersCommand:
 		return i.handleMembers(client, req)
 
+	case streamCommand:
+		return i.handleStream(client, req)
+
+	case stopStreamCommand:
+		return i.handleStopStream(client, req)
+
+	case monitorCommand:
+		return i.handleMonitor(client, req)
+
 	default:
 		client.send(&errorResponse{Error: unsupportedCommand})
 		return fmt.Errorf("command '%s' not recognized", command)
@@ -385,4 +411,37 @@ func (i *AgentIPC) handleMembers(client *IPCClient, raw map[string]interface{}) 
 		Members: serf.Members(),
 	}
 	return client.send(&resp)
+}
+
+func (i *AgentIPC) handleStream(client *IPCClient, raw map[string]interface{}) error {
+	var req streamRequest
+	client.Result = &req
+	if err := client.mapper.Decode(raw); err != nil {
+		return fmt.Errorf("decode failed: %v", err)
+	}
+
+	// TODO
+	return nil
+}
+
+func (i *AgentIPC) handleStopStream(client *IPCClient, raw map[string]interface{}) error {
+	var req stopStreamRequest
+	client.Result = &req
+	if err := client.mapper.Decode(raw); err != nil {
+		return fmt.Errorf("decode failed: %v", err)
+	}
+
+	// TODO
+	return nil
+}
+
+func (i *AgentIPC) handleMonitor(client *IPCClient, raw map[string]interface{}) error {
+	var req monitorRequest
+	client.Result = &req
+	if err := client.mapper.Decode(raw); err != nil {
+		return fmt.Errorf("decode failed: %v", err)
+	}
+
+	// TODO
+	return nil
 }
