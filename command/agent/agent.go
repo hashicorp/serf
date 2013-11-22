@@ -37,7 +37,6 @@ type Agent struct {
 	logIndex    int
 	logLock     sync.Mutex
 	logger      *log.Logger
-	once        sync.Once
 	rpcListener net.Listener
 	serf        *serf.Serf
 	shutdownCh  chan<- struct{}
@@ -52,98 +51,15 @@ const (
 	AgentRunning
 )
 
-// Join asks the Serf instance to join. See the Serf.Join function.
-func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
-	a.once.Do(a.init)
-
-	a.logger.Printf("[INFO] Agent joining: %v replay: %v", addrs, replay)
-	ignoreOld := !replay
-	n, err = a.serf.Join(addrs, ignoreOld)
-	return
-}
-
-// NotifyLogs causes the agent to begin sending log events to the
-// given channel. The return value is a buffer of past events up to a
-// point.
-//
-// All NotifyLogs calls should be paired with a StopLogs call.
-func (a *Agent) NotifyLogs(ch chan<- string) []string {
-	a.once.Do(a.init)
-
-	a.logLock.Lock()
-	defer a.logLock.Unlock()
-
-	if a.logChs == nil {
-		a.logChs = make(map[chan<- string]struct{})
-	}
-
-	a.logChs[ch] = struct{}{}
-
-	if a.logs == nil {
-		return nil
-	}
-
-	past := make([]string, 0, len(a.logs))
-	if a.logs[a.logIndex] != "" {
-		past = append(past, a.logs[a.logIndex:]...)
-	}
-	past = append(past, a.logs[:a.logIndex]...)
-	return past
-}
-
-// StopLogs causes the agent to stop sending logs to the given
-// channel.
-func (a *Agent) StopLogs(ch chan<- string) {
-	a.once.Do(a.init)
-
-	a.logLock.Lock()
-	defer a.logLock.Unlock()
-
-	delete(a.logChs, ch)
-}
-
-// Returns the Serf agent of the running Agent.
-func (a *Agent) Serf() *serf.Serf {
-	return a.serf
-}
-
-// Shutdown does a graceful shutdown of this agent and all of its processes.
-func (a *Agent) Shutdown() error {
-	a.once.Do(a.init)
-
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
-	if a.state == AgentIdle {
-		return nil
-	}
-
-	// Stop the RPC listener which in turn will stop the RPC server.
-	if err := a.rpcListener.Close(); err != nil {
-		return err
-	}
-
-	// Gracefully leave the serf cluster
-	a.logger.Println("[INFO] agent: requesting graceful leave from Serf")
-	if err := a.serf.Leave(); err != nil {
-		return err
-	}
-
-	a.logger.Println("[INFO] agent: requesting serf shutdown")
-	if err := a.serf.Shutdown(); err != nil {
-		return err
-	}
-
-	a.logger.Println("[INFO] agent: shutdown complete")
-	a.state = AgentIdle
-	close(a.shutdownCh)
-	return nil
-}
-
 // Start starts the agent, kicking off any goroutines to handle various
 // aspects of the agent.
 func (a *Agent) Start() error {
-	a.once.Do(a.init)
+	if a.LogOutput == nil {
+		a.LogOutput = os.Stderr
+	}
+	eventWriter := &EventWriter{Agent: a}
+	a.LogOutput = io.MultiWriter(a.LogOutput, eventWriter)
+	a.logger = log.New(a.LogOutput, "", log.LstdFlags)
 
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -194,6 +110,86 @@ func (a *Agent) Start() error {
 	a.state = AgentRunning
 	a.logger.Println("[INFO] Serf agent started")
 	return nil
+}
+
+// Shutdown does a graceful shutdown of this agent and all of its processes.
+func (a *Agent) Shutdown() error {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	if a.state == AgentIdle {
+		return nil
+	}
+
+	// Stop the RPC listener which in turn will stop the RPC server.
+	if err := a.rpcListener.Close(); err != nil {
+		return err
+	}
+
+	// Gracefully leave the serf cluster
+	a.logger.Println("[INFO] agent: requesting graceful leave from Serf")
+	if err := a.serf.Leave(); err != nil {
+		return err
+	}
+
+	a.logger.Println("[INFO] agent: requesting serf shutdown")
+	if err := a.serf.Shutdown(); err != nil {
+		return err
+	}
+
+	a.logger.Println("[INFO] agent: shutdown complete")
+	a.state = AgentIdle
+	close(a.shutdownCh)
+	return nil
+}
+
+// Join asks the Serf instance to join. See the Serf.Join function.
+func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
+	a.logger.Printf("[INFO] Agent joining: %v replay: %v", addrs, replay)
+	ignoreOld := !replay
+	n, err = a.serf.Join(addrs, ignoreOld)
+	return
+}
+
+// NotifyLogs causes the agent to begin sending log events to the
+// given channel. The return value is a buffer of past events up to a
+// point.
+//
+// All NotifyLogs calls should be paired with a StopLogs call.
+func (a *Agent) NotifyLogs(ch chan<- string) []string {
+	a.logLock.Lock()
+	defer a.logLock.Unlock()
+
+	if a.logChs == nil {
+		a.logChs = make(map[chan<- string]struct{})
+	}
+
+	a.logChs[ch] = struct{}{}
+
+	if a.logs == nil {
+		return nil
+	}
+
+	past := make([]string, 0, len(a.logs))
+	if a.logs[a.logIndex] != "" {
+		past = append(past, a.logs[a.logIndex:]...)
+	}
+	past = append(past, a.logs[:a.logIndex]...)
+	return past
+}
+
+// StopLogs causes the agent to stop sending logs to the given
+// channel.
+func (a *Agent) StopLogs(ch chan<- string) {
+	a.logLock.Lock()
+	defer a.logLock.Unlock()
+
+	delete(a.logChs, ch)
+}
+
+// Returns the Serf agent of the running Agent.
+func (a *Agent) Serf() *serf.Serf {
+	return a.serf
 }
 
 // UserEvent sends a UserEvent on Serf, see Serf.UserEvent.
@@ -249,15 +245,4 @@ func (a *Agent) eventLoop(h EventHandler, eventCh <-chan serf.Event, done <-chan
 			}
 		}
 	}
-}
-
-func (a *Agent) init() {
-	if a.LogOutput == nil {
-		a.LogOutput = os.Stderr
-	}
-
-	eventWriter := &EventWriter{Agent: a}
-	a.LogOutput = io.MultiWriter(a.LogOutput, eventWriter)
-
-	a.logger = log.New(a.LogOutput, "", log.LstdFlags)
 }
