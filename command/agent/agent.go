@@ -57,9 +57,9 @@ func (a *Agent) Start() error {
 	if a.LogOutput == nil {
 		a.LogOutput = os.Stderr
 	}
-	eventWriter := &EventWriter{Agent: a}
-	a.LogOutput = io.MultiWriter(a.LogOutput, eventWriter)
+	a.LogOutput = io.MultiWriter(a.LogOutput, a)
 	a.logger = log.New(a.LogOutput, "", log.LstdFlags)
+	a.logs = make([]string, 512)
 
 	a.lock.Lock()
 	defer a.lock.Unlock()
@@ -166,10 +166,6 @@ func (a *Agent) NotifyLogs(ch chan<- string) []string {
 
 	a.logChs[ch] = struct{}{}
 
-	if a.logs == nil {
-		return nil
-	}
-
 	past := make([]string, 0, len(a.logs))
 	if a.logs[a.logIndex] != "" {
 		past = append(past, a.logs[a.logIndex:]...)
@@ -205,7 +201,14 @@ func (a *Agent) ForceLeave(node string) error {
 	return a.serf.RemoveFailedNode(node)
 }
 
-func (a *Agent) storeLog(v string) {
+func (a *Agent) Write(p []byte) (n int, err error) {
+	// Strip off newlines at the end if there are any since we store
+	// individual log lines in the agent.
+	n = len(p)
+	if p[n-1] == '\n' {
+		p = p[:n-1]
+	}
+
 	a.logLock.Lock()
 	defer a.logLock.Unlock()
 
@@ -213,7 +216,7 @@ func (a *Agent) storeLog(v string) {
 		a.logs = make([]string, 512)
 	}
 
-	a.logs[a.logIndex] = v
+	a.logs[a.logIndex] = string(p)
 	a.logIndex++
 	if a.logIndex >= len(a.logs) {
 		a.logIndex = 0
@@ -221,10 +224,11 @@ func (a *Agent) storeLog(v string) {
 
 	for ch, _ := range a.logChs {
 		select {
-		case ch <- v:
+		case ch <- string(p):
 		default:
 		}
 	}
+	return n, nil
 }
 
 func (a *Agent) eventLoop(h EventHandler, eventCh <-chan serf.Event, done <-chan struct{}) {
