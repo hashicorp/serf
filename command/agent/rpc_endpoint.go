@@ -48,7 +48,7 @@ func (e *rpcEndpoint) ForceLeave(node string, result *interface{}) error {
 
 // Join asks the Serf to join another cluster.
 func (e *rpcEndpoint) Join(args RPCJoinArgs, result *int) (err error) {
-	*result, err = e.agent.Join(args.Addrs, args.IgnoreOld)
+	*result, err = e.agent.Join(args.Addrs, !args.IgnoreOld)
 	return
 }
 

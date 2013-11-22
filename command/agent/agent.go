@@ -53,10 +53,11 @@ const (
 )
 
 // Join asks the Serf instance to join. See the Serf.Join function.
-func (a *Agent) Join(addrs []string, ignoreOld bool) (n int, err error) {
+func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
 	a.once.Do(a.init)
 
-	a.logger.Printf("[INFO] Agent joining: %v", addrs)
+	a.logger.Printf("[INFO] Agent joining: %v replay: %v", addrs, replay)
+	ignoreOld := !replay
 	n, err = a.serf.Join(addrs, ignoreOld)
 	return
 }
@@ -197,9 +198,15 @@ func (a *Agent) Start() error {
 
 // UserEvent sends a UserEvent on Serf, see Serf.UserEvent.
 func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
-	a.logger.Printf("Requesting user event send: %s. Coalesced: %#v. Payload: %#v",
+	a.logger.Printf("[DEBUG] Requesting user event send: %s. Coalesced: %#v. Payload: %#v",
 		name, coalesce, string(payload))
 	return a.serf.UserEvent(name, payload, coalesce)
+}
+
+// ForceLeave is used to eject a failed node from the cluster
+func (a *Agent) ForceLeave(node string) error {
+	a.logger.Printf("[DEBUG] Force leaving node: %s", node)
+	return a.serf.RemoveFailedNode(node)
 }
 
 func (a *Agent) storeLog(v string) {
