@@ -1,5 +1,10 @@
 ## 0.3.0 (unreleased)
 
+FEATURES:
+
+  * Dynamic port support, cluster wide config not necessary [GH-36]
+  * Event handler provides lamport time of user events via SERF_USER_LTIME [GH-68]
+
 IMPROVEMENTS:
 
   * Memberlist encryption overhead has been reduced
@@ -7,6 +12,7 @@ IMPROVEMENTS:
 BUG FIXES:
 
   * IPv6 addresses can be bound to [GH-72]
+  * Serf join won't hang on a slow/dead node [GH-70]
 
 ## 0.2.1 (November 6, 2013)
 
