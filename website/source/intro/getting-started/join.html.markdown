@@ -18,43 +18,29 @@ member and quickly discover the other members in the cluster.
 
 ## Starting the Agents
 
-First, let's start two agents. Serf agents must all listen on the same ports,
-so we must bind each agent to a different IP address. Luckily, the entire
-`127.0.0.0/24` space is loopback, so we can just bind to those.
+First, let's start two agents. Serf agents must all listen on a unique
+IP and port pair, so we must bind each agent to a different ports.
 
-<div class="alert alert-block alert-warning">
-<p><strong>Mac OS X users:</strong> OS X has a bug that doesn't allow binding to
-addresses other than 127.0.0.1 for loopback. Run the script below in your
-terminal in order to fix this. This fix is temporary and will be reset whenever
-you restart your machine.</p>
-
-<pre>
-for ((i=2;i<256;i++)); do
-    sudo ifconfig lo0 alias 127.0.0.$i up
-done
-</pre>
-</div>
-
-The first agent we'll start will listen on `127.0.0.10`. We also will
+The first agent we'll start will listen on `127.0.0.1:7946`. We also will
 specify a node name. The node name must be unique and is how a machine
 is uniquely identified. By default it is the hostname of the machine, but
 since we'll be running multiple agents on a single machine, we'll manually
 override it.
 
 ```
-$ serf agent -node=agent-one -bind=127.0.0.10
+$ serf agent -node=agent-one -bind=127.0.0.1:7946
 ...
 ```
 
 Then, in another terminal, start a second agent. We'll bind this agent
-to `127.0.0.11`. In addition to overriding the node name, we're also going
+to `127.0.0.1:7947`. In addition to overriding the node name, we're also going
 to override the RPC address. The RPC address is the address that Serf binds
 to for RPC operations. The other `serf` commands communicate with a running
 Serf agent over RPC. We left the first agent with the default RPC address
 so lets select another for this agent.
 
 ```
-$ serf agent -node=agent-two -bind=127.0.0.11 -rpc-addr=127.0.0.1:7374
+$ serf agent -node=agent-two -bind=127.0.0.1:7947 -rpc-addr=127.0.0.1:7374
 ...
 ```
 
@@ -69,7 +55,7 @@ Now, let's tell the first agent to join the second agent by running
 the following command in a new terminal:
 
 ```
-$ serf join 127.0.0.11
+$ serf join 127.0.0.1:7947
 Successfully joined cluster by contacting 1 nodes.
 ```
 
@@ -80,12 +66,12 @@ know about each other:
 
 ```
 $ serf members
-agent-one    127.0.0.10    alive
-agent-two    127.0.0.11    alive
+agent-one    127.0.0.1:7946    alive
+agent-two    127.0.0.1:7947    alive
 
 $ serf members -rpc-addr=127.0.0.1:7374
-agent-two    127.0.0.11    alive
-agent-one    127.0.0.10    alive
+agent-two    127.0.0.1:7947    alive
+agent-one    127.0.0.1:4946    alive
 ```
 
 <div class="alert alert-block alert-info">

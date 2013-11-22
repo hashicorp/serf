@@ -36,14 +36,13 @@ $ serf agent
 
 There are three important components that `serf agent` outputs:
 
-* **Node name**: This is a unique name for the node. By default this
+* **Node name**: This is a unique name for the agent. By default this
   is the hostname of the machine, but you may customize it to whatever
   you'd like using the `-node` flag.
 
 * **Bind addr**: This is the address and port used for communication between
-  Serf agents in a cluster. Every Serf agent in a cluster must have the
-  _same port_! If you're running multiple clusters, you'll want to choose
-  a unique port per cluster.
+  Serf agents in a cluster. Every Serf agent in a cluster does not have to
+  use the same port.
 
 * **RPC addr**: This is the address and port used for RPC communications
   for other `serf` commands. Other Serf commands such as `serf members`

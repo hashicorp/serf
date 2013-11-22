@@ -23,11 +23,11 @@ The exact merging behavior will be specified.
 The options below are all specified on the command-line.
 
 * `-bind` - The address that Serf will bind to for communication with
-  other Serf nodes. By default this is "0.0.0.0:7946". All Serf nodes
-  within a cluster must have the same port for this configuration. Serf
-  uses both TCP and UDP and will use the same port for this, so if you
-  have any firewalls be sure to allow both protocols. If this
-  configuration value is changed and no port is specified, the default of
+  other Serf nodes. By default this is "0.0.0.0:7946". Serf nodes may
+  have different ports. If a join is specified without a port, we default
+  to locally configured port. Serf uses both TCP and UDP and use the
+  same port for both, so if you have any firewalls be sure to allow both protocols.
+  If this configuration value is changed and no port is specified, the default of
   "7946" will be used.
 
 * `-config-file` - A configuration file to load. For more information on
