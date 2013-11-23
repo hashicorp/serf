@@ -17,22 +17,25 @@ type EventHandler interface {
 type ScriptEventHandler struct {
 	Self    serf.Member
 	Scripts []EventScript
+	logger  *log.Logger
 }
 
-func (h *ScriptEventHandler) HandleEvent(logger *log.Logger, e serf.Event) error {
+func (h *ScriptEventHandler) SetLogger(logger *log.Logger) {
+	h.logger = logger
+}
+
+func (h *ScriptEventHandler) HandleEvent(e serf.Event) {
 	for _, script := range h.Scripts {
 		if !script.Invoke(e) {
 			continue
 		}
 
-		err := invokeEventScript(logger, script.Script, h.Self, e)
+		err := invokeEventScript(h.logger, script.Script, h.Self, e)
 		if err != nil {
-			logger.Printf("[ERR] Error invoking script '%s': %s",
+			h.logger.Printf("[ERR] agent: Error invoking script '%s': %s",
 				script.Script, err)
 		}
 	}
-
-	return nil
 }
 
 // EventScript is a single event script that will be executed in the

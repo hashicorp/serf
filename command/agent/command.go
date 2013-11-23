@@ -160,6 +160,16 @@ func (c *Command) Run(args []string) int {
 	}
 	defer agent.Shutdown()
 
+	// Add the script event handlers
+	scriptEH := &ScriptEventHandler{
+		Self: serf.Member{
+			Name: serfConfig.NodeName,
+			Role: serfConfig.Role,
+		},
+		Scripts: eventScripts,
+	}
+	agent.RegisterEventHandler(scriptEH)
+
 	bindAddr := (&net.TCPAddr{IP: net.ParseIP(bindIP), Port: bindPort}).String()
 	ui.Output("Serf agent running!")
 	ui.Info(fmt.Sprintf("Node name: '%s'", config.NodeName))
