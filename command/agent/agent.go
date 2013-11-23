@@ -11,9 +11,7 @@ import (
 
 // Agent starts and manages a Serf instance, adding some niceties
 // on top of Serf such as storing logs that you can later retrieve,
-// invoking and EventHandler when events occur, and putting an RPC
-// layer in front so that you can query and control the Serf instance
-// remotely.
+// and invoking EventHandlers when events occur.
 type Agent struct {
 	// eventCh is used for Serf to deliver events on
 	eventCh chan serf.Event
@@ -130,6 +128,7 @@ func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
 // RegisterLogHandler adds a log handler to recieve logs, and sends
 // the last buffered logs to the handler
 func (a *Agent) RegisterLogHandler(lh LogHandler) {
+	lh.SetLogger(a.logger)
 	a.logWriter.RegisterHandler(lh)
 }
 
@@ -140,6 +139,7 @@ func (a *Agent) DeregisterLogHandler(lh LogHandler) {
 
 // RegisterEventHandler adds an event handler to recieve event notifications
 func (a *Agent) RegisterEventHandler(eh EventHandler) {
+	eh.SetLogger(a.logger)
 	a.eventHandlersLock.Lock()
 	defer a.eventHandlersLock.Unlock()
 	a.eventHandlers[eh] = struct{}{}

@@ -9,6 +9,7 @@ import (
 
 // EventHandler is a handler that does things when events happen.
 type EventHandler interface {
+	SetLogger(*log.Logger)
 	HandleEvent(serf.Event)
 }
 
