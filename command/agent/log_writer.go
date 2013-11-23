@@ -5,11 +5,16 @@ import (
 	"sync"
 )
 
+// LogHandler interface is used for clients that want to subscribe
+// to logs, for example to stream them over an IPC mechanism
 type LogHandler interface {
 	SetLogger(*log.Logger)
 	HandleLog(string)
 }
 
+// logWriter implements io.Writer so it can be used as a log sink.
+// It maintains a circular buffer of logs, and a set of handlers to
+// which it can stream the logs to.
 type logWriter struct {
 	sync.Mutex
 	logs     []string
@@ -17,6 +22,7 @@ type logWriter struct {
 	handlers map[LogHandler]struct{}
 }
 
+// newLogWriter creates a logWriter with the given buffer capacity
 func newLogWriter(buf int) *logWriter {
 	return &logWriter{
 		logs:     make([]string, buf),
