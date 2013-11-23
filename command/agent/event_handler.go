@@ -9,7 +9,7 @@ import (
 
 // EventHandler is a handler that does things when events happen.
 type EventHandler interface {
-	HandleEvent(*log.Logger, serf.Event) error
+	HandleEvent(serf.Event)
 }
 
 // ScriptEventHandler invokes scripts for the events that it receives.

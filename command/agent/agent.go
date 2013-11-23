@@ -5,8 +5,6 @@ import (
 	"github.com/hashicorp/serf/serf"
 	"io"
 	"log"
-	"net"
-	"net/rpc"
 	"os"
 	"sync"
 )
@@ -17,113 +15,74 @@ import (
 // layer in front so that you can query and control the Serf instance
 // remotely.
 type Agent struct {
-	// EventHandler is what is invoked when an event occurs. If this
-	// isn't set, then events aren't handled in any special way.
-	EventHandler EventHandler
+	// eventCh is used for Serf to deliver events on
+	eventCh chan serf.Event
 
-	// LogOutput is where log messages are written to for the Agent,
-	// Serf, and the underlying Memberlist.
-	LogOutput io.Writer
+	// eventHandlers is the registered handlers for events
+	eventHandlers     map[EventHandler]struct{}
+	eventHandlersLock sync.Mutex
 
-	// RPCAddr is the address to bind the RPC listener to.
-	RPCAddr string
+	// logWriter is used to buffer and handle log streaming
+	logWriter *logWriter
 
-	// SerfConfig is the configuration of Serf to use. Some settings
-	// in here may be overriden by the agent.
-	SerfConfig *serf.Config
+	// logger instance wraps the logOutput
+	logger *log.Logger
 
-	logs        []string
-	logChs      map[chan<- string]struct{}
-	logIndex    int
-	logLock     sync.Mutex
-	logger      *log.Logger
-	rpcListener net.Listener
-	serf        *serf.Serf
-	shutdownCh  chan<- struct{}
-	state       AgentState
-	lock        sync.Mutex
+	// This is the underlying Serf we are wrapping
+	serf *serf.Serf
+
+	// shutdownCh is used for shutdowns
+	shutdown     bool
+	shutdownCh   chan struct{}
+	shutdownLock sync.Mutex
 }
 
-type AgentState int
-
-const (
-	AgentIdle AgentState = iota
-	AgentRunning
-)
-
-// Start starts the agent, kicking off any goroutines to handle various
-// aspects of the agent.
-func (a *Agent) Start() error {
-	if a.LogOutput == nil {
-		a.LogOutput = os.Stderr
+// Start creates a new agent, potentially returning an error
+func Start(conf *serf.Config, logOutput io.Writer) (*Agent, error) {
+	// Ensure we have a log sink
+	if logOutput == nil {
+		logOutput = os.Stderr
 	}
-	a.LogOutput = io.MultiWriter(a.LogOutput, a)
-	a.logger = log.New(a.LogOutput, "", log.LstdFlags)
-	a.logs = make([]string, 512)
 
-	a.lock.Lock()
-	defer a.lock.Unlock()
+	// Wrap the log output to buffer logs
+	logWriter := newLogWriter(512)
+	logOutput = io.MultiWriter(logOutput, logWriter)
 
-	a.logger.Println("[INFO] Serf agent starting")
+	// Setup the underlying loggers
+	conf.MemberlistConfig.LogOutput = logOutput
+	conf.LogOutput = logOutput
 
-	// Setup logging a bit
-	a.SerfConfig.MemberlistConfig.LogOutput = a.LogOutput
-	a.SerfConfig.LogOutput = a.LogOutput
-
+	// Create a channel to listen for events from Serf
 	eventCh := make(chan serf.Event, 64)
-	a.SerfConfig.EventCh = eventCh
+	conf.EventCh = eventCh
 
-	var err error
-	a.serf, err = serf.Create(a.SerfConfig)
+	// Create serf first
+	serf, err := serf.Create(conf)
 	if err != nil {
-		return fmt.Errorf("Error creating Serf: %s", err)
+		return nil, fmt.Errorf("Error creating Serf: %s", err)
 	}
 
-	a.rpcListener, err = net.Listen("tcp", a.RPCAddr)
-	if err != nil {
-		return fmt.Errorf("Error starting RPC listener: %s", err)
+	// Setup the agent
+	agent := &Agent{
+		eventCh:       eventCh,
+		eventHandlers: make(map[EventHandler]struct{}),
+		logWriter:     logWriter,
+		logger:        log.New(logOutput, "", log.LstdFlags),
+		serf:          serf,
+		shutdownCh:    make(chan struct{}),
 	}
-
-	rpcServer := rpc.NewServer()
-	err = registerEndpoint(rpcServer, a)
-	if err != nil {
-		return fmt.Errorf("Error starting RPC server: %s", err)
-	}
-
-	go func(l net.Listener) {
-		for {
-			conn, err := l.Accept()
-			if err != nil {
-				a.logger.Printf("[ERR] RPC accept error: %s", err)
-				return
-			}
-			go rpcServer.ServeConn(conn)
-		}
-	}(a.rpcListener)
-
-	shutdownCh := make(chan struct{})
-
-	// Only listen for events if we care about events.
-	go a.eventLoop(a.EventHandler, eventCh, shutdownCh)
-
-	a.shutdownCh = shutdownCh
-	a.state = AgentRunning
-	a.logger.Println("[INFO] Serf agent started")
-	return nil
+	go agent.eventLoop()
+	agent.logger.Printf("[INFO] Serf agent started")
+	return agent, nil
 }
 
 // Shutdown does a graceful shutdown of this agent and all of its processes.
 func (a *Agent) Shutdown() error {
-	a.lock.Lock()
-	defer a.lock.Unlock()
+	a.shutdownLock.Lock()
+	defer a.shutdownLock.Unlock()
 
-	if a.state == AgentIdle {
+	if a.shutdown {
 		return nil
-	}
-
-	// Stop the RPC listener which in turn will stop the RPC server.
-	if err := a.rpcListener.Close(); err != nil {
-		return err
 	}
 
 	// Gracefully leave the serf cluster
@@ -138,54 +97,27 @@ func (a *Agent) Shutdown() error {
 	}
 
 	a.logger.Println("[INFO] agent: shutdown complete")
-	a.state = AgentIdle
+	a.shutdown = true
 	close(a.shutdownCh)
 	return nil
+}
+
+// Returns the Serf agent of the running Agent.
+func (a *Agent) Serf() *serf.Serf {
+	return a.serf
 }
 
 // Join asks the Serf instance to join. See the Serf.Join function.
 func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
 	a.logger.Printf("[INFO] Agent joining: %v replay: %v", addrs, replay)
 	ignoreOld := !replay
-	n, err = a.serf.Join(addrs, ignoreOld)
-	return
+	return a.serf.Join(addrs, ignoreOld)
 }
 
-// NotifyLogs causes the agent to begin sending log events to the
-// given channel. The return value is a buffer of past events up to a
-// point.
-//
-// All NotifyLogs calls should be paired with a StopLogs call.
-func (a *Agent) NotifyLogs(ch chan<- string) []string {
-	a.logLock.Lock()
-	defer a.logLock.Unlock()
-
-	if a.logChs == nil {
-		a.logChs = make(map[chan<- string]struct{})
-	}
-
-	a.logChs[ch] = struct{}{}
-
-	past := make([]string, 0, len(a.logs))
-	if a.logs[a.logIndex] != "" {
-		past = append(past, a.logs[a.logIndex:]...)
-	}
-	past = append(past, a.logs[:a.logIndex]...)
-	return past
-}
-
-// StopLogs causes the agent to stop sending logs to the given
-// channel.
-func (a *Agent) StopLogs(ch chan<- string) {
-	a.logLock.Lock()
-	defer a.logLock.Unlock()
-
-	delete(a.logChs, ch)
-}
-
-// Returns the Serf agent of the running Agent.
-func (a *Agent) Serf() *serf.Serf {
-	return a.serf
+// ForceLeave is used to eject a failed node from the cluster
+func (a *Agent) ForceLeave(node string) error {
+	a.logger.Printf("[INFO] Force leaving node: %s", node)
+	return a.serf.RemoveFailedNode(node)
 }
 
 // UserEvent sends a UserEvent on Serf, see Serf.UserEvent.
@@ -195,58 +127,45 @@ func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
 	return a.serf.UserEvent(name, payload, coalesce)
 }
 
-// ForceLeave is used to eject a failed node from the cluster
-func (a *Agent) ForceLeave(node string) error {
-	a.logger.Printf("[DEBUG] Force leaving node: %s", node)
-	return a.serf.RemoveFailedNode(node)
+// RegisterLogHandler adds a log handler to recieve logs, and sends
+// the last buffered logs to the handler
+func (a *Agent) RegisterLogHandler(lh LogHandler) {
+	a.logWriter.RegisterHandler(lh)
 }
 
-func (a *Agent) Write(p []byte) (n int, err error) {
-	// Strip off newlines at the end if there are any since we store
-	// individual log lines in the agent.
-	n = len(p)
-	if p[n-1] == '\n' {
-		p = p[:n-1]
-	}
-
-	a.logLock.Lock()
-	defer a.logLock.Unlock()
-
-	if a.logs == nil {
-		a.logs = make([]string, 512)
-	}
-
-	a.logs[a.logIndex] = string(p)
-	a.logIndex++
-	if a.logIndex >= len(a.logs) {
-		a.logIndex = 0
-	}
-
-	for ch, _ := range a.logChs {
-		select {
-		case ch <- string(p):
-		default:
-		}
-	}
-	return n, nil
+// DeregisterLogHandler removes a LogHandler and prevents more invocations
+func (a *Agent) DeregisterLogHandler(lh LogHandler) {
+	a.logWriter.DeregisterHandler(lh)
 }
 
-func (a *Agent) eventLoop(h EventHandler, eventCh <-chan serf.Event, done <-chan struct{}) {
+// RegisterEventHandler adds an event handler to recieve event notifications
+func (a *Agent) RegisterEventHandler(eh EventHandler) {
+	a.eventHandlersLock.Lock()
+	defer a.eventHandlersLock.Unlock()
+	a.eventHandlers[eh] = struct{}{}
+}
+
+// DeregisterEventHandler removes an EventHandler and prevents more invocations
+func (a *Agent) DeregisterEventHandler(eh EventHandler) {
+	a.eventHandlersLock.Lock()
+	defer a.eventHandlersLock.Unlock()
+	delete(a.eventHandlers, eh)
+}
+
+// eventLoop listens to events from Serf and fans out to event handlers
+func (a *Agent) eventLoop() {
 	for {
 		select {
-		case <-done:
-			return
-		case e := <-eventCh:
+		case e := <-a.eventCh:
 			a.logger.Printf("[INFO] agent: Received event: %s", e.String())
-
-			if h == nil {
-				continue
+			a.eventHandlersLock.Lock()
+			for eh, _ := range a.eventHandlers {
+				eh.HandleEvent(e)
 			}
+			a.eventHandlersLock.Unlock()
 
-			err := h.HandleEvent(a.logger, e)
-			if err != nil {
-				a.logger.Printf("[ERR] agent: Error invoking event handler: %s", err)
-			}
+		case <-a.shutdownCh:
+			return
 		}
 	}
 }

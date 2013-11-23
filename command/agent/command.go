@@ -152,22 +152,10 @@ func (c *Command) Run(args []string) int {
 	serfConfig.UserCoalescePeriod = 3 * time.Second
 	serfConfig.UserQuiescentPeriod = time.Second
 
-	agent := &Agent{
-		EventHandler: &ScriptEventHandler{
-			Self: serf.Member{
-				Name: serfConfig.NodeName,
-				Role: serfConfig.Role,
-			},
-			Scripts: eventScripts,
-		},
-		LogOutput:  logLevelFilter,
-		RPCAddr:    config.RPCAddr,
-		SerfConfig: serfConfig,
-	}
-
 	ui.Output("Starting Serf agent...")
-	if err := agent.Start(); err != nil {
-		ui.Error(err.Error())
+	agent, err := Start(serfConfig, logLevelFilter)
+	if err != nil {
+		ui.Error(fmt.Sprintf("Failed to start the Serf agent: %v", err))
 		return 1
 	}
 	defer agent.Shutdown()
