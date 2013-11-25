@@ -70,9 +70,9 @@ func (es *eventStream) stream() {
 
 // sendMemberEvent is used to send a single member event
 func (es *eventStream) sendMemberEvent(me serf.MemberEvent) error {
-	members := make([]member, 0, len(me.Members))
+	members := make([]Member, 0, len(me.Members))
 	for _, m := range me.Members {
-		sm := member{
+		sm := Member{
 			Name:        m.Name,
 			Addr:        m.Addr,
 			Port:        m.Port,

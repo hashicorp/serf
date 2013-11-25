@@ -119,6 +119,7 @@ type streamRequest struct {
 type stopRequest struct {
 	Command string
 	Seq     int
+	Stop    int
 }
 
 type errorSeqResponse struct {
@@ -140,7 +141,7 @@ type userEventRecord struct {
 	Coalesce bool
 }
 
-type member struct {
+type Member struct {
 	Name        string
 	Addr        net.IP
 	Port        uint16
@@ -157,7 +158,7 @@ type member struct {
 type memberEventRecord struct {
 	Seq     int
 	Event   string
-	Members []member
+	Members []Member
 }
 
 type AgentIPC struct {
@@ -311,6 +312,7 @@ func (i *AgentIPC) handleClient(client *IPCClient) {
 	var req map[string]interface{}
 	for {
 		// Decode the command
+		req = nil
 		if err := client.dec.Decode(&req); err != nil {
 			if err != io.EOF {
 				i.logger.Printf("[ERR] agent.ipc: Failed to decode client request: %v", err)
@@ -324,16 +326,6 @@ func (i *AgentIPC) handleClient(client *IPCClient) {
 			return
 		}
 	}
-}
-
-// getField tries to get a field from a request, checking both the upper
-// and lower case variants. The field should be provided as title cased.
-func getField(req map[string]interface{}, field string) (interface{}, bool) {
-	if val, ok := req[field]; ok {
-		return val, ok
-	}
-	val, ok := req[strings.ToLower(field)]
-	return val, ok
 }
 
 // handleRequest is used to evaluate a single client command
@@ -521,7 +513,7 @@ func (i *AgentIPC) handleStream(client *IPCClient, raw map[string]interface{}) e
 	client.eventStreams[req.Seq] = es
 
 	// Register with the agent
-	i.agent.RegisterEventHandler(es)
+	defer i.agent.RegisterEventHandler(es)
 
 SEND:
 	return client.send(&resp)
@@ -557,7 +549,7 @@ func (i *AgentIPC) handleMonitor(client *IPCClient, raw map[string]interface{}) 
 	client.logStreamer = newLogStream(client, filter, req.Seq, i.logger)
 
 	// Register with the log writer
-	i.logWriter.RegisterHandler(client.logStreamer)
+	defer i.logWriter.RegisterHandler(client.logStreamer)
 
 SEND:
 	return client.send(&resp)
@@ -571,20 +563,30 @@ func (i *AgentIPC) handleStop(client *IPCClient, raw map[string]interface{}) err
 	}
 
 	// Remove a log monitor if any
-	if client.logStreamer != nil && client.logStreamer.seq == req.Seq {
+	if client.logStreamer != nil && client.logStreamer.seq == req.Stop {
 		i.logWriter.DeregisterHandler(client.logStreamer)
 		client.logStreamer.Stop()
 		client.logStreamer = nil
 	}
 
 	// Remove an event stream if any
-	if es, ok := client.eventStreams[req.Seq]; ok {
+	if es, ok := client.eventStreams[req.Stop]; ok {
 		i.agent.DeregisterEventHandler(es)
 		es.Stop()
-		delete(client.eventStreams, req.Seq)
+		delete(client.eventStreams, req.Stop)
 	}
 
 	// Always succeed
 	resp := errorSeqResponse{Seq: req.Seq, Error: ""}
 	return client.send(&resp)
+}
+
+// getField tries to get a field from a request, checking both the upper
+// and lower case variants. The field should be provided as title cased.
+func getField(req map[string]interface{}, field string) (interface{}, bool) {
+	if val, ok := req[field]; ok {
+		return val, ok
+	}
+	val, ok := req[strings.ToLower(field)]
+	return val, ok
 }
