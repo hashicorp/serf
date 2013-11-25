@@ -24,6 +24,7 @@ package agent
 import (
 	"bufio"
 	"fmt"
+	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/serf"
 	"github.com/mitchellh/mapstructure"
 	"github.com/ugorji/go/codec"
@@ -45,7 +46,7 @@ const (
 	joinCommand       = "join"
 	membersCommand    = "members"
 	streamCommand     = "stream"
-	stopStreamCommand = "stop-stream"
+	stopCommand       = "stop"
 	monitorCommand    = "monitor"
 )
 
@@ -54,6 +55,7 @@ const (
 	unsupportedIPCVersion = "Unsupported IPC version"
 	duplicateHandshake    = "Handshake already performed"
 	handshakeRequired     = "Handshake required"
+	monitorExists         = "Monitor already exists"
 )
 
 type handshakeRequest struct {
@@ -114,7 +116,7 @@ type streamRequest struct {
 	Type    string
 }
 
-type stopStreamRequest struct {
+type stopRequest struct {
 	Command string
 	Seq     int
 }
@@ -122,6 +124,11 @@ type stopStreamRequest struct {
 type errorSeqResponse struct {
 	Seq   int
 	Error string
+}
+
+type monitorStream struct {
+	Seq int
+	Log string
 }
 
 type AgentIPC struct {
@@ -137,15 +144,16 @@ type AgentIPC struct {
 
 type IPCClient struct {
 	mapstructure.DecoderConfig
-	name      string
-	conn      net.Conn
-	reader    *bufio.Reader
-	writer    *bufio.Writer
-	dec       *codec.Decoder
-	enc       *codec.Encoder
-	writeLock sync.Mutex
-	mapper    *mapstructure.Decoder
-	version   int // From the handshake, 0 before
+	name        string
+	conn        net.Conn
+	reader      *bufio.Reader
+	writer      *bufio.Writer
+	dec         *codec.Decoder
+	enc         *codec.Encoder
+	writeLock   sync.Mutex
+	mapper      *mapstructure.Decoder
+	version     int // From the handshake, 0 before
+	logStreamer *logStream
 }
 
 // send is used to send an object using the MsgPack encoding. send
@@ -252,6 +260,12 @@ func (i *AgentIPC) deregisterClient(client *IPCClient) {
 	i.Lock()
 	delete(i.clients, client.name)
 	i.Unlock()
+
+	// Remove from the log writer
+	if client.logStreamer != nil {
+		i.logWriter.DeregisterHandler(client.logStreamer)
+		client.logStreamer.Stop()
+	}
 }
 
 // handleClient is a long running routine that handles a single client
@@ -313,8 +327,8 @@ func (i *AgentIPC) handleRequest(client *IPCClient, req map[string]interface{}) 
 	case streamCommand:
 		return i.handleStream(client, req)
 
-	case stopStreamCommand:
-		return i.handleStopStream(client, req)
+	case stopCommand:
+		return i.handleStop(client, req)
 
 	case monitorCommand:
 		return i.handleMonitor(client, req)
@@ -427,8 +441,8 @@ func (i *AgentIPC) handleStream(client *IPCClient, raw map[string]interface{}) e
 	return nil
 }
 
-func (i *AgentIPC) handleStopStream(client *IPCClient, raw map[string]interface{}) error {
-	var req stopStreamRequest
+func (i *AgentIPC) handleStop(client *IPCClient, raw map[string]interface{}) error {
+	var req stopRequest
 	client.Result = &req
 	if err := client.mapper.Decode(raw); err != nil {
 		return fmt.Errorf("decode failed: %v", err)
@@ -445,6 +459,31 @@ func (i *AgentIPC) handleMonitor(client *IPCClient, raw map[string]interface{}) 
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	// TODO
-	return nil
+	resp := errorSeqResponse{
+		Seq:   req.Seq,
+		Error: "",
+	}
+
+	// Create a level filter
+	filter := LevelFilter()
+	filter.MinLevel = logutils.LogLevel(req.LogLevel)
+	if !ValidateLevelFilter(filter) {
+		resp.Error = fmt.Sprintf("Unknown log level: %s", filter.MinLevel)
+		goto SEND
+	}
+
+	// Check if there is an existing monitor
+	if client.logStreamer != nil {
+		resp.Error = monitorExists
+		goto SEND
+	}
+
+	// Create a log streamer
+	client.logStreamer = newLogStream(client, filter, req.Seq, i.logger)
+
+	// Register with the log writer
+	i.logWriter.RegisterHandler(client.logStreamer)
+
+SEND:
+	return client.send(&resp)
 }
