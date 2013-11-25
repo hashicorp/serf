@@ -119,7 +119,6 @@ func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
 
 // RegisterEventHandler adds an event handler to recieve event notifications
 func (a *Agent) RegisterEventHandler(eh EventHandler) {
-	eh.SetLogger(a.logger)
 	a.eventHandlersLock.Lock()
 	defer a.eventHandlersLock.Unlock()
 	a.eventHandlers[eh] = struct{}{}

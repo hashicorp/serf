@@ -9,7 +9,6 @@ import (
 
 // EventHandler is a handler that does things when events happen.
 type EventHandler interface {
-	SetLogger(*log.Logger)
 	HandleEvent(serf.Event)
 }
 
@@ -17,11 +16,7 @@ type EventHandler interface {
 type ScriptEventHandler struct {
 	Self    serf.Member
 	Scripts []EventScript
-	logger  *log.Logger
-}
-
-func (h *ScriptEventHandler) SetLogger(logger *log.Logger) {
-	h.logger = logger
+	Logger  *log.Logger
 }
 
 func (h *ScriptEventHandler) HandleEvent(e serf.Event) {
@@ -30,9 +25,9 @@ func (h *ScriptEventHandler) HandleEvent(e serf.Event) {
 			continue
 		}
 
-		err := invokeEventScript(h.logger, script.Script, h.Self, e)
+		err := invokeEventScript(h.Logger, script.Script, h.Self, e)
 		if err != nil {
-			h.logger.Printf("[ERR] agent: Error invoking script '%s': %s",
+			h.Logger.Printf("[ERR] agent: Error invoking script '%s': %s",
 				script.Script, err)
 		}
 	}

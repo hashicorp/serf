@@ -1,14 +1,12 @@
 package agent
 
 import (
-	"log"
 	"sync"
 )
 
 // LogHandler interface is used for clients that want to subscribe
 // to logs, for example to stream them over an IPC mechanism
 type LogHandler interface {
-	SetLogger(*log.Logger)
 	HandleLog(string)
 }
 
