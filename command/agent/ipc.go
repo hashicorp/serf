@@ -126,12 +126,13 @@ type errorSeqResponse struct {
 
 type AgentIPC struct {
 	sync.Mutex
-	agent    *Agent
-	clients  map[string]*IPCClient
-	listener net.Listener
-	logger   *log.Logger
-	stop     bool
-	stopCh   chan struct{}
+	agent     *Agent
+	clients   map[string]*IPCClient
+	listener  net.Listener
+	logger    *log.Logger
+	logWriter *logWriter
+	stop      bool
+	stopCh    chan struct{}
 }
 
 type IPCClient struct {
@@ -165,13 +166,15 @@ func (c *IPCClient) send(obj interface{}) error {
 }
 
 // NewAgentIPC is used to create a new Agent IPC handler
-func NewAgentIPC(agent *Agent, listener net.Listener, logger *log.Logger) *AgentIPC {
+func NewAgentIPC(agent *Agent, listener net.Listener,
+	logOutput io.Writer, logWriter *logWriter) *AgentIPC {
 	ipc := &AgentIPC{
-		agent:    agent,
-		clients:  make(map[string]*IPCClient),
-		listener: listener,
-		logger:   logger,
-		stopCh:   make(chan struct{}),
+		agent:     agent,
+		clients:   make(map[string]*IPCClient),
+		listener:  listener,
+		logger:    log.New(logOutput, "", log.LstdFlags),
+		logWriter: logWriter,
+		stopCh:    make(chan struct{}),
 	}
 	go ipc.listen()
 	return ipc

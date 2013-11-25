@@ -20,9 +20,6 @@ type Agent struct {
 	eventHandlers     map[EventHandler]struct{}
 	eventHandlersLock sync.Mutex
 
-	// logWriter is used to buffer and handle log streaming
-	logWriter *logWriter
-
 	// logger instance wraps the logOutput
 	logger *log.Logger
 
@@ -42,10 +39,6 @@ func Start(conf *serf.Config, logOutput io.Writer) (*Agent, error) {
 		logOutput = os.Stderr
 	}
 
-	// Wrap the log output to buffer logs
-	logWriter := newLogWriter(512)
-	logOutput = io.MultiWriter(logOutput, logWriter)
-
 	// Setup the underlying loggers
 	conf.MemberlistConfig.LogOutput = logOutput
 	conf.LogOutput = logOutput
@@ -64,7 +57,6 @@ func Start(conf *serf.Config, logOutput io.Writer) (*Agent, error) {
 	agent := &Agent{
 		eventCh:       eventCh,
 		eventHandlers: make(map[EventHandler]struct{}),
-		logWriter:     logWriter,
 		logger:        log.New(logOutput, "", log.LstdFlags),
 		serf:          serf,
 		shutdownCh:    make(chan struct{}),
@@ -123,18 +115,6 @@ func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
 	a.logger.Printf("[DEBUG] Requesting user event send: %s. Coalesced: %#v. Payload: %#v",
 		name, coalesce, string(payload))
 	return a.serf.UserEvent(name, payload, coalesce)
-}
-
-// RegisterLogHandler adds a log handler to recieve logs, and sends
-// the last buffered logs to the handler
-func (a *Agent) RegisterLogHandler(lh LogHandler) {
-	lh.SetLogger(a.logger)
-	a.logWriter.RegisterHandler(lh)
-}
-
-// DeregisterLogHandler removes a LogHandler and prevents more invocations
-func (a *Agent) DeregisterLogHandler(lh LogHandler) {
-	a.logWriter.DeregisterHandler(lh)
 }
 
 // RegisterEventHandler adds an event handler to recieve event notifications

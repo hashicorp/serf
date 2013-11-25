@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/serf"
 	"github.com/mitchellh/cli"
+	"io"
 	"net"
 	"os"
 	"strings"
@@ -152,8 +153,20 @@ func (c *Command) Run(args []string) int {
 	serfConfig.UserCoalescePeriod = 3 * time.Second
 	serfConfig.UserQuiescentPeriod = time.Second
 
+	// Setup the RPC listener
+	rpcListener, err := net.Listen("tcp", config.RPCAddr)
+	if err != nil {
+		ui.Error(fmt.Sprintf("Error starting RPC listener: %s", err))
+		return 1
+	}
+
+	// Create a log writer, and wrap a logOutput around it
+	logWriter := newLogWriter(512)
+	logOutput := io.MultiWriter(logLevelFilter, logWriter)
+
+	// Start Serf
 	ui.Output("Starting Serf agent...")
-	agent, err := Start(serfConfig, logLevelFilter)
+	agent, err := Start(serfConfig, logOutput)
 	if err != nil {
 		ui.Error(fmt.Sprintf("Failed to start the Serf agent: %v", err))
 		return 1
@@ -169,6 +182,11 @@ func (c *Command) Run(args []string) int {
 		Scripts: eventScripts,
 	}
 	agent.RegisterEventHandler(scriptEH)
+
+	// Start the IPC layer
+	ui.Output("Starting Serf agent RPC...")
+	ipc := NewAgentIPC(agent, rpcListener, logOutput, logWriter)
+	defer ipc.Shutdown()
 
 	bindAddr := (&net.TCPAddr{IP: net.ParseIP(bindIP), Port: bindPort}).String()
 	ui.Output("Serf agent running!")
