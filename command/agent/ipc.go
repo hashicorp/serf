@@ -368,12 +368,6 @@ func (i *AgentIPC) handleRequest(client *IPCClient, req map[string]interface{}) 
 	case eventCommand:
 		return i.handleEvent(client, req)
 
-	case forceLeaveCommand:
-		return i.handleForceLeave(client, req)
-
-	case joinCommand:
-		return i.handleJoin(client, req)
-
 	case membersCommand:
 		return i.handleMembers(client, req)
 
@@ -385,6 +379,16 @@ func (i *AgentIPC) handleRequest(client *IPCClient, req map[string]interface{}) 
 
 	case stopCommand:
 		return i.handleStop(client, req)
+
+	case forceLeaveCommand:
+		// Potentially blocking! Do async
+		go i.handleForceLeave(client, req)
+		return nil
+
+	case joinCommand:
+		// Potentially blocking! Do async
+		go i.handleJoin(client, req)
+		return nil
 
 	default:
 		client.send(&errorSeqResponse{Error: unsupportedCommand, Seq: seq})
