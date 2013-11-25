@@ -46,7 +46,7 @@ func (ls *logStream) Stop() {
 }
 
 func (ls *logStream) stream() {
-	ms := monitorStream{Seq: ls.seq}
+	ms := logRecord{Seq: ls.seq}
 	for line := range ls.logCh {
 		ms.Log = line
 		if err := ls.client.send(&ms); err != nil {

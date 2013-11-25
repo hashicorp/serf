@@ -111,11 +111,7 @@ func (c *Config) EncryptBytes() ([]byte, error) {
 func (c *Config) EventScripts() ([]EventScript, error) {
 	result := make([]EventScript, 0, len(c.EventHandlers))
 	for _, v := range c.EventHandlers {
-		part, err := ParseEventScript(v)
-		if err != nil {
-			return nil, err
-		}
-
+		part := ParseEventScript(v)
 		result = append(result, part...)
 	}
 

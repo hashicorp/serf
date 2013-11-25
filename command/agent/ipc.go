@@ -31,6 +31,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 	"sync"
 )
 
@@ -56,15 +57,14 @@ const (
 	duplicateHandshake    = "Handshake already performed"
 	handshakeRequired     = "Handshake required"
 	monitorExists         = "Monitor already exists"
+	invalidFilter         = "Invalid event filter"
+	streamExists          = "Stream with given sequence exists"
 )
 
 type handshakeRequest struct {
 	Command string
+	Seq     int
 	Version int
-}
-
-type errorResponse struct {
-	Error string
 }
 
 type eventRequest struct {
@@ -126,9 +126,38 @@ type errorSeqResponse struct {
 	Error string
 }
 
-type monitorStream struct {
+type logRecord struct {
 	Seq int
 	Log string
+}
+
+type userEventRecord struct {
+	Seq      int
+	Event    string
+	LTime    serf.LamportTime
+	Name     string
+	Payload  []byte
+	Coalesce bool
+}
+
+type member struct {
+	Name        string
+	Addr        net.IP
+	Port        uint16
+	Role        string
+	Status      string
+	ProtocolMin uint8
+	ProtocolMax uint8
+	ProtocolCur uint8
+	DelegateMin uint8
+	DelegateMax uint8
+	DelegateCur uint8
+}
+
+type memberEventRecord struct {
+	Seq     int
+	Event   string
+	Members []member
 }
 
 type AgentIPC struct {
@@ -144,16 +173,17 @@ type AgentIPC struct {
 
 type IPCClient struct {
 	mapstructure.DecoderConfig
-	name        string
-	conn        net.Conn
-	reader      *bufio.Reader
-	writer      *bufio.Writer
-	dec         *codec.Decoder
-	enc         *codec.Encoder
-	writeLock   sync.Mutex
-	mapper      *mapstructure.Decoder
-	version     int // From the handshake, 0 before
-	logStreamer *logStream
+	name         string
+	conn         net.Conn
+	reader       *bufio.Reader
+	writer       *bufio.Writer
+	dec          *codec.Decoder
+	enc          *codec.Encoder
+	writeLock    sync.Mutex
+	mapper       *mapstructure.Decoder
+	version      int // From the handshake, 0 before
+	logStreamer  *logStream
+	eventStreams map[int]*eventStream
 }
 
 // send is used to send an object using the MsgPack encoding. send
@@ -225,10 +255,11 @@ func (i *AgentIPC) listen() {
 				ErrorUnused: true,
 				Result:      &struct{}{},
 			},
-			name:   conn.RemoteAddr().String(),
-			conn:   conn,
-			reader: bufio.NewReader(conn),
-			writer: bufio.NewWriter(conn),
+			name:         conn.RemoteAddr().String(),
+			conn:         conn,
+			reader:       bufio.NewReader(conn),
+			writer:       bufio.NewWriter(conn),
+			eventStreams: make(map[int]*eventStream),
 		}
 		client.dec = codec.NewDecoder(client.reader, &codec.MsgpackHandle{})
 		client.enc = codec.NewEncoder(client.writer, &codec.MsgpackHandle{})
@@ -266,6 +297,12 @@ func (i *AgentIPC) deregisterClient(client *IPCClient) {
 		i.logWriter.DeregisterHandler(client.logStreamer)
 		client.logStreamer.Stop()
 	}
+
+	// Remove from event handlers
+	for _, es := range client.eventStreams {
+		i.agent.DeregisterEventHandler(es)
+		es.Stop()
+	}
 }
 
 // handleClient is a long running routine that handles a single client
@@ -289,10 +326,20 @@ func (i *AgentIPC) handleClient(client *IPCClient) {
 	}
 }
 
+// getField tries to get a field from a request, checking both the upper
+// and lower case variants. The field should be provided as title cased.
+func getField(req map[string]interface{}, field string) (interface{}, bool) {
+	if val, ok := req[field]; ok {
+		return val, ok
+	}
+	val, ok := req[strings.ToLower(field)]
+	return val, ok
+}
+
 // handleRequest is used to evaluate a single client command
 func (i *AgentIPC) handleRequest(client *IPCClient, req map[string]interface{}) error {
 	// Look for a command field
-	command_raw, ok := req["command"]
+	command_raw, ok := getField(req, "Command")
 	if !ok {
 		return fmt.Errorf("missing command field: %#v", req)
 	}
@@ -301,9 +348,15 @@ func (i *AgentIPC) handleRequest(client *IPCClient, req map[string]interface{}) 
 		return fmt.Errorf("command field not a string: %#v", req)
 	}
 
+	// Try to get the sequence number
+	var seq int
+	if seq_raw, ok := getField(req, "Seq"); ok {
+		seq, ok = seq_raw.(int)
+	}
+
 	// Ensure the handshake is performed before other commands
 	if command != handshakeCommand && client.version == 0 {
-		client.send(&errorResponse{Error: handshakeRequired})
+		client.send(&errorSeqResponse{Error: handshakeRequired, Seq: seq})
 		return fmt.Errorf(handshakeRequired)
 	}
 
@@ -327,14 +380,14 @@ func (i *AgentIPC) handleRequest(client *IPCClient, req map[string]interface{}) 
 	case streamCommand:
 		return i.handleStream(client, req)
 
-	case stopCommand:
-		return i.handleStop(client, req)
-
 	case monitorCommand:
 		return i.handleMonitor(client, req)
 
+	case stopCommand:
+		return i.handleStop(client, req)
+
 	default:
-		client.send(&errorResponse{Error: unsupportedCommand})
+		client.send(&errorSeqResponse{Error: unsupportedCommand, Seq: seq})
 		return fmt.Errorf("command '%s' not recognized", command)
 	}
 }
@@ -346,7 +399,8 @@ func (i *AgentIPC) handleHandshake(client *IPCClient, raw map[string]interface{}
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	resp := errorResponse{
+	resp := errorSeqResponse{
+		Seq:   req.Seq,
 		Error: "",
 	}
 
@@ -431,25 +485,42 @@ func (i *AgentIPC) handleMembers(client *IPCClient, raw map[string]interface{}) 
 }
 
 func (i *AgentIPC) handleStream(client *IPCClient, raw map[string]interface{}) error {
+	var es *eventStream
 	var req streamRequest
 	client.Result = &req
 	if err := client.mapper.Decode(raw); err != nil {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	// TODO
-	return nil
-}
-
-func (i *AgentIPC) handleStop(client *IPCClient, raw map[string]interface{}) error {
-	var req stopRequest
-	client.Result = &req
-	if err := client.mapper.Decode(raw); err != nil {
-		return fmt.Errorf("decode failed: %v", err)
+	resp := errorSeqResponse{
+		Seq:   req.Seq,
+		Error: "",
 	}
 
-	// TODO
-	return nil
+	// Create the event filters
+	filters := ParseEventFilter(req.Type)
+	for _, f := range filters {
+		if !f.Valid() {
+			resp.Error = invalidFilter
+			goto SEND
+		}
+	}
+
+	// Check if there is an existing stream
+	if _, ok := client.eventStreams[req.Seq]; ok {
+		resp.Error = streamExists
+		goto SEND
+	}
+
+	// Create an event streamer
+	es = newEventStream(client, filters, req.Seq, i.logger)
+	client.eventStreams[req.Seq] = es
+
+	// Register with the agent
+	i.agent.RegisterEventHandler(es)
+
+SEND:
+	return client.send(&resp)
 }
 
 func (i *AgentIPC) handleMonitor(client *IPCClient, raw map[string]interface{}) error {
@@ -485,5 +556,31 @@ func (i *AgentIPC) handleMonitor(client *IPCClient, raw map[string]interface{}) 
 	i.logWriter.RegisterHandler(client.logStreamer)
 
 SEND:
+	return client.send(&resp)
+}
+
+func (i *AgentIPC) handleStop(client *IPCClient, raw map[string]interface{}) error {
+	var req stopRequest
+	client.Result = &req
+	if err := client.mapper.Decode(raw); err != nil {
+		return fmt.Errorf("decode failed: %v", err)
+	}
+
+	// Remove a log monitor if any
+	if client.logStreamer != nil && client.logStreamer.seq == req.Seq {
+		i.logWriter.DeregisterHandler(client.logStreamer)
+		client.logStreamer.Stop()
+		client.logStreamer = nil
+	}
+
+	// Remove an event stream if any
+	if es, ok := client.eventStreams[req.Seq]; ok {
+		i.agent.DeregisterEventHandler(es)
+		es.Stop()
+		delete(client.eventStreams, req.Seq)
+	}
+
+	// Always succeed
+	resp := errorSeqResponse{Seq: req.Seq, Error: ""}
 	return client.send(&resp)
 }
