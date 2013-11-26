@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
+	"io"
 	"math/rand"
 	"net"
+	"os"
 	"time"
 )
 
@@ -36,15 +38,17 @@ func getRPCAddr() string {
 	panic("no listener")
 }
 
-func testAgent() *Agent {
+func testAgent(logOutput io.Writer) *Agent {
+	if logOutput == nil {
+		logOutput = os.Stderr
+	}
 	config := serf.DefaultConfig()
 	config.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
 	config.NodeName = config.MemberlistConfig.BindAddr
 
-	agent := &Agent{
-		RPCAddr:    getRPCAddr(),
-		SerfConfig: config,
+	agent, err := Create(config, logOutput)
+	if err != nil {
+		panic(err)
 	}
-
 	return agent
 }

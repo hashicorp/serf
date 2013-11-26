@@ -3,17 +3,15 @@ package agent
 import (
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
-	"strings"
 	"testing"
-	"time"
 )
 
 func TestAgent_eventHandler(t *testing.T) {
-	a1 := testAgent()
+	a1 := testAgent(nil)
 	defer a1.Shutdown()
 
 	handler := new(MockEventHandler)
-	a1.EventHandler = handler
+	a1.RegisterEventHandler(handler)
 
 	if err := a1.Start(); err != nil {
 		t.Fatalf("err: %s", err)
@@ -30,36 +28,8 @@ func TestAgent_eventHandler(t *testing.T) {
 	}
 }
 
-func TestAgent_events(t *testing.T) {
-	a1 := testAgent()
-	defer a1.Shutdown()
-
-	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
-	eventsCh := make(chan string, 64)
-	prev := a1.NotifyLogs(eventsCh)
-	defer a1.StopLogs(eventsCh)
-
-	if len(prev) < 1 {
-		t.Fatalf("bad: %d", len(prev))
-	}
-
-	a1.Join(nil, false)
-
-	select {
-	case e := <-eventsCh:
-		if !strings.Contains(e, "join") {
-			t.Fatalf("bad: %s", e)
-		}
-	case <-time.After(5 * time.Millisecond):
-		t.Fatal("timeout")
-	}
-}
-
 func TestAgentShutdown_multiple(t *testing.T) {
-	a := testAgent()
+	a := testAgent(nil)
 	if err := a.Start(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -71,19 +41,12 @@ func TestAgentShutdown_multiple(t *testing.T) {
 	}
 }
 
-func TestAgentShutdown_noStart(t *testing.T) {
-	a := testAgent()
-	if err := a.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
-	}
-}
-
 func TestAgentUserEvent(t *testing.T) {
-	a1 := testAgent()
+	a1 := testAgent(nil)
 	defer a1.Shutdown()
 
 	handler := new(MockEventHandler)
-	a1.EventHandler = handler
+	a1.RegisterEventHandler(handler)
 
 	if err := a1.Start(); err != nil {
 		t.Fatalf("err: %s", err)

@@ -4,7 +4,6 @@ import (
 	"github.com/hashicorp/serf/testutil"
 	"github.com/mitchellh/cli"
 	"log"
-	"net/rpc"
 	"testing"
 	"time"
 )
@@ -85,13 +84,12 @@ func TestCommandRun_rpc(t *testing.T) {
 
 	testutil.Yield()
 
-	rpcConn, err := rpc.Dial("tcp", rpcAddr)
+	client, err := NewRPCClient(rpcAddr)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	defer rpcConn.Close()
+	defer client.Close()
 
-	client := &RPCClient{Client: rpcConn}
 	members, err := client.Members()
 	if err != nil {
 		t.Fatalf("err: %s", err)
@@ -103,7 +101,7 @@ func TestCommandRun_rpc(t *testing.T) {
 }
 
 func TestCommandRun_join(t *testing.T) {
-	a1 := testAgent()
+	a1 := testAgent(nil)
 	if err := a1.Start(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -123,7 +121,7 @@ func TestCommandRun_join(t *testing.T) {
 
 	args := []string{
 		"-bind", testutil.GetBindAddr().String(),
-		"-join", a1.SerfConfig.MemberlistConfig.BindAddr,
+		"-join", a1.conf.MemberlistConfig.BindAddr,
 		"-replay",
 	}
 

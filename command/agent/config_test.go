@@ -87,8 +87,8 @@ func TestConfigEventScripts(t *testing.T) {
 	}
 
 	expected := []EventScript{
-		{"*", "", "foo.sh"},
-		{"bar", "", "blah.sh"},
+		{EventFilter{"*", ""}, "foo.sh"},
+		{EventFilter{"bar", ""}, "blah.sh"},
 	}
 
 	if !reflect.DeepEqual(result, expected) {
