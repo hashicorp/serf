@@ -13,6 +13,9 @@ import (
 // on top of Serf such as storing logs that you can later retrieve,
 // and invoking EventHandlers when events occur.
 type Agent struct {
+	// Stores the serf configuration
+	conf *serf.Config
+
 	// eventCh is used for Serf to deliver events on
 	eventCh chan serf.Event
 
@@ -33,7 +36,7 @@ type Agent struct {
 }
 
 // Start creates a new agent, potentially returning an error
-func Start(conf *serf.Config, logOutput io.Writer) (*Agent, error) {
+func Create(conf *serf.Config, logOutput io.Writer) (*Agent, error) {
 	// Ensure we have a log sink
 	if logOutput == nil {
 		logOutput = os.Stderr
@@ -47,23 +50,33 @@ func Start(conf *serf.Config, logOutput io.Writer) (*Agent, error) {
 	eventCh := make(chan serf.Event, 64)
 	conf.EventCh = eventCh
 
-	// Create serf first
-	serf, err := serf.Create(conf)
-	if err != nil {
-		return nil, fmt.Errorf("Error creating Serf: %s", err)
-	}
-
 	// Setup the agent
 	agent := &Agent{
+		conf:          conf,
 		eventCh:       eventCh,
 		eventHandlers: make(map[EventHandler]struct{}),
 		logger:        log.New(logOutput, "", log.LstdFlags),
-		serf:          serf,
 		shutdownCh:    make(chan struct{}),
 	}
-	go agent.eventLoop()
-	agent.logger.Printf("[INFO] Serf agent started")
 	return agent, nil
+}
+
+// Start is used to initiate the event listeners. It is seperate from
+// create so that there isn't a race condition between creating the
+// agent and registering handlers
+func (a *Agent) Start() error {
+	a.logger.Printf("[INFO] Serf agent starting")
+
+	// Create serf first
+	serf, err := serf.Create(a.conf)
+	if err != nil {
+		return fmt.Errorf("Error creating Serf: %s", err)
+	}
+	a.serf = serf
+
+	// Start event loop
+	go a.eventLoop()
+	return nil
 }
 
 // Shutdown does a graceful shutdown of this agent and all of its processes.
