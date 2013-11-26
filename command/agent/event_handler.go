@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/serf/serf"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -20,6 +21,10 @@ type ScriptEventHandler struct {
 }
 
 func (h *ScriptEventHandler) HandleEvent(e serf.Event) {
+	if h.Logger == nil {
+		h.Logger = log.New(os.Stderr, "", log.LstdFlags)
+	}
+
 	for _, script := range h.Scripts {
 		if !script.Invoke(e) {
 			continue
