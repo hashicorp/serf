@@ -167,7 +167,7 @@ func (c *Command) Run(args []string) int {
 
 	// Start Serf
 	ui.Output("Starting Serf agent...")
-	agent, err := Start(serfConfig, logOutput)
+	agent, err := Create(serfConfig, logOutput)
 	if err != nil {
 		ui.Error(fmt.Sprintf("Failed to start the Serf agent: %v", err))
 		return 1
@@ -184,6 +184,12 @@ func (c *Command) Run(args []string) int {
 		Logger:  log.New(logOutput, "", log.LstdFlags),
 	}
 	agent.RegisterEventHandler(scriptEH)
+
+	// Start the agent after the handler is registered
+	if err := agent.Start(); err != nil {
+		ui.Error(fmt.Sprintf("Failed to start the Serf agent: %v", err))
+		return 1
+	}
 
 	// Start the IPC layer
 	ui.Output("Starting Serf agent RPC...")
