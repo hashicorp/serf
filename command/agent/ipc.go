@@ -31,6 +31,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"strings"
 	"sync"
 )
@@ -207,6 +208,9 @@ func (c *IPCClient) send(obj interface{}) error {
 // NewAgentIPC is used to create a new Agent IPC handler
 func NewAgentIPC(agent *Agent, listener net.Listener,
 	logOutput io.Writer, logWriter *logWriter) *AgentIPC {
+	if logOutput == nil {
+		logOutput = os.Stderr
+	}
 	ipc := &AgentIPC{
 		agent:     agent,
 		clients:   make(map[string]*IPCClient),
@@ -249,6 +253,7 @@ func (i *AgentIPC) listen() {
 			i.logger.Printf("[ERR] agent.ipc: Failed to accept client: %v", err)
 			continue
 		}
+		i.logger.Printf("[INFO] agent.ipc: Accepted client: %v", conn.RemoteAddr())
 
 		// Wrap the connection in a client
 		client := &IPCClient{
@@ -262,8 +267,10 @@ func (i *AgentIPC) listen() {
 			writer:       bufio.NewWriter(conn),
 			eventStreams: make(map[int]*eventStream),
 		}
-		client.dec = codec.NewDecoder(client.reader, &codec.MsgpackHandle{})
-		client.enc = codec.NewEncoder(client.writer, &codec.MsgpackHandle{})
+		client.dec = codec.NewDecoder(client.reader,
+			&codec.MsgpackHandle{RawToString: true, WriteExt: true})
+		client.enc = codec.NewEncoder(client.writer,
+			&codec.MsgpackHandle{RawToString: true, WriteExt: true})
 		client.mapper, err = mapstructure.NewDecoder(&client.DecoderConfig)
 		if err != nil {
 			i.logger.Printf("[ERR] agent.ipc: Failed to create decoder: %v", err)
@@ -314,7 +321,7 @@ func (i *AgentIPC) handleClient(client *IPCClient) {
 		// Decode the command
 		req = nil
 		if err := client.dec.Decode(&req); err != nil {
-			if err != io.EOF {
+			if err != io.EOF && !i.stop {
 				i.logger.Printf("[ERR] agent.ipc: Failed to decode client request: %v", err)
 			}
 			return
@@ -530,6 +537,9 @@ func (i *AgentIPC) handleMonitor(client *IPCClient, raw map[string]interface{}) 
 		Seq:   req.Seq,
 		Error: "",
 	}
+
+	// Upper case the log level
+	req.LogLevel = strings.ToUpper(req.LogLevel)
 
 	// Create a level filter
 	filter := LevelFilter()
