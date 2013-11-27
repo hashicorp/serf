@@ -19,7 +19,7 @@ func testRPCClient(t *testing.T) (*RPCClient, *Agent, *AgentIPC) {
 		t.Fatalf("err: %s", err)
 	}
 
-	lw := newLogWriter(512)
+	lw := NewLogWriter(512)
 	mult := io.MultiWriter(os.Stderr, lw)
 
 	agent := testAgent(mult)

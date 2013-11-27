@@ -20,8 +20,8 @@ type logWriter struct {
 	handlers map[LogHandler]struct{}
 }
 
-// newLogWriter creates a logWriter with the given buffer capacity
-func newLogWriter(buf int) *logWriter {
+// NewLogWriter creates a logWriter with the given buffer capacity
+func NewLogWriter(buf int) *logWriter {
 	return &logWriter{
 		logs:     make([]string, buf),
 		index:    0,

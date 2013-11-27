@@ -88,6 +88,10 @@ func (a *Agent) Shutdown() error {
 		return nil
 	}
 
+	if a.serf == nil {
+		goto EXIT
+	}
+
 	// Gracefully leave the serf cluster
 	a.logger.Println("[INFO] agent: requesting graceful leave from Serf")
 	if err := a.serf.Leave(); err != nil {
@@ -99,6 +103,7 @@ func (a *Agent) Shutdown() error {
 		return err
 	}
 
+EXIT:
 	a.logger.Println("[INFO] agent: shutdown complete")
 	a.shutdown = true
 	close(a.shutdownCh)
@@ -108,6 +113,11 @@ func (a *Agent) Shutdown() error {
 // Returns the Serf agent of the running Agent.
 func (a *Agent) Serf() *serf.Serf {
 	return a.serf
+}
+
+// Returns the Serf config of the running Agent.
+func (a *Agent) SerfConfig() *serf.Config {
+	return a.conf
 }
 
 // Join asks the Serf instance to join. See the Serf.Join function.

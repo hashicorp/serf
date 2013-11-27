@@ -162,7 +162,7 @@ func (c *Command) Run(args []string) int {
 	}
 
 	// Create a log writer, and wrap a logOutput around it
-	logWriter := newLogWriter(512)
+	logWriter := NewLogWriter(512)
 	logOutput := io.MultiWriter(logLevelFilter, logWriter)
 
 	// Start Serf

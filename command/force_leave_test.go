@@ -18,8 +18,10 @@ func TestForceLeaveCommandRun(t *testing.T) {
 	a2 := testAgent(t)
 	defer a1.Shutdown()
 	defer a2.Shutdown()
+	rpcAddr, ipc := testIPC(t, a1)
+	defer ipc.Shutdown()
 
-	_, err := a1.Join([]string{a2.SerfConfig.MemberlistConfig.BindAddr}, false)
+	_, err := a1.Join([]string{a2.SerfConfig().MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -31,13 +33,13 @@ func TestForceLeaveCommandRun(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	time.Sleep(a2.SerfConfig.MemberlistConfig.ProbeInterval * 5)
+	time.Sleep(a2.SerfConfig().MemberlistConfig.ProbeInterval * 5)
 
 	ui := new(cli.MockUi)
 	c := &ForceLeaveCommand{Ui: ui}
 	args := []string{
-		"-rpc-addr=" + a1.RPCAddr,
-		a2.SerfConfig.NodeName,
+		"-rpc-addr=" + rpcAddr,
+		a2.SerfConfig().NodeName,
 	}
 
 	code := c.Run(args)
