@@ -28,6 +28,9 @@ type seqListener struct {
 
 	// The 'stream' handler is called for each subsequent message
 	stream func(resp interface{}, err error)
+
+	// The cleanup func is called whent he listener is being deregistered
+	cleanup func()
 }
 
 // RPCClient is the RPC client to make requests to the agent RPC.
@@ -110,6 +113,7 @@ func (c *RPCClient) Close() error {
 	if !c.shutdown {
 		c.shutdown = true
 		close(c.shutdownCh)
+		c.deregisterAll()
 		return c.conn.Close()
 	}
 	return nil
@@ -223,7 +227,10 @@ func (c *RPCClient) Monitor(level logutils.LogLevel, ch chan<- string) (StreamHa
 			ch <- log
 		}
 	}
-	c.streamHandler(seq, handler)
+	cleanup := func() {
+		close(ch)
+	}
+	c.streamHandler(seq, handler, cleanup)
 
 	// Try to establish the
 	if err := c.genericRPC(req.Seq, req); err != nil {
@@ -253,7 +260,10 @@ func (c *RPCClient) Stream(filter string, ch chan<- map[string]interface{}) (Str
 		}
 		ch <- resp_map
 	}
-	c.streamHandler(seq, handler)
+	cleanup := func() {
+		close(ch)
+	}
+	c.streamHandler(seq, handler, cleanup)
 
 	if err := c.genericRPC(req.Seq, req); err != nil {
 		c.deregisterHandler(seq)
@@ -327,16 +337,35 @@ func (c *RPCClient) getSeq() int {
 	return int(atomic.AddInt32(&c.seq, 1))
 }
 
+// deregisterAll is used to deregister all handlers
+func (c *RPCClient) deregisterAll() {
+	c.dispatchLock.Lock()
+	defer c.dispatchLock.Unlock()
+
+	for _, seqL := range c.dispatch {
+		if seqL.cleanup != nil {
+			seqL.cleanup()
+		}
+	}
+	c.dispatch = make(map[int]*seqListener)
+}
+
 // deregisterHandler is used to deregister a handler
 func (c *RPCClient) deregisterHandler(seq int) {
 	c.dispatchLock.Lock()
 	defer c.dispatchLock.Unlock()
+
+	seqL, ok := c.dispatch[seq]
 	delete(c.dispatch, seq)
+
+	if ok && seqL.cleanup != nil {
+		seqL.cleanup()
+	}
 }
 
 // streamHandler is used to set a stream handler that is
 // used after the first response to a sequence number is received
-func (c *RPCClient) streamHandler(seq int, handler func(resp interface{}, err error)) {
+func (c *RPCClient) streamHandler(seq int, handler func(resp interface{}, err error), cleanup func()) {
 	c.dispatchLock.Lock()
 	defer c.dispatchLock.Unlock()
 
@@ -345,6 +374,7 @@ func (c *RPCClient) streamHandler(seq int, handler func(resp interface{}, err er
 		seqL = new(seqListener)
 	}
 	seqL.stream = handler
+	seqL.cleanup = cleanup
 	c.dispatch[seq] = seqL
 }
 
@@ -384,6 +414,9 @@ func (c *RPCClient) respondSeq(seq int, resp interface{}, err error) {
 		seqL.first = nil
 		if seqL.stream == nil {
 			delete(c.dispatch, seq)
+			if seqL.cleanup != nil {
+				seqL.cleanup()
+			}
 		}
 		return
 	}
