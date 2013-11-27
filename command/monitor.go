@@ -55,11 +55,12 @@ func (c *MonitorCommand) Run(args []string) int {
 	defer client.Close()
 
 	eventCh := make(chan string)
-	doneCh := make(chan struct{})
-	if err := client.Monitor(logutils.LogLevel(logLevel), eventCh, doneCh); err != nil {
+	handle, err := client.Monitor(logutils.LogLevel(logLevel), eventCh)
+	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error starting monitor: %s", err))
 		return 1
 	}
+	defer client.Stop(handle)
 
 	eventDoneCh := make(chan struct{})
 	go func() {
@@ -86,7 +87,6 @@ func (c *MonitorCommand) Run(args []string) int {
 		c.lock.Unlock()
 	}
 
-	close(doneCh)
 	return 0
 }
 
