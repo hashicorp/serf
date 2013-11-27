@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/serf"
-	"github.com/mitchellh/mapstructure"
 	"github.com/ugorji/go/codec"
 	"io"
 	"log"
@@ -62,79 +61,62 @@ const (
 	streamExists          = "Stream with given sequence exists"
 )
 
-type handshakeRequest struct {
+// Request header is sent before each request
+type requestHeader struct {
 	Command string
-	Seq     int
-	Version int
+	Seq     uint64
+}
+
+// Response header is sent before each response
+type responseHeader struct {
+	Seq   uint64
+	Error string
+}
+
+type handshakeRequest struct {
+	Version int32
 }
 
 type eventRequest struct {
-	Command  string
-	Seq      int
 	Name     string
 	Payload  []byte
 	Coalesce bool
 }
 
 type forceLeaveRequest struct {
-	Command string
-	Seq     int
-	Node    string
+	Node string
 }
 
 type joinRequest struct {
-	Command  string
-	Seq      int
 	Existing []string
 	Replay   bool
 }
 
 type joinResponse struct {
-	Seq   int
-	Error string
-	Num   int
-}
-
-type membersRequest struct {
-	Command string
-	Seq     int
+	Num int32
 }
 
 type membersResponse struct {
-	Seq     int
 	Members []serf.Member
 }
 
 type monitorRequest struct {
-	Command  string
-	Seq      int
 	LogLevel string
 }
 
 type streamRequest struct {
-	Command string
-	Seq     int
-	Type    string
+	Type string
 }
 
 type stopRequest struct {
-	Command string
-	Seq     int
-	Stop    int
-}
-
-type errorSeqResponse struct {
-	Seq   int
-	Error string
+	Stop uint64
 }
 
 type logRecord struct {
-	Seq int
 	Log string
 }
 
 type userEventRecord struct {
-	Seq      int
 	Event    string
 	LTime    serf.LamportTime
 	Name     string
@@ -157,7 +139,6 @@ type Member struct {
 }
 
 type memberEventRecord struct {
-	Seq     int
 	Event   string
 	Members []Member
 }
@@ -174,7 +155,6 @@ type AgentIPC struct {
 }
 
 type IPCClient struct {
-	mapstructure.DecoderConfig
 	name         string
 	conn         net.Conn
 	reader       *bufio.Reader
@@ -182,20 +162,25 @@ type IPCClient struct {
 	dec          *codec.Decoder
 	enc          *codec.Encoder
 	writeLock    sync.Mutex
-	mapper       *mapstructure.Decoder
-	version      int // From the handshake, 0 before
+	version      int32 // From the handshake, 0 before
 	logStreamer  *logStream
-	eventStreams map[int]*eventStream
+	eventStreams map[uint64]*eventStream
 }
 
 // send is used to send an object using the MsgPack encoding. send
 // is serialized to prevent write overlaps, while properly buffering.
-func (c *IPCClient) send(obj interface{}) error {
+func (c *IPCClient) send(header *responseHeader, obj interface{}) error {
 	c.writeLock.Lock()
 	defer c.writeLock.Unlock()
 
-	if err := c.enc.Encode(obj); err != nil {
+	if err := c.enc.Encode(header); err != nil {
 		return err
+	}
+
+	if obj != nil {
+		if err := c.enc.Encode(obj); err != nil {
+			return err
+		}
 	}
 
 	if err := c.writer.Flush(); err != nil {
@@ -257,21 +242,16 @@ func (i *AgentIPC) listen() {
 
 		// Wrap the connection in a client
 		client := &IPCClient{
-			DecoderConfig: mapstructure.DecoderConfig{
-				ErrorUnused: true,
-				Result:      &struct{}{},
-			},
 			name:         conn.RemoteAddr().String(),
 			conn:         conn,
 			reader:       bufio.NewReader(conn),
 			writer:       bufio.NewWriter(conn),
-			eventStreams: make(map[int]*eventStream),
+			eventStreams: make(map[uint64]*eventStream),
 		}
 		client.dec = codec.NewDecoder(client.reader,
 			&codec.MsgpackHandle{RawToString: true, WriteExt: true})
 		client.enc = codec.NewEncoder(client.writer,
 			&codec.MsgpackHandle{RawToString: true, WriteExt: true})
-		client.mapper, err = mapstructure.NewDecoder(&client.DecoderConfig)
 		if err != nil {
 			i.logger.Printf("[ERR] agent.ipc: Failed to create decoder: %v", err)
 			conn.Close()
@@ -316,94 +296,78 @@ func (i *AgentIPC) deregisterClient(client *IPCClient) {
 // handleClient is a long running routine that handles a single client
 func (i *AgentIPC) handleClient(client *IPCClient) {
 	defer i.deregisterClient(client)
-	var req map[string]interface{}
+	var reqHeader requestHeader
 	for {
-		// Decode the command
-		req = nil
-		if err := client.dec.Decode(&req); err != nil {
+		// Decode the header
+		if err := client.dec.Decode(&reqHeader); err != nil {
 			if err != io.EOF && !i.stop {
-				i.logger.Printf("[ERR] agent.ipc: Failed to decode client request: %v", err)
+				i.logger.Printf("[ERR] agent.ipc: failed to decode request header: %v", err)
 			}
 			return
 		}
 
 		// Evaluate the command
-		if err := i.handleRequest(client, req); err != nil {
-			i.logger.Printf("[ERR] agent.ipc: Failed to evaluate client request: %v", err)
+		if err := i.handleRequest(client, &reqHeader); err != nil {
+			i.logger.Printf("[ERR] agent.ipc: Failed to evaluate request: %v", err)
 			return
 		}
 	}
 }
 
 // handleRequest is used to evaluate a single client command
-func (i *AgentIPC) handleRequest(client *IPCClient, req map[string]interface{}) error {
+func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) error {
 	// Look for a command field
-	command_raw, ok := getField(req, "Command")
-	if !ok {
-		return fmt.Errorf("missing command field: %#v", req)
-	}
-	command, ok := command_raw.(string)
-	if !ok {
-		return fmt.Errorf("command field not a string: %#v", req)
-	}
-
-	// Try to get the sequence number
-	var seq int
-	if seq_raw, ok := getField(req, "Seq"); ok {
-		seq, ok = seq_raw.(int)
-	}
+	command := reqHeader.Command
+	seq := reqHeader.Seq
 
 	// Ensure the handshake is performed before other commands
 	if command != handshakeCommand && client.version == 0 {
-		client.send(&errorSeqResponse{Error: handshakeRequired, Seq: seq})
+		respHeader := responseHeader{Seq: seq, Error: handshakeRequired}
+		client.send(&respHeader, nil)
 		return fmt.Errorf(handshakeRequired)
 	}
 
 	// Dispatch command specific handlers
 	switch command {
 	case handshakeCommand:
-		return i.handleHandshake(client, req)
+		return i.handleHandshake(client, seq)
 
 	case eventCommand:
-		return i.handleEvent(client, req)
+		return i.handleEvent(client, seq)
 
 	case membersCommand:
-		return i.handleMembers(client, req)
+		return i.handleMembers(client, seq)
 
 	case streamCommand:
-		return i.handleStream(client, req)
+		return i.handleStream(client, seq)
 
 	case monitorCommand:
-		return i.handleMonitor(client, req)
+		return i.handleMonitor(client, seq)
 
 	case stopCommand:
-		return i.handleStop(client, req)
+		return i.handleStop(client, seq)
 
 	case forceLeaveCommand:
-		// Potentially blocking! Do async
-		go i.handleForceLeave(client, req)
-		return nil
+		return i.handleForceLeave(client, seq)
 
 	case joinCommand:
-		// Potentially blocking! Do async
-		go i.handleJoin(client, req)
-		return nil
+		return i.handleJoin(client, seq)
 
 	default:
-		client.send(&errorSeqResponse{Error: unsupportedCommand, Seq: seq})
+		respHeader := responseHeader{Seq: seq, Error: unsupportedCommand}
+		client.send(&respHeader, nil)
 		return fmt.Errorf("command '%s' not recognized", command)
 	}
 }
 
-func (i *AgentIPC) handleHandshake(client *IPCClient, raw map[string]interface{}) error {
+func (i *AgentIPC) handleHandshake(client *IPCClient, seq uint64) error {
 	var req handshakeRequest
-	client.Result = &req
-	if err := client.mapper.Decode(raw); err != nil {
+	if err := client.dec.Decode(&req); err != nil {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	resp := errorSeqResponse{
-		Seq:   req.Seq,
+	resp := responseHeader{
+		Seq:   seq,
 		Error: "",
 	}
 
@@ -415,88 +379,85 @@ func (i *AgentIPC) handleHandshake(client *IPCClient, raw map[string]interface{}
 	} else {
 		client.version = req.Version
 	}
-	return client.send(&resp)
+	return client.send(&resp, nil)
 }
 
-func (i *AgentIPC) handleEvent(client *IPCClient, raw map[string]interface{}) error {
+func (i *AgentIPC) handleEvent(client *IPCClient, seq uint64) error {
 	var req eventRequest
-	client.Result = &req
-	if err := client.mapper.Decode(raw); err != nil {
+	if err := client.dec.Decode(&req); err != nil {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	resp := errorSeqResponse{
-		Seq:   req.Seq,
-		Error: "",
+	// Attempt the send
+	err := i.agent.UserEvent(req.Name, req.Payload, req.Coalesce)
+
+	// Respond
+	resp := responseHeader{
+		Seq:   seq,
+		Error: errToString(err),
 	}
-	if err := i.agent.UserEvent(req.Name, req.Payload, req.Coalesce); err != nil {
-		resp.Error = err.Error()
-	}
-	return client.send(&resp)
+	return client.send(&resp, nil)
 }
 
-func (i *AgentIPC) handleForceLeave(client *IPCClient, raw map[string]interface{}) error {
+func (i *AgentIPC) handleForceLeave(client *IPCClient, seq uint64) error {
 	var req forceLeaveRequest
-	client.Result = &req
-	if err := client.mapper.Decode(raw); err != nil {
+	if err := client.dec.Decode(&req); err != nil {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	resp := errorSeqResponse{
-		Seq:   req.Seq,
-		Error: "",
+	// Attempt leave
+	err := i.agent.ForceLeave(req.Node)
+
+	// Respond
+	resp := responseHeader{
+		Seq:   seq,
+		Error: errToString(err),
 	}
-	if err := i.agent.ForceLeave(req.Node); err != nil {
-		resp.Error = err.Error()
-	}
-	return client.send(&resp)
+	return client.send(&resp, nil)
 }
 
-func (i *AgentIPC) handleJoin(client *IPCClient, raw map[string]interface{}) error {
+func (i *AgentIPC) handleJoin(client *IPCClient, seq uint64) error {
 	var req joinRequest
-	client.Result = &req
-	if err := client.mapper.Decode(raw); err != nil {
+	if err := client.dec.Decode(&req); err != nil {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	resp := joinResponse{
-		Seq:   req.Seq,
-		Error: "",
-		Num:   0,
-	}
+	// Attempt the join
 	num, err := i.agent.Join(req.Existing, req.Replay)
-	resp.Num = num
-	if err != nil {
-		resp.Error = err.Error()
+
+	// Respond
+	header := responseHeader{
+		Seq:   seq,
+		Error: errToString(err),
 	}
-	return client.send(&resp)
+	resp := joinResponse{
+		Num: int32(num),
+	}
+	return client.send(&header, &resp)
 }
 
-func (i *AgentIPC) handleMembers(client *IPCClient, raw map[string]interface{}) error {
-	var req membersRequest
-	client.Result = &req
-	if err := client.mapper.Decode(raw); err != nil {
-		return fmt.Errorf("decode failed: %v", err)
-	}
-
+func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
 	serf := i.agent.Serf()
+
+	header := responseHeader{
+		Seq:   seq,
+		Error: "",
+	}
 	resp := membersResponse{
-		Seq:     req.Seq,
 		Members: serf.Members(),
 	}
-	return client.send(&resp)
+	return client.send(&header, &resp)
 }
 
-func (i *AgentIPC) handleStream(client *IPCClient, raw map[string]interface{}) error {
+func (i *AgentIPC) handleStream(client *IPCClient, seq uint64) error {
 	var es *eventStream
 	var req streamRequest
-	client.Result = &req
-	if err := client.mapper.Decode(raw); err != nil {
+	if err := client.dec.Decode(&req); err != nil {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	resp := errorSeqResponse{
-		Seq:   req.Seq,
+	resp := responseHeader{
+		Seq:   seq,
 		Error: "",
 	}
 
@@ -510,31 +471,31 @@ func (i *AgentIPC) handleStream(client *IPCClient, raw map[string]interface{}) e
 	}
 
 	// Check if there is an existing stream
-	if _, ok := client.eventStreams[req.Seq]; ok {
+	if _, ok := client.eventStreams[seq]; ok {
 		resp.Error = streamExists
 		goto SEND
 	}
 
 	// Create an event streamer
-	es = newEventStream(client, filters, req.Seq, i.logger)
-	client.eventStreams[req.Seq] = es
+	es = newEventStream(client, filters, seq, i.logger)
+	client.eventStreams[seq] = es
 
-	// Register with the agent
+	// Register with the agent. Defer so that we can respond before
+	// registration, avoids any possible race condition
 	defer i.agent.RegisterEventHandler(es)
 
 SEND:
-	return client.send(&resp)
+	return client.send(&resp, nil)
 }
 
-func (i *AgentIPC) handleMonitor(client *IPCClient, raw map[string]interface{}) error {
+func (i *AgentIPC) handleMonitor(client *IPCClient, seq uint64) error {
 	var req monitorRequest
-	client.Result = &req
-	if err := client.mapper.Decode(raw); err != nil {
+	if err := client.dec.Decode(&req); err != nil {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	resp := errorSeqResponse{
-		Seq:   req.Seq,
+	resp := responseHeader{
+		Seq:   seq,
 		Error: "",
 	}
 
@@ -556,19 +517,19 @@ func (i *AgentIPC) handleMonitor(client *IPCClient, raw map[string]interface{}) 
 	}
 
 	// Create a log streamer
-	client.logStreamer = newLogStream(client, filter, req.Seq, i.logger)
+	client.logStreamer = newLogStream(client, filter, seq, i.logger)
 
-	// Register with the log writer
+	// Register with the log writer. Defer so that we can respond before
+	// registration, avoids any possible race condition
 	defer i.logWriter.RegisterHandler(client.logStreamer)
 
 SEND:
-	return client.send(&resp)
+	return client.send(&resp, nil)
 }
 
-func (i *AgentIPC) handleStop(client *IPCClient, raw map[string]interface{}) error {
+func (i *AgentIPC) handleStop(client *IPCClient, seq uint64) error {
 	var req stopRequest
-	client.Result = &req
-	if err := client.mapper.Decode(raw); err != nil {
+	if err := client.dec.Decode(&req); err != nil {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
@@ -587,16 +548,14 @@ func (i *AgentIPC) handleStop(client *IPCClient, raw map[string]interface{}) err
 	}
 
 	// Always succeed
-	resp := errorSeqResponse{Seq: req.Seq, Error: ""}
-	return client.send(&resp)
+	resp := responseHeader{Seq: seq, Error: ""}
+	return client.send(&resp, nil)
 }
 
-// getField tries to get a field from a request, checking both the upper
-// and lower case variants. The field should be provided as title cased.
-func getField(req map[string]interface{}, field string) (interface{}, bool) {
-	if val, ok := req[field]; ok {
-		return val, ok
+// Used to convert an error to a string representation
+func errToString(err error) string {
+	if err == nil {
+		return ""
 	}
-	val, ok := req[strings.ToLower(field)]
-	return val, ok
+	return err.Error()
 }

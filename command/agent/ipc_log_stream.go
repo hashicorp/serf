@@ -11,11 +11,11 @@ type logStream struct {
 	filter *logutils.LevelFilter
 	logCh  chan string
 	logger *log.Logger
-	seq    int
+	seq    uint64
 }
 
 func newLogStream(client *IPCClient, filter *logutils.LevelFilter,
-	seq int, logger *log.Logger) *logStream {
+	seq uint64, logger *log.Logger) *logStream {
 	ls := &logStream{
 		client: client,
 		filter: filter,
@@ -46,10 +46,12 @@ func (ls *logStream) Stop() {
 }
 
 func (ls *logStream) stream() {
-	ms := logRecord{Seq: ls.seq}
+	header := responseHeader{Seq: ls.seq, Error: ""}
+	rec := logRecord{Log: ""}
+
 	for line := range ls.logCh {
-		ms.Log = line
-		if err := ls.client.send(&ms); err != nil {
+		rec.Log = line
+		if err := ls.client.send(&header, &rec); err != nil {
 			ls.logger.Printf("[ERR] Failed to stream log to %v: %v",
 				ls.client.conn, err)
 			return

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/serf"
-	"github.com/mitchellh/mapstructure"
 	"github.com/ugorji/go/codec"
 	"log"
 	"net"
@@ -17,33 +16,35 @@ var (
 	clientClosed = fmt.Errorf("client closed")
 )
 
-type rpcResponseTuple struct {
-	response interface{}
-	err      error
+type seqCallback struct {
+	handler func(*responseHeader)
 }
 
-type seqListener struct {
-	// The 'once' handler is called on the first message
-	first func(resp interface{}, err error)
+func (sc *seqCallback) Handle(resp *responseHeader) {
+	sc.handler(resp)
+}
+func (sc *seqCallback) Cleanup() {}
 
-	// The 'stream' handler is called for each subsequent message
-	stream func(resp interface{}, err error)
-
-	// The cleanup func is called whent he listener is being deregistered
-	cleanup func()
+// seqHandler interface is used to handle responses
+type seqHandler interface {
+	Handle(*responseHeader)
+	Cleanup()
 }
 
 // RPCClient is the RPC client to make requests to the agent RPC.
 type RPCClient struct {
-	seq          int32
-	conn         *net.TCPConn
-	reader       *bufio.Reader
-	writer       *bufio.Writer
-	dec          *codec.Decoder
-	enc          *codec.Encoder
-	writeLock    sync.Mutex
-	dispatch     map[int]*seqListener
+	seq uint64
+
+	conn      *net.TCPConn
+	reader    *bufio.Reader
+	writer    *bufio.Writer
+	dec       *codec.Decoder
+	enc       *codec.Encoder
+	writeLock sync.Mutex
+
+	dispatch     map[uint64]seqHandler
 	dispatchLock sync.Mutex
+
 	shutdown     bool
 	shutdownCh   chan struct{}
 	shutdownLock sync.Mutex
@@ -51,7 +52,7 @@ type RPCClient struct {
 
 // send is used to send an object using the MsgPack encoding. send
 // is serialized to prevent write overlaps, while properly buffering.
-func (c *RPCClient) send(obj interface{}) error {
+func (c *RPCClient) send(header *requestHeader, obj interface{}) error {
 	c.writeLock.Lock()
 	defer c.writeLock.Unlock()
 
@@ -59,8 +60,14 @@ func (c *RPCClient) send(obj interface{}) error {
 		return clientClosed
 	}
 
-	if err := c.enc.Encode(obj); err != nil {
+	if err := c.enc.Encode(header); err != nil {
 		return err
+	}
+
+	if obj != nil {
+		if err := c.enc.Encode(obj); err != nil {
+			return err
+		}
 	}
 
 	if err := c.writer.Flush(); err != nil {
@@ -85,7 +92,7 @@ func NewRPCClient(addr string) (*RPCClient, error) {
 		conn:       conn.(*net.TCPConn),
 		reader:     bufio.NewReader(conn),
 		writer:     bufio.NewWriter(conn),
-		dispatch:   make(map[int]*seqListener),
+		dispatch:   make(map[uint64]seqHandler),
 		shutdownCh: make(chan struct{}),
 	}
 	client.dec = codec.NewDecoder(client.reader,
@@ -103,7 +110,7 @@ func NewRPCClient(addr string) (*RPCClient, error) {
 }
 
 // StreamHandle is an opaque handle passed to stop to stop streaming
-type StreamHandle int
+type StreamHandle uint64
 
 // Close is used to free any resources associated with the client
 func (c *RPCClient) Close() error {
@@ -122,210 +129,263 @@ func (c *RPCClient) Close() error {
 // ForceLeave is used to ask the agent to issue a leave command for
 // a given node
 func (c *RPCClient) ForceLeave(node string) error {
-	req := forceLeaveRequest{
+	header := requestHeader{
 		Command: forceLeaveCommand,
 		Seq:     c.getSeq(),
-		Node:    node,
 	}
-	return c.genericRPC(req.Seq, req)
+	req := forceLeaveRequest{
+		Node: node,
+	}
+	return c.genericRPC(&header, &req, nil)
 }
 
 // Join is used to instruct the agent to attempt a join
-func (c *RPCClient) Join(addrs []string, ignoreOld bool) (n int, err error) {
+func (c *RPCClient) Join(addrs []string, ignoreOld bool) (int, error) {
+	header := requestHeader{
+		Command: joinCommand,
+		Seq:     c.getSeq(),
+	}
 	req := joinRequest{
-		Command:  joinCommand,
-		Seq:      c.getSeq(),
 		Existing: addrs,
 		Replay:   !ignoreOld,
 	}
-	ch := c.waitSeq(req.Seq)
-	if err := c.send(req); err != nil {
-		return 0, err
-	}
+	var resp joinResponse
 
-	select {
-	case tuple := <-ch:
-		if tuple.err != nil {
-			return 0, tuple.err
-		}
-
-		// Decode the response
-		var resp joinResponse
-		if err := mapstructure.Decode(tuple.response, &resp); err != nil {
-			return 0, err
-		}
-		return resp.Num, strError(resp.Error)
-
-	case <-c.shutdownCh:
-		return 0, clientClosed
-	}
+	err := c.genericRPC(&header, &req, &resp)
+	return int(resp.Num), err
 }
 
 // Members is used to fetch a list of known members
 func (c *RPCClient) Members() ([]serf.Member, error) {
-	req := membersRequest{
+	header := requestHeader{
 		Command: membersCommand,
 		Seq:     c.getSeq(),
 	}
-	ch := c.waitSeq(req.Seq)
-	if err := c.send(req); err != nil {
-		return nil, err
-	}
+	var resp membersResponse
 
-	select {
-	case tuple := <-ch:
-		// Check for an error
-		if tuple.err != nil {
-			return nil, tuple.err
-		}
-
-		// Decode the response
-		var resp membersResponse
-		if err := mapstructure.Decode(tuple.response, &resp); err != nil {
-			return nil, err
-		}
-		return resp.Members, nil
-
-	case <-c.shutdownCh:
-		return nil, clientClosed
-	}
+	err := c.genericRPC(&header, nil, &resp)
+	return resp.Members, err
 }
 
 // UserEvent is used to trigger sending an event
 func (c *RPCClient) UserEvent(name string, payload []byte, coalesce bool) error {
+	header := requestHeader{
+		Command: eventCommand,
+		Seq:     c.getSeq(),
+	}
 	req := eventRequest{
-		Command:  eventCommand,
-		Seq:      c.getSeq(),
 		Name:     name,
 		Payload:  payload,
 		Coalesce: coalesce,
 	}
-	return c.genericRPC(req.Seq, req)
+	return c.genericRPC(&header, &req, nil)
+}
+
+type monitorHandler struct {
+	client *RPCClient
+	closed bool
+	init   bool
+	initCh chan<- error
+	logCh  chan<- string
+	seq    uint64
+}
+
+func (mh *monitorHandler) Handle(resp *responseHeader) {
+	// Initialize on the first response
+	if !mh.init {
+		mh.init = true
+		mh.initCh <- strToError(resp.Error)
+		return
+	}
+
+	// Decode logs for all other responses
+	var rec logRecord
+	if err := mh.client.dec.Decode(&rec); err != nil {
+		log.Printf("[ERR] Failed to decode log: %v", err)
+		mh.client.deregisterHandler(mh.seq)
+		return
+	}
+	mh.logCh <- rec.Log
+}
+
+func (mh *monitorHandler) Cleanup() {
+	if !mh.closed {
+		close(mh.logCh)
+		mh.closed = true
+	}
 }
 
 // Monitor is used to subscribe to the logs of the agent
 func (c *RPCClient) Monitor(level logutils.LogLevel, ch chan<- string) (StreamHandle, error) {
 	// Setup the request
 	seq := c.getSeq()
+	header := requestHeader{
+		Command: monitorCommand,
+		Seq:     seq,
+	}
 	req := monitorRequest{
-		Command:  monitorCommand,
-		Seq:      seq,
 		LogLevel: string(level),
 	}
 
-	// Create a stream handler
-	handler := func(resp interface{}, err error) {
-		resp_map, ok := resp.(map[string]interface{})
-		if !ok {
-			return
-		}
-		raw, ok := getField(resp_map, "Log")
-		if !ok {
-			return
-		}
-		if log, ok := raw.(string); ok {
-			ch <- log
-		}
+	// Create a monitor handler
+	initCh := make(chan error, 1)
+	handler := &monitorHandler{
+		client: c,
+		initCh: initCh,
+		logCh:  ch,
+		seq:    seq,
 	}
-	cleanup := func() {
-		close(ch)
-	}
-	c.streamHandler(seq, handler, cleanup)
+	c.handleSeq(seq, handler)
 
-	// Try to establish the
-	if err := c.genericRPC(req.Seq, req); err != nil {
+	// Send the request
+	if err := c.send(&header, &req); err != nil {
 		c.deregisterHandler(seq)
 		return 0, err
 	}
 
-	// Return a handle
-	return StreamHandle(seq), nil
+	// Wait for a response
+	select {
+	case err := <-initCh:
+		return StreamHandle(seq), err
+	case <-c.shutdownCh:
+		c.deregisterHandler(seq)
+		return 0, clientClosed
+	}
+}
+
+type streamHandler struct {
+	client  *RPCClient
+	closed  bool
+	init    bool
+	initCh  chan<- error
+	eventCh chan<- map[string]interface{}
+	seq     uint64
+}
+
+func (sh *streamHandler) Handle(resp *responseHeader) {
+	// Initialize on the first response
+	if !sh.init {
+		sh.init = true
+		sh.initCh <- strToError(resp.Error)
+		return
+	}
+
+	// Decode logs for all other responses
+	var rec map[string]interface{}
+	if err := sh.client.dec.Decode(&rec); err != nil {
+		log.Printf("[ERR] Failed to decode stream record: %v", err)
+		sh.client.deregisterHandler(sh.seq)
+		return
+	}
+	sh.eventCh <- rec
+}
+
+func (sh *streamHandler) Cleanup() {
+	if !sh.closed {
+		close(sh.eventCh)
+		sh.closed = true
+	}
 }
 
 // Stream is used to subscribe to events
 func (c *RPCClient) Stream(filter string, ch chan<- map[string]interface{}) (StreamHandle, error) {
 	// Setup the request
 	seq := c.getSeq()
-	req := streamRequest{
+	header := requestHeader{
 		Command: streamCommand,
 		Seq:     seq,
-		Type:    filter,
+	}
+	req := streamRequest{
+		Type: filter,
 	}
 
-	// Create a stream handler
-	handler := func(resp interface{}, err error) {
-		resp_map, ok := resp.(map[string]interface{})
-		if !ok {
-			return
-		}
-		ch <- resp_map
+	// Create a monitor handler
+	initCh := make(chan error, 1)
+	handler := &streamHandler{
+		client:  c,
+		initCh:  initCh,
+		eventCh: ch,
+		seq:     seq,
 	}
-	cleanup := func() {
-		close(ch)
-	}
-	c.streamHandler(seq, handler, cleanup)
+	c.handleSeq(seq, handler)
 
-	if err := c.genericRPC(req.Seq, req); err != nil {
+	// Send the request
+	if err := c.send(&header, &req); err != nil {
 		c.deregisterHandler(seq)
 		return 0, err
 	}
 
-	// Return a handle
-	return StreamHandle(seq), nil
+	// Wait for a response
+	select {
+	case err := <-initCh:
+		return StreamHandle(seq), err
+	case <-c.shutdownCh:
+		c.deregisterHandler(seq)
+		return 0, clientClosed
+	}
 }
 
 // Stop is used to unsubscribe from logs or event streams
 func (c *RPCClient) Stop(handle StreamHandle) error {
 	// Deregister locally first to stop delivery
-	c.deregisterHandler(int(handle))
+	c.deregisterHandler(uint64(handle))
 
-	req := stopRequest{
+	header := requestHeader{
 		Command: stopCommand,
 		Seq:     c.getSeq(),
-		Stop:    int(handle),
 	}
-	return c.genericRPC(req.Seq, req)
+	req := stopRequest{
+		Stop: uint64(handle),
+	}
+	return c.genericRPC(&header, &req, nil)
 }
 
 // handshake is used to perform the initial handshake on connect
 func (c *RPCClient) handshake() error {
-	req := handshakeRequest{
+	header := requestHeader{
 		Command: handshakeCommand,
 		Seq:     c.getSeq(),
+	}
+	req := handshakeRequest{
 		Version: MaxIPCVersion,
 	}
-	return c.genericRPC(req.Seq, req)
+	return c.genericRPC(&header, &req, nil)
 }
 
 // genericRPC is used to send a request and wait for an
 // errorSequenceResponse, potentially returning an error
-func (c *RPCClient) genericRPC(seq int, req interface{}) error {
-	ch := c.waitSeq(seq)
-	if err := c.send(req); err != nil {
+func (c *RPCClient) genericRPC(header *requestHeader, req interface{}, resp interface{}) error {
+	// Setup a response handler
+	errCh := make(chan error, 1)
+	handler := func(respHeader *responseHeader) {
+		if resp != nil {
+			err := c.dec.Decode(resp)
+			if err != nil {
+				errCh <- err
+				return
+			}
+		}
+		errCh <- strToError(respHeader.Error)
+	}
+	c.handleSeq(header.Seq, &seqCallback{handler: handler})
+	defer c.deregisterHandler(header.Seq)
+
+	// Send the request
+	if err := c.send(header, req); err != nil {
 		return err
 	}
+
+	// Wait for a response
 	select {
-	case tuple := <-ch:
-		if tuple.err != nil {
-			return tuple.err
-		}
-		return c.maybeError(tuple.response)
+	case err := <-errCh:
+		return err
 	case <-c.shutdownCh:
 		return clientClosed
 	}
 }
 
-// maybeError is used for errorSeqResponse, where we may have an error
-func (c *RPCClient) maybeError(resp interface{}) error {
-	var errSeq errorSeqResponse
-	if err := mapstructure.Decode(resp, &errSeq); err != nil {
-		return err
-	}
-	return strError(errSeq.Error)
-}
-
-// strError converts a string to an error if not blank
-func strError(s string) error {
+// strToError converts a string to an error if not blank
+func strToError(s string) error {
 	if s != "" {
 		return fmt.Errorf(s)
 	}
@@ -333,8 +393,8 @@ func strError(s string) error {
 }
 
 // getSeq returns the next sequence number in a safe manner
-func (c *RPCClient) getSeq() int {
-	return int(atomic.AddInt32(&c.seq, 1))
+func (c *RPCClient) getSeq() uint64 {
+	return atomic.AddUint64(&c.seq, 1)
 }
 
 // deregisterAll is used to deregister all handlers
@@ -342,125 +402,56 @@ func (c *RPCClient) deregisterAll() {
 	c.dispatchLock.Lock()
 	defer c.dispatchLock.Unlock()
 
-	for _, seqL := range c.dispatch {
-		if seqL.cleanup != nil {
-			seqL.cleanup()
-		}
+	for _, seqH := range c.dispatch {
+		seqH.Cleanup()
 	}
-	c.dispatch = make(map[int]*seqListener)
+	c.dispatch = make(map[uint64]seqHandler)
 }
 
 // deregisterHandler is used to deregister a handler
-func (c *RPCClient) deregisterHandler(seq int) {
+func (c *RPCClient) deregisterHandler(seq uint64) {
 	c.dispatchLock.Lock()
-	defer c.dispatchLock.Unlock()
-
-	seqL, ok := c.dispatch[seq]
+	seqH, ok := c.dispatch[seq]
 	delete(c.dispatch, seq)
+	c.dispatchLock.Unlock()
 
-	if ok && seqL.cleanup != nil {
-		seqL.cleanup()
+	if ok {
+		seqH.Cleanup()
 	}
 }
 
-// streamHandler is used to set a stream handler that is
-// used after the first response to a sequence number is received
-func (c *RPCClient) streamHandler(seq int, handler func(resp interface{}, err error), cleanup func()) {
-	c.dispatchLock.Lock()
-	defer c.dispatchLock.Unlock()
-
-	seqL := c.dispatch[seq]
-	if seqL == nil {
-		seqL = new(seqListener)
-	}
-	seqL.stream = handler
-	seqL.cleanup = cleanup
-	c.dispatch[seq] = seqL
-}
-
-// waitSeq is used to setup a channel to wait on a response for
+// handleSeq is used to setup a handlerto wait on a response for
 // a given sequence number.
-func (c *RPCClient) waitSeq(seq int) chan rpcResponseTuple {
+func (c *RPCClient) handleSeq(seq uint64, handler seqHandler) {
 	c.dispatchLock.Lock()
 	defer c.dispatchLock.Unlock()
-
-	ch := make(chan rpcResponseTuple, 1)
-	handler := func(resp interface{}, err error) {
-		ch <- rpcResponseTuple{resp, err}
-	}
-
-	seqL := c.dispatch[seq]
-	if seqL == nil {
-		seqL = new(seqListener)
-	}
-	seqL.first = handler
-	c.dispatch[seq] = seqL
-	return ch
+	c.dispatch[seq] = handler
 }
 
 // respondSeq is used to respond to a given sequence number
-func (c *RPCClient) respondSeq(seq int, resp interface{}, err error) {
+func (c *RPCClient) respondSeq(seq uint64, respHeader *responseHeader) {
 	c.dispatchLock.Lock()
-	defer c.dispatchLock.Unlock()
-
 	seqL, ok := c.dispatch[seq]
-	if !ok {
-		return
-	}
+	c.dispatchLock.Unlock()
 
-	// Invoke the first handler if it exists
-	if seqL.first != nil {
-		seqL.first(resp, nil)
-		seqL.first = nil
-		if seqL.stream == nil {
-			delete(c.dispatch, seq)
-			if seqL.cleanup != nil {
-				seqL.cleanup()
-			}
-		}
-		return
+	// Get a registered listener, ignore if none
+	if ok {
+		seqL.Handle(respHeader)
 	}
-
-	// Invoke the stream handler otherwise
-	seqL.stream(resp, nil)
 }
 
 // listen is used to processes data coming over the IPC channel,
 // and wrote it to the correct destination based on seq no
 func (c *RPCClient) listen() {
 	defer c.Close()
-	var resp map[string]interface{}
+	var respHeader responseHeader
 	for {
-		resp = nil
-		if err := c.dec.Decode(&resp); err != nil {
+		if err := c.dec.Decode(&respHeader); err != nil {
 			if !c.shutdown {
-				log.Printf("[ERR] agent.client: Failed to decode response: %v", err)
+				log.Printf("[ERR] agent.client: Failed to decode response header: %v", err)
 			}
 			break
 		}
-
-		// Look for the seq
-		seq_raw, ok := getField(resp, "Seq")
-		if !ok {
-			log.Printf("[ERR] agent.client: Response missing Seq: %#v", resp)
-			continue
-		}
-
-		// Try to convert
-		var seq int
-		switch typed := seq_raw.(type) {
-		case int:
-			seq = typed
-		case int32:
-			seq = int(typed)
-		case int64:
-			seq = int(typed)
-		default:
-			log.Printf("[ERR] agent.client: Seq not int: %#v", seq_raw)
-			continue
-		}
-
-		// Try to dispatch
-		c.respondSeq(seq, resp, nil)
+		c.respondSeq(respHeader.Seq, &respHeader)
 	}
 }

@@ -12,10 +12,10 @@ type eventStream struct {
 	eventCh chan serf.Event
 	filters []EventFilter
 	logger  *log.Logger
-	seq     int
+	seq     uint64
 }
 
-func newEventStream(client *IPCClient, filters []EventFilter, seq int, logger *log.Logger) *eventStream {
+func newEventStream(client *IPCClient, filters []EventFilter, seq uint64, logger *log.Logger) *eventStream {
 	es := &eventStream{
 		client:  client,
 		eventCh: make(chan serf.Event, 512),
@@ -88,23 +88,29 @@ func (es *eventStream) sendMemberEvent(me serf.MemberEvent) error {
 		members = append(members, sm)
 	}
 
+	header := responseHeader{
+		Seq:   es.seq,
+		Error: "",
+	}
 	rec := memberEventRecord{
-		Seq:     es.seq,
 		Event:   me.String(),
 		Members: members,
 	}
-	return es.client.send(&rec)
+	return es.client.send(&header, &rec)
 }
 
 // sendUserEvent is used to send a single user event
 func (es *eventStream) sendUserEvent(ue serf.UserEvent) error {
+	header := responseHeader{
+		Seq:   es.seq,
+		Error: "",
+	}
 	rec := userEventRecord{
-		Seq:      es.seq,
 		Event:    ue.EventType().String(),
 		LTime:    ue.LTime,
 		Name:     ue.Name,
 		Payload:  ue.Payload,
 		Coalesce: ue.Coalesce,
 	}
-	return es.client.send(&rec)
+	return es.client.send(&header, &rec)
 }
