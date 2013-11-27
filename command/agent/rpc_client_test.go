@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"bytes"
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
 	"io"
@@ -234,5 +235,138 @@ func TestRPCClientMonitor(t *testing.T) {
 		}
 	default:
 		t.Fatalf("should have message")
+	}
+}
+
+func TestRPCClientStream_User(t *testing.T) {
+	client, a1, ipc := testRPCClient(t)
+	defer ipc.Shutdown()
+	defer client.Close()
+	defer a1.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	eventCh := make(chan map[string]interface{}, 64)
+	if handle, err := client.Stream("user", eventCh); err != nil {
+		t.Fatalf("err: %s", err)
+	} else {
+		defer client.Stop(handle)
+	}
+
+	testutil.Yield()
+
+	if err := client.UserEvent("deploy", []byte("foo"), false); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	select {
+	case e := <-eventCh:
+		if e["Event"].(string) != "user" {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if e["LTime"].(uint64) != 1 {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if e["Name"].(string) != "deploy" {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if bytes.Compare(e["Payload"].([]byte), []byte("foo")) != 0 {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if e["Coalesce"].(bool) != false {
+			t.Fatalf("bad event: %#v", e)
+		}
+
+	default:
+		t.Fatalf("should have event")
+	}
+}
+
+func TestRPCClientStream_Member(t *testing.T) {
+	client, a1, ipc := testRPCClient(t)
+	defer ipc.Shutdown()
+	defer client.Close()
+	defer a1.Shutdown()
+	a2 := testAgent(nil)
+	defer a2.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if err := a2.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	eventCh := make(chan map[string]interface{}, 64)
+	if handle, err := client.Stream("*", eventCh); err != nil {
+		t.Fatalf("err: %s", err)
+	} else {
+		defer client.Stop(handle)
+	}
+
+	testutil.Yield()
+
+	s2Addr := a2.conf.MemberlistConfig.BindAddr
+	if _, err := a1.Join([]string{s2Addr}, false); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	select {
+	case e := <-eventCh:
+		if e["Event"].(string) != "member-join" {
+			t.Fatalf("bad event: %#v", e)
+		}
+
+		members := e["Members"].([]interface{})
+		if len(members) != 1 {
+			t.Fatalf("should have 1 member")
+		}
+		member := members[0].(map[interface{}]interface{})
+
+		if _, ok := member["Name"].(string); !ok {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if _, ok := member["Addr"].([]interface{}); !ok {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if _, ok := member["Port"].(uint64); !ok {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if _, ok := member["Role"].(string); !ok {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if stat, _ := member["Status"].(string); stat != "alive" {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if _, ok := member["ProtocolMin"].(uint64); !ok {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if _, ok := member["ProtocolMax"].(uint64); !ok {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if _, ok := member["ProtocolCur"].(uint64); !ok {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if _, ok := member["DelegateMin"].(uint64); !ok {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if _, ok := member["DelegateMax"].(uint64); !ok {
+			t.Fatalf("bad event: %#v", e)
+		}
+		if _, ok := member["DelegateCur"].(uint64); !ok {
+			t.Fatalf("bad event: %#v", e)
+		}
+
+	default:
+		t.Fatalf("should have event")
 	}
 }
