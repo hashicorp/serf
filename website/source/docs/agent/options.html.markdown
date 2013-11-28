@@ -58,6 +58,11 @@ The options below are all specified on the command-line.
   unable to join with any of the specified addresses, agent startup will
   fail. By default, the agent won't join any nodes when it starts up.
 
+* `-replay` - If set, old user events from the past will be replayed for the
+  agent/cluster that is joining based on a `-join` configuration. Otherwise,
+  past events will be ignored. This configures for the initial join
+  only.
+
 * `-log-level` - The level of logging to show after the Serf agent has
   started. This defaults to "info". The available log levels are "trace",
   "debug", "info", "warn", "err". This is the log level that will be shown
@@ -128,3 +133,5 @@ at a single JSON object with configuration within it.
 
 * `start_join` - An array of strings specifying addresses of nodes to
   join upon startup.
+
+* `replay_on_join` - Equivalent to the `-replay` command-line flag.
