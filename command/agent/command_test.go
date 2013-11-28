@@ -124,7 +124,7 @@ func TestCommandRun_join(t *testing.T) {
 	args := []string{
 		"-bind", testutil.GetBindAddr().String(),
 		"-join", a1.SerfConfig.MemberlistConfig.BindAddr,
-		"-replay", true,
+		"-replay",
 	}
 
 	go func() {
