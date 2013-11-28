@@ -48,6 +48,8 @@ func (c *Command) Run(args []string) int {
 		"command to execute when events occur")
 	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.StartJoin), "join",
 		"address of agent to join on startup")
+	cmdFlags.BoolVar(&cmdConfig.ReplayOnJoin, "replay", false,
+		"replay events for startup join")
 	cmdFlags.StringVar(&cmdConfig.LogLevel, "log-level", "", "log level")
 	cmdFlags.StringVar(&cmdConfig.NodeName, "node", "", "node name")
 	cmdFlags.IntVar(&cmdConfig.Protocol, "protocol", -1, "protocol version")
