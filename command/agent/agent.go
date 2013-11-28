@@ -122,20 +122,26 @@ func (a *Agent) SerfConfig() *serf.Config {
 
 // Join asks the Serf instance to join. See the Serf.Join function.
 func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
-	a.logger.Printf("[INFO] Agent joining: %v replay: %v", addrs, replay)
+	a.logger.Printf("[INFO] agent: joining: %v replay: %v", addrs, replay)
 	ignoreOld := !replay
-	return a.serf.Join(addrs, ignoreOld)
+	n, err = a.serf.Join(addrs, ignoreOld)
+	a.logger.Printf("[INFO] agent: joined: %d Err: %v", n, err)
+	return
 }
 
 // ForceLeave is used to eject a failed node from the cluster
 func (a *Agent) ForceLeave(node string) error {
 	a.logger.Printf("[INFO] Force leaving node: %s", node)
-	return a.serf.RemoveFailedNode(node)
+	err := a.serf.RemoveFailedNode(node)
+	if err != nil {
+		a.logger.Printf("[WARN] agent: failed to remove node: %v", err)
+	}
+	return err
 }
 
 // UserEvent sends a UserEvent on Serf, see Serf.UserEvent.
 func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
-	a.logger.Printf("[DEBUG] Requesting user event send: %s. Coalesced: %#v. Payload: %#v",
+	a.logger.Printf("[DEBUG] agent: Requesting user event send: %s. Coalesced: %#v. Payload: %#v",
 		name, coalesce, string(payload))
 	return a.serf.UserEvent(name, payload, coalesce)
 }
