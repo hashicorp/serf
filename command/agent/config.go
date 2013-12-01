@@ -18,10 +18,11 @@ const DefaultBindPort int = 7946
 
 // DefaultConfig contains the defaults for configurations.
 var DefaultConfig = &Config{
-	BindAddr: "0.0.0.0",
-	LogLevel: "INFO",
-	RPCAddr:  "127.0.0.1:7373",
-	Protocol: serf.ProtocolVersionMax,
+	BindAddr:     "0.0.0.0",
+	LogLevel:     "INFO",
+	RPCAddr:      "127.0.0.1:7373",
+	Protocol:     serf.ProtocolVersionMax,
+	ReplayOnJoin: false,
 }
 
 // Config is the configuration that can be set for an Agent. Some of these
@@ -57,6 +58,10 @@ type Config struct {
 
 	// Protocol is the Serf protocol version to use.
 	Protocol int `mapstructure:"protocol"`
+
+	// ReplayOnJoin tells Serf to replay past user events
+	// when joining based on a `StartJoin`.
+	ReplayOnJoin bool `mapstructure:"replay_on_join"`
 
 	// StartJoin is a list of addresses to attempt to join when the
 	// agent starts. If Serf is unable to communicate with any of these
@@ -178,6 +183,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.RPCAddr != "" {
 		result.RPCAddr = b.RPCAddr
+	}
+	if b.ReplayOnJoin != false {
+		result.ReplayOnJoin = b.ReplayOnJoin
 	}
 
 	// Copy the event handlers

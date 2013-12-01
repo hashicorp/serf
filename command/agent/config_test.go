@@ -137,6 +137,17 @@ func TestDecodeConfig(t *testing.T) {
 	if config.BindAddr != "127.0.0.2" {
 		t.Fatalf("bad: %#v", config)
 	}
+
+	// replayOnJoin
+	input = `{"replay_on_join": true}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.ReplayOnJoin != true {
+		t.Fatalf("bad: %#v", config)
+	}
 }
 
 func TestMergeConfig(t *testing.T) {
@@ -146,6 +157,7 @@ func TestMergeConfig(t *testing.T) {
 		Protocol:      7,
 		EventHandlers: []string{"foo"},
 		StartJoin:     []string{"foo"},
+		ReplayOnJoin:  true,
 	}
 
 	b := &Config{
@@ -172,6 +184,10 @@ func TestMergeConfig(t *testing.T) {
 
 	if c.EncryptKey != "foo" {
 		t.Fatalf("bad: %#v", c.EncryptKey)
+	}
+
+	if c.ReplayOnJoin != true {
+		t.Fatalf("bad: %#v", c.ReplayOnJoin)
 	}
 
 	expected := []string{"foo", "bar"}

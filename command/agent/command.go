@@ -48,6 +48,8 @@ func (c *Command) Run(args []string) int {
 		"command to execute when events occur")
 	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.StartJoin), "join",
 		"address of agent to join on startup")
+	cmdFlags.BoolVar(&cmdConfig.ReplayOnJoin, "replay", false,
+		"replay events for startup join")
 	cmdFlags.StringVar(&cmdConfig.LogLevel, "log-level", "", "log level")
 	cmdFlags.StringVar(&cmdConfig.NodeName, "node", "", "node name")
 	cmdFlags.IntVar(&cmdConfig.Protocol, "protocol", -1, "protocol version")
@@ -163,8 +165,10 @@ func (c *Command) Run(args []string) int {
 	ui.Info(fmt.Sprintf("Encrypted: %#v", config.EncryptKey != ""))
 
 	if len(config.StartJoin) > 0 {
-		ui.Output("Joining cluster...")
-		n, err := agent.Join(config.StartJoin, true)
+		ui.Output(fmt.Sprintf("Joining cluster...(replay: %s)", config.ReplayOnJoin))
+		// agent.Join recieves (join addrs, ignoreold) so we switch the
+		// ReplayOnJoin configuration.
+		n, err := agent.Join(config.StartJoin, !config.ReplayOnJoin)
 		if err != nil {
 			ui.Error(err.Error())
 			return 1
