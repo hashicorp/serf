@@ -253,10 +253,8 @@ func Create(conf *Config) (*Serf, error) {
 	// for more information on their role.
 	go serf.handleReap()
 	go serf.handleReconnect()
-	go serf.checkQueueDepth(conf.QueueDepthWarning, "Intent",
-		serf.broadcasts, serf.shutdownCh)
-	go serf.checkQueueDepth(conf.QueueDepthWarning, "Event",
-		serf.eventBroadcasts, serf.shutdownCh)
+	go serf.checkQueueDepth("Intent", serf.broadcasts)
+	go serf.checkQueueDepth("Event", serf.eventBroadcasts)
 
 	return serf, nil
 }
@@ -903,15 +901,20 @@ func (s *Serf) reconnect() {
 
 // checkQueueDepth periodically checks the size of a queue to see if
 // it is too large
-func (s *Serf) checkQueueDepth(limit int, name string, queue *memberlist.TransmitLimitedQueue, shutdownCh chan struct{}) {
+func (s *Serf) checkQueueDepth(name string, queue *memberlist.TransmitLimitedQueue) {
 	for {
 		select {
 		case <-time.After(time.Second):
 			numq := queue.NumQueued()
-			if numq >= limit {
+			if numq >= s.config.QueueDepthWarning {
 				s.logger.Printf("[WARN] %s queue depth: %d", name, numq)
 			}
-		case <-shutdownCh:
+			if numq >= s.config.MaxQueueDepth {
+				s.logger.Printf("[WARN] %s queue depth (%d) exceeds limit (%d), dropping messages!",
+					name, numq, s.config.MaxQueueDepth)
+				queue.Prune(s.config.MaxQueueDepth)
+			}
+		case <-s.shutdownCh:
 			return
 		}
 	}
