@@ -24,13 +24,19 @@ func (m *MockStreamClient) Send(h *responseHeader, o interface{}) error {
 
 func TestIPCEventStream(t *testing.T) {
 	sc := &MockStreamClient{}
-	filters := []EventFilter{EventFilter{"*", ""}}
+	filters := ParseEventFilter("user:foobar,member-join")
 	es := newEventStream(sc, filters, 42, log.New(os.Stderr, "", log.LstdFlags))
 	defer es.Stop()
 
 	es.HandleEvent(serf.UserEvent{
 		LTime:    123,
 		Name:     "foobar",
+		Payload:  []byte("test"),
+		Coalesce: true,
+	})
+	es.HandleEvent(serf.UserEvent{
+		LTime:    124,
+		Name:     "ignore",
 		Payload:  []byte("test"),
 		Coalesce: true,
 	})
