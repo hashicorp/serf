@@ -11,6 +11,7 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
+  * Prevent unbounded transmit queues [GH-78]
   * IPv6 addresses can be bound to [GH-72]
   * Serf join won't hang on a slow/dead node [GH-70]
 
