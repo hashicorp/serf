@@ -169,7 +169,7 @@ type IPCClient struct {
 
 // send is used to send an object using the MsgPack encoding. send
 // is serialized to prevent write overlaps, while properly buffering.
-func (c *IPCClient) send(header *responseHeader, obj interface{}) error {
+func (c *IPCClient) Send(header *responseHeader, obj interface{}) error {
 	c.writeLock.Lock()
 	defer c.writeLock.Unlock()
 
@@ -188,6 +188,10 @@ func (c *IPCClient) send(header *responseHeader, obj interface{}) error {
 	}
 
 	return nil
+}
+
+func (c *IPCClient) String() string {
+	return fmt.Sprintf("ipc.client: %v", c.conn)
 }
 
 // NewAgentIPC is used to create a new Agent IPC handler
@@ -323,7 +327,7 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 	// Ensure the handshake is performed before other commands
 	if command != handshakeCommand && client.version == 0 {
 		respHeader := responseHeader{Seq: seq, Error: handshakeRequired}
-		client.send(&respHeader, nil)
+		client.Send(&respHeader, nil)
 		return fmt.Errorf(handshakeRequired)
 	}
 
@@ -355,7 +359,7 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 
 	default:
 		respHeader := responseHeader{Seq: seq, Error: unsupportedCommand}
-		client.send(&respHeader, nil)
+		client.Send(&respHeader, nil)
 		return fmt.Errorf("command '%s' not recognized", command)
 	}
 }
@@ -379,7 +383,7 @@ func (i *AgentIPC) handleHandshake(client *IPCClient, seq uint64) error {
 	} else {
 		client.version = req.Version
 	}
-	return client.send(&resp, nil)
+	return client.Send(&resp, nil)
 }
 
 func (i *AgentIPC) handleEvent(client *IPCClient, seq uint64) error {
@@ -396,7 +400,7 @@ func (i *AgentIPC) handleEvent(client *IPCClient, seq uint64) error {
 		Seq:   seq,
 		Error: errToString(err),
 	}
-	return client.send(&resp, nil)
+	return client.Send(&resp, nil)
 }
 
 func (i *AgentIPC) handleForceLeave(client *IPCClient, seq uint64) error {
@@ -413,7 +417,7 @@ func (i *AgentIPC) handleForceLeave(client *IPCClient, seq uint64) error {
 		Seq:   seq,
 		Error: errToString(err),
 	}
-	return client.send(&resp, nil)
+	return client.Send(&resp, nil)
 }
 
 func (i *AgentIPC) handleJoin(client *IPCClient, seq uint64) error {
@@ -433,7 +437,7 @@ func (i *AgentIPC) handleJoin(client *IPCClient, seq uint64) error {
 	resp := joinResponse{
 		Num: int32(num),
 	}
-	return client.send(&header, &resp)
+	return client.Send(&header, &resp)
 }
 
 func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
@@ -446,7 +450,7 @@ func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
 	resp := membersResponse{
 		Members: serf.Members(),
 	}
-	return client.send(&header, &resp)
+	return client.Send(&header, &resp)
 }
 
 func (i *AgentIPC) handleStream(client *IPCClient, seq uint64) error {
@@ -485,7 +489,7 @@ func (i *AgentIPC) handleStream(client *IPCClient, seq uint64) error {
 	defer i.agent.RegisterEventHandler(es)
 
 SEND:
-	return client.send(&resp, nil)
+	return client.Send(&resp, nil)
 }
 
 func (i *AgentIPC) handleMonitor(client *IPCClient, seq uint64) error {
@@ -524,7 +528,7 @@ func (i *AgentIPC) handleMonitor(client *IPCClient, seq uint64) error {
 	defer i.logWriter.RegisterHandler(client.logStreamer)
 
 SEND:
-	return client.send(&resp, nil)
+	return client.Send(&resp, nil)
 }
 
 func (i *AgentIPC) handleStop(client *IPCClient, seq uint64) error {
@@ -549,7 +553,7 @@ func (i *AgentIPC) handleStop(client *IPCClient, seq uint64) error {
 
 	// Always succeed
 	resp := responseHeader{Seq: seq, Error: ""}
-	return client.send(&resp, nil)
+	return client.Send(&resp, nil)
 }
 
 // Used to convert an error to a string representation

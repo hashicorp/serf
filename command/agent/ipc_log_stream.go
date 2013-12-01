@@ -7,14 +7,14 @@ import (
 
 // logStream is used to stream logs to a client over IPC
 type logStream struct {
-	client *IPCClient
+	client streamClient
 	filter *logutils.LevelFilter
 	logCh  chan string
 	logger *log.Logger
 	seq    uint64
 }
 
-func newLogStream(client *IPCClient, filter *logutils.LevelFilter,
+func newLogStream(client streamClient, filter *logutils.LevelFilter,
 	seq uint64, logger *log.Logger) *logStream {
 	ls := &logStream{
 		client: client,
@@ -37,7 +37,7 @@ func (ls *logStream) HandleLog(l string) {
 	select {
 	case ls.logCh <- l:
 	default:
-		ls.logger.Printf("[WARN] Dropping logs to %v", ls.client.conn)
+		ls.logger.Printf("[WARN] Dropping logs to %v", ls.client)
 	}
 }
 
@@ -51,9 +51,9 @@ func (ls *logStream) stream() {
 
 	for line := range ls.logCh {
 		rec.Log = line
-		if err := ls.client.send(&header, &rec); err != nil {
+		if err := ls.client.Send(&header, &rec); err != nil {
 			ls.logger.Printf("[ERR] Failed to stream log to %v: %v",
-				ls.client.conn, err)
+				ls.client, err)
 			return
 		}
 	}

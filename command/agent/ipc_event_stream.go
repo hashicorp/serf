@@ -6,16 +6,20 @@ import (
 	"log"
 )
 
+type streamClient interface {
+	Send(*responseHeader, interface{}) error
+}
+
 // eventStream is used to stream events to a client over IPC
 type eventStream struct {
-	client  *IPCClient
+	client  streamClient
 	eventCh chan serf.Event
 	filters []EventFilter
 	logger  *log.Logger
 	seq     uint64
 }
 
-func newEventStream(client *IPCClient, filters []EventFilter, seq uint64, logger *log.Logger) *eventStream {
+func newEventStream(client streamClient, filters []EventFilter, seq uint64, logger *log.Logger) *eventStream {
 	es := &eventStream{
 		client:  client,
 		eventCh: make(chan serf.Event, 512),
@@ -41,7 +45,7 @@ HANDLE:
 	select {
 	case es.eventCh <- e:
 	default:
-		es.logger.Printf("[WARN] Dropping event to %v", es.client.conn)
+		es.logger.Printf("[WARN] Dropping event to %v", es.client)
 	}
 }
 
@@ -62,7 +66,7 @@ func (es *eventStream) stream() {
 		}
 		if err != nil {
 			es.logger.Printf("[ERR] Failed to stream event to %v: %v",
-				es.client.conn, err)
+				es.client, err)
 			return
 		}
 	}
@@ -96,7 +100,7 @@ func (es *eventStream) sendMemberEvent(me serf.MemberEvent) error {
 		Event:   me.String(),
 		Members: members,
 	}
-	return es.client.send(&header, &rec)
+	return es.client.Send(&header, &rec)
 }
 
 // sendUserEvent is used to send a single user event
@@ -112,5 +116,5 @@ func (es *eventStream) sendUserEvent(ue serf.UserEvent) error {
 		Payload:  ue.Payload,
 		Coalesce: ue.Coalesce,
 	}
-	return es.client.send(&header, &rec)
+	return es.client.Send(&header, &rec)
 }
