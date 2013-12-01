@@ -277,3 +277,67 @@ func TestParseEventScript(t *testing.T) {
 		}
 	}
 }
+
+func TestParseEventFilter(t *testing.T) {
+	testCases := []struct {
+		v       string
+		results []EventFilter
+	}{
+		{
+			"",
+			[]EventFilter{EventFilter{"*", ""}},
+		},
+
+		{
+			"member-join",
+			[]EventFilter{EventFilter{"member-join", ""}},
+		},
+
+		{
+			"foo,bar",
+			[]EventFilter{
+				EventFilter{"foo", ""},
+				EventFilter{"bar", ""},
+			},
+		},
+
+		{
+			"user:deploy",
+			[]EventFilter{EventFilter{"user", "deploy"}},
+		},
+
+		{
+			"foo,user:blah,bar",
+			[]EventFilter{
+				EventFilter{"foo", ""},
+				EventFilter{"user", "blah"},
+				EventFilter{"bar", ""},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		results := ParseEventFilter(tc.v)
+		if results == nil {
+			t.Errorf("result should not be nil")
+			continue
+		}
+
+		if len(results) != len(tc.results) {
+			t.Errorf("bad: %#v", results)
+			continue
+		}
+
+		for i, r := range results {
+			expected := tc.results[i]
+
+			if r.Event != expected.Event {
+				t.Errorf("Events not equal: %s %s", r.Event, expected.Event)
+			}
+
+			if r.UserEvent != expected.UserEvent {
+				t.Errorf("User events not equal: %s %s", r.UserEvent, expected.UserEvent)
+			}
+		}
+	}
+}
