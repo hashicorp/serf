@@ -23,6 +23,7 @@ var DefaultConfig = &Config{
 	RPCAddr:      "127.0.0.1:7373",
 	Protocol:     serf.ProtocolVersionMax,
 	ReplayOnJoin: false,
+	Profile:      "lan",
 }
 
 // Config is the configuration that can be set for an Agent. Some of these
@@ -70,6 +71,10 @@ type Config struct {
 
 	// EventHandlers is a list of event handlers that will be invoked.
 	EventHandlers []string `mapstructure:"event_handlers"`
+
+	// Profile is used to select a timing profile for Serf. The supported choices
+	// are "wan", "lan", and "local". The default is "lan"
+	Profile string `mapstructure:"profile"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -186,6 +191,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.ReplayOnJoin != false {
 		result.ReplayOnJoin = b.ReplayOnJoin
+	}
+	if b.Profile != "" {
+		result.Profile = b.Profile
 	}
 
 	// Copy the event handlers

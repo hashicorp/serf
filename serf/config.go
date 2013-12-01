@@ -169,6 +169,6 @@ func DefaultConfig() *Config {
 		QueueDepthWarning:  128,
 		MaxQueueDepth:      4096,
 		TombstoneTimeout:   24 * time.Hour,
-		MemberlistConfig:   memberlist.DefaultConfig(),
+		MemberlistConfig:   memberlist.DefaultLANConfig(),
 	}
 }
