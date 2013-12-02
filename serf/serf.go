@@ -221,6 +221,7 @@ func Create(conf *Config) (*Serf, error) {
 		prev = snap.AliveNodes()
 		oldClock = snap.LastClock()
 		oldEventClock = snap.LastEventClock()
+		serf.eventMinTime = oldEventClock + 1
 	}
 
 	// Setup the broadcast queue, which we use to send our own custom
@@ -998,7 +999,7 @@ func (s *Serf) handleRejoin(previous []*PreviousNode) {
 
 		s.logger.Printf("[INFO] Attempting re-join to previously known node: %s", prev)
 		_, err := s.memberlist.Join([]string{prev.Addr})
-		if err != nil {
+		if err == nil {
 			s.logger.Printf("[INFO] Re-joined to previously known node: %s", prev)
 			return
 		}

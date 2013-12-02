@@ -3,6 +3,8 @@ package serf
 import (
 	"fmt"
 	"github.com/hashicorp/serf/testutil"
+	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -894,5 +896,81 @@ func TestSerf_Join_IgnoreOld(t *testing.T) {
 	testutil.Yield()
 
 	// check the events to make sure we got nothing
+	testUserEvents(t, eventCh, []string{}, [][]byte{})
+}
+
+func TestSerf_SnapshotRecovery(t *testing.T) {
+	td, err := ioutil.TempDir("", "serf")
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	defer os.RemoveAll(td)
+
+	s1Config := testConfig()
+	s2Config := testConfig()
+	s2Config.SnapshotPath = td + "snap"
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Fire a user event
+	if err := s1.UserEvent("event!", []byte("test"), false); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Now force the shutdown of s2 so it appears to fail.
+	if err := s2.Shutdown(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 5)
+
+	// Verify that s2 is "failed"
+	testMember(t, s1.Members(), s2Config.NodeName, StatusFailed)
+
+	// Now remove the failed node
+	if err := s1.RemoveFailedNode(s2Config.NodeName); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Verify that s2 is gone
+	testMember(t, s1.Members(), s2Config.NodeName, StatusLeft)
+
+	// Listen for events
+	eventCh := make(chan Event, 4)
+	s2Config.EventCh = eventCh
+
+	// Restart s2 from the snapshot now!
+	s2, err = Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+
+	// Wait for the node to auto rejoin
+	testutil.Yield()
+
+	// Verify that s2 is "alive"
+	testMember(t, s1.Members(), s2Config.NodeName, StatusAlive)
+	testMember(t, s2.Members(), s1Config.NodeName, StatusAlive)
+
+	// Check the events to make sure we got nothing
 	testUserEvents(t, eventCh, []string{}, [][]byte{})
 }
