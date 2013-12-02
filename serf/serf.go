@@ -406,6 +406,11 @@ func (s *Serf) Leave() error {
 		}
 	}()
 
+	// If we have a snapshot, mark we are leaving
+	if s.snapshoter != nil {
+		s.snapshoter.Leave()
+	}
+
 	// Construct the message for the graceful leave
 	msg := messageLeave{
 		LTime: s.clock.Time(),

@@ -34,6 +34,8 @@ type Snapshoter struct {
 	lastFsync      time.Time
 	lastClock      LamportTime
 	lastEventClock LamportTime
+	leaveCh        chan struct{}
+	leaving        bool
 	logger         *log.Logger
 	maxSize        int64
 	path           string
@@ -82,6 +84,7 @@ func NewSnapshoter(path string, maxSize int, logger *log.Logger, clock *LamportC
 		inCh:           inCh,
 		lastClock:      0,
 		lastEventClock: 0,
+		leaveCh:        make(chan struct{}),
 		logger:         logger,
 		maxSize:        int64(maxSize),
 		path:           path,
@@ -133,14 +136,37 @@ func (s *Snapshoter) Wait() {
 	<-s.waitCh
 }
 
+// Leave is used to remove known nodes to prevent a restart from
+// causing a join. Otherwise nodes will re-join after leaving!
+func (s *Snapshoter) Leave() {
+	select {
+	case s.leaveCh <- struct{}{}:
+	case <-s.shutdownCh:
+	}
+}
+
 // stream is a long running routine that is used to handle events
 func (s *Snapshoter) stream() {
 	for {
 		select {
+		case <-s.leaveCh:
+			// Clear the known nodes
+			s.aliveNodes = make(map[string]string)
+			s.leaving = true
+			s.tryAppend("leave\n")
+			if err := s.fh.Sync(); err != nil {
+				s.logger.Printf("[ERR] serf: failed to sync leave to snapshot: %v", err)
+			}
+
 		case e := <-s.inCh:
 			// Forward the event immediately
 			if s.outCh != nil {
 				s.outCh <- e
+			}
+
+			// Stop recording events after a leave is issued
+			if s.leaving {
+				continue
 			}
 			switch typed := e.(type) {
 			case MemberEvent:
@@ -150,8 +176,11 @@ func (s *Snapshoter) stream() {
 			default:
 				s.logger.Printf("[ERR] serf: Unknown event to snapshot: %#v", e)
 			}
+
 		case <-s.shutdownCh:
-			s.fh.Sync()
+			if err := s.fh.Sync(); err != nil {
+				s.logger.Printf("[ERR] serf: failed to sync snapshot: %v", err)
+			}
 			s.fh.Close()
 			close(s.waitCh)
 			return
@@ -332,6 +361,11 @@ func (s *Snapshoter) replay() error {
 				continue
 			}
 			s.lastEventClock = LamportTime(timeInt)
+
+		} else if line == "leave" {
+			s.aliveNodes = make(map[string]string)
+			s.lastClock = 0
+			s.lastEventClock = 0
 
 		} else {
 			s.logger.Printf("[WARN] Unrecognized snapshot line: %v", line)

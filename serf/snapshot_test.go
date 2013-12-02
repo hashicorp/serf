@@ -175,3 +175,69 @@ func TestSnapshoter_forceCompact(t *testing.T) {
 	close(stopCh)
 	snap.Wait()
 }
+
+func TestSnapshoter_leave(t *testing.T) {
+	td, err := ioutil.TempDir("", "serf")
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	defer os.RemoveAll(td)
+
+	clock := new(LamportClock)
+	stopCh := make(chan struct{})
+	logger := log.New(os.Stderr, "", log.LstdFlags)
+	inCh, snap, err := NewSnapshoter(td+"snap", snapshotSizeLimit,
+		logger, clock, nil, stopCh)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	// Write a user event
+	ue := UserEvent{
+		LTime: 42,
+		Name:  "bar",
+	}
+	inCh <- ue
+
+	// Write some member events
+	clock.Witness(100)
+	meJoin := MemberEvent{
+		Type: EventMemberJoin,
+		Members: []Member{
+			Member{
+				Name: "foo",
+				Addr: []byte{127, 0, 0, 1},
+				Port: 5000,
+			},
+		},
+	}
+	inCh <- meJoin
+
+	// Leave the cluster!
+	snap.Leave()
+
+	// Close the snapshoter
+	close(stopCh)
+	snap.Wait()
+
+	// Open the snapshoter
+	stopCh = make(chan struct{})
+	_, snap, err = NewSnapshoter(td+"snap", snapshotSizeLimit,
+		logger, clock, nil, stopCh)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	// Check the values
+	if snap.LastClock() != 0 {
+		t.Fatalf("bad clock %d", snap.LastClock())
+	}
+	if snap.LastEventClock() != 0 {
+		t.Fatalf("bad clock %d", snap.LastEventClock())
+	}
+
+	prev := snap.AliveNodes()
+	if len(prev) != 0 {
+		t.Fatalf("expected none alive: %#v", prev)
+	}
+}
