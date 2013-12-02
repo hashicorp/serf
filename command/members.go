@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/mitchellh/cli"
 	"net"
+	"regexp"
 	"strings"
 )
 
@@ -31,11 +32,26 @@ Options:
 
 func (c *MembersCommand) Run(args []string) int {
 	var detailed bool
+	var roleFilter, statusFilter string
 	cmdFlags := flag.NewFlagSet("members", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.BoolVar(&detailed, "detailed", false, "detailed output")
+	cmdFlags.StringVar(&roleFilter, "role", ".*", "role filter")
+	cmdFlags.StringVar(&statusFilter, "status", ".*", "status filter")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
+		return 1
+	}
+
+	// Compile the regexp
+	roleRe, err := regexp.Compile(roleFilter)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Failed to compile role regexp: %v", err))
+		return 1
+	}
+	statusRe, err := regexp.Compile(statusFilter)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Failed to compile status regexp: %v", err))
 		return 1
 	}
 
@@ -53,6 +69,11 @@ func (c *MembersCommand) Run(args []string) int {
 	}
 
 	for _, member := range members {
+		// Skip the non-matching members
+		if !roleRe.MatchString(member.Role) || !statusRe.MatchString(member.Status.String()) {
+			continue
+		}
+
 		addr := net.TCPAddr{IP: member.Addr, Port: int(member.Port)}
 		c.Ui.Output(fmt.Sprintf("%s    %s    %s    %s",
 			member.Name, addr.String(), member.Status, member.Role))
