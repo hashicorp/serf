@@ -991,6 +991,11 @@ func recentIntent(recent []nodeIntent, node string) (intent *nodeIntent) {
 // handleRejoin attempts to reconnect to previously known alive nodes
 func (s *Serf) handleRejoin(previous []*PreviousNode) {
 	for _, prev := range previous {
+		// Do not attempt to join ourself
+		if prev.Name == s.config.NodeName {
+			continue
+		}
+
 		s.logger.Printf("[INFO] Attempting re-join to previously known node: %s", prev)
 		_, err := s.memberlist.Join([]string{prev.Addr})
 		if err != nil {
