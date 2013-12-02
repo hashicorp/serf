@@ -146,6 +146,12 @@ type Config struct {
 	// LogOutput is the location to write logs to. If this is not set,
 	// logs will go to stderr.
 	LogOutput io.Writer
+
+	// SnapshotPath if provided is used to snapshot live nodes as well
+	// as lamport clock values. When Serf is started with a snapshot,
+	// it will attempt to join all the previously known nodes until one
+	// succeeds and will also avoid replaying old user events.
+	SnapshotPath string
 }
 
 // DefaultConfig returns a Config struct that contains reasonable defaults
@@ -169,6 +175,6 @@ func DefaultConfig() *Config {
 		QueueDepthWarning:  128,
 		MaxQueueDepth:      4096,
 		TombstoneTimeout:   24 * time.Hour,
-		MemberlistConfig:   memberlist.DefaultConfig(),
+		MemberlistConfig:   memberlist.DefaultLANConfig(),
 	}
 }
