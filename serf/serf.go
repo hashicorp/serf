@@ -158,7 +158,8 @@ type userEvents struct {
 }
 
 const (
-	UserEventSizeLimit = 128 // Maximum byte size for event name and payload
+	UserEventSizeLimit = 128         // Maximum byte size for event name and payload
+	snapshotSizeLimit  = 1024 * 1024 // Maximum 1 MB snapshot
 )
 
 // Create creates a new Serf instance, starting all the background tasks
@@ -204,6 +205,20 @@ func Create(conf *Config) (*Serf, error) {
 			conf.UserCoalescePeriod, conf.UserQuiescentPeriod, c)
 	}
 
+	// Try access the snapshot
+	var oldEventClock LamportTime
+	var prev []*PreviousNode
+	if conf.SnapshotPath != "" {
+		eventCh, snap, err := NewSnapshoter(conf.SnapshotPath, snapshotSizeLimit,
+			serf.logger, conf.EventCh, serf.shutdownCh)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to setup snapshot: %v", err)
+		}
+		conf.EventCh = eventCh
+		prev = snap.AliveNodes()
+		oldEventClock = snap.LastEventClock()
+	}
+
 	// Setup the broadcast queue, which we use to send our own custom
 	// broadcasts along the gossip channel.
 	serf.broadcasts = &memberlist.TransmitLimitedQueue{
@@ -231,6 +246,9 @@ func Create(conf *Config) (*Serf, error) {
 	serf.clock.Increment()
 	serf.eventClock.Increment()
 
+	// Restore the clock from snap if we have one
+	serf.eventClock.Witness(oldEventClock)
+
 	// Modify the memberlist configuration with keys that we set
 	conf.MemberlistConfig.Events = &eventDelegate{serf: serf}
 	conf.MemberlistConfig.Delegate = &delegate{serf: serf}
@@ -255,6 +273,11 @@ func Create(conf *Config) (*Serf, error) {
 	go serf.handleReconnect()
 	go serf.checkQueueDepth("Intent", serf.broadcasts)
 	go serf.checkQueueDepth("Event", serf.eventBroadcasts)
+
+	// Attempt to re-join the cluster if we have known nodes
+	if len(prev) != 0 {
+		go serf.handleRejoin(prev)
+	}
 
 	return serf, nil
 }
@@ -952,4 +975,17 @@ func recentIntent(recent []nodeIntent, node string) (intent *nodeIntent) {
 		}
 	}
 	return
+}
+
+// handleRejoin attempts to reconnect to previously known alive nodes
+func (s *Serf) handleRejoin(previous []*PreviousNode) {
+	for _, prev := range previous {
+		s.logger.Printf("[INFO] Attempting re-join to previously known node: %s", prev)
+		_, err := s.memberlist.Join([]string{prev.Addr})
+		if err != nil {
+			s.logger.Printf("[INFO] Re-joined to previously known node: %s", prev)
+			return
+		}
+	}
+	s.logger.Printf("[WARN] Failed to re-join any previously known node")
 }
