@@ -151,6 +151,7 @@ func (s *Snapshoter) stream() {
 				s.logger.Printf("[ERR] serf: Unknown event to snapshot: %#v", e)
 			}
 		case <-s.shutdownCh:
+			s.fh.Sync()
 			s.fh.Close()
 			close(s.waitCh)
 			return
