@@ -61,6 +61,8 @@ type Serf struct {
 	stateLock  sync.Mutex
 	state      SerfState
 	shutdownCh chan struct{}
+
+	snapshoter *Snapshoter
 }
 
 // SerfState is the state of the Serf instance.
@@ -214,6 +216,7 @@ func Create(conf *Config) (*Serf, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Failed to setup snapshot: %v", err)
 		}
+		serf.snapshoter = snap
 		conf.EventCh = eventCh
 		prev = snap.AliveNodes()
 		oldClock = snap.LastClock()
@@ -533,6 +536,12 @@ func (s *Serf) Shutdown() error {
 
 	s.state = SerfShutdown
 	close(s.shutdownCh)
+
+	// Wait for the snapshoter to finish if we have one
+	if s.snapshoter != nil {
+		s.snapshoter.Wait()
+	}
+
 	return nil
 }
 

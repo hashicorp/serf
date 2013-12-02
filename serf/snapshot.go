@@ -40,6 +40,7 @@ type Snapshoter struct {
 	offset         int64
 	outCh          chan<- Event
 	shutdownCh     <-chan struct{}
+	waitCh         chan struct{}
 }
 
 type PreviousNode struct {
@@ -87,6 +88,7 @@ func NewSnapshoter(path string, maxSize int, logger *log.Logger, clock *LamportC
 		offset:         offset,
 		outCh:          outCh,
 		shutdownCh:     shutdownCh,
+		waitCh:         make(chan struct{}),
 	}
 
 	// Recover the last known state
@@ -126,6 +128,11 @@ func (s *Snapshoter) AliveNodes() []*PreviousNode {
 	return previous
 }
 
+// Wait is used to wait until the snapshoter finishes shut down
+func (s *Snapshoter) Wait() {
+	<-s.waitCh
+}
+
 // stream is a long running routine that is used to handle events
 func (s *Snapshoter) stream() {
 	for {
@@ -145,6 +152,7 @@ func (s *Snapshoter) stream() {
 			}
 		case <-s.shutdownCh:
 			s.fh.Close()
+			close(s.waitCh)
 			return
 		}
 	}
