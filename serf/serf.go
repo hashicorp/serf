@@ -206,16 +206,17 @@ func Create(conf *Config) (*Serf, error) {
 	}
 
 	// Try access the snapshot
-	var oldEventClock LamportTime
+	var oldClock, oldEventClock LamportTime
 	var prev []*PreviousNode
 	if conf.SnapshotPath != "" {
 		eventCh, snap, err := NewSnapshoter(conf.SnapshotPath, snapshotSizeLimit,
-			serf.logger, conf.EventCh, serf.shutdownCh)
+			serf.logger, &serf.clock, conf.EventCh, serf.shutdownCh)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to setup snapshot: %v", err)
 		}
 		conf.EventCh = eventCh
 		prev = snap.AliveNodes()
+		oldClock = snap.LastClock()
 		oldEventClock = snap.LastEventClock()
 	}
 
@@ -247,6 +248,7 @@ func Create(conf *Config) (*Serf, error) {
 	serf.eventClock.Increment()
 
 	// Restore the clock from snap if we have one
+	serf.clock.Witness(oldClock)
 	serf.eventClock.Witness(oldEventClock)
 
 	// Modify the memberlist configuration with keys that we set

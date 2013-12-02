@@ -28,9 +28,11 @@ const tmpExt = ".compact"
 
 type Snapshoter struct {
 	aliveNodes     map[string]string
+	clock          *LamportClock
 	fh             *os.File
 	inCh           <-chan Event
 	lastFsync      time.Time
+	lastClock      LamportTime
 	lastEventClock LamportTime
 	logger         *log.Logger
 	maxSize        int64
@@ -53,7 +55,7 @@ func (p PreviousNode) String() string {
 // max byte size before rotating the file. It can also be used to
 // recover old state. Snapshoter works by reading an event channel it returns,
 // passing through to an output channel, and persisting relevant events to disk.
-func NewSnapshoter(path string, maxSize int, logger *log.Logger,
+func NewSnapshoter(path string, maxSize int, logger *log.Logger, clock *LamportClock,
 	outCh chan<- Event, shutdownCh <-chan struct{}) (chan<- Event, *Snapshoter, error) {
 	inCh := make(chan Event, 1024)
 
@@ -74,8 +76,10 @@ func NewSnapshoter(path string, maxSize int, logger *log.Logger,
 	// Create the snapshotter
 	snap := &Snapshoter{
 		aliveNodes:     make(map[string]string),
+		clock:          clock,
 		fh:             fh,
 		inCh:           inCh,
+		lastClock:      0,
 		lastEventClock: 0,
 		logger:         logger,
 		maxSize:        int64(maxSize),
@@ -96,7 +100,12 @@ func NewSnapshoter(path string, maxSize int, logger *log.Logger,
 	return inCh, snap, nil
 }
 
-// LastEventClock returns the last known event cloc
+// LastClock returns the last known clock time
+func (s *Snapshoter) LastClock() LamportTime {
+	return s.lastClock
+}
+
+// LastEventClock returns the last known event clock time
 func (s *Snapshoter) LastEventClock() LamportTime {
 	return s.lastEventClock
 }
@@ -148,11 +157,7 @@ func (s *Snapshoter) processMemberEvent(e MemberEvent) {
 		for _, mem := range e.Members {
 			addr := net.TCPAddr{IP: mem.Addr, Port: int(mem.Port)}
 			s.aliveNodes[mem.Name] = addr.String()
-
-			line := fmt.Sprintf("alive: %s %s\n", mem.Name, addr.String())
-			if err := s.appendLine(line); err != nil {
-				s.logger.Printf("[ERR] serf: Failed to update snapshot: %v", err)
-			}
+			s.tryAppend(fmt.Sprintf("alive: %s %s\n", mem.Name, addr.String()))
 		}
 
 	case EventMemberLeave:
@@ -160,11 +165,15 @@ func (s *Snapshoter) processMemberEvent(e MemberEvent) {
 	case EventMemberFailed:
 		for _, mem := range e.Members {
 			delete(s.aliveNodes, mem.Name)
-			line := fmt.Sprintf("not-alive: %s\n", mem.Name)
-			if err := s.appendLine(line); err != nil {
-				s.logger.Printf("[ERR] serf: Failed to update snapshot: %v", err)
-			}
+			s.tryAppend(fmt.Sprintf("not-alive: %s\n", mem.Name))
 		}
+	}
+
+	// Check for a new clock value
+	lastSeen := s.clock.Time() - 1
+	if lastSeen > s.lastClock {
+		s.lastClock = lastSeen
+		s.tryAppend(fmt.Sprintf("clock: %d\n", s.lastClock))
 	}
 }
 
@@ -175,9 +184,12 @@ func (s *Snapshoter) processUserEvent(e UserEvent) {
 		return
 	}
 	s.lastEventClock = e.LTime
+	s.tryAppend(fmt.Sprintf("event-clock: %d\n", e.LTime))
+}
 
-	line := fmt.Sprintf("event-clock: %d\n", e.LTime)
-	if err := s.appendLine(line); err != nil {
+// tryAppend will invoke append line but will not return an error
+func (s *Snapshoter) tryAppend(l string) {
+	if err := s.appendLine(l); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to update snapshot: %v", err)
 	}
 }
@@ -227,9 +239,17 @@ func (s *Snapshoter) compact() error {
 		offset += int64(n)
 	}
 
-	// Write out the event clock
-	line := fmt.Sprintf("event-clock: %d\n", s.lastEventClock)
+	// Write out the clocks
+	line := fmt.Sprintf("clock: %d\n", s.lastClock)
 	n, err := fh.WriteString(line)
+	if err != nil {
+		fh.Close()
+		return err
+	}
+	offset += int64(n)
+
+	line = fmt.Sprintf("event-clock: %d\n", s.lastEventClock)
+	n, err = fh.WriteString(line)
 	if err != nil {
 		fh.Close()
 		return err
@@ -285,6 +305,15 @@ func (s *Snapshoter) replay() error {
 		} else if strings.HasPrefix(line, "not-alive: ") {
 			name := strings.TrimPrefix(line, "not-alive: ")
 			delete(s.aliveNodes, name)
+
+		} else if strings.HasPrefix(line, "clock: ") {
+			timeStr := strings.TrimPrefix(line, "clock: ")
+			timeInt, err := strconv.ParseUint(timeStr, 10, 64)
+			if err != nil {
+				s.logger.Printf("[WARN] Failed to convert clock time: %v", err)
+				continue
+			}
+			s.lastClock = LamportTime(timeInt)
 
 		} else if strings.HasPrefix(line, "event-clock: ") {
 			timeStr := strings.TrimPrefix(line, "event-clock: ")
