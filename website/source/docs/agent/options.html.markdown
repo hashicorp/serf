@@ -133,6 +133,8 @@ at a single JSON object with configuration within it.
 
 * `log_level` - Equivalent to the `-log-level` command-line flag.
 
+* `profile` - Equivalent to the `-profile` command-line flag.
+
 * `protocol` - Equivalent to the `-protocol` command-line flag.
 
 * `rpc_addr` - Equivalent to the `-rpc-addr` command-line flag.
