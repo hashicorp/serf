@@ -113,14 +113,13 @@ func (c *Config) EncryptBytes() ([]byte, error) {
 
 // EventScripts returns the list of EventScripts associated with this
 // configuration and specified by the "event_handlers" configuration.
-func (c *Config) EventScripts() ([]EventScript, error) {
+func (c *Config) EventScripts() []EventScript {
 	result := make([]EventScript, 0, len(c.EventHandlers))
 	for _, v := range c.EventHandlers {
 		part := ParseEventScript(v)
 		result = append(result, part...)
 	}
-
-	return result, nil
+	return result
 }
 
 // DecodeConfig reads the configuration from the given reader in JSON
