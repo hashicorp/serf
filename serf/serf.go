@@ -61,6 +61,8 @@ type Serf struct {
 	stateLock  sync.Mutex
 	state      SerfState
 	shutdownCh chan struct{}
+
+	snapshotter *Snapshotter
 }
 
 // SerfState is the state of the Serf instance.
@@ -158,7 +160,8 @@ type userEvents struct {
 }
 
 const (
-	UserEventSizeLimit = 128 // Maximum byte size for event name and payload
+	UserEventSizeLimit = 128         // Maximum byte size for event name and payload
+	snapshotSizeLimit  = 1024 * 1024 // Maximum 1 MB snapshot
 )
 
 // Create creates a new Serf instance, starting all the background tasks
@@ -204,6 +207,23 @@ func Create(conf *Config) (*Serf, error) {
 			conf.UserCoalescePeriod, conf.UserQuiescentPeriod, c)
 	}
 
+	// Try access the snapshot
+	var oldClock, oldEventClock LamportTime
+	var prev []*PreviousNode
+	if conf.SnapshotPath != "" {
+		eventCh, snap, err := NewSnapshotter(conf.SnapshotPath, snapshotSizeLimit,
+			serf.logger, &serf.clock, conf.EventCh, serf.shutdownCh)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to setup snapshot: %v", err)
+		}
+		serf.snapshotter = snap
+		conf.EventCh = eventCh
+		prev = snap.AliveNodes()
+		oldClock = snap.LastClock()
+		oldEventClock = snap.LastEventClock()
+		serf.eventMinTime = oldEventClock + 1
+	}
+
 	// Setup the broadcast queue, which we use to send our own custom
 	// broadcasts along the gossip channel.
 	serf.broadcasts = &memberlist.TransmitLimitedQueue{
@@ -231,6 +251,10 @@ func Create(conf *Config) (*Serf, error) {
 	serf.clock.Increment()
 	serf.eventClock.Increment()
 
+	// Restore the clock from snap if we have one
+	serf.clock.Witness(oldClock)
+	serf.eventClock.Witness(oldEventClock)
+
 	// Modify the memberlist configuration with keys that we set
 	conf.MemberlistConfig.Events = &eventDelegate{serf: serf}
 	conf.MemberlistConfig.Delegate = &delegate{serf: serf}
@@ -255,6 +279,11 @@ func Create(conf *Config) (*Serf, error) {
 	go serf.handleReconnect()
 	go serf.checkQueueDepth("Intent", serf.broadcasts)
 	go serf.checkQueueDepth("Event", serf.eventBroadcasts)
+
+	// Attempt to re-join the cluster if we have known nodes
+	if len(prev) != 0 {
+		go serf.handleRejoin(prev)
+	}
 
 	return serf, nil
 }
@@ -376,6 +405,11 @@ func (s *Serf) Leave() error {
 			s.state = SerfAlive
 		}
 	}()
+
+	// If we have a snapshot, mark we are leaving
+	if s.snapshotter != nil {
+		s.snapshotter.Leave()
+	}
 
 	// Construct the message for the graceful leave
 	msg := messageLeave{
@@ -508,6 +542,12 @@ func (s *Serf) Shutdown() error {
 
 	s.state = SerfShutdown
 	close(s.shutdownCh)
+
+	// Wait for the snapshoter to finish if we have one
+	if s.snapshotter != nil {
+		s.snapshotter.Wait()
+	}
+
 	return nil
 }
 
@@ -952,4 +992,22 @@ func recentIntent(recent []nodeIntent, node string) (intent *nodeIntent) {
 		}
 	}
 	return
+}
+
+// handleRejoin attempts to reconnect to previously known alive nodes
+func (s *Serf) handleRejoin(previous []*PreviousNode) {
+	for _, prev := range previous {
+		// Do not attempt to join ourself
+		if prev.Name == s.config.NodeName {
+			continue
+		}
+
+		s.logger.Printf("[INFO] Attempting re-join to previously known node: %s", prev)
+		_, err := s.memberlist.Join([]string{prev.Addr})
+		if err == nil {
+			s.logger.Printf("[INFO] Re-joined to previously known node: %s", prev)
+			return
+		}
+	}
+	s.logger.Printf("[WARN] Failed to re-join any previously known node")
 }
