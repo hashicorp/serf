@@ -20,7 +20,7 @@ func TestSnapshoter(t *testing.T) {
 	outCh := make(chan Event, 64)
 	stopCh := make(chan struct{})
 	logger := log.New(os.Stderr, "", log.LstdFlags)
-	inCh, snap, err := NewSnapshoter(td+"snap", snapshotSizeLimit,
+	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit,
 		logger, clock, outCh, stopCh)
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -102,7 +102,7 @@ func TestSnapshoter(t *testing.T) {
 
 	// Open the snapshoter
 	stopCh = make(chan struct{})
-	_, snap, err = NewSnapshoter(td+"snap", snapshotSizeLimit,
+	_, snap, err = NewSnapshotter(td+"snap", snapshotSizeLimit,
 		logger, clock, outCh, stopCh)
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -140,7 +140,7 @@ func TestSnapshoter_forceCompact(t *testing.T) {
 	logger := log.New(os.Stderr, "", log.LstdFlags)
 
 	// Create a very low limit
-	inCh, snap, err := NewSnapshoter(td+"snap", 1024,
+	inCh, snap, err := NewSnapshotter(td+"snap", 1024,
 		logger, clock, nil, stopCh)
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -161,7 +161,7 @@ func TestSnapshoter_forceCompact(t *testing.T) {
 
 	// Open the snapshoter
 	stopCh = make(chan struct{})
-	_, snap, err = NewSnapshoter(td+"snap", snapshotSizeLimit,
+	_, snap, err = NewSnapshotter(td+"snap", snapshotSizeLimit,
 		logger, clock, nil, stopCh)
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -186,7 +186,7 @@ func TestSnapshoter_leave(t *testing.T) {
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
 	logger := log.New(os.Stderr, "", log.LstdFlags)
-	inCh, snap, err := NewSnapshoter(td+"snap", snapshotSizeLimit,
+	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit,
 		logger, clock, nil, stopCh)
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -222,7 +222,7 @@ func TestSnapshoter_leave(t *testing.T) {
 
 	// Open the snapshoter
 	stopCh = make(chan struct{})
-	_, snap, err = NewSnapshoter(td+"snap", snapshotSizeLimit,
+	_, snap, err = NewSnapshotter(td+"snap", snapshotSizeLimit,
 		logger, clock, nil, stopCh)
 	if err != nil {
 		t.Fatalf("err: %v", err)
