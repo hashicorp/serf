@@ -97,7 +97,7 @@ type joinResponse struct {
 }
 
 type membersResponse struct {
-	Members []serf.Member
+	Members []Member
 }
 
 type monitorRequest struct {
@@ -442,13 +442,32 @@ func (i *AgentIPC) handleJoin(client *IPCClient, seq uint64) error {
 
 func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
 	serf := i.agent.Serf()
+	raw := serf.Members()
+
+	members := make([]Member, 0, len(raw))
+	for _, m := range raw {
+		sm := Member{
+			Name:        m.Name,
+			Addr:        m.Addr,
+			Port:        m.Port,
+			Role:        m.Role,
+			Status:      m.Status.String(),
+			ProtocolMin: m.ProtocolMin,
+			ProtocolMax: m.ProtocolMax,
+			ProtocolCur: m.ProtocolCur,
+			DelegateMin: m.DelegateMin,
+			DelegateMax: m.DelegateMax,
+			DelegateCur: m.DelegateCur,
+		}
+		members = append(members, sm)
+	}
 
 	header := responseHeader{
 		Seq:   seq,
 		Error: "",
 	}
 	resp := membersResponse{
-		Members: serf.Members(),
+		Members: members,
 	}
 	return client.Send(&header, &resp)
 }

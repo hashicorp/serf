@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/hashicorp/logutils"
-	"github.com/hashicorp/serf/serf"
 	"github.com/ugorji/go/codec"
 	"log"
 	"net"
@@ -156,7 +155,7 @@ func (c *RPCClient) Join(addrs []string, ignoreOld bool) (int, error) {
 }
 
 // Members is used to fetch a list of known members
-func (c *RPCClient) Members() ([]serf.Member, error) {
+func (c *RPCClient) Members() ([]Member, error) {
 	header := requestHeader{
 		Command: membersCommand,
 		Seq:     c.getSeq(),

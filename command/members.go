@@ -77,7 +77,7 @@ func (c *MembersCommand) Run(args []string) int {
 
 	for _, member := range members {
 		// Skip the non-matching members
-		if !roleRe.MatchString(member.Role) || !statusRe.MatchString(member.Status.String()) {
+		if !roleRe.MatchString(member.Role) || !statusRe.MatchString(member.Status) {
 			continue
 		}
 
