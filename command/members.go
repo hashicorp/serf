@@ -25,7 +25,14 @@ Options:
 
   -detailed                 Additional information such as protocol verions
                             will be shown.
+
+  -role=<regexp>            If provided, output is filtered to only nodes matching
+                            the regular expression for role
+
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
+
+  -status=<regexp>			If provided, output is filtered to only nodes matching
+                            the regular expression for status
 `
 	return strings.TrimSpace(helpText)
 }
