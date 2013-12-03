@@ -60,6 +60,7 @@ func (c *Command) Run(args []string) int {
 	cmdFlags.StringVar(&cmdConfig.RPCAddr, "rpc-addr", "",
 		"address to bind RPC listener to")
 	cmdFlags.StringVar(&cmdConfig.Profile, "profile", "", "timing profile to use (lan, wan, local)")
+	cmdFlags.StringVar(&cmdConfig.SnapshotPath, "snapshot", "", "path to the snapshot file")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
@@ -148,6 +149,7 @@ func (c *Command) Run(args []string) int {
 	serfConfig.MemberlistConfig.SecretKey = encryptKey
 	serfConfig.NodeName = config.NodeName
 	serfConfig.Role = config.Role
+	serfConfig.SnapshotPath = config.SnapshotPath
 	serfConfig.ProtocolVersion = uint8(config.Protocol)
 	serfConfig.CoalescePeriod = 3 * time.Second
 	serfConfig.QuiescentPeriod = time.Second
@@ -202,6 +204,7 @@ func (c *Command) Run(args []string) int {
 	ui.Info(fmt.Sprintf("Bind addr: '%s'", bindAddr))
 	ui.Info(fmt.Sprintf(" RPC addr: '%s'", config.RPCAddr))
 	ui.Info(fmt.Sprintf("Encrypted: %#v", config.EncryptKey != ""))
+	ui.Info(fmt.Sprintf(" Snapshot: %v", config.SnapshotPath != ""))
 	ui.Info(fmt.Sprintf("  Profile: %s", config.Profile))
 
 	if len(config.StartJoin) > 0 {
@@ -302,6 +305,9 @@ Options:
                            by event scripts to differentiate different types
                            of nodes that may be part of the same cluster.
   -rpc-addr=127.0.0.1:7373 Address to bind the RPC listener.
+  -snapshot=path/to/file   The snapshot file is used to store alive nodes and
+                           event information so that Serf can rejoin a cluster
+						   and avoid event replay on restart.
 
 Event handlers:
 

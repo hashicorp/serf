@@ -98,6 +98,12 @@ The options below are all specified on the command-line.
   in order to query a running Serf agent. It is also used by other applications
   to control Serf using it's [RPC protocol](/docs/agent/rpc.html).
 
+* `-snapshot` - The snapshot flag provides a file path that is used to store
+  recovery information, so when Serf restarts it is able to automatically
+  re-join the cluster, and avoid replay of events it has already seen. The path
+  must be read/writable by Serf, and the directory must allow Serf to create
+  other files, so that it can periodically compact the snapshot file.
+
 ## Configuration Files
 
 In addition to the command-line options, configuration can be put into
@@ -147,3 +153,6 @@ at a single JSON object with configuration within it.
   join upon startup.
 
 * `replay_on_join` - Equivalent to the `-replay` command-line flag.
+
+* `snapshot_path` - Equivalent to the `-snapshot` command-line flag.
+
