@@ -51,7 +51,8 @@ There are five important components that `serf agent` outputs:
   connect to a running agent and use RPC to query and control the agent.
   By default, this binds only to localhost on the default port. If you
   change this address, you'll have to specify an `-rpc-addr` to commands
-  such as `serf members` so they know how to talk to the agent.
+  such as `serf members` so they know how to talk to the agent. This is also
+  the address other applications can use over [RPC to control Serf](/docs/agent/rpc.html).
 
 * **Encrypted**: This shows if Serf is encrypting all traffic that it
   sends and expects to receive. It is a good sanity check to avoid sending
