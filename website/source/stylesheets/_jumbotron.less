@@ -4,12 +4,19 @@
 
 
 #jumbotron {
+  position: relative;
   height: @jumbotron-height;
   color: @jumbotron-color;
   background-color:  @gray-light;
   padding-top: 0;
   padding-bottom: 0;
   overflow: hidden;
+
+  &.mobile-hero{
+    background:  transparent url( ../images/node-hero-pattern.jpg ) center center;
+    background-size: 320px 320px;
+    background: -webkit-image-set( url('../images/node-hero-pattern.jpg') 1x, url('../images/node-hero-pattern@2x.jpg') 2x );
+  }
 
   .container{
       position: relative;
@@ -24,6 +31,12 @@
           background:  transparent url( ../images/logo-circle-logo@2x.png ) 0 0 no-repeat;
           background-size: 726px 454px;
           z-index: 20;
+          pointer-events: none;
+      }
+
+      .col-lg-5{
+          z-index: 20;
+          pointer-events: none;   
       }
 
       h2{
