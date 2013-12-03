@@ -25,6 +25,7 @@ $ serf agent
     Bind addr: '0.0.0.0:7946'
      RPC addr: '127.0.0.1:7373'
     Encrypted: false
+     Snapshot: false
       Profile: lan
 
 ==> Log data will now stream in as it occurs:
@@ -36,7 +37,7 @@ $ serf agent
 ...
 ```
 
-There are five important components that `serf agent` outputs:
+There are six important components that `serf agent` outputs:
 
 * **Node name**: This is a unique name for the agent. By default this
   is the hostname of the machine, but you may customize it to whatever
@@ -58,6 +59,14 @@ There are five important components that `serf agent` outputs:
   sends and expects to receive. It is a good sanity check to avoid sending
   non-encrypted traffic over any public networks. You can read more about
   [encryption here](/docs/agent/encryption.html).
+
+* **Snapshot**: This shows if Serf snapshotting is enabled. The snapshot
+  file enables Serf to automatically re-join a cluster after failure and
+  prevents replay of events that have already been seen. It requires storing
+  state on disk, and [must be configured](/docs/agent/options.html)
+  using a CLI flag or in the configuration directory. If it is not provided,
+  other nodes will still attempt to reconnect on recovery, however the node
+  will take longer to join the cluster and will replay old events.
 
 * **Profile**: The profile controls various timing values which should
   be appropriate to the environment Serf is running in. It defaults to

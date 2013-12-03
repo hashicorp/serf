@@ -24,6 +24,7 @@ old events.
 */
 
 const fsyncInterval = 100 * time.Millisecond
+const clockUpdateInterval = 500 * time.Millisecond
 const tmpExt = ".compact"
 
 // Snapshotter is responsible for ingesting events and persisting
@@ -180,6 +181,9 @@ func (s *Snapshotter) stream() {
 				s.logger.Printf("[ERR] serf: Unknown event to snapshot: %#v", e)
 			}
 
+		case <-time.After(clockUpdateInterval):
+			s.updateClock()
+
 		case <-s.shutdownCh:
 			if err := s.fh.Sync(); err != nil {
 				s.logger.Printf("[ERR] serf: failed to sync snapshot: %v", err)
@@ -209,8 +213,13 @@ func (s *Snapshotter) processMemberEvent(e MemberEvent) {
 			s.tryAppend(fmt.Sprintf("not-alive: %s\n", mem.Name))
 		}
 	}
+	s.updateClock()
+}
 
-	// Check for a new clock value
+// updateClock is called periodically to check if we should udpate our
+// clock value. This is done after member events but should also be done
+// periodically due to race conditions with join and leave intents
+func (s *Snapshotter) updateClock() {
 	lastSeen := s.clock.Time() - 1
 	if lastSeen > s.lastClock {
 		s.lastClock = lastSeen

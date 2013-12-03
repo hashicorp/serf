@@ -75,6 +75,11 @@ type Config struct {
 	// Profile is used to select a timing profile for Serf. The supported choices
 	// are "wan", "lan", and "local". The default is "lan"
 	Profile string `mapstructure:"profile"`
+
+	// SnapshotPath is used to allow Serf to snapshot important transactional
+	// state to make a more graceful recovery possible. This enables auto
+	// re-joining a cluster on failure and avoids old message replay.
+	SnapshotPath string `mapstructure:"snapshot_path"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -190,6 +195,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.Profile != "" {
 		result.Profile = b.Profile
+	}
+	if b.SnapshotPath != "" {
+		result.SnapshotPath = b.SnapshotPath
 	}
 
 	// Copy the event handlers
