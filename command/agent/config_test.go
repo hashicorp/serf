@@ -77,11 +77,7 @@ func TestConfigEventScripts(t *testing.T) {
 		},
 	}
 
-	result, err := c.EventScripts()
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
+	result := c.EventScripts()
 	if len(result) != 2 {
 		t.Fatalf("bad: %#v", result)
 	}
