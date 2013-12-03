@@ -24,6 +24,8 @@ $ serf agent
     Node name: 'mitchellh.local'
     Bind addr: '0.0.0.0:7946'
      RPC addr: '127.0.0.1:7373'
+    Encrypted: false
+      Profile: lan
 
 ==> Log data will now stream in as it occurs:
 
@@ -34,7 +36,7 @@ $ serf agent
 ...
 ```
 
-There are three important components that `serf agent` outputs:
+There are five important components that `serf agent` outputs:
 
 * **Node name**: This is a unique name for the agent. By default this
   is the hostname of the machine, but you may customize it to whatever
@@ -50,6 +52,17 @@ There are three important components that `serf agent` outputs:
   By default, this binds only to localhost on the default port. If you
   change this address, you'll have to specify an `-rpc-addr` to commands
   such as `serf members` so they know how to talk to the agent.
+
+* **Encrypted**: This shows if Serf is encrypting all traffic that it
+  sends and expects to receive. It is a good sanity check to avoid sending
+  non-encrypted traffic over any public networks. You can read more about
+  [encryption here](/docs/agent/encryption.html).
+
+* **Profile**: The profile controls various timing values which should
+  be appropriate to the environment Serf is running in. It defaults to
+  optimizing for a LAN environment, but can also be set for WAN or
+  local-only communication. The profile can be set in
+  the [configuration](/docs/agent/options.html).
 
 ## Stopping an Agent
 

@@ -72,6 +72,15 @@ The options below are all specified on the command-line.
 * `-node` - The name of this node in the cluster. This must be unique within
   the cluster. By default this is the hostname of the machine.
 
+* `-profile` - Serf by default is configured to run in a LAN or Local Area
+  Network. However, there are cases in which a user may want to use Serf over
+  the Internet or (WAN), or even just locally. To support setting the correct
+  configuration values for each environment, you can select a timing profile.
+  The current choices are "lan", "wan", and "local". This defaults to "local".
+  If a "lan" or "local" profile is used over the Internet, or a "local" profile
+  over the LAN, a high rate of false failures is risked, as the timing constaints
+  are too tight.
+
 * `-protocol` - The Serf protocol version to use. This defaults to the latest
   version. This should be set only when [upgrading](/docs/upgrading.html).
   You can view the protocol versions supported by Serf by running `serf -v`.
