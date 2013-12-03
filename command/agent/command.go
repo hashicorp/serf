@@ -215,10 +215,8 @@ func (c *Command) startupJoin(config *Config, agent *Agent) error {
 		return nil
 	}
 
-	c.Ui.Output(fmt.Sprintf("Joining cluster...(replay: %s)", config.ReplayOnJoin))
-	// agent.Join recieves (join addrs, ignoreold) so we switch the
-	// ReplayOnJoin configuration.
-	n, err := agent.Join(config.StartJoin, !config.ReplayOnJoin)
+	c.Ui.Output(fmt.Sprintf("Joining cluster...(replay: %v)", config.ReplayOnJoin))
+	n, err := agent.Join(config.StartJoin, config.ReplayOnJoin)
 	if err != nil {
 		return err
 	}
