@@ -23,6 +23,7 @@ func testAgent(t *testing.T) *agent.Agent {
 	config.MemberlistConfig.ProbeTimeout = 25 * time.Millisecond
 	config.MemberlistConfig.SuspicionMult = 1
 	config.NodeName = config.MemberlistConfig.BindAddr
+	config.Role = "test"
 
 	agent := &agent.Agent{
 		RPCAddr:    getRPCAddr(),

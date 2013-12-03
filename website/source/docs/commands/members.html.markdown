@@ -25,7 +25,13 @@ The command-line flags are all optional. The list of available flags are:
 * `-detailed` - Will show additional information per member, such as the
   protocol version that each can understand and that each is speaking.
 
+* `-role` - If provided, output is filtered to only nodes matching
+  the regular expression for role
+
 * `-rpc-addr` - Address to the RPC server of the agent you want to contact
   to send this command. If this isn't specified, the command will contact
   "127.0.0.1:7373" which is the default RPC address of a Serf agent.
+
+* `-status` - If provided, output is filtered to only nodes matching
+  the regular expression for status
 
