@@ -26,7 +26,7 @@ old events.
 const fsyncInterval = 100 * time.Millisecond
 const tmpExt = ".compact"
 
-type Snapshoter struct {
+type Snapshotter struct {
 	aliveNodes     map[string]string
 	clock          *LamportClock
 	fh             *os.File
@@ -54,12 +54,12 @@ func (p PreviousNode) String() string {
 	return fmt.Sprintf("%s: %s", p.Name, p.Addr)
 }
 
-// NewSnapshoter creates a new Snapshoter that records events up to a
+// NewSnapshotter creates a new Snapshotter that records events up to a
 // max byte size before rotating the file. It can also be used to
-// recover old state. Snapshoter works by reading an event channel it returns,
+// recover old state. Snapshotter works by reading an event channel it returns,
 // passing through to an output channel, and persisting relevant events to disk.
-func NewSnapshoter(path string, maxSize int, logger *log.Logger, clock *LamportClock,
-	outCh chan<- Event, shutdownCh <-chan struct{}) (chan<- Event, *Snapshoter, error) {
+func NewSnapshotter(path string, maxSize int, logger *log.Logger, clock *LamportClock,
+	outCh chan<- Event, shutdownCh <-chan struct{}) (chan<- Event, *Snapshotter, error) {
 	inCh := make(chan Event, 1024)
 
 	// Try to open the file
@@ -77,7 +77,7 @@ func NewSnapshoter(path string, maxSize int, logger *log.Logger, clock *LamportC
 	offset := info.Size()
 
 	// Create the snapshotter
-	snap := &Snapshoter{
+	snap := &Snapshotter{
 		aliveNodes:     make(map[string]string),
 		clock:          clock,
 		fh:             fh,
@@ -106,17 +106,17 @@ func NewSnapshoter(path string, maxSize int, logger *log.Logger, clock *LamportC
 }
 
 // LastClock returns the last known clock time
-func (s *Snapshoter) LastClock() LamportTime {
+func (s *Snapshotter) LastClock() LamportTime {
 	return s.lastClock
 }
 
 // LastEventClock returns the last known event clock time
-func (s *Snapshoter) LastEventClock() LamportTime {
+func (s *Snapshotter) LastEventClock() LamportTime {
 	return s.lastEventClock
 }
 
 // AliveNodes returns the last known alive nodes
-func (s *Snapshoter) AliveNodes() []*PreviousNode {
+func (s *Snapshotter) AliveNodes() []*PreviousNode {
 	// Copy the previously known
 	previous := make([]*PreviousNode, 0, len(s.aliveNodes))
 	for name, addr := range s.aliveNodes {
@@ -131,14 +131,14 @@ func (s *Snapshoter) AliveNodes() []*PreviousNode {
 	return previous
 }
 
-// Wait is used to wait until the snapshoter finishes shut down
-func (s *Snapshoter) Wait() {
+// Wait is used to wait until the snapshotter finishes shut down
+func (s *Snapshotter) Wait() {
 	<-s.waitCh
 }
 
 // Leave is used to remove known nodes to prevent a restart from
 // causing a join. Otherwise nodes will re-join after leaving!
-func (s *Snapshoter) Leave() {
+func (s *Snapshotter) Leave() {
 	select {
 	case s.leaveCh <- struct{}{}:
 	case <-s.shutdownCh:
@@ -146,7 +146,7 @@ func (s *Snapshoter) Leave() {
 }
 
 // stream is a long running routine that is used to handle events
-func (s *Snapshoter) stream() {
+func (s *Snapshotter) stream() {
 	for {
 		select {
 		case <-s.leaveCh:
@@ -189,7 +189,7 @@ func (s *Snapshoter) stream() {
 }
 
 // processMemberEvent is used to handle a single member event
-func (s *Snapshoter) processMemberEvent(e MemberEvent) {
+func (s *Snapshotter) processMemberEvent(e MemberEvent) {
 	switch e.Type {
 	case EventMemberJoin:
 		for _, mem := range e.Members {
@@ -216,7 +216,7 @@ func (s *Snapshoter) processMemberEvent(e MemberEvent) {
 }
 
 // processUserEvent is used to handle a single user event
-func (s *Snapshoter) processUserEvent(e UserEvent) {
+func (s *Snapshotter) processUserEvent(e UserEvent) {
 	// Ignore old clocks
 	if e.LTime <= s.lastEventClock {
 		return
@@ -226,14 +226,14 @@ func (s *Snapshoter) processUserEvent(e UserEvent) {
 }
 
 // tryAppend will invoke append line but will not return an error
-func (s *Snapshoter) tryAppend(l string) {
+func (s *Snapshotter) tryAppend(l string) {
 	if err := s.appendLine(l); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to update snapshot: %v", err)
 	}
 }
 
 // appendLine is used to append a line to the existing log
-func (s *Snapshoter) appendLine(l string) error {
+func (s *Snapshotter) appendLine(l string) error {
 	n, err := s.fh.WriteString(l)
 	if err != nil {
 		return err
@@ -257,7 +257,7 @@ func (s *Snapshoter) appendLine(l string) error {
 }
 
 // Compact is used to compact the snapshot once it is too large
-func (s *Snapshoter) compact() error {
+func (s *Snapshotter) compact() error {
 	// Try to open the file to new fiel
 	newPath := s.path + tmpExt
 	fh, err := os.OpenFile(newPath, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0755)
@@ -311,7 +311,7 @@ func (s *Snapshoter) compact() error {
 // replay is used to seek to reset our internal state by replaying
 // the snapshot file. It is used at initialization time to read old
 // state
-func (s *Snapshoter) replay() error {
+func (s *Snapshotter) replay() error {
 	// Seek to the beginning
 	if _, err := s.fh.Seek(0, os.SEEK_SET); err != nil {
 		return err

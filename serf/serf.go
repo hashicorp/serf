@@ -62,7 +62,7 @@ type Serf struct {
 	state      SerfState
 	shutdownCh chan struct{}
 
-	snapshoter *Snapshoter
+	snapshotter *Snapshotter
 }
 
 // SerfState is the state of the Serf instance.
@@ -211,12 +211,12 @@ func Create(conf *Config) (*Serf, error) {
 	var oldClock, oldEventClock LamportTime
 	var prev []*PreviousNode
 	if conf.SnapshotPath != "" {
-		eventCh, snap, err := NewSnapshoter(conf.SnapshotPath, snapshotSizeLimit,
+		eventCh, snap, err := NewSnapshotter(conf.SnapshotPath, snapshotSizeLimit,
 			serf.logger, &serf.clock, conf.EventCh, serf.shutdownCh)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to setup snapshot: %v", err)
 		}
-		serf.snapshoter = snap
+		serf.snapshotter = snap
 		conf.EventCh = eventCh
 		prev = snap.AliveNodes()
 		oldClock = snap.LastClock()
@@ -407,8 +407,8 @@ func (s *Serf) Leave() error {
 	}()
 
 	// If we have a snapshot, mark we are leaving
-	if s.snapshoter != nil {
-		s.snapshoter.Leave()
+	if s.snapshotter != nil {
+		s.snapshotter.Leave()
 	}
 
 	// Construct the message for the graceful leave
@@ -544,8 +544,8 @@ func (s *Serf) Shutdown() error {
 	close(s.shutdownCh)
 
 	// Wait for the snapshoter to finish if we have one
-	if s.snapshoter != nil {
-		s.snapshoter.Wait()
+	if s.snapshotter != nil {
+		s.snapshotter.Wait()
 	}
 
 	return nil
