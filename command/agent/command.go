@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/hashicorp/logutils"
+	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/serf"
 	"github.com/mitchellh/cli"
 	"net"
@@ -56,6 +57,7 @@ func (c *Command) Run(args []string) int {
 	cmdFlags.StringVar(&cmdConfig.Role, "role", "", "role name")
 	cmdFlags.StringVar(&cmdConfig.RPCAddr, "rpc-addr", "",
 		"address to bind RPC listener to")
+	cmdFlags.StringVar(&cmdConfig.Profile, "profile", "", "timing profile to use (lan, wan, local)")
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
@@ -126,6 +128,19 @@ func (c *Command) Run(args []string) int {
 	}
 
 	serfConfig := serf.DefaultConfig()
+
+	switch config.Profile {
+	case "lan":
+		serfConfig.MemberlistConfig = memberlist.DefaultLANConfig()
+	case "wan":
+		serfConfig.MemberlistConfig = memberlist.DefaultWANConfig()
+	case "local":
+		serfConfig.MemberlistConfig = memberlist.DefaultLocalConfig()
+	default:
+		c.Ui.Error(fmt.Sprintf("Unknown profile: %s", config.Profile))
+		return 1
+	}
+
 	serfConfig.MemberlistConfig.BindAddr = bindIP
 	serfConfig.MemberlistConfig.Port = bindPort
 	serfConfig.MemberlistConfig.SecretKey = encryptKey
@@ -163,6 +178,7 @@ func (c *Command) Run(args []string) int {
 	ui.Info(fmt.Sprintf("Bind addr: '%s'", bindAddr))
 	ui.Info(fmt.Sprintf(" RPC addr: '%s'", config.RPCAddr))
 	ui.Info(fmt.Sprintf("Encrypted: %#v", config.EncryptKey != ""))
+	ui.Info(fmt.Sprintf("  Profile: %s", config.Profile))
 
 	if len(config.StartJoin) > 0 {
 		ui.Output(fmt.Sprintf("Joining cluster...(replay: %s)", config.ReplayOnJoin))
@@ -254,6 +270,8 @@ Options:
                            specified multiple times.
   -log-level=info          Log level of the agent.
   -node=hostname           Name of this node. Must be unique in the cluster
+  -profile=[lan|wan|local] Profile is used to control the timing profiles used in Serf.
+						   The default if not provided is lan.
   -protocol=n              Serf protocol version to use. This defaults to
                            the latest version, but can be set back for upgrades.
   -role=foo                The role of this node, if any. This can be used
