@@ -13,17 +13,19 @@ func TestMembersCommand_implements(t *testing.T) {
 func TestMembersCommandRun(t *testing.T) {
 	a1 := testAgent(t)
 	defer a1.Shutdown()
+	rpcAddr, ipc := testIPC(t, a1)
+	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
 	c := &MembersCommand{Ui: ui}
-	args := []string{"-rpc-addr=" + a1.RPCAddr}
+	args := []string{"-rpc-addr=" + rpcAddr}
 
 	code := c.Run(args)
 	if code != 0 {
 		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
 	}
 
-	if !strings.Contains(ui.OutputWriter.String(), a1.SerfConfig.NodeName) {
+	if !strings.Contains(ui.OutputWriter.String(), a1.SerfConfig().NodeName) {
 		t.Fatalf("bad: %#v", ui.OutputWriter.String())
 	}
 }
@@ -31,11 +33,13 @@ func TestMembersCommandRun(t *testing.T) {
 func TestMembersCommandRun_statusFilter(t *testing.T) {
 	a1 := testAgent(t)
 	defer a1.Shutdown()
+	rpcAddr, ipc := testIPC(t, a1)
+	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
 	c := &MembersCommand{Ui: ui}
 	args := []string{
-		"-rpc-addr=" + a1.RPCAddr,
+		"-rpc-addr=" + rpcAddr,
 		"-status=a.*e",
 	}
 
@@ -44,7 +48,7 @@ func TestMembersCommandRun_statusFilter(t *testing.T) {
 		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
 	}
 
-	if !strings.Contains(ui.OutputWriter.String(), a1.SerfConfig.NodeName) {
+	if !strings.Contains(ui.OutputWriter.String(), a1.SerfConfig().NodeName) {
 		t.Fatalf("bad: %#v", ui.OutputWriter.String())
 	}
 }
@@ -52,11 +56,13 @@ func TestMembersCommandRun_statusFilter(t *testing.T) {
 func TestMembersCommandRun_statusFilter_failed(t *testing.T) {
 	a1 := testAgent(t)
 	defer a1.Shutdown()
+	rpcAddr, ipc := testIPC(t, a1)
+	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
 	c := &MembersCommand{Ui: ui}
 	args := []string{
-		"-rpc-addr=" + a1.RPCAddr,
+		"-rpc-addr=" + rpcAddr,
 		"-status=(fail|left)",
 	}
 
@@ -65,7 +71,7 @@ func TestMembersCommandRun_statusFilter_failed(t *testing.T) {
 		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
 	}
 
-	if strings.Contains(ui.OutputWriter.String(), a1.SerfConfig.NodeName) {
+	if strings.Contains(ui.OutputWriter.String(), a1.SerfConfig().NodeName) {
 		t.Fatalf("bad: %#v", ui.OutputWriter.String())
 	}
 }
@@ -73,11 +79,13 @@ func TestMembersCommandRun_statusFilter_failed(t *testing.T) {
 func TestMembersCommandRun_roleFilter(t *testing.T) {
 	a1 := testAgent(t)
 	defer a1.Shutdown()
+	rpcAddr, ipc := testIPC(t, a1)
+	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
 	c := &MembersCommand{Ui: ui}
 	args := []string{
-		"-rpc-addr=" + a1.RPCAddr,
+		"-rpc-addr=" + rpcAddr,
 		"-role=test",
 	}
 
@@ -86,7 +94,7 @@ func TestMembersCommandRun_roleFilter(t *testing.T) {
 		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
 	}
 
-	if !strings.Contains(ui.OutputWriter.String(), a1.SerfConfig.NodeName) {
+	if !strings.Contains(ui.OutputWriter.String(), a1.SerfConfig().NodeName) {
 		t.Fatalf("bad: %#v", ui.OutputWriter.String())
 	}
 }
@@ -94,11 +102,13 @@ func TestMembersCommandRun_roleFilter(t *testing.T) {
 func TestMembersCommandRun_roleFilter_failed(t *testing.T) {
 	a1 := testAgent(t)
 	defer a1.Shutdown()
+	rpcAddr, ipc := testIPC(t, a1)
+	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
 	c := &MembersCommand{Ui: ui}
 	args := []string{
-		"-rpc-addr=" + a1.RPCAddr,
+		"-rpc-addr=" + rpcAddr,
 		"-role=primary",
 	}
 
@@ -107,7 +117,7 @@ func TestMembersCommandRun_roleFilter_failed(t *testing.T) {
 		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
 	}
 
-	if strings.Contains(ui.OutputWriter.String(), a1.SerfConfig.NodeName) {
+	if strings.Contains(ui.OutputWriter.String(), a1.SerfConfig().NodeName) {
 		t.Fatalf("bad: %#v", ui.OutputWriter.String())
 	}
 }

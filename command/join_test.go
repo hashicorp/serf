@@ -15,12 +15,14 @@ func TestJoinCommandRun(t *testing.T) {
 	a2 := testAgent(t)
 	defer a1.Shutdown()
 	defer a2.Shutdown()
+	rpcAddr, ipc := testIPC(t, a1)
+	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
 	c := &JoinCommand{Ui: ui}
 	args := []string{
-		"-rpc-addr=" + a1.RPCAddr,
-		a2.SerfConfig.MemberlistConfig.BindAddr,
+		"-rpc-addr=" + rpcAddr,
+		a2.SerfConfig().MemberlistConfig.BindAddr,
 	}
 
 	code := c.Run(args)

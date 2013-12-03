@@ -92,10 +92,11 @@ The options below are all specified on the command-line.
   web servers to the load balancers, so the role of web servers may be "web"
   and the event handlers can filter on that.
 
-* `-rpc-addr` - The address that Serf will bind to for the agent's internal
-  RPC server. By default this is "127.0.0.1:7373", allowing only loopback
-  connections. The RPC address is used by other Serf commands, such as
-  `serf members`, in order to query a running Serf agent.
+* `-rpc-addr` - The address that Serf will bind to for the agent's  RPC server.
+  By default this is "127.0.0.1:7373", allowing only loopback connections.
+  The RPC address is used by other Serf commands, such as  `serf members`,
+  in order to query a running Serf agent. It is also used by other applications
+  to control Serf using it's [RPC protocol](/docs/agent/rpc.html).
 
 ## Configuration Files
 

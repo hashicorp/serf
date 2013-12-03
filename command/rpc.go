@@ -3,7 +3,6 @@ package command
 import (
 	"flag"
 	"github.com/hashicorp/serf/command/agent"
-	"net/rpc"
 )
 
 // RPCAddrFlag returns a pointer to a string that will be populated
@@ -15,10 +14,5 @@ func RPCAddrFlag(f *flag.FlagSet) *string {
 
 // RPCClient returns a new Serf RPC client with the given address.
 func RPCClient(addr string) (*agent.RPCClient, error) {
-	rpcClient, err := rpc.Dial("tcp", addr)
-	if err != nil {
-		return nil, err
-	}
-
-	return &agent.RPCClient{Client: rpcClient}, nil
+	return agent.NewRPCClient(addr)
 }

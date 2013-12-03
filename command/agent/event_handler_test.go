@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/serf/serf"
 	"io/ioutil"
-	"log"
 	"net"
-	"os"
 	"testing"
 )
 
@@ -68,7 +66,9 @@ func TestScriptEventHandler(t *testing.T) {
 		},
 		Scripts: []EventScript{
 			{
-				Event:  "*",
+				EventFilter: EventFilter{
+					Event: "*",
+				},
 				Script: script,
 			},
 		},
@@ -85,11 +85,7 @@ func TestScriptEventHandler(t *testing.T) {
 		},
 	}
 
-	discardLogger := log.New(os.Stderr, "", log.LstdFlags)
-	err := h.HandleEvent(discardLogger, event)
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
+	h.HandleEvent(event)
 
 	result, err := ioutil.ReadFile(results)
 	if err != nil {
@@ -112,7 +108,9 @@ func TestScriptUserEventHandler(t *testing.T) {
 		},
 		Scripts: []EventScript{
 			{
-				Event:  "*",
+				EventFilter: EventFilter{
+					Event: "*",
+				},
 				Script: script,
 			},
 		},
@@ -125,11 +123,7 @@ func TestScriptUserEventHandler(t *testing.T) {
 		Coalesce: true,
 	}
 
-	discardLogger := log.New(os.Stderr, "", log.LstdFlags)
-	err := h.HandleEvent(discardLogger, userEvent)
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
+	h.HandleEvent(userEvent)
 
 	result, err := ioutil.ReadFile(results)
 	if err != nil {
@@ -149,32 +143,32 @@ func TestEventScriptInvoke(t *testing.T) {
 		invoke bool
 	}{
 		{
-			EventScript{"*", "", "script.sh"},
+			EventScript{EventFilter{"*", ""}, "script.sh"},
 			serf.MemberEvent{},
 			true,
 		},
 		{
-			EventScript{"user", "", "script.sh"},
+			EventScript{EventFilter{"user", ""}, "script.sh"},
 			serf.MemberEvent{},
 			false,
 		},
 		{
-			EventScript{"user", "deploy", "script.sh"},
+			EventScript{EventFilter{"user", "deploy"}, "script.sh"},
 			serf.UserEvent{Name: "deploy"},
 			true,
 		},
 		{
-			EventScript{"user", "deploy", "script.sh"},
+			EventScript{EventFilter{"user", "deploy"}, "script.sh"},
 			serf.UserEvent{Name: "restart"},
 			false,
 		},
 		{
-			EventScript{"member-join", "", "script.sh"},
+			EventScript{EventFilter{"member-join", ""}, "script.sh"},
 			serf.MemberEvent{Type: serf.EventMemberJoin},
 			true,
 		},
 		{
-			EventScript{"member-join", "", "script.sh"},
+			EventScript{EventFilter{"member-join", ""}, "script.sh"},
 			serf.MemberEvent{Type: serf.EventMemberLeave},
 			false,
 		},
@@ -203,7 +197,7 @@ func TestEventScriptValid(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		script := EventScript{Event: tc.Event}
+		script := EventScript{EventFilter: EventFilter{Event: tc.Event}}
 		if script.Valid() != tc.Valid {
 			t.Errorf("bad: %#v", tc)
 		}
@@ -219,51 +213,43 @@ func TestParseEventScript(t *testing.T) {
 		{
 			"script.sh",
 			false,
-			[]EventScript{{"*", "", "script.sh"}},
+			[]EventScript{{EventFilter{"*", ""}, "script.sh"}},
 		},
 
 		{
 			"member-join=script.sh",
 			false,
-			[]EventScript{{"member-join", "", "script.sh"}},
+			[]EventScript{{EventFilter{"member-join", ""}, "script.sh"}},
 		},
 
 		{
 			"foo,bar=script.sh",
 			false,
 			[]EventScript{
-				{"foo", "", "script.sh"},
-				{"bar", "", "script.sh"},
+				{EventFilter{"foo", ""}, "script.sh"},
+				{EventFilter{"bar", ""}, "script.sh"},
 			},
 		},
 
 		{
 			"user:deploy=script.sh",
 			false,
-			[]EventScript{{"user", "deploy", "script.sh"}},
+			[]EventScript{{EventFilter{"user", "deploy"}, "script.sh"}},
 		},
 
 		{
 			"foo,user:blah,bar=script.sh",
 			false,
 			[]EventScript{
-				{"foo", "", "script.sh"},
-				{"user", "blah", "script.sh"},
-				{"bar", "", "script.sh"},
+				{EventFilter{"foo", ""}, "script.sh"},
+				{EventFilter{"user", "blah"}, "script.sh"},
+				{EventFilter{"bar", ""}, "script.sh"},
 			},
 		},
 	}
 
 	for _, tc := range testCases {
-		results, err := ParseEventScript(tc.v)
-		if tc.err && err == nil {
-			t.Errorf("should error: %s", tc.v)
-			continue
-		} else if !tc.err && err != nil {
-			t.Errorf("should not err: %s, %s", tc.v, err)
-			continue
-		}
-
+		results := ParseEventScript(tc.v)
 		if results == nil {
 			t.Errorf("result should not be nil")
 			continue
@@ -287,6 +273,70 @@ func TestParseEventScript(t *testing.T) {
 
 			if r.Script != expected.Script {
 				t.Errorf("Scripts not equal: %s %s", r.Script, expected.Script)
+			}
+		}
+	}
+}
+
+func TestParseEventFilter(t *testing.T) {
+	testCases := []struct {
+		v       string
+		results []EventFilter
+	}{
+		{
+			"",
+			[]EventFilter{EventFilter{"*", ""}},
+		},
+
+		{
+			"member-join",
+			[]EventFilter{EventFilter{"member-join", ""}},
+		},
+
+		{
+			"foo,bar",
+			[]EventFilter{
+				EventFilter{"foo", ""},
+				EventFilter{"bar", ""},
+			},
+		},
+
+		{
+			"user:deploy",
+			[]EventFilter{EventFilter{"user", "deploy"}},
+		},
+
+		{
+			"foo,user:blah,bar",
+			[]EventFilter{
+				EventFilter{"foo", ""},
+				EventFilter{"user", "blah"},
+				EventFilter{"bar", ""},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		results := ParseEventFilter(tc.v)
+		if results == nil {
+			t.Errorf("result should not be nil")
+			continue
+		}
+
+		if len(results) != len(tc.results) {
+			t.Errorf("bad: %#v", results)
+			continue
+		}
+
+		for i, r := range results {
+			expected := tc.results[i]
+
+			if r.Event != expected.Event {
+				t.Errorf("Events not equal: %s %s", r.Event, expected.Event)
+			}
+
+			if r.UserEvent != expected.UserEvent {
+				t.Errorf("User events not equal: %s %s", r.UserEvent, expected.UserEvent)
 			}
 		}
 	}

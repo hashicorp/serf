@@ -54,18 +54,42 @@ func (c *MonitorCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
-	eventCh := make(chan string)
-	doneCh := make(chan struct{})
-	if err := client.Monitor(logutils.LogLevel(logLevel), eventCh, doneCh); err != nil {
+	logCh := make(chan string, 16)
+	monHandle, err := client.Monitor(logutils.LogLevel(logLevel), logCh)
+	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error starting monitor: %s", err))
 		return 1
 	}
+	defer client.Stop(monHandle)
+
+	eventCh := make(chan map[string]interface{}, 16)
+	streamHandle, err := client.Stream("*", eventCh)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error starting stream: %s", err))
+		return 1
+	}
+	defer client.Stop(streamHandle)
 
 	eventDoneCh := make(chan struct{})
 	go func() {
 		defer close(eventDoneCh)
-		for e := range eventCh {
-			c.Ui.Info(e)
+	OUTER:
+		for {
+			select {
+			case log := <-logCh:
+				if log == "" {
+					break OUTER
+				}
+				c.Ui.Info(log)
+			case event := <-eventCh:
+				if event == nil {
+					break OUTER
+				}
+				c.Ui.Info("Event Info:")
+				for key, val := range event {
+					c.Ui.Info(fmt.Sprintf("\t%s: %#v", key, val))
+				}
+			}
 		}
 
 		c.lock.Lock()
@@ -86,7 +110,6 @@ func (c *MonitorCommand) Run(args []string) int {
 		c.lock.Unlock()
 	}
 
-	close(doneCh)
 	return 0
 }
 

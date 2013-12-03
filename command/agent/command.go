@@ -7,6 +7,8 @@ import (
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/serf"
 	"github.com/mitchellh/cli"
+	"io"
+	"log"
 	"net"
 	"os"
 	"strings"
@@ -152,25 +154,47 @@ func (c *Command) Run(args []string) int {
 	serfConfig.UserCoalescePeriod = 3 * time.Second
 	serfConfig.UserQuiescentPeriod = time.Second
 
-	agent := &Agent{
-		EventHandler: &ScriptEventHandler{
-			Self: serf.Member{
-				Name: serfConfig.NodeName,
-				Role: serfConfig.Role,
-			},
-			Scripts: eventScripts,
-		},
-		LogOutput:  logLevelFilter,
-		RPCAddr:    config.RPCAddr,
-		SerfConfig: serfConfig,
+	// Setup the RPC listener
+	rpcListener, err := net.Listen("tcp", config.RPCAddr)
+	if err != nil {
+		ui.Error(fmt.Sprintf("Error starting RPC listener: %s", err))
+		return 1
 	}
 
+	// Create a log writer, and wrap a logOutput around it
+	logWriter := NewLogWriter(512)
+	logOutput := io.MultiWriter(logLevelFilter, logWriter)
+
+	// Start Serf
 	ui.Output("Starting Serf agent...")
-	if err := agent.Start(); err != nil {
-		ui.Error(err.Error())
+	agent, err := Create(serfConfig, logOutput)
+	if err != nil {
+		ui.Error(fmt.Sprintf("Failed to start the Serf agent: %v", err))
 		return 1
 	}
 	defer agent.Shutdown()
+
+	// Add the script event handlers
+	scriptEH := &ScriptEventHandler{
+		Self: serf.Member{
+			Name: serfConfig.NodeName,
+			Role: serfConfig.Role,
+		},
+		Scripts: eventScripts,
+		Logger:  log.New(logOutput, "", log.LstdFlags),
+	}
+	agent.RegisterEventHandler(scriptEH)
+
+	// Start the agent after the handler is registered
+	if err := agent.Start(); err != nil {
+		ui.Error(fmt.Sprintf("Failed to start the Serf agent: %v", err))
+		return 1
+	}
+
+	// Start the IPC layer
+	ui.Output("Starting Serf agent RPC...")
+	ipc := NewAgentIPC(agent, rpcListener, logOutput, logWriter)
+	defer ipc.Shutdown()
 
 	bindAddr := (&net.TCPAddr{IP: net.ParseIP(bindIP), Port: bindPort}).String()
 	ui.Output("Serf agent running!")
