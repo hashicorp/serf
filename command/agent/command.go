@@ -28,17 +28,11 @@ type Command struct {
 	shuttingDown bool
 }
 
-func (c *Command) Run(args []string) int {
-	ui := &cli.PrefixedUi{
-		OutputPrefix: "==> ",
-		InfoPrefix:   "    ",
-		ErrorPrefix:  "==> ",
-		Ui:           c.Ui,
-	}
-
+// readConfig is responsible for setup of our configuration using
+// the command line and any file configs
+func (c *Command) readConfig(ui *cli.PrefixedUi, args []string) *Config {
 	var cmdConfig Config
 	var configFiles []string
-
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	cmdFlags.Usage = func() { ui.Output(c.Help()) }
 	cmdFlags.StringVar(&cmdConfig.BindAddr, "bind", "", "address to bind listeners to")
@@ -62,7 +56,7 @@ func (c *Command) Run(args []string) int {
 	cmdFlags.StringVar(&cmdConfig.Profile, "profile", "", "timing profile to use (lan, wan, local)")
 	cmdFlags.StringVar(&cmdConfig.SnapshotPath, "snapshot", "", "path to the snapshot file")
 	if err := cmdFlags.Parse(args); err != nil {
-		return 1
+		return nil
 	}
 
 	config := DefaultConfig
@@ -70,13 +64,29 @@ func (c *Command) Run(args []string) int {
 		fileConfig, err := ReadConfigPaths(configFiles)
 		if err != nil {
 			c.Ui.Error(err.Error())
-			return 1
+			return nil
 		}
 
 		config = MergeConfig(config, fileConfig)
 	}
 
 	config = MergeConfig(config, &cmdConfig)
+	return config
+}
+
+func (c *Command) Run(args []string) int {
+	ui := &cli.PrefixedUi{
+		OutputPrefix: "==> ",
+		InfoPrefix:   "    ",
+		ErrorPrefix:  "==> ",
+		Ui:           c.Ui,
+	}
+
+	// Parse our configs
+	config := c.readConfig(ui, args)
+	if config == nil {
+		return 1
+	}
 
 	if config.NodeName == "" {
 		hostname, err := os.Hostname()
