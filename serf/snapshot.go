@@ -26,6 +26,8 @@ old events.
 const fsyncInterval = 100 * time.Millisecond
 const tmpExt = ".compact"
 
+// Snapshotter is responsible for ingesting events and persisting
+// them to disk, and providing a recovery mechanism at start time.
 type Snapshotter struct {
 	aliveNodes     map[string]string
 	clock          *LamportClock
@@ -45,6 +47,7 @@ type Snapshotter struct {
 	waitCh         chan struct{}
 }
 
+// PreviousNode is used to represent the previously known alive nodes
 type PreviousNode struct {
 	Name string
 	Addr string
