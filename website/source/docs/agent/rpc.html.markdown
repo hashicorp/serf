@@ -53,6 +53,7 @@ Possible commands include:
 * stream - Starts streaming events over the connection
 * monitor - Starts streaming logs over the connection
 * stop - Stops streaming logs or events
+* leave - Serf agent performs a graceful leave and shutdown
 
 Below each command is documented along with any request or
 response body that is applicable.
@@ -255,4 +256,9 @@ This unsubscribes the client from the monitor and/or stream registered
 with `Seq` value of 50.
 
 There is no special response body.
+
+### leave
+
+The leave command is used trigger a graceful leave and shutdown.
+There is no request body, or special response body.
 

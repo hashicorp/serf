@@ -180,6 +180,15 @@ func (c *RPCClient) UserEvent(name string, payload []byte, coalesce bool) error 
 	return c.genericRPC(&header, &req, nil)
 }
 
+// Leave is used to trigger a graceful leave and shutdown
+func (c *RPCClient) Leave() error {
+	header := requestHeader{
+		Command: leaveCommand,
+		Seq:     c.getSeq(),
+	}
+	return c.genericRPC(&header, nil, nil)
+}
+
 type monitorHandler struct {
 	client *RPCClient
 	closed bool
