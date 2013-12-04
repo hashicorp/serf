@@ -18,6 +18,10 @@ will be merged into configuration specified earlier. In most cases,
 some cases, such as event handlers, merging just appends the handlers.
 The exact merging behavior will be specified.
 
+Serf also supports reloading of configuration when it receives the
+SIGHUP signal. Not all changes are respected, but those that are
+are documented below.
+
 ## Command-line Options
 
 The options below are all specified on the command-line.
@@ -52,6 +56,7 @@ The options below are all specified on the command-line.
   event handlers. By default no event handlers are registered. See the
   [event handler page](/docs/agent/event-handlers.html) for more details on
   event handlers as well as a syntax for filtering event handlers by event.
+  Event handlers can be changed by reloading the configuration.
 
 * `-join` - Address of another agent to join upon starting up. This can be
   specified multiple times to specify multiple agents to join. If Serf is
@@ -67,7 +72,8 @@ The options below are all specified on the command-line.
   started. This defaults to "info". The available log levels are "trace",
   "debug", "info", "warn", "err". This is the log level that will be shown
   for the agent output, but note you can always connect via `serf monitor`
-  to an agent at any log level.
+  to an agent at any log level. The log level can be changed during a
+  config reload.
 
 * `-node` - The name of this node in the cluster. This must be unique within
   the cluster. By default this is the hostname of the machine.
