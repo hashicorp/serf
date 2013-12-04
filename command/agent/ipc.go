@@ -49,6 +49,7 @@ const (
 	streamCommand     = "stream"
 	stopCommand       = "stop"
 	monitorCommand    = "monitor"
+	leaveCommand      = "leave"
 )
 
 const (
@@ -357,6 +358,9 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 	case joinCommand:
 		return i.handleJoin(client, seq)
 
+	case leaveCommand:
+		return i.handleLeave(client, seq)
+
 	default:
 		respHeader := responseHeader{Seq: seq, Error: unsupportedCommand}
 		client.Send(&respHeader, nil)
@@ -573,6 +577,26 @@ func (i *AgentIPC) handleStop(client *IPCClient, seq uint64) error {
 	// Always succeed
 	resp := responseHeader{Seq: seq, Error: ""}
 	return client.Send(&resp, nil)
+}
+
+func (i *AgentIPC) handleLeave(client *IPCClient, seq uint64) error {
+	i.logger.Printf("[INFO] Graceful leave triggered")
+
+	// Do the leave
+	err := i.agent.Leave()
+	if err != nil {
+		i.logger.Printf("[ERR] agent: leave failed: %v", err)
+	}
+	resp := responseHeader{Seq: seq, Error: errToString(err)}
+
+	// Send and wait
+	err = client.Send(&resp, nil)
+
+	// Trigger a shutdown!
+	if err := i.agent.Shutdown(); err != nil {
+		i.logger.Printf("[ERR] agent: shutdown failed: %v", err)
+	}
+	return err
 }
 
 // Used to convert an error to a string representation
