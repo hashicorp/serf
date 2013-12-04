@@ -58,6 +58,7 @@ type Serf struct {
 	eventLock       sync.RWMutex
 
 	logger     *log.Logger
+	joinLock   sync.Mutex
 	stateLock  sync.Mutex
 	state      SerfState
 	shutdownCh chan struct{}
@@ -333,15 +334,17 @@ func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
 // case that no nodes could be contacted. If ignoreOld is true, then any
 // user messages sent prior to the join will be ignored.
 func (s *Serf) Join(existing []string, ignoreOld bool) (int, error) {
-	s.stateLock.Lock()
-	defer s.stateLock.Unlock()
-
-	if s.state == SerfShutdown {
-		return 0, fmt.Errorf("Serf can't Join after Shutdown")
+	// Do a quick state check
+	if s.State() != SerfAlive {
+		return 0, fmt.Errorf("Serf can't Join after Leave or Shutdown")
 	}
 
+	// Hold the joinLock, this is to make eventJoinIgnore safe
+	s.joinLock.Lock()
+	defer s.joinLock.Unlock()
+
 	// Ignore any events from a potential join. This is safe since we hold
-	// the stateLock and nobody else can be doing a Join
+	// the joinLock and nobody else can be doing a Join
 	if ignoreOld {
 		s.eventJoinIgnore = true
 		defer func() {
@@ -389,22 +392,19 @@ func (s *Serf) broadcastJoin(ltime LamportTime) error {
 // Leave gracefully exits the cluster. It is safe to call this multiple
 // times.
 func (s *Serf) Leave() error {
+	// Check the current state
 	s.stateLock.Lock()
-	defer s.stateLock.Unlock()
-
 	if s.state == SerfLeft {
 		return nil
+	} else if s.state == SerfLeaving {
+		s.stateLock.Unlock()
+		return fmt.Errorf("Leave already in progress")
 	} else if s.state == SerfShutdown {
+		s.stateLock.Unlock()
 		return fmt.Errorf("Leave called after Shutdown")
 	}
-
-	// Moving into a temporary Leaving state, rollback on failure
 	s.state = SerfLeaving
-	defer func() {
-		if s.state != SerfLeft {
-			s.state = SerfAlive
-		}
-	}()
+	s.stateLock.Unlock()
 
 	// If we have a snapshot, mark we are leaving
 	if s.snapshotter != nil {
@@ -436,12 +436,18 @@ func (s *Serf) Leave() error {
 		}
 	}
 
+	// Attempt the memberlist leave
 	err := s.memberlist.Leave(s.config.BroadcastTimeout)
 	if err != nil {
 		return err
 	}
 
-	s.state = SerfLeft
+	// Transition to Left only if we not already shutdown
+	s.stateLock.Lock()
+	if s.state != SerfShutdown {
+		s.state = SerfLeft
+	}
+	s.stateLock.Unlock()
 	return nil
 }
 
@@ -535,13 +541,13 @@ func (s *Serf) Shutdown() error {
 		s.logger.Println("[WARN] Shutdown without a Leave")
 	}
 
+	s.state = SerfShutdown
+	close(s.shutdownCh)
+
 	err := s.memberlist.Shutdown()
 	if err != nil {
 		return err
 	}
-
-	s.state = SerfShutdown
-	close(s.shutdownCh)
 
 	// Wait for the snapshoter to finish if we have one
 	if s.snapshotter != nil {
