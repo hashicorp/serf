@@ -347,7 +347,7 @@ func (c *Command) handleReload(config *Config, agent *Agent) *Config {
 	// Change the log level
 	minLevel := logutils.LogLevel(strings.ToUpper(newConf.LogLevel))
 	if ValidateLevelFilter(minLevel, c.logFilter) {
-		c.logFilter.MinLevel = minLevel
+		c.logFilter.SetMinLevel(minLevel)
 	} else {
 		c.Ui.Error(fmt.Sprintf(
 			"Invalid log level: %s. Valid log levels are: %v",
