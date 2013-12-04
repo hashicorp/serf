@@ -11,21 +11,22 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
 	"strings"
-	"sync"
+	"syscall"
 	"time"
 )
+
+// gracefulTimeout controls how long we wait before forcefully terminating
+var gracefulTimeout = 3 * time.Second
 
 // Command is a Command implementation that runs a Serf agent.
 // The command will not end unless a shutdown message is sent on the
 // ShutdownCh. If two messages are sent on the ShutdownCh it will forcibly
 // exit.
 type Command struct {
-	ShutdownCh <-chan struct{}
 	Ui         cli.Ui
-
-	lock         sync.Mutex
-	shuttingDown bool
+	ShutdownCh chan struct{}
 }
 
 // readConfig is responsible for setup of our configuration using
@@ -270,48 +271,57 @@ func (c *Command) Run(args []string) int {
 	c.Ui.Output("Log data will now stream in as it occurs:\n")
 	logGate.Flush()
 
-	// Wait to exit
-	graceful, forceful := c.startShutdownWatcher(agent)
-	select {
-	case <-graceful:
-	case <-forceful:
-		// Forcefully shut down, return a bad exit status.
-		return 1
-	}
-	return 0
+	// Wait for exit
+	return c.handleSignals(config, agent)
 }
 
-func (c *Command) startShutdownWatcher(agent *Agent) (graceful <-chan struct{}, forceful <-chan struct{}) {
-	g := make(chan struct{})
-	f := make(chan struct{})
-	graceful = g
-	forceful = f
+// handleSignals blocks until we get an exit-causing signal
+func (c *Command) handleSignals(config *Config, agent *Agent) int {
+	signalCh := make(chan os.Signal, 4)
+	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM)
 
+	// Wait for a signal
+	var sig os.Signal
+	select {
+	case s := <-signalCh:
+		sig = s
+	case <-c.ShutdownCh:
+		sig = os.Interrupt
+	}
+
+	// Check if we should do a graceful leave
+	graceful := false
+	if sig == os.Interrupt && config.LeaveOnInt {
+		graceful = true
+	} else if sig == syscall.SIGTERM && config.LeaveOnTerm {
+		graceful = true
+	}
+
+	// Bail fast if not doing a graceful leave
+	if !graceful {
+		return 1
+	}
+
+	// Attempt a graceful leave
+	gracefulCh := make(chan struct{})
+	c.Ui.Output("Gracefully shutting down agent...")
 	go func() {
-		<-c.ShutdownCh
-
-		c.lock.Lock()
-		c.shuttingDown = true
-		c.lock.Unlock()
-
-		c.Ui.Output("Gracefully shutting down agent...")
-		go func() {
-			if err := agent.Shutdown(); err != nil {
-				c.Ui.Error(fmt.Sprintf("Error: %s", err))
-				return
-			}
-			close(g)
-		}()
-
-		select {
-		case <-g:
-			// Gracefully shut down properly
-		case <-c.ShutdownCh:
-			close(f)
+		if err := agent.Leave(); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error: %s", err))
+			return
 		}
+		close(gracefulCh)
 	}()
 
-	return
+	// Wait for leave or another signal
+	select {
+	case <-signalCh:
+		return 1
+	case <-time.After(gracefulTimeout):
+		return 1
+	case <-gracefulCh:
+		return 0
+	}
 }
 
 func (c *Command) Synopsis() string {
