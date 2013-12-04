@@ -16,15 +16,22 @@ type EventHandler interface {
 
 // ScriptEventHandler invokes scripts for the events that it receives.
 type ScriptEventHandler struct {
-	Self       serf.Member
-	Scripts    []EventScript
-	Logger     *log.Logger
+	Self    serf.Member
+	Scripts []EventScript
+	Logger  *log.Logger
+
 	scriptLock sync.Mutex
+	newScripts []EventScript
 }
 
 func (h *ScriptEventHandler) HandleEvent(e serf.Event) {
+	// Swap in the new scripts if any
 	h.scriptLock.Lock()
-	defer h.scriptLock.Unlock()
+	if h.newScripts != nil {
+		h.Scripts = h.newScripts
+		h.newScripts = nil
+	}
+	h.scriptLock.Unlock()
 
 	if h.Logger == nil {
 		h.Logger = log.New(os.Stderr, "", log.LstdFlags)
@@ -48,7 +55,7 @@ func (h *ScriptEventHandler) HandleEvent(e serf.Event) {
 func (h *ScriptEventHandler) UpdateScripts(scripts []EventScript) {
 	h.scriptLock.Lock()
 	defer h.scriptLock.Unlock()
-	h.Scripts = scripts
+	h.newScripts = scripts
 }
 
 // EventFilter is used to filter which events are processed
