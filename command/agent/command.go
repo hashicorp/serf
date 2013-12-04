@@ -25,13 +25,16 @@ var gracefulTimeout = 3 * time.Second
 // ShutdownCh. If two messages are sent on the ShutdownCh it will forcibly
 // exit.
 type Command struct {
-	Ui         cli.Ui
-	ShutdownCh <-chan struct{}
+	Ui            cli.Ui
+	ShutdownCh    <-chan struct{}
+	args          []string
+	scriptHandler *ScriptEventHandler
+	logFilter     *logutils.LevelFilter
 }
 
 // readConfig is responsible for setup of our configuration using
 // the command line and any file configs
-func (c *Command) readConfig(args []string) *Config {
+func (c *Command) readConfig() *Config {
 	var cmdConfig Config
 	var configFiles []string
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
@@ -56,7 +59,7 @@ func (c *Command) readConfig(args []string) *Config {
 		"address to bind RPC listener to")
 	cmdFlags.StringVar(&cmdConfig.Profile, "profile", "", "timing profile to use (lan, wan, local)")
 	cmdFlags.StringVar(&cmdConfig.SnapshotPath, "snapshot", "", "path to the snapshot file")
-	if err := cmdFlags.Parse(args); err != nil {
+	if err := cmdFlags.Parse(c.args); err != nil {
 		return nil
 	}
 
@@ -151,19 +154,19 @@ func (c *Command) setupLoggers(config *Config) (*GatedWriter, *logWriter, io.Wri
 		Writer: &cli.UiWriter{Ui: c.Ui},
 	}
 
-	logLevelFilter := LevelFilter()
-	logLevelFilter.MinLevel = logutils.LogLevel(strings.ToUpper(config.LogLevel))
-	logLevelFilter.Writer = logGate
-	if !ValidateLevelFilter(logLevelFilter) {
+	c.logFilter = LevelFilter()
+	c.logFilter.MinLevel = logutils.LogLevel(strings.ToUpper(config.LogLevel))
+	c.logFilter.Writer = logGate
+	if !ValidateLevelFilter(c.logFilter.MinLevel, c.logFilter) {
 		c.Ui.Error(fmt.Sprintf(
 			"Invalid log level: %s. Valid log levels are: %v",
-			logLevelFilter.MinLevel, logLevelFilter.Levels))
+			c.logFilter.MinLevel, c.logFilter.Levels))
 		return nil, nil, nil
 	}
 
 	// Create a log writer, and wrap a logOutput around it
 	logWriter := NewLogWriter(512)
-	logOutput := io.MultiWriter(logLevelFilter, logWriter)
+	logOutput := io.MultiWriter(c.logFilter, logWriter)
 	return logGate, logWriter, logOutput
 }
 
@@ -171,7 +174,7 @@ func (c *Command) setupLoggers(config *Config) (*GatedWriter, *logWriter, io.Wri
 func (c *Command) startAgent(config *Config, agent *Agent,
 	logWriter *logWriter, logOutput io.Writer) *AgentIPC {
 	// Add the script event handlers
-	scriptEH := &ScriptEventHandler{
+	c.scriptHandler = &ScriptEventHandler{
 		Self: serf.Member{
 			Name: config.NodeName,
 			Role: config.Role,
@@ -179,7 +182,7 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 		Scripts: config.EventScripts(),
 		Logger:  log.New(logOutput, "", log.LstdFlags),
 	}
-	agent.RegisterEventHandler(scriptEH)
+	agent.RegisterEventHandler(c.scriptHandler)
 
 	// Start the agent after the handler is registered
 	if err := agent.Start(); err != nil {
@@ -235,7 +238,8 @@ func (c *Command) Run(args []string) int {
 	}
 
 	// Parse our configs
-	config := c.readConfig(args)
+	c.args = args
+	config := c.readConfig()
 	if config == nil {
 		return 1
 	}
@@ -278,15 +282,22 @@ func (c *Command) Run(args []string) int {
 // handleSignals blocks until we get an exit-causing signal
 func (c *Command) handleSignals(config *Config, agent *Agent) int {
 	signalCh := make(chan os.Signal, 4)
-	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 
 	// Wait for a signal
+WAIT:
 	var sig os.Signal
 	select {
 	case s := <-signalCh:
 		sig = s
 	case <-c.ShutdownCh:
 		sig = os.Interrupt
+	}
+
+	// Check if this is a SIGHUP
+	if sig == syscall.SIGHUP {
+		config = c.handleReload(config, agent)
+		goto WAIT
 	}
 
 	// Check if we should do a graceful leave
@@ -322,6 +333,33 @@ func (c *Command) handleSignals(config *Config, agent *Agent) int {
 	case <-gracefulCh:
 		return 0
 	}
+}
+
+// handleReload is invoked when we should reload our configs, e.g. SIGHUP
+func (c *Command) handleReload(config *Config, agent *Agent) *Config {
+	c.Ui.Output("Reloading configuration...")
+	newConf := c.readConfig()
+	if newConf == nil {
+		c.Ui.Error(fmt.Sprintf("Failed to reload configs"))
+		return config
+	}
+
+	// Change the log level
+	minLevel := logutils.LogLevel(strings.ToUpper(newConf.LogLevel))
+	if ValidateLevelFilter(minLevel, c.logFilter) {
+		c.logFilter.MinLevel = minLevel
+	} else {
+		c.Ui.Error(fmt.Sprintf(
+			"Invalid log level: %s. Valid log levels are: %v",
+			minLevel, c.logFilter.Levels))
+
+		// Keep the current log level
+		newConf.LogLevel = config.LogLevel
+	}
+
+	// Change the event handlers
+	c.scriptHandler.UpdateScripts(config.EventScripts())
+	return newConf
 }
 
 func (c *Command) Synopsis() string {
