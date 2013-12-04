@@ -193,6 +193,27 @@ func TestRPCClientUserEvent(t *testing.T) {
 	}
 }
 
+func TestRPCClientLeave(t *testing.T) {
+	client, a1, ipc := testRPCClient(t)
+	defer ipc.Shutdown()
+	defer client.Close()
+	defer a1.Shutdown()
+
+	testutil.Yield()
+
+	if err := client.Leave(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	select {
+	case <-a1.ShutdownCh():
+	default:
+		t.Fatalf("agent should be shutdown!")
+	}
+}
+
 func TestRPCClientMonitor(t *testing.T) {
 	client, a1, ipc := testRPCClient(t)
 	defer ipc.Shutdown()
