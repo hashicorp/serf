@@ -37,7 +37,11 @@ func (ls *logStream) HandleLog(l string) {
 	select {
 	case ls.logCh <- l:
 	default:
-		ls.logger.Printf("[WARN] Dropping logs to %v", ls.client)
+		// We can't log syncronously, since we are already being invoked
+		// from the logWriter, and a log will need to invoke Write() which
+		// already holds the lock. We must therefor do the log async, so
+		// as to not deadlock
+		go ls.logger.Printf("[WARN] Dropping logs to %v", ls.client)
 	}
 }
 
