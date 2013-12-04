@@ -395,6 +395,7 @@ func (s *Serf) Leave() error {
 	// Check the current state
 	s.stateLock.Lock()
 	if s.state == SerfLeft {
+		s.stateLock.Unlock()
 		return nil
 	} else if s.state == SerfLeaving {
 		s.stateLock.Unlock()
