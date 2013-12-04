@@ -287,6 +287,9 @@ func (c *Command) handleSignals(config *Config, agent *Agent) int {
 		sig = s
 	case <-c.ShutdownCh:
 		sig = os.Interrupt
+	case <-agent.ShutdownCh():
+		// Agent is already shutdown!
+		return 0
 	}
 
 	// Check if we should do a graceful leave

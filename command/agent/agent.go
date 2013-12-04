@@ -115,6 +115,12 @@ EXIT:
 	return nil
 }
 
+// ShutdownCh returns a channel that can be selected to wait
+// for the agent to perform a shutdown.
+func (a *Agent) ShutdownCh() <-chan struct{} {
+	return a.shutdownCh
+}
+
 // Returns the Serf agent of the running Agent.
 func (a *Agent) Serf() *serf.Serf {
 	return a.serf
