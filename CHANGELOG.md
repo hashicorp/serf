@@ -2,18 +2,26 @@
 
 FEATURES:
 
-  * Dynamic port support, cluster wide config not necessary [GH-36]
-  * Event handler provides lamport time of user events via SERF_USER_LTIME [GH-68]
+  * Dynamic port support, cluster wide consistent config not necessary
+  * Snapshots to automaticaly rejoin cluster after failure and prevent replays [GH-84] [GH-71]
+  * Adding `profile` to agent, to support WAN, LAN, and Local modes
+  * MsgPack over TCP RPC protocol which can be used to control Serf, send events, and
+  receive events with low latency.
 
 IMPROVEMENTS:
 
+  * Event handler provides lamport time of user events via SERF_USER_LTIME [GH-68]
   * Memberlist encryption overhead has been reduced
+  * Filter output of `members` using regular expressions on role and status
+  * `replay_on_join` parameter to control replay with `start_join`
+  * `monitor` works even if the client is behind a NAT
 
 BUG FIXES:
 
   * Prevent unbounded transmit queues [GH-78]
   * IPv6 addresses can be bound to [GH-72]
   * Serf join won't hang on a slow/dead node [GH-70]
+  * Serf Leave won't block Shutdown [GH-1]
 
 ## 0.2.1 (November 6, 2013)
 
