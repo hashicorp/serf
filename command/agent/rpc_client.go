@@ -218,6 +218,10 @@ func (mh *monitorHandler) Handle(resp *responseHeader) {
 
 func (mh *monitorHandler) Cleanup() {
 	if !mh.closed {
+		if !mh.init {
+			mh.init = true
+			mh.initCh <- fmt.Errorf("Stream closed")
+		}
 		close(mh.logCh)
 		mh.closed = true
 	}
@@ -290,6 +294,10 @@ func (sh *streamHandler) Handle(resp *responseHeader) {
 
 func (sh *streamHandler) Cleanup() {
 	if !sh.closed {
+		if !sh.init {
+			sh.init = true
+			sh.initCh <- fmt.Errorf("Stream closed")
+		}
 		close(sh.eventCh)
 		sh.closed = true
 	}
