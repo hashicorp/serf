@@ -52,6 +52,7 @@ type Config struct {
 	EncryptKey string `mapstructure:"encrypt_key"`
 
 	// LogLevel is the level of the logs to output.
+	// This can be updated during a reload.
 	LogLevel string `mapstructure:"log_level"`
 
 	// RPCAddr is the address and port to listen on for the agent's RPC
@@ -71,6 +72,7 @@ type Config struct {
 	StartJoin []string `mapstructure:"start_join"`
 
 	// EventHandlers is a list of event handlers that will be invoked.
+	// These can be updated during a reload.
 	EventHandlers []string `mapstructure:"event_handlers"`
 
 	// Profile is used to select a timing profile for Serf. The supported choices
@@ -83,11 +85,11 @@ type Config struct {
 	SnapshotPath string `mapstructure:"snapshot_path"`
 
 	// LeaveOnTerm controls if Serf does a graceful leave when receiving
-	// the TERM signal. Defaults false.
+	// the TERM signal. Defaults false. This can be changed on reload.
 	LeaveOnTerm bool `mapstructure:"leave_on_terminate"`
 
 	// LeaveOnInt controls if Serf does a graceful leave when receiving
-	// the INT signal. Defaults true.
+	// the INT signal. Defaults true. This can be changed on reload.
 	LeaveOnInt bool `mapstructure:"leave_on_interrupt"`
 }
 

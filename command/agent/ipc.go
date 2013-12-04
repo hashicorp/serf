@@ -532,7 +532,7 @@ func (i *AgentIPC) handleMonitor(client *IPCClient, seq uint64) error {
 	// Create a level filter
 	filter := LevelFilter()
 	filter.MinLevel = logutils.LogLevel(req.LogLevel)
-	if !ValidateLevelFilter(filter) {
+	if !ValidateLevelFilter(filter.MinLevel, filter) {
 		resp.Error = fmt.Sprintf("Unknown log level: %s", filter.MinLevel)
 		goto SEND
 	}
