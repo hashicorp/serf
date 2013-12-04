@@ -213,7 +213,11 @@ func (mh *monitorHandler) Handle(resp *responseHeader) {
 		mh.client.deregisterHandler(mh.seq)
 		return
 	}
-	mh.logCh <- rec.Log
+	select {
+	case mh.logCh <- rec.Log:
+	default:
+		log.Printf("[ERR] Dropping log! Monitor channel full")
+	}
 }
 
 func (mh *monitorHandler) Cleanup() {
@@ -289,7 +293,11 @@ func (sh *streamHandler) Handle(resp *responseHeader) {
 		sh.client.deregisterHandler(sh.seq)
 		return
 	}
-	sh.eventCh <- rec
+	select {
+	case sh.eventCh <- rec:
+	default:
+		log.Printf("[ERR] Dropping event! Stream channel full")
+	}
 }
 
 func (sh *streamHandler) Cleanup() {
