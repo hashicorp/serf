@@ -4,9 +4,13 @@ FEATURES:
 
   * Dynamic port support, cluster wide consistent config not necessary
   * Snapshots to automaticaly rejoin cluster after failure and prevent replays [GH-84] [GH-71]
-  * Adding `profile` to agent, to support WAN, LAN, and Local modes
+  * Adding `profile` config to agent, to support WAN, LAN, and Local modes
   * MsgPack over TCP RPC protocol which can be used to control Serf, send events, and
   receive events with low latency.
+  * New `leave` CLI command and RPC endpoint to control graceful leaves
+  * Signal handling is controlable, graceful leave behavior on SIGINT/SIGTERM
+  can be specified
+  * SIGHUP can be used to reload configuration
 
 IMPROVEMENTS:
 
@@ -15,6 +19,7 @@ IMPROVEMENTS:
   * Filter output of `members` using regular expressions on role and status
   * `replay_on_join` parameter to control replay with `start_join`
   * `monitor` works even if the client is behind a NAT
+  * Serf generates warning if binding to public IP without encryption
 
 BUG FIXES:
 
