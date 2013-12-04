@@ -156,3 +156,11 @@ at a single JSON object with configuration within it.
 
 * `snapshot_path` - Equivalent to the `-snapshot` command-line flag.
 
+* `leave_on_terminate` - If enabled, when the agent receives a TERM signal,
+  it will send a Leave message to the rest of the cluster and gracefully
+  leave. Defaults to false.
+
+* `leave_on_interrupt` - This is the same as `leave_on_terminate` but
+  only affects interrupt handling. This is usually from a Control-C
+  from a shell. Defaults to true.
+

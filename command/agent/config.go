@@ -24,6 +24,7 @@ var DefaultConfig = &Config{
 	Protocol:     serf.ProtocolVersionMax,
 	ReplayOnJoin: false,
 	Profile:      "lan",
+	LeaveOnInt:   true,
 }
 
 // Config is the configuration that can be set for an Agent. Some of these
@@ -80,6 +81,14 @@ type Config struct {
 	// state to make a more graceful recovery possible. This enables auto
 	// re-joining a cluster on failure and avoids old message replay.
 	SnapshotPath string `mapstructure:"snapshot_path"`
+
+	// LeaveOnTerm controls if Serf does a graceful leave when receiving
+	// the TERM signal. Defaults false.
+	LeaveOnTerm bool `mapstructure:"leave_on_terminate"`
+
+	// LeaveOnInt controls if Serf does a graceful leave when receiving
+	// the INT signal. Defaults true.
+	LeaveOnInt bool `mapstructure:"leave_on_interrupt"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -113,14 +122,13 @@ func (c *Config) EncryptBytes() ([]byte, error) {
 
 // EventScripts returns the list of EventScripts associated with this
 // configuration and specified by the "event_handlers" configuration.
-func (c *Config) EventScripts() ([]EventScript, error) {
+func (c *Config) EventScripts() []EventScript {
 	result := make([]EventScript, 0, len(c.EventHandlers))
 	for _, v := range c.EventHandlers {
 		part := ParseEventScript(v)
 		result = append(result, part...)
 	}
-
-	return result, nil
+	return result
 }
 
 // DecodeConfig reads the configuration from the given reader in JSON

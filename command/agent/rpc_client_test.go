@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 // testRPCClient returns an RPCClient connected to an RPC server that
@@ -62,7 +63,7 @@ func TestRPCClientForceLeave(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	testutil.Yield()
+	time.Sleep(a1.conf.MemberlistConfig.ProbeInterval * 7)
 
 	if err := client.ForceLeave(a2.conf.NodeName); err != nil {
 		t.Fatalf("err: %s", err)
