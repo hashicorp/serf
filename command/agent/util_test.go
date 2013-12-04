@@ -43,6 +43,7 @@ func testAgent(logOutput io.Writer) *Agent {
 		logOutput = os.Stderr
 	}
 	config := serf.DefaultConfig()
+	config.MemberlistConfig.ProbeInterval = 100 * time.Millisecond
 	config.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
 	config.NodeName = config.MemberlistConfig.BindAddr
 

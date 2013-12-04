@@ -9,6 +9,7 @@ import (
 func TestAgent_eventHandler(t *testing.T) {
 	a1 := testAgent(nil)
 	defer a1.Shutdown()
+	defer a1.Leave()
 
 	handler := new(MockEventHandler)
 	a1.RegisterEventHandler(handler)
@@ -44,6 +45,7 @@ func TestAgentShutdown_multiple(t *testing.T) {
 func TestAgentUserEvent(t *testing.T) {
 	a1 := testAgent(nil)
 	defer a1.Shutdown()
+	defer a1.Leave()
 
 	handler := new(MockEventHandler)
 	a1.RegisterEventHandler(handler)

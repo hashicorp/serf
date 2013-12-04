@@ -79,7 +79,18 @@ func (a *Agent) Start() error {
 	return nil
 }
 
-// Shutdown does a graceful shutdown of this agent and all of its processes.
+// Leave prepares for a graceful shutdown of the agent and its processes
+func (a *Agent) Leave() error {
+	if a.serf == nil {
+		return nil
+	}
+
+	a.logger.Println("[INFO] agent: requesting graceful leave from Serf")
+	return a.serf.Leave()
+}
+
+// Shutdown closes this agent and all of its processes. Should be preceeded
+// by a Leave for a graceful shutdown.
 func (a *Agent) Shutdown() error {
 	a.shutdownLock.Lock()
 	defer a.shutdownLock.Unlock()
@@ -90,12 +101,6 @@ func (a *Agent) Shutdown() error {
 
 	if a.serf == nil {
 		goto EXIT
-	}
-
-	// Gracefully leave the serf cluster
-	a.logger.Println("[INFO] agent: requesting graceful leave from Serf")
-	if err := a.serf.Leave(); err != nil {
-		return err
 	}
 
 	a.logger.Println("[INFO] agent: requesting serf shutdown")
