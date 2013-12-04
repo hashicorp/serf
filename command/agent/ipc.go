@@ -580,12 +580,12 @@ func (i *AgentIPC) handleStop(client *IPCClient, seq uint64) error {
 }
 
 func (i *AgentIPC) handleLeave(client *IPCClient, seq uint64) error {
-	i.logger.Printf("[INFO] Graceful leave triggered")
+	i.logger.Printf("[INFO] agent.ipc: Graceful leave triggered")
 
 	// Do the leave
 	err := i.agent.Leave()
 	if err != nil {
-		i.logger.Printf("[ERR] agent: leave failed: %v", err)
+		i.logger.Printf("[ERR] agent.ipc: leave failed: %v", err)
 	}
 	resp := responseHeader{Seq: seq, Error: errToString(err)}
 
@@ -594,7 +594,7 @@ func (i *AgentIPC) handleLeave(client *IPCClient, seq uint64) error {
 
 	// Trigger a shutdown!
 	if err := i.agent.Shutdown(); err != nil {
-		i.logger.Printf("[ERR] agent: shutdown failed: %v", err)
+		i.logger.Printf("[ERR] agent.ipc: shutdown failed: %v", err)
 	}
 	return err
 }
