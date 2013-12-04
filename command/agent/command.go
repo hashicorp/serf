@@ -26,7 +26,7 @@ var gracefulTimeout = 3 * time.Second
 // exit.
 type Command struct {
 	Ui         cli.Ui
-	ShutdownCh chan struct{}
+	ShutdownCh <-chan struct{}
 }
 
 // readConfig is responsible for setup of our configuration using
