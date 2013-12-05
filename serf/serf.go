@@ -956,7 +956,7 @@ func (s *Serf) checkQueueDepth(name string, queue *memberlist.TransmitLimitedQue
 			if numq >= s.config.QueueDepthWarning {
 				s.logger.Printf("[WARN] %s queue depth: %d", name, numq)
 			}
-			if numq >= s.config.MaxQueueDepth {
+			if numq > s.config.MaxQueueDepth {
 				s.logger.Printf("[WARN] %s queue depth (%d) exceeds limit (%d), dropping messages!",
 					name, numq, s.config.MaxQueueDepth)
 				queue.Prune(s.config.MaxQueueDepth)
