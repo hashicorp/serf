@@ -139,14 +139,14 @@ func (c *RPCClient) ForceLeave(node string) error {
 }
 
 // Join is used to instruct the agent to attempt a join
-func (c *RPCClient) Join(addrs []string, ignoreOld bool) (int, error) {
+func (c *RPCClient) Join(addrs []string, replay bool) (int, error) {
 	header := requestHeader{
 		Command: joinCommand,
 		Seq:     c.getSeq(),
 	}
 	req := joinRequest{
 		Existing: addrs,
-		Replay:   !ignoreOld,
+		Replay:   replay,
 	}
 	var resp joinResponse
 

@@ -54,7 +54,7 @@ func (c *JoinCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
-	n, err := client.Join(addrs, !replayEvents)
+	n, err := client.Join(addrs, replayEvents)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error joining the cluster: %s", err))
 		return 1
