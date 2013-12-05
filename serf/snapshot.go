@@ -379,6 +379,9 @@ func (s *Snapshotter) replay() error {
 			s.lastClock = 0
 			s.lastEventClock = 0
 
+		} else if strings.HasPrefix(line, "#") {
+			// Skip comment lines
+
 		} else {
 			s.logger.Printf("[WARN] Unrecognized snapshot line: %v", line)
 		}
