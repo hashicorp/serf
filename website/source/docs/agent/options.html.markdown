@@ -32,7 +32,9 @@ The options below are all specified on the command-line.
   to locally configured port. Serf uses both TCP and UDP and use the
   same port for both, so if you have any firewalls be sure to allow both protocols.
   If this configuration value is changed and no port is specified, the default of
-  "7946" will be used.
+  "7946" will be used. An important compatibility note, protocol version 2
+  introduces support for non-consistent ports across the cluster. For more information,
+  see the [compatibility page](/docs/compatibility.html).
 
 * `-config-file` - A configuration file to load. For more information on
   the format of this file, read the "Configuration Files" section below.
