@@ -209,6 +209,12 @@ func MergeConfig(a, b *Config) *Config {
 	if b.SnapshotPath != "" {
 		result.SnapshotPath = b.SnapshotPath
 	}
+	if b.LeaveOnTerm {
+		result.LeaveOnTerm = true
+	}
+	if !b.LeaveOnInt {
+		result.LeaveOnInt = false
+	}
 
 	// Copy the event handlers
 	result.EventHandlers = make([]string, 0, len(a.EventHandlers)+len(b.EventHandlers))

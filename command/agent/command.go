@@ -296,6 +296,7 @@ WAIT:
 		// Agent is already shutdown!
 		return 0
 	}
+	c.Ui.Output(fmt.Sprintf("Caught signal: %v", sig))
 
 	// Check if this is a SIGHUP
 	if sig == syscall.SIGHUP {
