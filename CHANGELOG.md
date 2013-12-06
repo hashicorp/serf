@@ -2,7 +2,7 @@
 
 BUG FIXES:
 
- * `leave_on_interrupt` should be set to false even if not specified if
+ * `leave_on_interrupt` set to false when not specified, if
  any config file is provided. This flag is deprecated for
  `skip_leave_on_interrupt` instead. [GH-94]
 
