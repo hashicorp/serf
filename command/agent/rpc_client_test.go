@@ -290,7 +290,7 @@ func TestRPCClientStream_User(t *testing.T) {
 		if e["Event"].(string) != "user" {
 			t.Fatalf("bad event: %#v", e)
 		}
-		if e["LTime"].(uint64) != 1 {
+		if e["LTime"].(int64) != 1 {
 			t.Fatalf("bad event: %#v", e)
 		}
 		if e["Name"].(string) != "deploy" {
@@ -357,7 +357,7 @@ func TestRPCClientStream_Member(t *testing.T) {
 		if _, ok := member["Name"].(string); !ok {
 			t.Fatalf("bad event: %#v", e)
 		}
-		if _, ok := member["Addr"].([]interface{}); !ok {
+		if _, ok := member["Addr"].([]uint8); !ok {
 			t.Fatalf("bad event: %#v", e)
 		}
 		if _, ok := member["Port"].(uint64); !ok {
@@ -369,22 +369,22 @@ func TestRPCClientStream_Member(t *testing.T) {
 		if stat, _ := member["Status"].(string); stat != "alive" {
 			t.Fatalf("bad event: %#v", e)
 		}
-		if _, ok := member["ProtocolMin"].(uint64); !ok {
+		if _, ok := member["ProtocolMin"].(int64); !ok {
 			t.Fatalf("bad event: %#v", e)
 		}
-		if _, ok := member["ProtocolMax"].(uint64); !ok {
+		if _, ok := member["ProtocolMax"].(int64); !ok {
 			t.Fatalf("bad event: %#v", e)
 		}
-		if _, ok := member["ProtocolCur"].(uint64); !ok {
+		if _, ok := member["ProtocolCur"].(int64); !ok {
 			t.Fatalf("bad event: %#v", e)
 		}
-		if _, ok := member["DelegateMin"].(uint64); !ok {
+		if _, ok := member["DelegateMin"].(int64); !ok {
 			t.Fatalf("bad event: %#v", e)
 		}
-		if _, ok := member["DelegateMax"].(uint64); !ok {
+		if _, ok := member["DelegateMax"].(int64); !ok {
 			t.Fatalf("bad event: %#v", e)
 		}
-		if _, ok := member["DelegateCur"].(uint64); !ok {
+		if _, ok := member["DelegateCur"].(int64); !ok {
 			t.Fatalf("bad event: %#v", e)
 		}
 
