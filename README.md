@@ -37,14 +37,11 @@ setup, each node in your system will run one or more Serf agents (it can
 run multiple agents if you're running multiple cluster types. e.g. web
 servers vs. memcached servers).
 
-Mac OS X users: an extra step is needed on your platform, 
-[follow the tutorial here](http://www.serfdom.io/intro/getting-started/join.html).
-
 Start each Serf agent in a separate terminal session so that we can see
 the output of each. Start the first agent:
 
 ```
-$ serf agent -node=foo -bind=127.0.0.10 -rpc-addr=127.0.0.1:7373
+$ serf agent -node=foo -bind=127.0.0.1:5000 -rpc-addr=127.0.0.1:7373
 ...
 ```
 
@@ -52,7 +49,7 @@ Start the second agent in another terminal session (while the first is still
 running):
 
 ```
-$ serf agent -node=bar -bind=127.0.0.11 -rpc-addr=127.0.0.1:7374
+$ serf agent -node=bar -bind=127.0.0.1:5001 -rpc-addr=127.0.0.1:7374
 ...
 ```
 
@@ -64,7 +61,7 @@ Serf gossips and the remainder of the cluster becomes aware of the join.
 Run the following commands in a third terminal session.
 
 ```
-$ serf join 127.0.0.11
+$ serf join 127.0.0.1:5001
 ...
 ```
 
@@ -74,8 +71,8 @@ to see the members of the Serf cluster:
 
 ```
 $ serf members
-foo    127.0.0.10    alive
-bar    127.0.0.11    alive
+foo    127.0.0.1:5000    alive
+bar    127.0.0.1:5001    alive
 ...
 ```
 
