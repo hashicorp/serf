@@ -168,7 +168,9 @@ at a single JSON object with configuration within it.
   it will send a Leave message to the rest of the cluster and gracefully
   leave. Defaults to false.
 
-* `leave_on_interrupt` - This is the same as `leave_on_terminate` but
-  only affects interrupt handling. This is usually from a Control-C
-  from a shell. Defaults to true.
+* `skip_leave_on_interrupt` - This is the similar to`leave_on_terminate` but
+  only affects interrupt handling. By default, an interrupt causes Serf to
+  gracefully leave, but setting this to true disables that. Defaults to false.
+  Interrupts are usually from a Control-C from a shell. (This was previously
+  `leave_on_interrupt` but has since changed).
 

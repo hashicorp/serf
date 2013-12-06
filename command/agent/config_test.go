@@ -108,6 +108,14 @@ func TestDecodeConfig(t *testing.T) {
 		t.Fatalf("bad: %#v", config)
 	}
 
+	if config.SkipLeaveOnInt != DefaultConfig.SkipLeaveOnInt {
+		t.Fatalf("bad: %#v", config)
+	}
+
+	if config.LeaveOnTerm != DefaultConfig.LeaveOnTerm {
+		t.Fatalf("bad: %#v", config)
+	}
+
 	// With a protocol
 	input = `{"node_name": "foo", "protocol": 7}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
@@ -144,6 +152,28 @@ func TestDecodeConfig(t *testing.T) {
 	if config.ReplayOnJoin != true {
 		t.Fatalf("bad: %#v", config)
 	}
+
+	// leave_on_terminate
+	input = `{"leave_on_terminate": true}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.LeaveOnTerm != true {
+		t.Fatalf("bad: %#v", config)
+	}
+
+	// skip_leave_on_interrupt
+	input = `{"skip_leave_on_interrupt": true}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.SkipLeaveOnInt != true {
+		t.Fatalf("bad: %#v", config)
+	}
 }
 
 func TestMergeConfig(t *testing.T) {
@@ -157,11 +187,13 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	b := &Config{
-		NodeName:      "bname",
-		Protocol:      -1,
-		EncryptKey:    "foo",
-		EventHandlers: []string{"bar"},
-		StartJoin:     []string{"bar"},
+		NodeName:       "bname",
+		Protocol:       -1,
+		EncryptKey:     "foo",
+		EventHandlers:  []string{"bar"},
+		StartJoin:      []string{"bar"},
+		LeaveOnTerm:    true,
+		SkipLeaveOnInt: true,
 	}
 
 	c := MergeConfig(a, b)
@@ -184,6 +216,14 @@ func TestMergeConfig(t *testing.T) {
 
 	if c.ReplayOnJoin != true {
 		t.Fatalf("bad: %#v", c.ReplayOnJoin)
+	}
+
+	if !c.LeaveOnTerm {
+		t.Fatalf("bad: %#v", c.LeaveOnTerm)
+	}
+
+	if !c.SkipLeaveOnInt {
+		t.Fatalf("bad: %#v", c.SkipLeaveOnInt)
 	}
 
 	expected := []string{"foo", "bar"}

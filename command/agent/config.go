@@ -24,7 +24,6 @@ var DefaultConfig = &Config{
 	Protocol:     serf.ProtocolVersionMax,
 	ReplayOnJoin: false,
 	Profile:      "lan",
-	LeaveOnInt:   true,
 }
 
 // Config is the configuration that can be set for an Agent. Some of these
@@ -88,9 +87,9 @@ type Config struct {
 	// the TERM signal. Defaults false. This can be changed on reload.
 	LeaveOnTerm bool `mapstructure:"leave_on_terminate"`
 
-	// LeaveOnInt controls if Serf does a graceful leave when receiving
-	// the INT signal. Defaults true. This can be changed on reload.
-	LeaveOnInt bool `mapstructure:"leave_on_interrupt"`
+	// SkipLeaveOnInt controls if Serf skips a graceful leave when receiving
+	// the INT signal. Defaults false. This can be changed on reload.
+	SkipLeaveOnInt bool `mapstructure:"skip_leave_on_interrupt"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -158,19 +157,22 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 	}
 
 	// If we never set the protocol, then set it to the default
-	found := false
-	for _, k := range md.Keys {
-		if k == "protocol" {
-			found = true
-			break
-		}
-	}
-
-	if !found {
+	if !containsKey(md.Keys, "protocol") {
 		result.Protocol = DefaultConfig.Protocol
 	}
 
 	return &result, nil
+}
+
+// containsKey is used to check if a slice of string keys contains
+// another key
+func containsKey(keys []string, key string) bool {
+	for _, k := range keys {
+		if k == key {
+			return true
+		}
+	}
+	return false
 }
 
 // MergeConfig merges two configurations together to make a single new
@@ -209,11 +211,11 @@ func MergeConfig(a, b *Config) *Config {
 	if b.SnapshotPath != "" {
 		result.SnapshotPath = b.SnapshotPath
 	}
-	if b.LeaveOnTerm {
+	if b.LeaveOnTerm == true {
 		result.LeaveOnTerm = true
 	}
-	if !b.LeaveOnInt {
-		result.LeaveOnInt = false
+	if b.SkipLeaveOnInt == true {
+		result.SkipLeaveOnInt = true
 	}
 
 	// Copy the event handlers
