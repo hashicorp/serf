@@ -45,7 +45,7 @@ are network issues causing our own node to fail the probe. If both our
 probe and the indirect probes fail within a reasonable time, then the
 node is marked "suspicious" and this knowledge is gossiped to the cluster.
 A suspicious node is still considered a member of cluster. If the suspect member
-of the cluster does not disputes the suspicion within a configurable period of
+of the cluster does not dispute the suspicion within a configurable period of
 time, the node is finally considered dead, and this state is then gossiped
 to the cluster.
 
