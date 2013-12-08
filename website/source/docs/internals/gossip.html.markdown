@@ -6,7 +6,7 @@ sidebar_current: "docs-internals-gossip"
 
 # Gossip Protocol
 
-Serf uses a [gossip protocol](#)
+Serf uses a [gossip protocol](http://en.wikipedia.org/wiki/Gossip_protocol)
 to broadcast messages to the cluster. This page documents the details of
 this internal protocol. The gossip protocol is based on
 ["SWIM: Scalable Weakly-consistent Infection-style Process Group Membership Protocol"](http://www.cs.cornell.edu/~asdas/research/dsn02-swim.pdf),
