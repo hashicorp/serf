@@ -86,7 +86,7 @@ The options below are all specified on the command-line.
   configuration values for each environment, you can select a timing profile.
   The current choices are "lan", "wan", and "local". This defaults to "local".
   If a "lan" or "local" profile is used over the Internet, or a "local" profile
-  over the LAN, a high rate of false failures is risked, as the timing constaints
+  over the LAN, a high rate of false failures is risked, as the timing constrains
   are too tight.
 
 * `-protocol` - The Serf protocol version to use. This defaults to the latest
