@@ -161,7 +161,7 @@ type userEvents struct {
 }
 
 const (
-	UserEventSizeLimit = 128        // Maximum byte size for event name and payload
+	UserEventSizeLimit = 256        // Maximum byte size for event name and payload
 	snapshotSizeLimit  = 128 * 1024 // Maximum 128 KB snapshot
 )
 
