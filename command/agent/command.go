@@ -40,6 +40,7 @@ func (c *Command) readConfig() *Config {
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.StringVar(&cmdConfig.BindAddr, "bind", "", "address to bind listeners to")
+	cmdFlags.StringVar(&cmdConfig.AdvertiseAddr, "advertise", "", "address to advertise to cluster")
 	cmdFlags.Var((*AppendSliceValue)(&configFiles), "config-file",
 		"json file to read config from")
 	cmdFlags.Var((*AppendSliceValue)(&configFiles), "config-dir",
@@ -98,10 +99,16 @@ func (c *Command) readConfig() *Config {
 
 // setupAgent is used to create the agent we use
 func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
-	bindIP, bindPort, err := config.BindAddrParts()
+	bindIP, bindPort, err := config.AddrParts(config.BindAddr)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Invalid bind address: %s", err))
 		return nil
+	}
+
+	advertiseIP, advertisePort, err := config.AddrParts(config.AdvertiseAddr)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Invalid advertise address, falling back to bind address: %s", err))
+		advertiseIP, advertisePort = bindIP, bindPort
 	}
 
 	encryptKey, err := config.EncryptBytes()
@@ -124,7 +131,9 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	}
 
 	serfConfig.MemberlistConfig.BindAddr = bindIP
-	serfConfig.MemberlistConfig.Port = bindPort
+	serfConfig.MemberlistConfig.BindPort = bindPort
+	serfConfig.MemberlistConfig.AdvertiseAddr = advertiseIP
+	serfConfig.MemberlistConfig.AdvertisePort = advertisePort
 	serfConfig.MemberlistConfig.SecretKey = encryptKey
 	serfConfig.NodeName = config.NodeName
 	serfConfig.Role = config.Role
@@ -201,15 +210,18 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	c.Ui.Output("Starting Serf agent RPC...")
 	ipc := NewAgentIPC(agent, rpcListener, logOutput, logWriter)
 
-	bindIP, bindPort, err := config.BindAddrParts()
+	bindIP, bindPort, err := config.AddrParts(config.BindAddr)
 	bindAddr := (&net.TCPAddr{IP: net.ParseIP(bindIP), Port: bindPort}).String()
+	advertiseIP, advertisePort, err := config.AddrParts(config.AdvertiseAddr)
+	advertiseAddr := (&net.TCPAddr{IP: net.ParseIP(advertiseIP), Port: advertisePort}).String()
 	c.Ui.Output("Serf agent running!")
-	c.Ui.Info(fmt.Sprintf("Node name: '%s'", config.NodeName))
-	c.Ui.Info(fmt.Sprintf("Bind addr: '%s'", bindAddr))
-	c.Ui.Info(fmt.Sprintf(" RPC addr: '%s'", config.RPCAddr))
-	c.Ui.Info(fmt.Sprintf("Encrypted: %#v", config.EncryptKey != ""))
-	c.Ui.Info(fmt.Sprintf(" Snapshot: %v", config.SnapshotPath != ""))
-	c.Ui.Info(fmt.Sprintf("  Profile: %s", config.Profile))
+	c.Ui.Info(fmt.Sprintf("     Node name: '%s'", config.NodeName))
+	c.Ui.Info(fmt.Sprintf("     Bind addr: '%s'", bindAddr))
+	c.Ui.Info(fmt.Sprintf("Advertise addr: '%s'", advertiseAddr))
+	c.Ui.Info(fmt.Sprintf("      RPC addr: '%s'", config.RPCAddr))
+	c.Ui.Info(fmt.Sprintf("     Encrypted: %#v", config.EncryptKey != ""))
+	c.Ui.Info(fmt.Sprintf("      Snapshot: %v", config.SnapshotPath != ""))
+	c.Ui.Info(fmt.Sprintf("       Profile: %s", config.Profile))
 	return ipc
 }
 
@@ -380,6 +392,7 @@ Usage: serf agent [options]
 Options:
 
   -bind=0.0.0.0            Address to bind network listeners to
+  -advertise=0.0.0.0       Address to advertise to the other cluster members
   -config-file=foo         Path to a JSON file to read configuration from.
                            This can be specified multiple times.
   -config-dir=foo          Path to a directory to read configuration files

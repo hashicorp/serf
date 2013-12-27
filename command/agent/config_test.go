@@ -23,7 +23,7 @@ func TestConfigBindAddrParts(t *testing.T) {
 
 	for _, tc := range testCases {
 		c := &Config{BindAddr: tc.Value}
-		ip, port, err := c.BindAddrParts()
+		ip, port, err := c.AddrParts(c.BindAddr)
 		if tc.Error != (err != nil) {
 			t.Errorf("Bad error: %s", err)
 			continue

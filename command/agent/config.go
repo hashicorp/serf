@@ -18,12 +18,13 @@ const DefaultBindPort int = 7946
 
 // DefaultConfig contains the defaults for configurations.
 var DefaultConfig = &Config{
-	BindAddr:     "0.0.0.0",
-	LogLevel:     "INFO",
-	RPCAddr:      "127.0.0.1:7373",
-	Protocol:     serf.ProtocolVersionMax,
-	ReplayOnJoin: false,
-	Profile:      "lan",
+	BindAddr:      "0.0.0.0",
+	AdvertiseAddr: "",
+	LogLevel:      "INFO",
+	RPCAddr:       "127.0.0.1:7373",
+	Protocol:      serf.ProtocolVersionMax,
+	ReplayOnJoin:  false,
+	Profile:       "lan",
 }
 
 // Config is the configuration that can be set for an Agent. Some of these
@@ -42,6 +43,11 @@ type Config struct {
 	// and UDP connections. If no port is present in the address, the default
 	// port will be used.
 	BindAddr string `mapstructure:"bind"`
+
+	// AdvertiseAddr is the address that the Serf agent will advertise to
+	// other members of the cluster. Can be used for basic NAT traversal
+	// where both the internal ip:port and external ip:port are known.
+	AdvertiseAddr string `mapstructure:"advertise"`
 
 	// EncryptKey is the secret key to use for encrypting communication
 	// traffic for Serf. The secret key must be exactly 16-bytes, base64
@@ -94,8 +100,8 @@ type Config struct {
 
 // BindAddrParts returns the parts of the BindAddr that should be
 // used to configure Serf.
-func (c *Config) BindAddrParts() (string, int, error) {
-	checkAddr := c.BindAddr
+func (c *Config) AddrParts(address string) (string, int, error) {
+	checkAddr := address
 
 START:
 	_, _, err := net.SplitHostPort(checkAddr)
@@ -189,6 +195,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.BindAddr != "" {
 		result.BindAddr = b.BindAddr
+	}
+	if b.AdvertiseAddr != "" {
+		result.AdvertiseAddr = b.AdvertiseAddr
 	}
 	if b.EncryptKey != "" {
 		result.EncryptKey = b.EncryptKey
