@@ -105,10 +105,14 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 		return nil
 	}
 
-	advertiseIP, advertisePort, err := config.AddrParts(config.AdvertiseAddr)
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Invalid advertise address, falling back to bind address: %s", err))
-		advertiseIP, advertisePort = bindIP, bindPort
+	var advertiseIP string
+	var advertisePort int
+	if config.AdvertiseAddr != "" {
+		advertiseIP, advertisePort, err = config.AddrParts(config.AdvertiseAddr)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Invalid advertise address: %s", err))
+			return nil
+		}
 	}
 
 	encryptKey, err := config.EncryptBytes()
@@ -212,12 +216,16 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 
 	bindIP, bindPort, err := config.AddrParts(config.BindAddr)
 	bindAddr := (&net.TCPAddr{IP: net.ParseIP(bindIP), Port: bindPort}).String()
-	advertiseIP, advertisePort, err := config.AddrParts(config.AdvertiseAddr)
-	advertiseAddr := (&net.TCPAddr{IP: net.ParseIP(advertiseIP), Port: advertisePort}).String()
 	c.Ui.Output("Serf agent running!")
 	c.Ui.Info(fmt.Sprintf("     Node name: '%s'", config.NodeName))
 	c.Ui.Info(fmt.Sprintf("     Bind addr: '%s'", bindAddr))
-	c.Ui.Info(fmt.Sprintf("Advertise addr: '%s'", advertiseAddr))
+
+	if config.AdvertiseAddr != "" {
+		advertiseIP, advertisePort, _ := config.AddrParts(config.AdvertiseAddr)
+		advertiseAddr := (&net.TCPAddr{IP: net.ParseIP(advertiseIP), Port: advertisePort}).String()
+		c.Ui.Info(fmt.Sprintf("Advertise addr: '%s'", advertiseAddr))
+	}
+
 	c.Ui.Info(fmt.Sprintf("      RPC addr: '%s'", config.RPCAddr))
 	c.Ui.Info(fmt.Sprintf("     Encrypted: %#v", config.EncryptKey != ""))
 	c.Ui.Info(fmt.Sprintf("      Snapshot: %v", config.SnapshotPath != ""))
