@@ -65,7 +65,7 @@ func TestSnapshoter(t *testing.T) {
 		if !reflect.DeepEqual(e, ue) {
 			t.Fatalf("expected user event: %#v", e)
 		}
-	case <-time.After(50 * time.Millisecond):
+	case <-time.After(100 * time.Millisecond):
 		t.Fatalf("timeout")
 	}
 
@@ -74,7 +74,7 @@ func TestSnapshoter(t *testing.T) {
 		if !reflect.DeepEqual(e, meJoin) {
 			t.Fatalf("expected member event: %#v", e)
 		}
-	case <-time.After(50 * time.Millisecond):
+	case <-time.After(100 * time.Millisecond):
 		t.Fatalf("timeout")
 	}
 
@@ -83,7 +83,7 @@ func TestSnapshoter(t *testing.T) {
 		if !reflect.DeepEqual(e, meFail) {
 			t.Fatalf("expected member event: %#v", e)
 		}
-	case <-time.After(50 * time.Millisecond):
+	case <-time.After(100 * time.Millisecond):
 		t.Fatalf("timeout")
 	}
 
@@ -92,7 +92,7 @@ func TestSnapshoter(t *testing.T) {
 		if !reflect.DeepEqual(e, meJoin) {
 			t.Fatalf("expected member event: %#v", e)
 		}
-	case <-time.After(50 * time.Millisecond):
+	case <-time.After(100 * time.Millisecond):
 		t.Fatalf("timeout")
 	}
 
@@ -153,7 +153,11 @@ func TestSnapshoter_forceCompact(t *testing.T) {
 		}
 		inCh <- ue
 	}
-	time.Sleep(200 * time.Millisecond)
+
+	// Wait for drain
+	for len(inCh) > 0 {
+		time.Sleep(20 * time.Millisecond)
+	}
 
 	// Close the snapshoter
 	close(stopCh)
