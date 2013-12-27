@@ -1,5 +1,10 @@
 ## 0.3.1 (Unreleased)
 
+FEATURES:
+
+ * `advertise` flag can be used to set a advertise address different
+ from the bind address. Used for NAT traversal. Thanks to @benagricola [GH-93]
+
 BUG FIXES:
 
  * `leave_on_interrupt` set to false when not specified, if
