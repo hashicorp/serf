@@ -17,7 +17,3 @@ notifications:
         on_success: change
         on_failure: always
 
-matrix:
-    allow_failures:
-        - go: tip
-
