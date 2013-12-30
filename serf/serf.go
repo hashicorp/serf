@@ -76,6 +76,21 @@ const (
 	SerfShutdown
 )
 
+func (s SerfState) String() string {
+	switch s {
+	case SerfAlive:
+		return "alive"
+	case SerfLeaving:
+		return "leaving"
+	case SerfLeft:
+		return "left"
+	case SerfShutdown:
+		return "shutdown"
+	default:
+		return "unknown"
+	}
+}
+
 // Member is a single member of the Serf cluster.
 type Member struct {
 	Name   string
