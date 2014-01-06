@@ -115,7 +115,7 @@
             "Properties" : {
                 "SubnetId" : { "Ref" : "PublicSubnet" },
                 "SourceDestCheck" : "false",
-                "ImageId" : "ami-c6699baf",
+                "ImageId" : "ami-3bcc9e7e",
                 "SecurityGroupIds" : [
                     { "Ref" : "InstanceSecurityGroup" }
                 ],
@@ -128,7 +128,7 @@
         "LoadBalancer": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
-                "ImageId": "ami-ad3660c4",
+                "ImageId": "ami-acf9cde9",
                 "PrivateIpAddress": "10.0.0.5",
                 "SecurityGroupIds": [
                     {"Ref": "InstanceSecurityGroup"}
@@ -171,7 +171,7 @@
         "WebLaunchConfig": {
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
-                "ImageId": "ami-ad3660c4",
+                "ImageId": "ami-acf9cde9",
                 "InstanceType": "m1.small",
                 "SecurityGroups": [
                     {"Ref": "InstanceSecurityGroup"}
