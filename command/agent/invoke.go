@@ -108,14 +108,18 @@ func memberEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.MemberEv
 
 // Sends data on stdin for a user event. The stdin simply contains the
 // payload (if any) of the event.
-// Most shells read implementations need a newline, force it to be there 
+// Most shells read implementations need a newline, force it to be there
 func userEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.UserEvent) {
-    defer stdin.Close()
-    _, err := stdin.Write([]byte(fmt.Sprintf(
-        "%s\n",
-        bytes.TrimSuffix(e.Payload, []byte("\n")))))
-    if err != nil {
-        logger.Printf("[ERR] Error writing user event payload: %s", err)
-        return
-    }
+	defer stdin.Close()
+
+	// Append a newline to payload if missing
+	payload := e.Payload
+	if len(payload) > 0 && payload[len(payload)-1] != '\n' {
+		payload = append(payload, '\n')
+	}
+
+	if _, err := stdin.Write(e.Payload); err != nil {
+		logger.Printf("[ERR] Error writing user event payload: %s", err)
+		return
+	}
 }
