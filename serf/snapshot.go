@@ -345,7 +345,7 @@ func (s *Snapshotter) replay() error {
 			info := strings.TrimPrefix(line, "alive: ")
 			addrIdx := strings.LastIndex(info, " ")
 			if addrIdx == -1 {
-				s.logger.Printf("[WARN] Failed to parse address: %v", line)
+				s.logger.Printf("[WARN] serf: Failed to parse address: %v", line)
 				continue
 			}
 			addr := info[addrIdx+1:]
@@ -360,7 +360,7 @@ func (s *Snapshotter) replay() error {
 			timeStr := strings.TrimPrefix(line, "clock: ")
 			timeInt, err := strconv.ParseUint(timeStr, 10, 64)
 			if err != nil {
-				s.logger.Printf("[WARN] Failed to convert clock time: %v", err)
+				s.logger.Printf("[WARN] serf: Failed to convert clock time: %v", err)
 				continue
 			}
 			s.lastClock = LamportTime(timeInt)
@@ -369,7 +369,7 @@ func (s *Snapshotter) replay() error {
 			timeStr := strings.TrimPrefix(line, "event-clock: ")
 			timeInt, err := strconv.ParseUint(timeStr, 10, 64)
 			if err != nil {
-				s.logger.Printf("[WARN] Failed to convert event clock time: %v", err)
+				s.logger.Printf("[WARN] serf: Failed to convert event clock time: %v", err)
 				continue
 			}
 			s.lastEventClock = LamportTime(timeInt)
@@ -383,7 +383,7 @@ func (s *Snapshotter) replay() error {
 			// Skip comment lines
 
 		} else {
-			s.logger.Printf("[WARN] Unrecognized snapshot line: %v", line)
+			s.logger.Printf("[WARN] serf: Unrecognized snapshot line: %v", line)
 		}
 	}
 

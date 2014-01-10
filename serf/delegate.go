@@ -31,36 +31,36 @@ func (d *delegate) NotifyMsg(buf []byte) {
 	case messageLeaveType:
 		var leave messageLeave
 		if err := decodeMessage(buf[1:], &leave); err != nil {
-			d.serf.logger.Printf("[ERR] Error decoding leave message: %s", err)
+			d.serf.logger.Printf("[ERR] serf: Error decoding leave message: %s", err)
 			break
 		}
 
-		d.serf.logger.Printf("[DEBUG] serf-delegate: messageLeaveType: %s", leave.Node)
+		d.serf.logger.Printf("[DEBUG] serf: messageLeaveType: %s", leave.Node)
 		rebroadcast = d.serf.handleNodeLeaveIntent(&leave)
 
 	case messageJoinType:
 		var join messageJoin
 		if err := decodeMessage(buf[1:], &join); err != nil {
-			d.serf.logger.Printf("[ERR] Error decoding join message: %s", err)
+			d.serf.logger.Printf("[ERR] serf: Error decoding join message: %s", err)
 			break
 		}
 
-		d.serf.logger.Printf("[DEBUG] serf-delegate: messageJoinType: %s", join.Node)
+		d.serf.logger.Printf("[DEBUG] serf: messageJoinType: %s", join.Node)
 		rebroadcast = d.serf.handleNodeJoinIntent(&join)
 
 	case messageUserEventType:
 		var event messageUserEvent
 		if err := decodeMessage(buf[1:], &event); err != nil {
-			d.serf.logger.Printf("[ERR] Error decoding user event message: %s", err)
+			d.serf.logger.Printf("[ERR] serf: Error decoding user event message: %s", err)
 			break
 		}
 
-		d.serf.logger.Printf("[DEBUG] serf-delegate: messageUserEventType: %s", event.Name)
+		d.serf.logger.Printf("[DEBUG] serf: messageUserEventType: %s", event.Name)
 		rebroadcast = d.serf.handleUserEvent(&event)
 		rebroadcastQueue = d.serf.eventBroadcasts
 
 	default:
-		d.serf.logger.Printf("[WARN] Received message of unknown type: %d", t)
+		d.serf.logger.Printf("[WARN] serf: Received message of unknown type: %d", t)
 	}
 
 	if rebroadcast {
