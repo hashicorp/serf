@@ -16,8 +16,8 @@ import (
 // Serf-level protocol versions that are passed down as the delegate
 // version to memberlist below.
 const (
-	ProtocolVersionMin uint8 = 0
-	ProtocolVersionMax       = 2
+	ProtocolVersionMin uint8 = 1
+	ProtocolVersionMax       = 3
 )
 
 func init() {
