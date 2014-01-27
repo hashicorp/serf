@@ -15,14 +15,40 @@ func TestDelegate_impl(t *testing.T) {
 	}
 }
 
-func TestDelegate_NodeMeta(t *testing.T) {
+func TestDelegate_NodeMeta_Old(t *testing.T) {
 	c := testConfig()
-	c.Role = "test"
+	c.ProtocolVersion = 2
+	c.Tags["role"] = "test"
 	d := &delegate{&Serf{config: c}}
 	meta := d.NodeMeta(32)
 
 	if !reflect.DeepEqual(meta, []byte("test")) {
-		t.Fatalf("bad  meta data")
+		t.Fatalf("bad meta data: %v", meta)
+	}
+
+	out := d.serf.decodeTags(meta)
+	if out["role"] != "test" {
+		t.Fatalf("bad meta data: %v", meta)
+	}
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("expected panic")
+		}
+	}()
+	d.NodeMeta(1)
+}
+
+func TestDelegate_NodeMeta_New(t *testing.T) {
+	c := testConfig()
+	c.ProtocolVersion = 3
+	c.Tags["role"] = "test"
+	d := &delegate{&Serf{config: c}}
+	meta := d.NodeMeta(32)
+
+	out := d.serf.decodeTags(meta)
+	if out["role"] != "test" {
+		t.Fatalf("bad meta data: %v", meta)
 	}
 
 	defer func() {

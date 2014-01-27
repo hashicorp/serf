@@ -12,6 +12,7 @@ import (
 
 func testConfig() *Config {
 	config := DefaultConfig()
+	config.Init()
 	config.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
 
 	// Set probe intervals that are aggressive for finding bad nodes
@@ -332,7 +333,7 @@ func TestSerf_joinLeave(t *testing.T) {
 func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()
-	s2Config.Role = "foo"
+	s2Config.Tags["role"] = "foo"
 
 	s1, err := Create(s1Config)
 	if err != nil {
@@ -371,7 +372,7 @@ func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
 	s3Config := testConfig()
 	s3Config.MemberlistConfig.BindAddr = s2Config.MemberlistConfig.BindAddr
 	s3Config.NodeName = s2Config.NodeName
-	s3Config.Role = "bar"
+	s3Config.Tags["role"] = "bar"
 
 	s3, err := Create(s3Config)
 	if err != nil {
@@ -403,8 +404,8 @@ func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
 		t.Fatalf("couldn't find member")
 	}
 
-	if member.Role != s3Config.Role {
-		t.Fatalf("bad role: %s", member.Role)
+	if member.Tags["role"] != s3Config.Tags["role"] {
+		t.Fatalf("bad role: %s", member.Tags["role"])
 	}
 }
 
@@ -465,8 +466,8 @@ func TestSerf_role(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()
 
-	s1Config.Role = "web"
-	s2Config.Role = "lb"
+	s1Config.Tags["role"] = "web"
+	s2Config.Tags["role"] = "lb"
 
 	s1, err := Create(s1Config)
 	if err != nil {
@@ -495,7 +496,7 @@ func TestSerf_role(t *testing.T) {
 
 	roles := make(map[string]string)
 	for _, m := range members {
-		roles[m.Name] = m.Role
+		roles[m.Name] = m.Tags["role"]
 	}
 
 	if roles[s1Config.NodeName] != "web" {
