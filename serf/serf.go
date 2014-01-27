@@ -713,6 +713,34 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 	}
 }
 
+// handleNodeUpdate is called when a node meta data update
+// has taken place
+func (s *Serf) handleNodeUpdate(n *memberlist.Node) {
+	s.memberLock.Lock()
+	defer s.memberLock.Unlock()
+
+	member, ok := s.members[n.Name]
+	if !ok {
+		// We've never even heard of this node that is updating.
+		// Just ignore it completely.
+		return
+	}
+
+	// Update the member attributes
+	member.Addr = net.IP(n.Addr)
+	member.Port = n.Port
+	member.Tags = s.decodeTags(n.Meta)
+
+	// Send an event along
+	s.logger.Printf("[INFO] serf: EventMemberUpdate: %s", member.Member.Name)
+	if s.config.EventCh != nil {
+		s.config.EventCh <- MemberEvent{
+			Type:    EventMemberUpdate,
+			Members: []Member{member.Member},
+		}
+	}
+}
+
 // handleNodeLeaveIntent is called when an intent to leave is received.
 func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 	// Witness a potentially newer time
