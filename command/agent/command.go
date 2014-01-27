@@ -134,13 +134,19 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 		return nil
 	}
 
+	// Backward compatibility hack for 'Role'
+	if config.Role != "" {
+		c.Ui.Output("Deprecation warning: 'Role' has been replaced with 'Tags'")
+		config.Tags["role"] = config.Role
+	}
+
 	serfConfig.MemberlistConfig.BindAddr = bindIP
 	serfConfig.MemberlistConfig.BindPort = bindPort
 	serfConfig.MemberlistConfig.AdvertiseAddr = advertiseIP
 	serfConfig.MemberlistConfig.AdvertisePort = advertisePort
 	serfConfig.MemberlistConfig.SecretKey = encryptKey
 	serfConfig.NodeName = config.NodeName
-	serfConfig.Role = config.Role
+	serfConfig.Tags = config.Tags
 	serfConfig.SnapshotPath = config.SnapshotPath
 	serfConfig.ProtocolVersion = uint8(config.Protocol)
 	serfConfig.CoalescePeriod = 3 * time.Second
@@ -190,7 +196,7 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	c.scriptHandler = &ScriptEventHandler{
 		Self: serf.Member{
 			Name: config.NodeName,
-			Role: config.Role,
+			Tags: config.Tags,
 		},
 		Scripts: config.EventScripts(),
 		Logger:  log.New(logOutput, "", log.LstdFlags),

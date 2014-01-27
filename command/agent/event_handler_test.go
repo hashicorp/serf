@@ -11,6 +11,7 @@ import (
 const eventScript = `#!/bin/sh
 RESULT_FILE="%s"
 echo $SERF_SELF_NAME $SERF_SELF_ROLE >>${RESULT_FILE}
+echo $SERF_TAG_DC >> ${RESULT_FILE}
 echo $SERF_EVENT $SERF_USER_EVENT "$@" >>${RESULT_FILE}
 while read line; do
 	printf "${line}\n" >>${RESULT_FILE}
@@ -20,6 +21,7 @@ done
 const userEventScript = `#!/bin/sh
 RESULT_FILE="%s"
 echo $SERF_SELF_NAME $SERF_SELF_ROLE >>${RESULT_FILE}
+echo $SERF_TAG_DC >> ${RESULT_FILE}
 echo $SERF_EVENT $SERF_USER_EVENT "$@" >>${RESULT_FILE}
 echo $SERF_EVENT $SERF_USER_LTIME "$@" >>${RESULT_FILE}
 while read line; do
@@ -62,7 +64,7 @@ func TestScriptEventHandler(t *testing.T) {
 	h := &ScriptEventHandler{
 		Self: serf.Member{
 			Name: "ourname",
-			Role: "ourrole",
+			Tags: map[string]string{"role": "ourrole", "dc": "east-aws"},
 		},
 		Scripts: []EventScript{
 			{
@@ -80,7 +82,7 @@ func TestScriptEventHandler(t *testing.T) {
 			{
 				Name: "foo",
 				Addr: net.ParseIP("1.2.3.4"),
-				Role: "bar",
+				Tags: map[string]string{"role": "bar", "foo": "bar"},
 			},
 		},
 	}
@@ -92,7 +94,7 @@ func TestScriptEventHandler(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	expected := "ourname ourrole\nmember-join\nfoo\t1.2.3.4\tbar\n"
+	expected := "ourname ourrole\neast-aws\nmember-join\nfoo\t1.2.3.4\tbar\trole=bar,foo=bar\n"
 	if string(result) != expected {
 		t.Fatalf("bad: %#v. Expected: %#v", string(result), expected)
 	}
@@ -104,7 +106,7 @@ func TestScriptUserEventHandler(t *testing.T) {
 	h := &ScriptEventHandler{
 		Self: serf.Member{
 			Name: "ourname",
-			Role: "ourrole",
+			Tags: map[string]string{"role": "ourrole", "dc": "east-aws"},
 		},
 		Scripts: []EventScript{
 			{
@@ -130,7 +132,7 @@ func TestScriptUserEventHandler(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	expected := "ourname ourrole\nuser baz\nuser 1\n"
+	expected := "ourname ourrole\neast-aws\nuser baz\nuser 1\n"
 	if string(result) != expected {
 		t.Fatalf("bad: %#v. Expected: %#v", string(result), expected)
 	}

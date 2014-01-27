@@ -129,7 +129,7 @@ type Member struct {
 	Name        string
 	Addr        net.IP
 	Port        uint16
-	Role        string
+	Tags        map[string]string
 	Status      string
 	ProtocolMin uint8
 	ProtocolMax uint8
@@ -454,7 +454,7 @@ func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
 			Name:        m.Name,
 			Addr:        m.Addr,
 			Port:        m.Port,
-			Role:        m.Role,
+			Tags:        m.Tags,
 			Status:      m.Status.String(),
 			ProtocolMin: m.ProtocolMin,
 			ProtocolMax: m.ProtocolMax,

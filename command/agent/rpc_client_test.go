@@ -363,7 +363,7 @@ func TestRPCClientStream_Member(t *testing.T) {
 		if _, ok := member["Port"].(uint64); !ok {
 			t.Fatalf("bad event: %#v", e)
 		}
-		if _, ok := member["Role"].(string); !ok {
+		if _, ok := member["Tags"].(map[interface{}]interface{}); !ok {
 			t.Fatalf("bad event: %#v", e)
 		}
 		if stat, _ := member["Status"].(string); stat != "alive" {
