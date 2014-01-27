@@ -18,6 +18,8 @@ func (c *memberEventCoalescer) Handle(e Event) bool {
 		return true
 	case EventMemberFailed:
 		return true
+	case EventMemberUpdate:
+		return true
 	default:
 		return false
 	}
@@ -40,7 +42,8 @@ func (c *memberEventCoalescer) Flush(outCh chan<- Event) {
 		previous, ok := c.lastEvents[name]
 
 		// If we sent the same event before, then ignore
-		if ok && previous == cevent.Type {
+		// unless it is a MemberUpdate
+		if ok && previous == cevent.Type && cevent.Type != EventMemberUpdate {
 			continue
 		}
 

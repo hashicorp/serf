@@ -33,6 +33,14 @@ func TestMemberEventCoalesce_Basic(t *testing.T) {
 			Type:    EventMemberLeave,
 			Members: []Member{Member{Name: "bar"}},
 		},
+		MemberEvent{
+			Type:    EventMemberUpdate,
+			Members: []Member{Member{Name: "zip", Tags: map[string]string{"role": "foo"}}},
+		},
+		MemberEvent{
+			Type:    EventMemberUpdate,
+			Members: []Member{Member{Name: "zip", Tags: map[string]string{"role": "bar"}}},
+		},
 	}
 
 	for _, e := range send {
@@ -52,7 +60,7 @@ MEMBEREVENTFORLOOP:
 		}
 	}
 
-	if len(events) != 1 {
+	if len(events) != 2 {
 		t.Fatalf("bad: %#v", events)
 	}
 
@@ -72,6 +80,69 @@ MEMBEREVENTFORLOOP:
 		if !reflect.DeepEqual(expected, names) {
 			t.Fatalf("bad: %#v", names)
 		}
+	}
+
+	if e, ok := events[EventMemberUpdate]; !ok {
+		t.Fatalf("bad: %#v", events)
+	} else {
+		me := e.(MemberEvent)
+		if len(me.Members) != 1 {
+			t.Fatalf("bad: %#v", me)
+		}
+
+		if me.Members[0].Name != "zip" {
+			t.Fatalf("bad: %#v", me.Members)
+		}
+		if me.Members[0].Tags["role"] != "bar" {
+			t.Fatalf("bad: %#v", me.Members[0].Tags)
+		}
+	}
+}
+
+func TestMemberEventCoalesce_TagUpdate(t *testing.T) {
+	outCh := make(chan Event, 64)
+	shutdownCh := make(chan struct{})
+	defer close(shutdownCh)
+
+	c := &memberEventCoalescer{
+		lastEvents:   make(map[string]EventType),
+		latestEvents: make(map[string]coalesceEvent),
+	}
+
+	inCh := coalescedEventCh(outCh, shutdownCh,
+		5*time.Millisecond, 5*time.Millisecond, c)
+
+	inCh <- MemberEvent{
+		Type:    EventMemberUpdate,
+		Members: []Member{Member{Name: "foo", Tags: map[string]string{"role": "foo"}}},
+	}
+
+	time.Sleep(10 * time.Millisecond)
+
+	select {
+	case e := <-outCh:
+		if e.EventType() != EventMemberUpdate {
+			t.Fatalf("expected update")
+		}
+	default:
+		t.Fatalf("expected update")
+	}
+
+	// Second update should not be supressed even though
+	// last event was an update
+	inCh <- MemberEvent{
+		Type:    EventMemberUpdate,
+		Members: []Member{Member{Name: "foo", Tags: map[string]string{"role": "bar"}}},
+	}
+	time.Sleep(10 * time.Millisecond)
+
+	select {
+	case e := <-outCh:
+		if e.EventType() != EventMemberUpdate {
+			t.Fatalf("expected update")
+		}
+	default:
+		t.Fatalf("expected update")
 	}
 }
 
