@@ -357,6 +357,23 @@ func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
 	return nil
 }
 
+// SetTags is used to dynamically update the tags associated with
+// the local node. This will propogate the change to the rest of
+// the cluster. Blocks until a the message is broadcast out.
+func (s *Serf) SetTags(tags map[string]string) error {
+	// Check that the meta data length is okay
+	if len(s.encodeTags(tags)) > memberlist.MetaMaxSize {
+		return fmt.Errorf("Encoded length of tags exceeds limit of %d bytes",
+			memberlist.MetaMaxSize)
+	}
+
+	// Update the config
+	s.config.Tags = tags
+
+	// Trigger a memberlist update
+	return s.memberlist.UpdateNode(s.config.BroadcastTimeout)
+}
+
 // Join joins an existing Serf cluster. Returns the number of nodes
 // successfully contacted. The returned error will be non-nil only in the
 // case that no nodes could be contacted. If ignoreOld is true, then any
