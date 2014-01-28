@@ -108,6 +108,12 @@ func (c *Command) readConfig() *Config {
 		}
 	}
 
+	// Backward compatibility hack for 'Role'
+	if config.Role != "" {
+		c.Ui.Output("Deprecation warning: 'Role' has been replaced with 'Tags'")
+		config.Tags["role"] = config.Role
+	}
+
 	return config
 }
 
@@ -146,12 +152,6 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	default:
 		c.Ui.Error(fmt.Sprintf("Unknown profile: %s", config.Profile))
 		return nil
-	}
-
-	// Backward compatibility hack for 'Role'
-	if config.Role != "" {
-		c.Ui.Output("Deprecation warning: 'Role' has been replaced with 'Tags'")
-		config.Tags["role"] = config.Role
 	}
 
 	serfConfig.MemberlistConfig.BindAddr = bindIP
