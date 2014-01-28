@@ -403,6 +403,18 @@ func (c *Command) handleReload(config *Config, agent *Agent) *Config {
 
 	// Change the event handlers
 	c.scriptHandler.UpdateScripts(config.EventScripts())
+
+	// Update the tags in serf
+	serf := agent.Serf()
+	if err := serf.SetTags(newConf.Tags); err != nil {
+		c.Ui.Error(fmt.Sprintf("Failed to update tags: %v", err))
+		return newConf
+	}
+
+	// Change the tags for the event handlers
+	c.scriptHandler.Self.Tags = newConf.Tags
+	c.Ui.Info(fmt.Sprintf("Updated tags: %v", newConf.Tags))
+
 	return newConf
 }
 
