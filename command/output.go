@@ -2,7 +2,6 @@ package command
 
 import (
 	"encoding/json"
-	"encoding/xml"
 	"strings"
 	"fmt"
 )
@@ -21,13 +20,6 @@ func formatOutput(data interface{}, format string) ([]byte, error) {
 			return nil, err
 		}
 		out = string(jsonout)
-
-	case "xml":
-		xmlout, err := xml.MarshalIndent(data.(fmt.Stringer), "", "  ")
-		if err != nil {
-			return nil, err
-		}
-		out = fmt.Sprintf("%s%s", xml.Header, xmlout)
 
 	case "text":
 		out = data.(fmt.Stringer).String()

@@ -45,20 +45,6 @@ func TestCommandOutput(t *testing.T) {
 		t.Fatalf("bad json:\n%s\n\nexpected:\n%s", formatted, json_expected)
 	}
 
-	xml_expected := `<?xml version="1.0" encoding="UTF-8"?>
-<test>
-  <test_string>woooo a string</test_string>
-  <test_int>77</test_int>
-  <test_nil></test_nil>
-  <nested>
-    <nest_key>nest_value</nest_key>
-  </nested>
-</test>`
-	formatted, _ = formatOutput(result, "xml")
-	if string(formatted) != xml_expected {
-		t.Fatalf("bad xml:\n%s\n\nexpected:\n%s", formatted, xml_expected)
-	}
-
 	text_expected := "woooo a string    77"
 	formatted, _ = formatOutput(result, "text")
 	if string(formatted) != text_expected {

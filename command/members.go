@@ -20,35 +20,16 @@ type MembersCommand struct {
 // keys in the output interface.
 type Member struct {
 	detail   bool
-	XMLName  string            `json:"-"        xml:"member"`
-	Name     string            `json:"name"     xml:"name,attr"`
-	Addr     string            `json:"addr"     xml:"addr"`
-	Port     uint16            `json:"port"     xml:"port"`
-	Tags     TagContainer      `json:"-"        xml:"tags"`
-	StrTags  map[string]string `json:"tags"     xml:"-"`
-	Status   string            `json:"status"   xml:"status"`
-	Proto    ProtoDetail       `json:"protocol" xml:"protocol"`
-}
-
-type ProtoDetail struct {
-	Min uint8 `json:"min"     xml:"min"`
-	Max uint8 `json:"max"     xml:"max"`
-	Ver uint8 `json:"version" xml:"version"`
-}
-
-type Tag struct {
-	XMLName string `xml:"tag"`
-	Name    string `xml:"name,attr"`
-	Value   string `xml:"val,attr"`
-}
-
-type TagContainer struct {
-	Tags []Tag `xml:"tag"`
+	Name     string            `json:"name"`
+	Addr     string            `json:"addr"`
+	Port     uint16            `json:"port"`
+	Tags     map[string]string `json:"tags"`
+	Status   string            `json:"status"`
+	Proto    map[string]uint8  `json:"protocol"`
 }
 
 type MemberContainer struct{
-	XMLName string   `json:"-"       xml:"members"`
-	Members []Member `json:"members" xml:"members"`
+	Members []Member `json:"members"`
 }
 
 func (c MemberContainer) String() string {
@@ -56,7 +37,7 @@ func (c MemberContainer) String() string {
 	for _, member := range c.Members {
 		// Format the tags as tag1=v1,tag2=v2,...
 		var tagPairs []string
-		for name, value := range member.StrTags {
+		for name, value := range member.Tags {
 			tagPairs = append(tagPairs, fmt.Sprintf("%s=%s", name, value))
 		}
 		tags := strings.Join(tagPairs, ",")
@@ -66,7 +47,7 @@ func (c MemberContainer) String() string {
 		if member.detail {
 			result += fmt.Sprintf(
 				"    Protocol Version: %d    Available Protocol Range: [%d, %d]",
-				member.Proto.Ver, member.Proto.Min, member.Proto.Max)
+				member.Proto["version"], member.Proto["min"], member.Proto["max"])
 		}
 		result += "\n"
 	}
@@ -82,8 +63,7 @@ Usage: serf members [options]
 Options:
 
   -format                   If provided, output is returned in the specified
-                            format. Valid formats are 'json', 'xml', and
-                            'text' (default)
+                            format. Valid formats are 'json', and 'text' (default)
 
   -detailed                 Additional information such as protocol verions
                             will be shown (only affects text output format).
@@ -148,30 +128,27 @@ func (c *MembersCommand) Run(args []string) int {
 
 		addr := net.TCPAddr{IP: member.Addr, Port: int(member.Port)}
 
-		tags := TagContainer{}
-		for name, value := range member.Tags {
-			tags.Tags = append(tags.Tags, Tag{
-				Name: name,
-				Value: value,
-			})
-		}
-
 		result.Members = append(result.Members, Member{
 			detail: detailed,
 			Name: member.Name,
 			Addr: addr.String(),
 			Port: member.Port,
-			Tags: tags,
-			StrTags: member.Tags,
+			Tags: member.Tags,
 			Status: member.Status,
-			Proto: ProtoDetail{
-				Min: member.DelegateMin,
-				Max: member.DelegateMax,
-				Ver: member.DelegateCur,
+			Proto: map[string]uint8{
+				"min": member.DelegateMin,
+				"max": member.DelegateMax,
+				"version": member.DelegateCur,
 			},
 		})
 	}
 
+	y := make(map[string]interface{})
+	y["x"] = "xyz"
+	x, err := formatOutput(y, "xml")
+	if x != nil {
+		return 1
+	}
 	output, err := formatOutput(result, format)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Encoding error: %s", err))
