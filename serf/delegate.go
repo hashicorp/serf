@@ -2,6 +2,7 @@ package serf
 
 import (
 	"fmt"
+	"github.com/armon/go-metrics"
 )
 
 // delegate is the memberlist.Delegate implementation that Serf uses.
@@ -23,6 +24,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 	if len(buf) == 0 {
 		return
 	}
+	metrics.AddSample([]string{"serf", "msgs", "received"}, float32(len(buf)))
 
 	rebroadcast := false
 	rebroadcastQueue := d.serf.broadcasts
@@ -81,12 +83,17 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 	// Determine the bytes used already
 	bytesUsed := 0
 	for _, msg := range msgs {
-		bytesUsed += len(msg) + overhead
+		lm := len(msg)
+		bytesUsed += lm + overhead
+		metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(lm))
 	}
 
 	// Get any additional event broadcasts
 	eventMsgs := d.serf.eventBroadcasts.GetBroadcasts(overhead, limit-bytesUsed)
 	if eventMsgs != nil {
+		for _, m := range eventMsgs {
+			metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(len(m)))
+		}
 		msgs = append(msgs, eventMsgs...)
 	}
 

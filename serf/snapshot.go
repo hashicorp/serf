@@ -3,6 +3,7 @@ package serf
 import (
 	"bufio"
 	"fmt"
+	"github.com/armon/go-metrics"
 	"log"
 	"math/rand"
 	"net"
@@ -246,6 +247,8 @@ func (s *Snapshotter) tryAppend(l string) {
 
 // appendLine is used to append a line to the existing log
 func (s *Snapshotter) appendLine(l string) error {
+	defer metrics.MeasureSince([]string{"serf", "snapshot", "appendLine"}, time.Now())
+
 	n, err := s.fh.WriteString(l)
 	if err != nil {
 		return err
@@ -270,6 +273,8 @@ func (s *Snapshotter) appendLine(l string) error {
 
 // Compact is used to compact the snapshot once it is too large
 func (s *Snapshotter) compact() error {
+	defer metrics.MeasureSince([]string{"serf", "snapshot", "compact"}, time.Now())
+
 	// Try to open the file to new fiel
 	newPath := s.path + tmpExt
 	fh, err := os.OpenFile(newPath, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0755)

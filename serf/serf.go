@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/armon/go-metrics"
 	"github.com/hashicorp/memberlist"
 	"github.com/ugorji/go/codec"
 	"log"
@@ -623,7 +624,6 @@ func (s *Serf) broadcast(t messageType, msg interface{}, notify chan<- struct{})
 		msg:    raw,
 		notify: notify,
 	})
-
 	return nil
 }
 
@@ -686,6 +686,9 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 		s.leftMembers = removeOldMember(s.leftMembers, member.Name)
 	}
 
+	// Update some metrics
+	metrics.IncrCounter([]string{"serf", "member", "join"}, 1)
+
 	// Send an event along
 	s.logger.Printf("[INFO] serf: EventMemberJoin: %s %s",
 		member.Member.Name, member.Member.Addr)
@@ -733,6 +736,9 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 		eventStr = "EventMemberFailed"
 	}
 
+	// Update some metrics
+	metrics.IncrCounter([]string{"serf", "member", member.Status.String()}, 1)
+
 	s.logger.Printf("[INFO] serf: %s: %s %s",
 		eventStr, member.Member.Name, member.Member.Addr)
 	if s.config.EventCh != nil {
@@ -760,6 +766,9 @@ func (s *Serf) handleNodeUpdate(n *memberlist.Node) {
 	member.Addr = net.IP(n.Addr)
 	member.Port = n.Port
 	member.Tags = s.decodeTags(n.Meta)
+
+	// Update some metrics
+	metrics.IncrCounter([]string{"serf", "member", "update"}, 1)
 
 	// Send an event along
 	s.logger.Printf("[INFO] serf: EventMemberUpdate: %s", member.Member.Name)
@@ -912,6 +921,10 @@ func (s *Serf) handleUserEvent(eventMsg *messageUserEvent) bool {
 	// Add to recent events
 	seen.Events = append(seen.Events, userEvent)
 
+	// Update some metrics
+	metrics.IncrCounter([]string{"serf", "events"}, 1)
+	metrics.IncrCounter([]string{"serf", "events", eventMsg.Name}, 1)
+
 	if s.config.EventCh != nil {
 		s.config.EventCh <- UserEvent{
 			LTime:    eventMsg.LTime,
@@ -1026,6 +1039,7 @@ func (s *Serf) checkQueueDepth(name string, queue *memberlist.TransmitLimitedQue
 		select {
 		case <-time.After(time.Second):
 			numq := queue.NumQueued()
+			metrics.AddSample([]string{"serf", "queue", name}, float32(numq))
 			if numq >= s.config.QueueDepthWarning {
 				s.logger.Printf("[WARN] serf: %s queue depth: %d", name, numq)
 			}
