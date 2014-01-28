@@ -10,6 +10,9 @@ FEATURES:
  * `advertise` flag can be used to set a advertise address different
  from the bind address. Used for NAT traversal. Thanks to @benagricola [GH-93]
 
+ * `members` command now takes `-format` flag to specify either text or JSON
+ output. Fixed by @ryanuber [GH-97]
+
 IMPROVEMENTS:
 
  * User payload always appends a newline when invoking a shell script
