@@ -18,15 +18,17 @@ import (
 const DefaultBindPort int = 7946
 
 // DefaultConfig contains the defaults for configurations.
-var DefaultConfig = &Config{
-	Tags:          make(map[string]string),
-	BindAddr:      "0.0.0.0",
-	AdvertiseAddr: "",
-	LogLevel:      "INFO",
-	RPCAddr:       "127.0.0.1:7373",
-	Protocol:      serf.ProtocolVersionMax,
-	ReplayOnJoin:  false,
-	Profile:       "lan",
+func DefaultConfig() *Config {
+	return &Config{
+		Tags:          make(map[string]string),
+		BindAddr:      "0.0.0.0",
+		AdvertiseAddr: "",
+		LogLevel:      "INFO",
+		RPCAddr:       "127.0.0.1:7373",
+		Protocol:      serf.ProtocolVersionMax,
+		ReplayOnJoin:  false,
+		Profile:       "lan",
+	}
 }
 
 type dirEnts []os.FileInfo
@@ -173,7 +175,7 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 
 	// If we never set the protocol, then set it to the default
 	if !containsKey(md.Keys, "protocol") {
-		result.Protocol = DefaultConfig.Protocol
+		result.Protocol = serf.ProtocolVersionMax
 	}
 
 	return &result, nil

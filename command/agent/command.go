@@ -37,6 +37,7 @@ type Command struct {
 func (c *Command) readConfig() *Config {
 	var cmdConfig Config
 	var configFiles []string
+	var tags []string
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.StringVar(&cmdConfig.BindAddr, "bind", "", "address to bind listeners to")
@@ -60,11 +61,24 @@ func (c *Command) readConfig() *Config {
 		"address to bind RPC listener to")
 	cmdFlags.StringVar(&cmdConfig.Profile, "profile", "", "timing profile to use (lan, wan, local)")
 	cmdFlags.StringVar(&cmdConfig.SnapshotPath, "snapshot", "", "path to the snapshot file")
+	cmdFlags.Var((*AppendSliceValue)(&tags), "tag",
+		"tag pair, specified as key=value")
 	if err := cmdFlags.Parse(c.args); err != nil {
 		return nil
 	}
 
-	config := DefaultConfig
+	// Parse any command line tag values
+	cmdConfig.Tags = make(map[string]string)
+	for _, tag := range tags {
+		parts := strings.SplitN(tag, "=", 2)
+		if len(parts) != 2 {
+			c.Ui.Error(fmt.Sprintf("Invalid tag '%s' provided", tag))
+			return nil
+		}
+		cmdConfig.Tags[parts[0]] = parts[1]
+	}
+
+	config := DefaultConfig()
 	if len(configFiles) > 0 {
 		fileConfig, err := ReadConfigPaths(configFiles)
 		if err != nil {
@@ -429,10 +443,13 @@ Options:
   -role=foo                The role of this node, if any. This can be used
                            by event scripts to differentiate different types
                            of nodes that may be part of the same cluster.
+                           '-role' is deprecated in favor of '-tag role=foo'.
   -rpc-addr=127.0.0.1:7373 Address to bind the RPC listener.
   -snapshot=path/to/file   The snapshot file is used to store alive nodes and
                            event information so that Serf can rejoin a cluster
 						   and avoid event replay on restart.
+  -tag key=value           Tag can be specified multiple times to attach multiple
+                           key/value tag pairs to the given node.
 
 Event handlers:
 
