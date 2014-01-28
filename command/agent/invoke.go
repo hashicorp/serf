@@ -114,7 +114,7 @@ func memberEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.MemberEv
 			eventClean(member.Name),
 			member.Addr.String(),
 			eventClean(member.Tags["role"]),
-			tags)))
+			eventClean(tags))))
 		if err != nil {
 			return
 		}
