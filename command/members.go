@@ -62,11 +62,11 @@ Usage: serf members [options]
 
 Options:
 
-  -format                   If provided, output is returned in the specified
-                            format. Valid formats are 'json', and 'text' (default)
-
   -detailed                 Additional information such as protocol verions
                             will be shown (only affects text output format).
+
+  -format                   If provided, output is returned in the specified
+                            format. Valid formats are 'json', and 'text' (default)
 
   -role=<regexp>            If provided, output is filtered to only nodes matching
                             the regular expression for role

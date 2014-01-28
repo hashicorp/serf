@@ -25,6 +25,9 @@ The command-line flags are all optional. The list of available flags are:
 * `-detailed` - Will show additional information per member, such as the
   protocol version that each can understand and that each is speaking.
 
+* `-format` - Controls the output format. Supports `text` and `json`.
+  The default format is `text`.
+
 * `-role` - If provided, output is filtered to only nodes matching
   the regular expression for role
 
