@@ -143,12 +143,6 @@ func (c *MembersCommand) Run(args []string) int {
 		})
 	}
 
-	y := make(map[string]interface{})
-	y["x"] = "xyz"
-	x, err := formatOutput(y, "xml")
-	if x != nil {
-		return 1
-	}
 	output, err := formatOutput(result, format)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Encoding error: %s", err))
