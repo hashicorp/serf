@@ -6,15 +6,15 @@ import (
 )
 
 type OutputTest struct {
-	XMLName    string           `json:"-"           xml:"test"`
-	TestString string           `json:"test_string" xml:"test_string"`
-	TestInt    int              `json:"test_int"    xml:"test_int"`
-	TestNil    []byte           `json:"test_nil"    xml:"test_nil"`
-	TestNested OutputTestNested `json:"nested"      xml:"nested"`
+	XMLName    string           `json:"-"`
+	TestString string           `json:"test_string"`
+	TestInt    int              `json:"test_int"`
+	TestNil    []byte           `json:"test_nil"`
+	TestNested OutputTestNested `json:"nested"`
 }
 
 type OutputTestNested struct {
-	NestKey string `json:"nest_key" xml:"nest_key"`
+	NestKey string `json:"nest_key"`
 }
 
 func (o OutputTest) String() string {
