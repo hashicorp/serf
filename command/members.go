@@ -19,14 +19,15 @@ type MembersCommand struct {
 // makes sense so that the agent.Member struct can evolve without changing the
 // keys in the output interface.
 type Member struct {
-	detail  bool
-	XMLName string      `json:"-"          xml:"member"`
-	Name    string      `json:"name"       xml:"name,attr"`
-	Addr    string      `json:"addr"       xml:"addr"`
-	Port    uint16      `json:"port"       xml:"port"`
-	Role    string      `json:"role"       xml:"role"`
-	Status  string      `json:"status"     xml:"status"`
-	Proto   ProtoDetail `json:"protocol"   xml:"protocol"`
+	detail   bool
+	XMLName  string            `json:"-"        xml:"member"`
+	Name     string            `json:"name"     xml:"name,attr"`
+	Addr     string            `json:"addr"     xml:"addr"`
+	Port     uint16            `json:"port"     xml:"port"`
+	Tags     []Tag             `json:"-"        xml:"tags"`
+	StrTags  map[string]string `json:"tags"     xml:"-"`
+	Status   string            `json:"status"   xml:"status"`
+	Proto    ProtoDetail       `json:"protocol" xml:"protocol"`
 }
 
 type ProtoDetail struct {
@@ -35,16 +36,29 @@ type ProtoDetail struct {
 	Ver uint8 `json:"version" xml:"version"`
 }
 
+type Tag struct {
+	XMLName string `xml:"tag"`
+	Name    string `xml:"name,attr"`
+	Value   string `xml:"val,attr"`
+}
+
 type MemberContainer struct{
-	XMLName string   `json:"-" xml:"members"`
+	XMLName string   `json:"-"       xml:"members"`
 	Members []Member `json:"members" xml:"members"`
 }
 
 func (c MemberContainer) String() string {
 	var result string
 	for _, member := range c.Members {
+		// Format the tags as tag1=v1,tag2=v2,...
+		var tagPairs []string
+		for name, value := range member.StrTags {
+			tagPairs = append(tagPairs, fmt.Sprintf("%s=%s", name, value))
+		}
+		tags := strings.Join(tagPairs, ",")
+
 		result += fmt.Sprintf("%s     %s    %s    %s",
-			member.Name, member.Addr, member.Status, member.Role)
+			member.Name, member.Addr, member.Status, tags)
 		if member.detail {
 			result += fmt.Sprintf(
 				"    Protocol Version: %d    Available Protocol Range: [%d, %d]",
@@ -128,24 +142,36 @@ func (c *MembersCommand) Run(args []string) int {
 			continue
 		}
 
-		// Format the tags as tag1=v1,tag2=v2,...
-		var tagPairs []string
-		for name, value := range member.Tags {
-			tagPairs = append(tagPairs, fmt.Sprintf("%s=%s", name, value))
-		}
-		tags := strings.Join(tagPairs, ",")
-
 		addr := net.TCPAddr{IP: member.Addr, Port: int(member.Port)}
 
-		c.Ui.Output(fmt.Sprintf("%s    %s    %s    %s",
-			member.Name, addr.String(), member.Status, tags))
-
-		if detailed {
-			c.Ui.Output(fmt.Sprintf("    Protocol Version: %d",
-				member.DelegateCur))
-			c.Ui.Output(fmt.Sprintf("    Available Protocol Range: [%d, %d]",
-				member.DelegateMin, member.DelegateMax))
+		tags := []Tag{}
+		for name, value := range member.Tags {
+			tags = append(tags, Tag{
+				Name: name,
+				Value: value,
+			})
 		}
+
+		result.Members = append(result.Members, Member{
+			detail: detailed,
+			Name: member.Name,
+			Addr: addr.String(),
+			Port: member.Port,
+			Tags: tags,
+			StrTags: member.Tags,
+			Status: member.Status,
+			Proto: ProtoDetail{
+				Min: member.DelegateMin,
+				Max: member.DelegateMax,
+				Ver: member.DelegateCur,
+			},
+		})
+	}
+
+	output, err := formatOutput(result, format)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Encoding error: %s", err))
+		return 1
 	}
 
 	c.Ui.Output(string(output))
