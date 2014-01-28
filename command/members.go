@@ -24,7 +24,7 @@ type Member struct {
 	Name     string            `json:"name"     xml:"name,attr"`
 	Addr     string            `json:"addr"     xml:"addr"`
 	Port     uint16            `json:"port"     xml:"port"`
-	Tags     []Tag             `json:"-"        xml:"tags"`
+	Tags     TagContainer      `json:"-"        xml:"tags"`
 	StrTags  map[string]string `json:"tags"     xml:"-"`
 	Status   string            `json:"status"   xml:"status"`
 	Proto    ProtoDetail       `json:"protocol" xml:"protocol"`
@@ -40,6 +40,10 @@ type Tag struct {
 	XMLName string `xml:"tag"`
 	Name    string `xml:"name,attr"`
 	Value   string `xml:"val,attr"`
+}
+
+type TagContainer struct {
+	Tags []Tag `xml:"tag"`
 }
 
 type MemberContainer struct{
@@ -144,9 +148,9 @@ func (c *MembersCommand) Run(args []string) int {
 
 		addr := net.TCPAddr{IP: member.Addr, Port: int(member.Port)}
 
-		tags := []Tag{}
+		tags := TagContainer{}
 		for name, value := range member.Tags {
-			tags = append(tags, Tag{
+			tags.Tags = append(tags.Tags, Tag{
 				Name: name,
 				Value: value,
 			})
