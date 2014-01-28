@@ -2,8 +2,8 @@ package command
 
 import (
 	"encoding/json"
-	"strings"
 	"fmt"
+	"strings"
 )
 
 // Format some raw data for output. For better or worse, this currently forces

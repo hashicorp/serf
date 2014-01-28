@@ -1,8 +1,8 @@
 package command
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
 
 type OutputTest struct {

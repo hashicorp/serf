@@ -19,16 +19,16 @@ type MembersCommand struct {
 // makes sense so that the agent.Member struct can evolve without changing the
 // keys in the output interface.
 type Member struct {
-	detail   bool
-	Name     string            `json:"name"`
-	Addr     string            `json:"addr"`
-	Port     uint16            `json:"port"`
-	Tags     map[string]string `json:"tags"`
-	Status   string            `json:"status"`
-	Proto    map[string]uint8  `json:"protocol"`
+	detail bool
+	Name   string            `json:"name"`
+	Addr   string            `json:"addr"`
+	Port   uint16            `json:"port"`
+	Tags   map[string]string `json:"tags"`
+	Status string            `json:"status"`
+	Proto  map[string]uint8  `json:"protocol"`
 }
 
-type MemberContainer struct{
+type MemberContainer struct {
 	Members []Member `json:"members"`
 }
 
@@ -130,14 +130,14 @@ func (c *MembersCommand) Run(args []string) int {
 
 		result.Members = append(result.Members, Member{
 			detail: detailed,
-			Name: member.Name,
-			Addr: addr.String(),
-			Port: member.Port,
-			Tags: member.Tags,
+			Name:   member.Name,
+			Addr:   addr.String(),
+			Port:   member.Port,
+			Tags:   member.Tags,
 			Status: member.Status,
 			Proto: map[string]uint8{
-				"min": member.DelegateMin,
-				"max": member.DelegateMax,
+				"min":     member.DelegateMin,
+				"max":     member.DelegateMax,
 				"version": member.DelegateCur,
 			},
 		})
