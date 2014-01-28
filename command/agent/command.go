@@ -413,7 +413,6 @@ func (c *Command) handleReload(config *Config, agent *Agent) *Config {
 
 	// Change the tags for the event handlers
 	c.scriptHandler.Self.Tags = newConf.Tags
-	c.Ui.Info(fmt.Sprintf("Updated tags: %v", newConf.Tags))
 
 	return newConf
 }
