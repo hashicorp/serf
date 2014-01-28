@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/testutil"
 	"github.com/mitchellh/cli"
 	"log"
@@ -85,7 +86,7 @@ func TestCommandRun_rpc(t *testing.T) {
 
 	testutil.Yield()
 
-	client, err := NewRPCClient(rpcAddr)
+	client, err := client.NewRPCClient(rpcAddr)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -193,7 +194,7 @@ func TestCommandRun_advertiseAddr(t *testing.T) {
 
 	testutil.Yield()
 
-	client, err := NewRPCClient(rpcAddr)
+	client, err := client.NewRPCClient(rpcAddr)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}

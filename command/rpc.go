@@ -2,7 +2,7 @@ package command
 
 import (
 	"flag"
-	"github.com/hashicorp/serf/command/agent"
+	"github.com/hashicorp/serf/client"
 )
 
 // RPCAddrFlag returns a pointer to a string that will be populated
@@ -13,6 +13,6 @@ func RPCAddrFlag(f *flag.FlagSet) *string {
 }
 
 // RPCClient returns a new Serf RPC client with the given address.
-func RPCClient(addr string) (*agent.RPCClient, error) {
-	return agent.NewRPCClient(addr)
+func RPCClient(addr string) (*client.RPCClient, error) {
+	return client.NewRPCClient(addr)
 }

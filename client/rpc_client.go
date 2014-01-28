@@ -1,4 +1,4 @@
-package agent
+package client
 
 import (
 	"bufio"
@@ -371,7 +371,7 @@ func (c *RPCClient) handshake() error {
 		Seq:     c.getSeq(),
 	}
 	req := handshakeRequest{
-		Version: MaxIPCVersion,
+		Version: maxIPCVersion,
 	}
 	return c.genericRPC(&header, &req, nil)
 }
