@@ -29,10 +29,6 @@ features or changes that aren't listed here.
   layer. A future version of Serf will allow you to modify these tunables
   so that Serf may work more efficiently in any environment you put it in.
 
-* **SIGHUP reloading**. Alongside configuration files, Serf will respond to
-  SIGHUP requests by reloading the configuration without disrupting cluster
-  state.
-
 * **Event handler library**. We think that there are many cases
   for generic event handlers. We plan on building into Serf a method of
   sharing and quickly "installing" event handlers so that you can more

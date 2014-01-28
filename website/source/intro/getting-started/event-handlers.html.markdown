@@ -80,6 +80,8 @@ There are currently four types of events that Serf invokes:
 * `member-leave` - One or more members have gracefully left the cluster.
 * `member-failed` - One or more members have failed, meaning that they
   didn't properly respond to ping requests.
+* `member-update` - One or members have updated, likely to update the
+  associated tags
 * `user` - A custom user event, covered later in this guide.
 
 ## Multiple Event Scripts, Filtering, And More
