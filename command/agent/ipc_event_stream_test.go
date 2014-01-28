@@ -47,7 +47,7 @@ func TestIPCEventStream(t *testing.T) {
 				Name:        "TestNode",
 				Addr:        net.IP([]byte{127, 0, 0, 1}),
 				Port:        12345,
-				Role:        "node",
+				Tags:        map[string]string{"role": "node"},
 				Status:      serf.StatusAlive,
 				ProtocolMin: 0,
 				ProtocolMax: 0,

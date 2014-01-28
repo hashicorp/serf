@@ -80,7 +80,7 @@ func (es *eventStream) sendMemberEvent(me serf.MemberEvent) error {
 			Name:        m.Name,
 			Addr:        m.Addr,
 			Port:        m.Port,
-			Role:        m.Role,
+			Tags:        m.Tags,
 			Status:      m.Status.String(),
 			ProtocolMin: m.ProtocolMin,
 			ProtocolMax: m.ProtocolMax,

@@ -18,14 +18,17 @@ import (
 const DefaultBindPort int = 7946
 
 // DefaultConfig contains the defaults for configurations.
-var DefaultConfig = &Config{
-	BindAddr:      "0.0.0.0",
-	AdvertiseAddr: "",
-	LogLevel:      "INFO",
-	RPCAddr:       "127.0.0.1:7373",
-	Protocol:      serf.ProtocolVersionMax,
-	ReplayOnJoin:  false,
-	Profile:       "lan",
+func DefaultConfig() *Config {
+	return &Config{
+		Tags:          make(map[string]string),
+		BindAddr:      "0.0.0.0",
+		AdvertiseAddr: "",
+		LogLevel:      "INFO",
+		RPCAddr:       "127.0.0.1:7373",
+		Protocol:      serf.ProtocolVersionMax,
+		ReplayOnJoin:  false,
+		Profile:       "lan",
+	}
 }
 
 type dirEnts []os.FileInfo
@@ -40,6 +43,11 @@ type Config struct {
 	// more info.
 	NodeName string `mapstructure:"node_name"`
 	Role     string `mapstructure:"role"`
+
+	// Tags are used to attach key/value metadata to a node. They have
+	// replaced 'Role' as a more flexible meta data mechanism. For compatibility,
+	// the 'role' key is special, and is used for backwards compatibility.
+	Tags map[string]string `mapstructure:"tags"`
 
 	// BindAddr is the address that the Serf agent's communication ports
 	// will bind to. Serf will use this address to bind to for both TCP
@@ -167,7 +175,7 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 
 	// If we never set the protocol, then set it to the default
 	if !containsKey(md.Keys, "protocol") {
-		result.Protocol = DefaultConfig.Protocol
+		result.Protocol = serf.ProtocolVersionMax
 	}
 
 	return &result, nil
@@ -195,6 +203,14 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.Role != "" {
 		result.Role = b.Role
+	}
+	if b.Tags != nil {
+		if result.Tags == nil {
+			result.Tags = make(map[string]string)
+		}
+		for name, value := range b.Tags {
+			result.Tags[name] = value
+		}
 	}
 	if b.BindAddr != "" {
 		result.BindAddr = b.BindAddr

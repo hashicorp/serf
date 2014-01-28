@@ -131,7 +131,9 @@ information. There is no request body, but the response looks like:
         "Name": "TestNode"
         "Addr": [127, 0, 0, 1],
         "Port": 5000,
-        "Role": "test",
+        "Tags": {
+            "role": "test"
+        },
         "Status": "alive",
         "ProtocolMin": 0,
         "ProtocolMax": 3,
@@ -183,7 +185,9 @@ we may start getting messages like:
                 "Name": "TestNode"
                 "Addr": [127, 0, 0, 1],
                 "Port": 5000,
-                "Role": "test",
+                "Tags": {
+                    "role": "test"
+                },
                 "Status": "alive",
                 "ProtocolMin": 0,
                 "ProtocolMax": 3,

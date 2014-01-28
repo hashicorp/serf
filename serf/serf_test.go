@@ -12,6 +12,7 @@ import (
 
 func testConfig() *Config {
 	config := DefaultConfig()
+	config.Init()
 	config.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
 
 	// Set probe intervals that are aggressive for finding bad nodes
@@ -332,7 +333,7 @@ func TestSerf_joinLeave(t *testing.T) {
 func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()
-	s2Config.Role = "foo"
+	s2Config.Tags["role"] = "foo"
 
 	s1, err := Create(s1Config)
 	if err != nil {
@@ -371,7 +372,7 @@ func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
 	s3Config := testConfig()
 	s3Config.MemberlistConfig.BindAddr = s2Config.MemberlistConfig.BindAddr
 	s3Config.NodeName = s2Config.NodeName
-	s3Config.Role = "bar"
+	s3Config.Tags["role"] = "bar"
 
 	s3, err := Create(s3Config)
 	if err != nil {
@@ -403,8 +404,8 @@ func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
 		t.Fatalf("couldn't find member")
 	}
 
-	if member.Role != s3Config.Role {
-		t.Fatalf("bad role: %s", member.Role)
+	if member.Tags["role"] != s3Config.Tags["role"] {
+		t.Fatalf("bad role: %s", member.Tags["role"])
 	}
 }
 
@@ -465,8 +466,8 @@ func TestSerf_role(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()
 
-	s1Config.Role = "web"
-	s2Config.Role = "lb"
+	s1Config.Tags["role"] = "web"
+	s2Config.Tags["role"] = "lb"
 
 	s1, err := Create(s1Config)
 	if err != nil {
@@ -495,7 +496,7 @@ func TestSerf_role(t *testing.T) {
 
 	roles := make(map[string]string)
 	for _, m := range members {
-		roles[m.Name] = m.Role
+		roles[m.Name] = m.Tags["role"]
 	}
 
 	if roles[s1Config.NodeName] != "web" {
@@ -1033,5 +1034,74 @@ func TestSerf_Leave_SnapshotRecovery(t *testing.T) {
 	testMember(t, s1.Members(), s2Config.NodeName, StatusLeft)
 	if len(s2.Members()) != 1 {
 		t.Fatalf("bad members: %#v", s2.Members())
+	}
+}
+
+func TestSerf_SetTags(t *testing.T) {
+	eventCh := make(chan Event, 4)
+	s1Config := testConfig()
+	s1Config.EventCh = eventCh
+	s2Config := testConfig()
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	testutil.Yield()
+
+	// Update the tags
+	if err := s1.SetTags(map[string]string{"port": "8000"}); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if err := s2.SetTags(map[string]string{"datacenter": "east-aws"}); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	testutil.Yield()
+
+	// Since s2 shutdown, we check the events to make sure we got failures.
+	testEvents(t, eventCh, s2Config.NodeName,
+		[]EventType{EventMemberJoin, EventMemberUpdate})
+
+	// Verify the new tags
+	m1m := s1.Members()
+	m1m_tags := make(map[string]map[string]string)
+	for _, m := range m1m {
+		m1m_tags[m.Name] = m.Tags
+	}
+
+	if m := m1m_tags[s1.config.NodeName]; m["port"] != "8000" {
+		t.Fatalf("bad: %v", m1m_tags)
+	}
+
+	if m := m1m_tags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
+		t.Fatalf("bad: %v", m1m_tags)
+	}
+
+	m2m := s2.Members()
+	m2m_tags := make(map[string]map[string]string)
+	for _, m := range m2m {
+		m2m_tags[m.Name] = m.Tags
+	}
+
+	if m := m2m_tags[s1.config.NodeName]; m["port"] != "8000" {
+		t.Fatalf("bad: %v", m1m_tags)
+	}
+
+	if m := m2m_tags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
+		t.Fatalf("bad: %v", m1m_tags)
 	}
 }

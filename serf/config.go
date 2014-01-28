@@ -14,9 +14,9 @@ var ProtocolVersionMap map[uint8]uint8
 
 func init() {
 	ProtocolVersionMap = map[uint8]uint8{
+		3: 2,
 		2: 2,
 		1: 1,
-		0: 0,
 	}
 }
 
@@ -26,13 +26,12 @@ type Config struct {
 	// is not set, Serf will set it to the hostname of the running machine.
 	NodeName string
 
-	// The role for this node, if any. This is used to differentiate
-	// between perhaps different members of a Serf. For example, you might
-	// have a "load-balancer" role and a "web" role part of the same cluster.
-	// When new nodes are added, the load balancer wants to know (so it
-	// must be part of the cluster), but it doesn't want to add other load
-	// balancers to the rotation, so it checks if the added nodes are "web".
-	Role string
+	// The tags for this role, if any. This is used to provide arbitrary
+	// key/value metadata per-node. For example, a "role" tag may be used to
+	// differentiate "load-balancer" from a "web" role as parts of the same cluster.
+	// Tags are deprecating 'Role', and instead it acts as a special key in this
+	// map.
+	Tags map[string]string
 
 	// EventCh is a channel that receives all the Serf events. The events
 	// are sent on this channel in proper ordering. Care must be taken that
@@ -152,6 +151,13 @@ type Config struct {
 	// it will attempt to join all the previously known nodes until one
 	// succeeds and will also avoid replaying old user events.
 	SnapshotPath string
+}
+
+// Init allocates the subdata structures
+func (c *Config) Init() {
+	if c.Tags == nil {
+		c.Tags = make(map[string]string)
+	}
 }
 
 // DefaultConfig returns a Config struct that contains reasonable defaults

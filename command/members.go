@@ -124,31 +124,28 @@ func (c *MembersCommand) Run(args []string) int {
 
 	for _, member := range members {
 		// Skip the non-matching members
-		if !roleRe.MatchString(member.Role) || !statusRe.MatchString(member.Status) {
+		if !roleRe.MatchString(member.Tags["role"]) || !statusRe.MatchString(member.Status) {
 			continue
 		}
 
+		// Format the tags as tag1=v1,tag2=v2,...
+		var tagPairs []string
+		for name, value := range member.Tags {
+			tagPairs = append(tagPairs, fmt.Sprintf("%s=%s", name, value))
+		}
+		tags := strings.Join(tagPairs, ",")
+
 		addr := net.TCPAddr{IP: member.Addr, Port: int(member.Port)}
 
-		result.Members = append(result.Members, Member{
-			detail: detailed,
-			Name: member.Name,
-			Addr: addr.String(),
-			Port: member.Port,
-			Role: member.Role,
-			Status: member.Status,
-			Proto: ProtoDetail{
-				Min: member.DelegateMin,
-				Max: member.DelegateMax,
-				Ver: member.DelegateCur,
-			},
-		})
-	}
+		c.Ui.Output(fmt.Sprintf("%s    %s    %s    %s",
+			member.Name, addr.String(), member.Status, tags))
 
-	output, err := formatOutput(result, format)
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Encoding error: %s", err))
-		return 1
+		if detailed {
+			c.Ui.Output(fmt.Sprintf("    Protocol Version: %d",
+				member.DelegateCur))
+			c.Ui.Output(fmt.Sprintf("    Available Protocol Range: [%d, %d]",
+				member.DelegateMin, member.DelegateMax))
+		}
 	}
 
 	c.Ui.Output(string(output))

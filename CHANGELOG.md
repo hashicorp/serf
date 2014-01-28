@@ -1,6 +1,11 @@
-## 0.3.1 (Unreleased)
+## 0.4.0 (Unreleased)
 
 FEATURES:
+
+ * Static `role` has been replaced with dynamic tags. Each agent can have
+ multiple key/value tags associated using `-tag`. Tags can be updated using
+ a SIGHUP and are advertised to the cluster, causing the `member-update` event
+ to be triggered. [GH-111] [GH-98]
 
  * `advertise` flag can be used to set a advertise address different
  from the bind address. Used for NAT traversal. Thanks to @benagricola [GH-93]
@@ -14,6 +19,11 @@ BUG FIXES:
  * `leave_on_interrupt` set to false when not specified, if
  any config file is provided. This flag is deprecated for
  `skip_leave_on_interrupt` instead. [GH-94]
+
+MISC:
+
+  * `-role` configuration has been deprecated in favor of `-tag role=foo`.
+  The flag is still supported but will generate warnings.
 
 ## 0.3.0 (December 5, 2013)
 

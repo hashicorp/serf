@@ -15,3 +15,7 @@ func (e *eventDelegate) NotifyJoin(n *memberlist.Node) {
 func (e *eventDelegate) NotifyLeave(n *memberlist.Node) {
 	e.serf.handleNodeLeave(n)
 }
+
+func (e *eventDelegate) NotifyUpdate(n *memberlist.Node) {
+	e.serf.handleNodeUpdate(n)
+}

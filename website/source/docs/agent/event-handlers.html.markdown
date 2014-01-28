@@ -29,25 +29,28 @@ variables:
 
 * `SERF_SELF_ROLE` is the role of the node that is executing the event handler.
 
+* `SERF_TAG_${TAG}` is set for each tag the agent has. The tag name is upper-cased.
+
 * `SERF_USER_EVENT` is the name of the user event type if `SERF_EVENT` is
   "user".
 
 * `SERF_USER_LTIME` is the `LamportTime` of the user event if `SERF_EVENT`
   is "user".
 
+
 In addition to these environmental variables, the data for an event is passed
 in via stdin. The format of the data is dependent on the event type.
 
 #### Membership Event Data
 
-For membership related events (`member-join`, `member-leave`, and `member-failed`),
+For membership related events (`member-join`, `member-leave`, `member-failed`, and `member-update`),
 stdin is the list of members that participated in that event. Each member is
 separated by a newline and each field about the member is separated by
-whitespace. The fields of a membership event are name, address, then role.
+whitespace. The fields of a membership event are name, address, role, then tags.
 For example:
 
 ```
-mitchellh.local    127.0.0.1    web
+mitchellh.local    127.0.0.1    web    role=web,datacenter=east
 ```
 
 #### User Event Data

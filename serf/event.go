@@ -12,6 +12,7 @@ const (
 	EventMemberJoin EventType = iota
 	EventMemberLeave
 	EventMemberFailed
+	EventMemberUpdate
 	EventUser
 )
 
@@ -23,6 +24,8 @@ func (t EventType) String() string {
 		return "member-leave"
 	case EventMemberFailed:
 		return "member-failed"
+	case EventMemberUpdate:
+		return "member-update"
 	case EventUser:
 		return "user"
 	default:
@@ -57,6 +60,8 @@ func (m MemberEvent) String() string {
 		return "member-leave"
 	case EventMemberFailed:
 		return "member-failed"
+	case EventMemberUpdate:
+		return "member-update"
 	default:
 		panic(fmt.Sprintf("unknown event type: %d", m.Type))
 	}

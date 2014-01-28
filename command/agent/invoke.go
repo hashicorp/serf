@@ -42,10 +42,16 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 	cmd.Env = append(cmd.Env,
 		"SERF_EVENT="+event.EventType().String(),
 		"SERF_SELF_NAME="+self.Name,
-		"SERF_SELF_ROLE="+self.Role,
+		"SERF_SELF_ROLE="+self.Tags["role"],
 	)
 	cmd.Stderr = &output
 	cmd.Stdout = &output
+
+	// Add all the tags
+	for name, val := range self.Tags {
+		tag_env := fmt.Sprintf("SERF_TAG_%s=%s", strings.ToUpper(name), val)
+		cmd.Env = append(cmd.Env, tag_env)
+	}
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -89,17 +95,26 @@ func eventClean(v string) string {
 //
 // The format for the data is unix tool friendly, separated by whitespace
 // and newlines. The structure of each line for any member event is:
-// "NAME    ADDRESS    ROLE" where the whitespace is actually tabs.
+// "NAME    ADDRESS    ROLE    TAGS" where the whitespace is actually tabs.
 // The name and role are cleaned so that newlines and tabs are replaced
 // with "\n" and "\t" respectively.
 func memberEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.MemberEvent) {
 	defer stdin.Close()
 	for _, member := range e.Members {
+		// Format the tags as tag1=v1,tag2=v2,...
+		var tagPairs []string
+		for name, value := range member.Tags {
+			tagPairs = append(tagPairs, fmt.Sprintf("%s=%s", name, value))
+		}
+		tags := strings.Join(tagPairs, ",")
+
+		// Send the entire line
 		_, err := stdin.Write([]byte(fmt.Sprintf(
-			"%s\t%s\t%s\n",
+			"%s\t%s\t%s\t%s\n",
 			eventClean(member.Name),
 			member.Addr.String(),
-			eventClean(member.Role))))
+			eventClean(member.Tags["role"]),
+			eventClean(tags))))
 		if err != nil {
 			return
 		}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/memberlist"
+	"github.com/ugorji/go/codec"
 	"log"
 	"math/rand"
 	"net"
@@ -16,8 +17,14 @@ import (
 // Serf-level protocol versions that are passed down as the delegate
 // version to memberlist below.
 const (
-	ProtocolVersionMin uint8 = 0
-	ProtocolVersionMax       = 2
+	ProtocolVersionMin uint8 = 1
+	ProtocolVersionMax       = 3
+)
+
+const (
+	// Used to detect if the meta data is tags
+	// or if it is a raw role
+	tagMagicByte uint8 = 255
 )
 
 func init() {
@@ -96,7 +103,7 @@ type Member struct {
 	Name   string
 	Addr   net.IP
 	Port   uint16
-	Role   string
+	Tags   map[string]string
 	Status MemberStatus
 
 	// The minimum, maximum, and current values of the protocol versions
@@ -186,6 +193,7 @@ const (
 // After calling this function, the configuration should no longer be used
 // or modified by the caller.
 func Create(conf *Config) (*Serf, error) {
+	conf.Init()
 	if conf.ProtocolVersion < ProtocolVersionMin {
 		return nil, fmt.Errorf("Protocol version '%d' too low. Must be in range: [%d, %d]",
 			conf.ProtocolVersion, ProtocolVersionMin, ProtocolVersionMax)
@@ -200,6 +208,11 @@ func Create(conf *Config) (*Serf, error) {
 		members:    make(map[string]*memberState),
 		shutdownCh: make(chan struct{}),
 		state:      SerfAlive,
+	}
+
+	// Check that the meta data length is okay
+	if len(serf.encodeTags(conf.Tags)) > memberlist.MetaMaxSize {
+		return nil, fmt.Errorf("Encoded length of tags exceeds limit of %d bytes", memberlist.MetaMaxSize)
 	}
 
 	// Check if serf member event coalescing is enabled
@@ -342,6 +355,23 @@ func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
 		msg: raw,
 	})
 	return nil
+}
+
+// SetTags is used to dynamically update the tags associated with
+// the local node. This will propogate the change to the rest of
+// the cluster. Blocks until a the message is broadcast out.
+func (s *Serf) SetTags(tags map[string]string) error {
+	// Check that the meta data length is okay
+	if len(s.encodeTags(tags)) > memberlist.MetaMaxSize {
+		return fmt.Errorf("Encoded length of tags exceeds limit of %d bytes",
+			memberlist.MetaMaxSize)
+	}
+
+	// Update the config
+	s.config.Tags = tags
+
+	// Trigger a memberlist update
+	return s.memberlist.UpdateNode(s.config.BroadcastTimeout)
 }
 
 // Join joins an existing Serf cluster. Returns the number of nodes
@@ -612,7 +642,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 				Name:   n.Name,
 				Addr:   net.IP(n.Addr),
 				Port:   n.Port,
-				Role:   string(n.Meta),
+				Tags:   s.decodeTags(n.Meta),
 				Status: StatusAlive,
 			},
 		}
@@ -637,7 +667,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 		member.leaveTime = time.Time{}
 		member.Addr = net.IP(n.Addr)
 		member.Port = n.Port
-		member.Role = string(n.Meta)
+		member.Tags = s.decodeTags(n.Meta)
 	}
 
 	// Update the protocol versions every time we get an event
@@ -708,6 +738,34 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 	if s.config.EventCh != nil {
 		s.config.EventCh <- MemberEvent{
 			Type:    event,
+			Members: []Member{member.Member},
+		}
+	}
+}
+
+// handleNodeUpdate is called when a node meta data update
+// has taken place
+func (s *Serf) handleNodeUpdate(n *memberlist.Node) {
+	s.memberLock.Lock()
+	defer s.memberLock.Unlock()
+
+	member, ok := s.members[n.Name]
+	if !ok {
+		// We've never even heard of this node that is updating.
+		// Just ignore it completely.
+		return
+	}
+
+	// Update the member attributes
+	member.Addr = net.IP(n.Addr)
+	member.Port = n.Port
+	member.Tags = s.decodeTags(n.Meta)
+
+	// Send an event along
+	s.logger.Printf("[INFO] serf: EventMemberUpdate: %s", member.Member.Name)
+	if s.config.EventCh != nil {
+		s.config.EventCh <- MemberEvent{
+			Type:    EventMemberUpdate,
 			Members: []Member{member.Member},
 		}
 	}
@@ -1032,4 +1090,42 @@ func (s *Serf) handleRejoin(previous []*PreviousNode) {
 		}
 	}
 	s.logger.Printf("[WARN] serf: Failed to re-join any previously known node")
+}
+
+// encodeTags is used to encode a tag map
+func (s *Serf) encodeTags(tags map[string]string) []byte {
+	// Support role-only backwards compatibility
+	if s.ProtocolVersion() < 3 {
+		role := tags["role"]
+		return []byte(role)
+	}
+
+	// Use a magic byte prefix and msgpack encode the tags
+	var buf bytes.Buffer
+	buf.WriteByte(tagMagicByte)
+	enc := codec.NewEncoder(&buf, &codec.MsgpackHandle{})
+	if err := enc.Encode(tags); err != nil {
+		panic(fmt.Sprintf("Failed to encode tags: %v", err))
+	}
+	return buf.Bytes()
+}
+
+// decodeTags is used to decode a tag map
+func (s *Serf) decodeTags(buf []byte) map[string]string {
+	tags := make(map[string]string)
+
+	// Backwards compatibility mode
+	if len(buf) == 0 || buf[0] != tagMagicByte {
+		tags["role"] = string(buf)
+		return tags
+
+	}
+
+	// Decode the tags
+	r := bytes.NewReader(buf[1:])
+	dec := codec.NewDecoder(r, &codec.MsgpackHandle{})
+	if err := dec.Decode(&tags); err != nil {
+		s.logger.Printf("[ERR] Failed to decode tags: %v", err)
+	}
+	return tags
 }
