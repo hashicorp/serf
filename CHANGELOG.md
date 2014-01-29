@@ -7,6 +7,9 @@ FEATURES:
  a SIGHUP and are advertised to the cluster, causing the `member-update` event
  to be triggered. [GH-111] [GH-98]
 
+ * Serf collects telemetry information and simple runtime profiling. Stats can
+ be dumped to stderr by sending a `USR1` signal to Serf. [GH-103]
+
  * `advertise` flag can be used to set a advertise address different
  from the bind address. Used for NAT traversal. Thanks to @benagricola [GH-93]
 
