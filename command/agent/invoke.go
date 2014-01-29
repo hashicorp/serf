@@ -3,12 +3,14 @@ package agent
 import (
 	"bytes"
 	"fmt"
+	"github.com/armon/go-metrics"
 	"github.com/hashicorp/serf/serf"
 	"io"
 	"log"
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 )
 
 const (
@@ -25,6 +27,7 @@ const (
 // In all events, data is passed in via stdin to faciliate piping. See
 // the various stdin functions below for more information.
 func invokeEventScript(logger *log.Logger, script string, self serf.Member, event serf.Event) error {
+	defer metrics.MeasureSince([]string{"agent", "invoke", script}, time.Now())
 	var output bytes.Buffer
 
 	// Determine the shell invocation based on OS

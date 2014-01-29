@@ -24,6 +24,7 @@ package agent
 import (
 	"bufio"
 	"fmt"
+	"github.com/armon/go-metrics"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/serf"
 	"github.com/ugorji/go/codec"
@@ -244,6 +245,7 @@ func (i *AgentIPC) listen() {
 			continue
 		}
 		i.logger.Printf("[INFO] agent.ipc: Accepted client: %v", conn.RemoteAddr())
+		metrics.IncrCounter([]string{"agent", "ipc", "accept"}, 1)
 
 		// Wrap the connection in a client
 		client := &IPCClient{
@@ -331,6 +333,7 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 		client.Send(&respHeader, nil)
 		return fmt.Errorf(handshakeRequired)
 	}
+	metrics.IncrCounter([]string{"agent", "ipc", "command"}, 1)
 
 	// Dispatch command specific handlers
 	switch command {
