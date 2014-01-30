@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/serf/testutil"
 	"github.com/mitchellh/cli"
 	"log"
+	"os"
 	"testing"
 	"time"
 )
@@ -220,6 +221,11 @@ func TestCommandRun_advertiseAddr(t *testing.T) {
 }
 
 func TestCommandRun_mDNS(t *testing.T) {
+	// mDNS does not work in travis
+	if os.Getenv("TRAVIS") != "" {
+		t.SkipNow()
+	}
+
 	// Start an agent
 	doneCh := make(chan struct{})
 	shutdownCh := make(chan struct{})
