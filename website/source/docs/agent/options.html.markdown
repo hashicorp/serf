@@ -56,6 +56,11 @@ The options below are all specified on the command-line.
   in alphabetical order. For more information on the format of the configuration
   files, see the "Configuration Files" section below.
 
+* `-discover` - Discover provides a cluster name, which is used with mDNS to
+  automatically discover Serf peers. When provided, Serf will respond to mDNS
+  queries and periodically poll for new peers. This feature requires a network
+  environment that supports multicasting.
+
 * `-encrypt` - Specifies the secret key to use for encryption of Serf
   network traffic. This key must be 16-bytes that are base64 encoded. The
   easiest way to create an encryption key is to use `serf keygen`. All
@@ -161,9 +166,14 @@ at a single JSON object with configuration within it.
 
 * `role` - **Deprecated**. Equivalent to the `-role` command-line flag.
 
+* `tags` - This is a dictionary of tag values. It is the same as specifying
+  the `tag` command-line flag once per tag.
+
 * `bind` - Equivalent to the `-bind` command-line flag.
 
 * `advertise` - Equivalent to the `-advertise` command-line flag.
+
+* `discover` - Equivalent to the `-discover` command-line flag.
 
 * `encrypt_key` - Equivalent to the `-encrypt` command-line flag.
 
@@ -195,7 +205,4 @@ at a single JSON object with configuration within it.
   gracefully leave, but setting this to true disables that. Defaults to false.
   Interrupts are usually from a Control-C from a shell. (This was previously
   `leave_on_interrupt` but has since changed).
-
-* `tags` - This is a dictionary of tag values. It is the same as specifying
-  the `tag` command-line flag once per tag.
 
