@@ -189,7 +189,6 @@ func TestDecodeConfig(t *testing.T) {
 		t.Fatalf("bad: %#v", config)
 	}
 
-}
 	// Discover
 	input = `{"discover": "foobar"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
@@ -200,6 +199,7 @@ func TestDecodeConfig(t *testing.T) {
 	if config.Discover != "foobar" {
 		t.Fatalf("bad: %#v", config)
 	}
+}
 
 func TestMergeConfig(t *testing.T) {
 	a := &Config{
@@ -219,7 +219,7 @@ func TestMergeConfig(t *testing.T) {
 		StartJoin:      []string{"bar"},
 		LeaveOnTerm:    true,
 		SkipLeaveOnInt: true,
-		Discover: "tubez",
+		Discover:       "tubez",
 	}
 
 	c := MergeConfig(a, b)
@@ -252,7 +252,7 @@ func TestMergeConfig(t *testing.T) {
 		t.Fatalf("bad: %#v", c.SkipLeaveOnInt)
 	}
 
-	if c.Discover != "foobar" {
+	if c.Discover != "tubez" {
 		t.Fatalf("Bad: %v", c.Discover)
 	}
 

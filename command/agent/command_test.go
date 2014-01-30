@@ -218,3 +218,79 @@ func TestCommandRun_advertiseAddr(t *testing.T) {
 		t.Fatalf("bad: %#v", m)
 	}
 }
+
+func TestCommandRun_mDNS(t *testing.T) {
+	// Start an agent
+	doneCh := make(chan struct{})
+	shutdownCh := make(chan struct{})
+	defer func() {
+		close(shutdownCh)
+		<-doneCh
+	}()
+
+	c := &Command{
+		ShutdownCh: shutdownCh,
+		Ui:         new(cli.MockUi),
+	}
+
+	args := []string{
+		"-node", "foo",
+		"-bind", testutil.GetBindAddr().String(),
+		"-discover", "test",
+		"-rpc-addr", getRPCAddr(),
+	}
+
+	go func() {
+		code := c.Run(args)
+		if code != 0 {
+			log.Printf("bad: %d", code)
+		}
+		close(doneCh)
+	}()
+
+	// Start a second agent
+	doneCh2 := make(chan struct{})
+	shutdownCh2 := make(chan struct{})
+	defer func() {
+		close(shutdownCh2)
+		<-doneCh2
+	}()
+
+	c2 := &Command{
+		ShutdownCh: shutdownCh2,
+		Ui:         new(cli.MockUi),
+	}
+
+	addr2 := getRPCAddr()
+	args2 := []string{
+		"-node", "bar",
+		"-bind", testutil.GetBindAddr().String(),
+		"-discover", "test",
+		"-rpc-addr", addr2,
+	}
+
+	go func() {
+		code := c2.Run(args2)
+		if code != 0 {
+			log.Printf("bad: %d", code)
+		}
+		close(doneCh2)
+	}()
+
+	time.Sleep(150 * time.Millisecond)
+
+	client, err := client.NewRPCClient(addr2)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer client.Close()
+
+	members, err := client.Members()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if len(members) != 2 {
+		t.Fatalf("bad: %#v", members)
+	}
+}

@@ -64,6 +64,7 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.StringVar(&cmdConfig.SnapshotPath, "snapshot", "", "path to the snapshot file")
 	cmdFlags.Var((*AppendSliceValue)(&tags), "tag",
 		"tag pair, specified as key=value")
+	cmdFlags.StringVar(&cmdConfig.Discover, "discover", "", "mDNS discovery name")
 	if err := cmdFlags.Parse(c.args); err != nil {
 		return nil
 	}
@@ -224,6 +225,21 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 		return nil
 	}
 
+	// Parse the bind address information
+	bindIP, bindPort, err := config.AddrParts(config.BindAddr)
+	bindAddr := &net.TCPAddr{IP: net.ParseIP(bindIP), Port: bindPort}
+
+	// Start the discovery layer
+	if config.Discover != "" {
+		_, err := NewAgentMDNS(agent, logOutput, config.ReplayOnJoin,
+			config.NodeName, config.Discover, bindAddr.IP, bindPort)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error starting mDNS listener: %s", err))
+			return nil
+
+		}
+	}
+
 	// Setup the RPC listener
 	rpcListener, err := net.Listen("tcp", config.RPCAddr)
 	if err != nil {
@@ -235,11 +251,9 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	c.Ui.Output("Starting Serf agent RPC...")
 	ipc := NewAgentIPC(agent, rpcListener, logOutput, logWriter)
 
-	bindIP, bindPort, err := config.AddrParts(config.BindAddr)
-	bindAddr := (&net.TCPAddr{IP: net.ParseIP(bindIP), Port: bindPort}).String()
 	c.Ui.Output("Serf agent running!")
 	c.Ui.Info(fmt.Sprintf("     Node name: '%s'", config.NodeName))
-	c.Ui.Info(fmt.Sprintf("     Bind addr: '%s'", bindAddr))
+	c.Ui.Info(fmt.Sprintf("     Bind addr: '%s'", bindAddr.String()))
 
 	if config.AdvertiseAddr != "" {
 		advertiseIP, advertisePort, _ := config.AddrParts(config.AdvertiseAddr)
@@ -251,6 +265,10 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	c.Ui.Info(fmt.Sprintf("     Encrypted: %#v", config.EncryptKey != ""))
 	c.Ui.Info(fmt.Sprintf("      Snapshot: %v", config.SnapshotPath != ""))
 	c.Ui.Info(fmt.Sprintf("       Profile: %s", config.Profile))
+
+	if config.Discover != "" {
+		c.Ui.Info(fmt.Sprintf("  mDNS cluster: %s", config.Discover))
+	}
 	return ipc
 }
 
@@ -449,6 +467,9 @@ Options:
                            from. This will read every file ending in ".json"
                            as configuration in this directory in alphabetical
                            order.
+  -discover=cluster        Discover is set to enable mDNS discovery of peer. On
+                           networks that support multicast, this can be used to have
+                           peers join each other without an explicit join.
   -encrypt=foo             Key for encrypting network traffic within Serf.
                            Must be a base64-encoded 16-byte key.
   -event-handler=foo       Script to execute when events occur. This can
