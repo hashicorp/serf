@@ -11,7 +11,8 @@ of different libraries and sub-systems. These metrics are aggregated on a ten se
 interval and are retained for one minute.
 
 To view the telemetry information, you must send a `USR1` signal to the Serf
-process. Once Serf receives the signal, it will dump the current telemetry
+process. Windows users must use the `BREAK` signal instead.
+Once Serf receives the signal, it will dump the current telemetry
 information to the stderr of the agent.
 
 In general, the telemetry information is used for debugging or otherwise

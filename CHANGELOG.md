@@ -12,7 +12,8 @@ FEATURES:
  to find peers. [GH-53]
 
  * Serf collects telemetry information and simple runtime profiling. Stats can
- be dumped to stderr by sending a `USR1` signal to Serf. [GH-103]
+ be dumped to stderr by sending a `USR1` signal to Serf. Windows users must use
+ the `BREAK` signal instead. [GH-103]
 
  * `advertise` flag can be used to set a advertise address different
  from the bind address. Used for NAT traversal. Thanks to @benagricola [GH-93]
