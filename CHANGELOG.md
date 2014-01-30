@@ -7,6 +7,10 @@ FEATURES:
  a SIGHUP and are advertised to the cluster, causing the `member-update` event
  to be triggered. [GH-111] [GH-98]
 
+ * Serf can automatically discover peers uing mDNS when provided the `-discover`
+ flag. In network environments supporting multicast, no explicit join is needed
+ to find peers. [GH-53]
+
  * Serf collects telemetry information and simple runtime profiling. Stats can
  be dumped to stderr by sending a `USR1` signal to Serf. [GH-103]
 
