@@ -1,6 +1,30 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
+    "Mappings" : {
+        "AWSNATAMI" : {
+          "us-east-1"      : { "AMI" : "ami-c6699baf" },
+          "us-west-2"      : { "AMI" : "ami-52ff7262" },
+          "us-west-1"      : { "AMI" : "ami-3bcc9e7e" },
+          "eu-west-1"      : { "AMI" : "ami-0b5b6c7f" },
+          "ap-southeast-1" : { "AMI" : "ami-02eb9350" },
+          "ap-southeast-2" : { "AMI" : "ami-ab990e91" },
+          "ap-northeast-1" : { "AMI" : "ami-14d86d15" },
+          "sa-east-1"      : { "AMI" : "ami-0439e619" }
+        },
+
+        "AWSINSTAMI" : {
+          "us-east-1"      : { "AMI" : "ami-a73264ce" },
+          "us-west-2"      : { "AMI" : "ami-6aad335a" },
+          "us-west-1"      : { "AMI" : "ami-acf9cde9" },
+          "eu-west-1"      : { "AMI" : "ami-8e987ef9" },
+          "ap-southeast-1" : { "AMI" : "ami-b84e04ea" },
+          "ap-southeast-2" : { "AMI" : "ami-3d128f07" },
+          "ap-northeast-1" : { "AMI" : "ami-3f32ac3e" },
+          "sa-east-1"      : { "AMI" : "ami-35258228" }
+        }
+    },
+
     "Parameters": {
         "WebNodes": {
             "Type": "String",
@@ -115,7 +139,7 @@
             "Properties" : {
                 "SubnetId" : { "Ref" : "PublicSubnet" },
                 "SourceDestCheck" : "false",
-                "ImageId" : "ami-3bcc9e7e",
+                "ImageId" : { "Fn::FindInMap" : [ "AWSNATAMI", { "Ref" : "AWS::Region" }, "AMI" ]},
                 "SecurityGroupIds" : [
                     { "Ref" : "InstanceSecurityGroup" }
                 ],
@@ -128,7 +152,7 @@
         "LoadBalancer": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
-                "ImageId": "ami-acf9cde9",
+                "ImageId": { "Fn::FindInMap" : [ "AWSINSTAMI", { "Ref" : "AWS::Region" }, "AMI" ]},
                 "PrivateIpAddress": "10.0.0.5",
                 "SecurityGroupIds": [
                     {"Ref": "InstanceSecurityGroup"}
@@ -171,7 +195,7 @@
         "WebLaunchConfig": {
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
-                "ImageId": "ami-acf9cde9",
+                "ImageId": { "Fn::FindInMap" : [ "AWSINSTAMI", { "Ref" : "AWS::Region" }, "AMI" ]},
                 "InstanceType": "m1.small",
                 "SecurityGroups": [
                     {"Ref": "InstanceSecurityGroup"}
