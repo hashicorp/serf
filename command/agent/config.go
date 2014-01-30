@@ -107,6 +107,12 @@ type Config struct {
 	// SkipLeaveOnInt controls if Serf skips a graceful leave when receiving
 	// the INT signal. Defaults false. This can be changed on reload.
 	SkipLeaveOnInt bool `mapstructure:"skip_leave_on_interrupt"`
+
+	// Discover is used to setup an mDNS Discovery name. When this is set, the
+	// agent will setup an mDNS responder and periodically run an mDNS query
+	// to look for peers. For peers on a network that supports multicast, this
+	// allows Serf agents to join each other with zero configuration.
+	Discover string `mapstructure:"discover"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -244,6 +250,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.SkipLeaveOnInt == true {
 		result.SkipLeaveOnInt = true
+	}
+	if b.Discover != "" {
+		result.Discover = b.Discover
 	}
 
 	// Copy the event handlers
