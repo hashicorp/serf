@@ -28,7 +28,7 @@ For simplicity, we'll run a single Serf agent right now:
 $ serf agent
 ==> Starting Serf agent...
 ==> Serf agent running!
-    Node name: ''
+    Node name: 'foobar'
     Bind addr: '0.0.0.0:7946'
      RPC addr: '127.0.0.1:7373'
 
