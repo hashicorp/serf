@@ -35,12 +35,15 @@ $ serf
 usage: serf [--version] [--help] <command> [<args>]
 
 Available commands are:
-    agent      Runs a Serf agent
-    event      Send a custom event through the Serf cluster
-    join       Tell Serf agent to join cluster
-    members    Lists the members of a Serf cluster
-    monitor    Stream logs from a Serf agent
-    version    Prints the Serf version
+    agent          Runs a Serf agent
+    event          Send a custom event through the Serf cluster
+    force-leave    Forces a member of the cluster to enter the "left" state
+    join           Tell Serf agent to join cluster
+    keygen         Generates a new encryption key
+    leave          Gracefully leaves the Serf cluster and shuts down
+    members        Lists the members of a Serf cluster
+    monitor        Stream logs from a Serf agent
+    version        Prints the Serf version
 ```
 
 If you get an error that `serf` could not be found, then your PATH
