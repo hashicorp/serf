@@ -15,7 +15,7 @@ FEATURES:
  be dumped to stderr by sending a `USR1` signal to Serf. Windows users must use
  the `BREAK` signal instead. [GH-103]
 
- * `advertise` flag can be used to set a advertise address different
+ * `advertise` flag can be used to set an advertise address different
  from the bind address. Used for NAT traversal. Thanks to @benagricola [GH-93]
 
  * `members` command now takes `-format` flag to specify either text or JSON
@@ -25,13 +25,13 @@ IMPROVEMENTS:
 
  * User payload always appends a newline when invoking a shell script
 
- * Severify of "Potential blocking operation" reduced to debug to prevent
+ * Severity of "Potential blocking operation" reduced to debug to prevent
  spurious messages on slow or busy machines.
 
 BUG FIXES:
 
- * If a agent is restarted with the same bind address but new name, it
- no will not respond to the old name, causing the old name to enter the
+ * If na agent is restarted with the same bind address but new name, it
+ will not respond to the old name, causing the old name to enter the
  `failed` state, instead of having duplicate entries in the `alive` state.
 
  * `leave_on_interrupt` set to false when not specified, if
