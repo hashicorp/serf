@@ -30,7 +30,7 @@ IMPROVEMENTS:
 
 BUG FIXES:
 
- * If na agent is restarted with the same bind address but new name, it
+ * If an agent is restarted with the same bind address but new name, it
  will not respond to the old name, causing the old name to enter the
  `failed` state, instead of having duplicate entries in the `alive` state.
 
