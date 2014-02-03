@@ -48,7 +48,7 @@ of the event handlers, so we can see them being run:
 $ serf agent -log-level=debug -event-handler=handler.sh
 ==> Starting Serf agent...
 ==> Serf agent running!
-    Node name: ''
+    Node name: 'foobar'
     Bind addr: '0.0.0.0:7946'
      RPC addr: '127.0.0.1:7373'
 
