@@ -604,6 +604,11 @@ func (s *Serf) Shutdown() error {
 	return nil
 }
 
+// Memberlist is used to get access to the underlying Memberlist instance
+func (s *Serf) Memberlist() *memberlist.Memberlist {
+	return s.memberlist
+}
+
 // State is the current state of this Serf instance.
 func (s *Serf) State() SerfState {
 	s.stateLock.Lock()
