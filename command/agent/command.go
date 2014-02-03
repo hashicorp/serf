@@ -231,8 +231,11 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 
 	// Start the discovery layer
 	if config.Discover != "" {
+		// Use the advertise addr and port
+		local := agent.Serf().Memberlist().LocalNode()
+
 		_, err := NewAgentMDNS(agent, logOutput, config.ReplayOnJoin,
-			config.NodeName, config.Discover, bindAddr.IP, bindPort)
+			config.NodeName, config.Discover, local.Addr, int(local.Port))
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error starting mDNS listener: %s", err))
 			return nil
