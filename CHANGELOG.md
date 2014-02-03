@@ -1,3 +1,9 @@
+## 0.4.1 (Unreleased)
+
+IMPROVEMENTS:
+
+ * mDNS service uses the advertise address instead of bind address
+
 ## 0.4.0 (January 31, 2014)
 
 FEATURES:
