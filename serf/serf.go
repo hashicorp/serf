@@ -40,7 +40,7 @@ func init() {
 // All functions on the Serf structure are safe to call concurrently.
 type Serf struct {
 	// The clocks for different purposes. These MUST be the first things
-	// in this struct so due to Golang issue #599.
+	// in this struct due to Golang issue #599.
 	clock      LamportClock
 	eventClock LamportClock
 
