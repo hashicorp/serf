@@ -317,10 +317,16 @@ func Create(conf *Config) (*Serf, error) {
 		go serf.handleRejoin(prev)
 	}
 
-	// Restore any tags from previous state
-	if len(prev_tags) != 0 {
-		serf.SetTags(prev_tags)
+	// Restore any tags from previous state, merging passed configuration from
+	// the CLI over the snapshot.
+	tags := make(map[string]string)
+	for name, value := range prev_tags {
+		tags[name] = value
 	}
+	for name, value := range serf.config.Tags {
+		tags[name] = value
+	}
+	serf.SetTags(tags)
 
 	return serf, nil
 }
@@ -377,6 +383,14 @@ func (s *Serf) SetTags(tags map[string]string) error {
 
 	// Update the config
 	s.config.Tags = tags
+
+	// Register an event
+	if s.config.EventCh != nil {
+		s.config.EventCh <- TagsEvent{
+			Type:    EventTags,
+			Tags:    tags,
+		}
+	}
 
 	// Trigger a memberlist update
 	return s.memberlist.UpdateNode(s.config.BroadcastTimeout)
@@ -711,12 +725,6 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 		}
 	}
 
-	if s.config.EventCh != nil {
-		s.config.EventCh <- MemberEvent{
-			Type:    EventMemberTags,
-			Members: []Member{member.Member},
-		}
-	}
 }
 
 // handleNodeLeave is called when a node leave event is received

@@ -183,6 +183,8 @@ func (s *Snapshotter) stream() {
 			switch typed := e.(type) {
 			case MemberEvent:
 				s.processMemberEvent(typed)
+			case TagsEvent:
+				s.processTagsEvent(typed)
 			case UserEvent:
 				s.processUserEvent(typed)
 			default:
@@ -220,16 +222,16 @@ func (s *Snapshotter) processMemberEvent(e MemberEvent) {
 			delete(s.aliveNodes, mem.Name)
 			s.tryAppend(fmt.Sprintf("not-alive: %s\n", mem.Name))
 		}
-
-	case EventMemberTags:
-		for _, mem := range e.Members {
-			var tagPairs []string
-			for name, value := range mem.Tags {
-				tagPairs = append(tagPairs, fmt.Sprintf("%s=%s", name, value))
-			}
-			s.tryAppend(fmt.Sprintf("tags: %s\n", strings.Join(tagPairs, ",")))
-		}
 	}
+	s.updateClock()
+}
+
+func (s *Snapshotter) processTagsEvent(e TagsEvent) {
+	var tagPairs []string
+	for name, value := range e.Tags {
+		tagPairs = append(tagPairs, fmt.Sprintf("%s=%s", name, value))
+	}
+	s.tryAppend(fmt.Sprintf("tags: %s\n", strings.Join(tagPairs, ",")))
 	s.updateClock()
 }
 

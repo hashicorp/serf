@@ -12,7 +12,7 @@ const (
 	EventMemberJoin EventType = iota
 	EventMemberLeave
 	EventMemberFailed
-	EventMemberTags
+	EventTags
 	EventMemberUpdate
 	EventUser
 )
@@ -25,10 +25,10 @@ func (t EventType) String() string {
 		return "member-leave"
 	case EventMemberFailed:
 		return "member-failed"
-	case EventMemberTags:
-		return "member-tags"
 	case EventMemberUpdate:
 		return "member-update"
+	case EventTags:
+		return "tags"
 	case EventUser:
 		return "user"
 	default:
@@ -63,8 +63,8 @@ func (m MemberEvent) String() string {
 		return "member-leave"
 	case EventMemberFailed:
 		return "member-failed"
-	case EventMemberTags:
-		return "member-tags"
+	case EventTags:
+		return "tags"
 	case EventMemberUpdate:
 		return "member-update"
 	default:
@@ -87,4 +87,19 @@ func (u UserEvent) EventType() EventType {
 
 func (u UserEvent) String() string {
 	return fmt.Sprintf("user-event: %s", u.Name)
+}
+
+// TagsEvent is the struct used for tag changing events. Tag events
+// may only occur for the local node.
+type TagsEvent struct {
+	Type EventType
+	Tags map[string]string
+}
+
+func (t TagsEvent) EventType() EventType {
+	return EventTags
+}
+
+func (t TagsEvent) String() string {
+	return "tags-event"
 }
