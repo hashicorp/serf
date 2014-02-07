@@ -47,6 +47,7 @@ type Snapshotter struct {
 	outCh          chan<- Event
 	shutdownCh     <-chan struct{}
 	waitCh         chan struct{}
+	tags           map[string]string
 }
 
 // PreviousNode is used to represent the previously known alive nodes
@@ -97,6 +98,7 @@ func NewSnapshotter(path string, maxSize int, logger *log.Logger, clock *Lamport
 		outCh:          outCh,
 		shutdownCh:     shutdownCh,
 		waitCh:         make(chan struct{}),
+		tags:           make(map[string]string),
 	}
 
 	// Recover the last known state
@@ -134,6 +136,11 @@ func (s *Snapshotter) AliveNodes() []*PreviousNode {
 		previous[i], previous[j] = previous[j], previous[i]
 	}
 	return previous
+}
+
+// Tags returns the tags as they last were set
+func (s *Snapshotter) Tags() map[string]string {
+	return s.tags
 }
 
 // Wait is used to wait until the snapshotter finishes shut down
@@ -212,6 +219,15 @@ func (s *Snapshotter) processMemberEvent(e MemberEvent) {
 		for _, mem := range e.Members {
 			delete(s.aliveNodes, mem.Name)
 			s.tryAppend(fmt.Sprintf("not-alive: %s\n", mem.Name))
+		}
+
+	case EventMemberTags:
+		for _, mem := range e.Members {
+			var tagPairs []string
+			for name, value := range mem.Tags {
+				tagPairs = append(tagPairs, fmt.Sprintf("%s=%s", name, value))
+			}
+			s.tryAppend(fmt.Sprintf("tags: %s\n", strings.Join(tagPairs, ",")))
 		}
 	}
 	s.updateClock()
@@ -303,6 +319,19 @@ func (s *Snapshotter) compact() error {
 	}
 	offset += int64(n)
 
+	// Write out the tags
+	var tagPairs []string
+	for name, value := range s.tags {
+		tagPairs = append(tagPairs, fmt.Sprintf("%s=%s", name, value))
+	}
+	line = fmt.Sprintf("tags: %s\n", strings.Join(tagPairs, ","))
+	n, err = fh.WriteString(line)
+	if err != nil {
+		fh.Close()
+		return err
+	}
+	offset += int64(n)
+
 	line = fmt.Sprintf("event-clock: %d\n", s.lastEventClock)
 	n, err = fh.WriteString(line)
 	if err != nil {
@@ -360,6 +389,17 @@ func (s *Snapshotter) replay() error {
 		} else if strings.HasPrefix(line, "not-alive: ") {
 			name := strings.TrimPrefix(line, "not-alive: ")
 			delete(s.aliveNodes, name)
+
+		} else if strings.HasPrefix(line, "tags: ") {
+			tags := make(map[string]string)
+			encoded := strings.TrimPrefix(line, "tags: ")
+			for _, tag := range strings.Split(encoded, ",") {
+				if strings.Contains(tag, "=") {
+					pair := strings.Split(tag, "=")
+					tags[pair[0]] = pair[1]
+				}
+			}
+			s.tags = tags
 
 		} else if strings.HasPrefix(line, "clock: ") {
 			timeStr := strings.TrimPrefix(line, "clock: ")

@@ -12,6 +12,7 @@ const (
 	EventMemberJoin EventType = iota
 	EventMemberLeave
 	EventMemberFailed
+	EventMemberTags
 	EventMemberUpdate
 	EventUser
 )
@@ -24,6 +25,8 @@ func (t EventType) String() string {
 		return "member-leave"
 	case EventMemberFailed:
 		return "member-failed"
+	case EventMemberTags:
+		return "member-tags"
 	case EventMemberUpdate:
 		return "member-update"
 	case EventUser:
@@ -60,6 +63,8 @@ func (m MemberEvent) String() string {
 		return "member-leave"
 	case EventMemberFailed:
 		return "member-failed"
+	case EventMemberTags:
+		return "member-tags"
 	case EventMemberUpdate:
 		return "member-update"
 	default:

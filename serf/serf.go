@@ -703,6 +703,13 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 			Members: []Member{member.Member},
 		}
 	}
+
+	if s.config.EventCh != nil {
+		s.config.EventCh <- MemberEvent{
+			Type:    EventMemberTags,
+			Members: []Member{member.Member},
+		}
+	}
 }
 
 // handleNodeLeave is called when a node leave event is received
