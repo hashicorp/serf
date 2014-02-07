@@ -240,6 +240,7 @@ func Create(conf *Config) (*Serf, error) {
 	// Try access the snapshot
 	var oldClock, oldEventClock LamportTime
 	var prev []*PreviousNode
+	var prev_tags map[string]string
 	if conf.SnapshotPath != "" {
 		eventCh, snap, err := NewSnapshotter(conf.SnapshotPath, snapshotSizeLimit,
 			serf.logger, &serf.clock, conf.EventCh, serf.shutdownCh)
@@ -249,6 +250,7 @@ func Create(conf *Config) (*Serf, error) {
 		serf.snapshotter = snap
 		conf.EventCh = eventCh
 		prev = snap.AliveNodes()
+		prev_tags = snap.Tags()
 		oldClock = snap.LastClock()
 		oldEventClock = snap.LastEventClock()
 		serf.eventMinTime = oldEventClock + 1
@@ -313,6 +315,11 @@ func Create(conf *Config) (*Serf, error) {
 	// Attempt to re-join the cluster if we have known nodes
 	if len(prev) != 0 {
 		go serf.handleRejoin(prev)
+	}
+
+	// Restore any tags from previous state
+	if len(prev_tags) != 0 {
+		serf.SetTags(prev_tags)
 	}
 
 	return serf, nil
