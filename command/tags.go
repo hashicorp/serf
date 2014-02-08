@@ -43,6 +43,11 @@ func (c *TagsCommand) Run(args []string) int {
 		return 1
 	}
 
+	if len(tagPairs) == 0 && len(delTags) == 0 {
+		c.Ui.Output(c.Help())
+		return 1
+	}
+
 	client, err := RPCClient(*rpcAddr)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
