@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/mitchellh/cli"
+	"github.com/hashicorp/serf/command/agent"
 	"strings"
 )
 
@@ -33,9 +34,9 @@ func (c *TagsCommand) Run(args []string) int {
 	var delTags []string
 	cmdFlags := flag.NewFlagSet("tags", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
-	cmdFlags.Var((*AppendSliceValue)(&tagPairs), "set",
+	cmdFlags.Var((*agent.AppendSliceValue)(&tagPairs), "set",
 		"tag pairs, specified as key=value")
-	cmdFlags.Var((*AppendSliceValue)(&delTags), "delete",
+	cmdFlags.Var((*agent.AppendSliceValue)(&delTags), "delete",
 		"tag keys to unset")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
