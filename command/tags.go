@@ -22,7 +22,7 @@ Usage: serf tags [options] ...
 Options:
 
   -rpc-addr=127.0.0.1:7373  RPC Address of the Serf agent.
-  -tag  key=value           Adds or modifies the value of a tag
+  -set  key=value           Creates or modifies the value of a tag
   -delete                   Removes a tag, if present
 `
 	return strings.TrimSpace(helpText)
@@ -33,7 +33,7 @@ func (c *TagsCommand) Run(args []string) int {
 	var delTags []string
 	cmdFlags := flag.NewFlagSet("tags", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
-	cmdFlags.Var((*AppendSliceValue)(&tagPairs), "tag",
+	cmdFlags.Var((*AppendSliceValue)(&tagPairs), "set",
 		"tag pairs, specified as key=value")
 	cmdFlags.Var((*AppendSliceValue)(&delTags), "delete",
 		"tag keys to unset")
