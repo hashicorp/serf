@@ -397,7 +397,11 @@ func (s *Snapshotter) replay() error {
 			encoded := strings.TrimPrefix(line, "tags: ")
 			for _, tag := range strings.Split(encoded, ",") {
 				if strings.Contains(tag, "=") {
-					pair := strings.Split(tag, "=")
+					pair := strings.SplitN(tag, "=", 2)
+					if len(pair) != 2 {
+						s.logger.Printf("[WARN] serf: Unrecognized tag format: %s", tag)
+						continue
+					}
 					tags[pair[0]] = pair[1]
 				}
 			}
