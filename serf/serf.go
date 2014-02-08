@@ -393,8 +393,8 @@ func (s *Serf) SetTags(tags map[string]string) error {
 	// while snapshots are being used.
 	if s.config.EventCh != nil {
 		s.config.EventCh <- TagsEvent{
-			Type:    EventTags,
-			Tags:    tags,
+			Type: EventTags,
+			Tags: tags,
 		}
 	}
 
