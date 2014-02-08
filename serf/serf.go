@@ -326,7 +326,6 @@ func Create(conf *Config) (*Serf, error) {
 	for name, value := range serf.config.Tags {
 		tags[name] = value
 	}
-	serf.SetTags(tags)
 
 	return serf, nil
 }

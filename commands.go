@@ -65,6 +65,12 @@ func init() {
 			}, nil
 		},
 
+		"tags": func() (cli.Command, error) {
+			return &command.TagsCommand{
+				Ui: ui,
+			}, nil
+		},
+
 		"version": func() (cli.Command, error) {
 			return &command.VersionCommand{
 				Revision:          GitCommit,

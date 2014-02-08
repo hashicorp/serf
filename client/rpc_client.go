@@ -189,6 +189,18 @@ func (c *RPCClient) Leave() error {
 	return c.genericRPC(&header, nil, nil)
 }
 
+// SetTags will modify the tags on a running serf agent
+func (c *RPCClient) SetTags(tags map[string]string) error {
+	header := requestHeader{
+		Command: tagsCommand,
+		Seq:     c.getSeq(),
+	}
+	req := tagsRequest{
+		Tags: tags,
+	}
+	return c.genericRPC(&header, &req, nil)
+}
+
 type monitorHandler struct {
 	client *RPCClient
 	closed bool

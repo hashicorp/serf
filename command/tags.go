@@ -1,0 +1,72 @@
+package command
+
+import (
+	"flag"
+	"fmt"
+	"github.com/mitchellh/cli"
+	"strings"
+)
+
+// TagsCommand is an interface to dynamically add or otherwise modify a
+// running serf agent's tags.
+type TagsCommand struct {
+	Ui cli.Ui
+}
+
+func (c *TagsCommand) Help() string {
+	helpText := `
+Usage: serf tags [options] ...
+
+  Modifies tags on a running Serf agent.
+
+Options:
+
+  -rpc-addr=127.0.0.1:7373  RPC Address of the Serf agent.
+  -tag  key=value           Adds or modifies the value of a tag
+  -delete                   Removes a tag, if present
+`
+	return strings.TrimSpace(helpText)
+}
+
+func (c *TagsCommand) Run(args []string) int {
+	var tagPairs []string
+	var delTags []string
+	cmdFlags := flag.NewFlagSet("tags", flag.ContinueOnError)
+	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
+	cmdFlags.Var((*AppendSliceValue)(&tagPairs), "tag",
+		"tag pairs, specified as key=value")
+	cmdFlags.Var((*AppendSliceValue)(&delTags), "-delete",
+		"tag keys to unset")
+	rpcAddr := RPCAddrFlag(cmdFlags)
+	if err := cmdFlags.Parse(args); err != nil {
+		return 1
+	}
+
+	client, err := RPCClient(*rpcAddr)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
+		return 1
+	}
+	defer client.Close()
+
+	tags := make(map[string]string)
+	for _, tag := range tagPairs {
+		parts := strings.SplitN(tag, "=", 2)
+		if len(parts) != 2 {
+			c.Ui.Error(fmt.Sprintf("Invalid tag '%s' provided", tag))
+			return 1
+		}
+		tags[parts[0]] = parts[1]
+	}
+	if err := client.SetTags(tags); err != nil {
+		c.Ui.Error(fmt.Sprintf("Error setting tags: %s", err))
+		return 1
+	}
+
+	c.Ui.Output("Successfully set tags")
+	return 0
+}
+
+func (c *TagsCommand) Synopsis() string {
+	return "Modify tags of a running Serf agent"
+}
