@@ -389,7 +389,8 @@ func (s *Serf) SetTags(tags map[string]string) error {
 	// Update the config
 	s.config.Tags = tags
 
-	// Register an event
+	// Register an event. This is what triggers a state save for tags
+	// while snapshots are being used.
 	if s.config.EventCh != nil {
 		s.config.EventCh <- TagsEvent{
 			Type:    EventTags,
