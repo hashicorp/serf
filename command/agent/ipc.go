@@ -116,7 +116,8 @@ type stopRequest struct {
 }
 
 type tagsRequest struct {
-	Tags map[string]string
+	Tags       map[string]string
+	DeleteTags []string
 }
 
 type logRecord struct {
@@ -616,12 +617,23 @@ func (i *AgentIPC) handleTags(client *IPCClient, seq uint64) error {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	tags := i.agent.SerfConfig().Tags
+	tags := make(map[string]string)
+
+	for key, val := range i.agent.SerfConfig().Tags {
+		var delTag bool
+		for _, delkey := range req.DeleteTags {
+			delTag = (delTag || delkey == key)
+		}
+		if !delTag {
+			tags[key] = val
+		}
+	}
+
 	for key, val := range req.Tags {
 		tags[key] = val
 	}
 
-	err := i.agent.serf.SetTags(req.Tags)
+	err := i.agent.serf.SetTags(tags)
 
 	resp := responseHeader{Seq: seq, Error: errToString(err)}
 	return client.Send(&resp, nil)

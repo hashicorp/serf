@@ -84,7 +84,8 @@ type stopRequest struct {
 }
 
 type tagsRequest struct {
-	Tags map[string]string
+	Tags       map[string]string
+	DeleteTags []string
 }
 
 type logRecord struct {

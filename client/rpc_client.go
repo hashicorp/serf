@@ -189,14 +189,15 @@ func (c *RPCClient) Leave() error {
 	return c.genericRPC(&header, nil, nil)
 }
 
-// SetTags will modify the tags on a running serf agent
-func (c *RPCClient) SetTags(tags map[string]string) error {
+// UpdateTags will modify the tags on a running serf agent
+func (c *RPCClient) UpdateTags(tags map[string]string, delTags []string) error {
 	header := requestHeader{
 		Command: tagsCommand,
 		Seq:     c.getSeq(),
 	}
 	req := tagsRequest{
-		Tags: tags,
+		Tags:       tags,
+		DeleteTags: delTags,
 	}
 	return c.genericRPC(&header, &req, nil)
 }

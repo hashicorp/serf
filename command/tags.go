@@ -35,7 +35,7 @@ func (c *TagsCommand) Run(args []string) int {
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.Var((*AppendSliceValue)(&tagPairs), "tag",
 		"tag pairs, specified as key=value")
-	cmdFlags.Var((*AppendSliceValue)(&delTags), "-delete",
+	cmdFlags.Var((*AppendSliceValue)(&delTags), "delete",
 		"tag keys to unset")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
@@ -58,12 +58,12 @@ func (c *TagsCommand) Run(args []string) int {
 		}
 		tags[parts[0]] = parts[1]
 	}
-	if err := client.SetTags(tags); err != nil {
+	if err := client.UpdateTags(tags, delTags); err != nil {
 		c.Ui.Error(fmt.Sprintf("Error setting tags: %s", err))
 		return 1
 	}
 
-	c.Ui.Output("Successfully set tags")
+	c.Ui.Output("Successfully updated agent tags")
 	return 0
 }
 
