@@ -103,10 +103,10 @@ func (c *MembersCommand) Run(args []string) int {
 		return 1
 	}
 
-        // Deprecation warning for role
-        if roleFilter != ".*" {
+	// Deprecation warning for role
+	if roleFilter != ".*" {
 		c.Ui.Output("Deprecation warning: 'Role' has been replaced with 'Tags'")
-        }
+	}
 
 	// Compile the regexp
 	roleRe, err := regexp.Compile(roleFilter)
