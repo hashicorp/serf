@@ -49,6 +49,9 @@ MISC:
   * `-role` configuration has been deprecated in favor of `-tag role=foo`.
   The flag is still supported but will generate warnings.
 
+  * `-role=<regexp>` members filter flag has been deprecated in favor of
+  `-tag role=<regexp>` The flag is still supported but will generate warnings
+
   * Support for protocol version 0 (Serf 0.1) has been removed. Serf 0.4 cannot
   join a cluster that has members running version 0.1.
 

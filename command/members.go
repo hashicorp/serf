@@ -71,6 +71,7 @@ Options:
 
   -role=<regexp>            If provided, output is filtered to only nodes matching
                             the regular expression for role
+                            '-role' is deprecated in favor of '-tag role=foo'.
 
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
 
@@ -101,6 +102,11 @@ func (c *MembersCommand) Run(args []string) int {
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
+
+        // Deprecation warning for role
+        if roleFilter != ".*" {
+		c.Ui.Output("Deprecation warning: 'Role' has been replaced with 'Tags'")
+        }
 
 	// Compile the regexp
 	roleRe, err := regexp.Compile(roleFilter)
