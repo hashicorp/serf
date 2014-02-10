@@ -3,6 +3,12 @@
 IMPROVEMENTS:
 
  * mDNS service uses the advertise address instead of bind address
+ * Upstart receipe logs output thanks to @breerly [GH-128]
+
+BUG FIXES:
+
+ * -config-dir would cause protocol to be set to 0 if there are no
+ configuration files in the directory [GH-129]
 
 ## 0.4.0 (January 31, 2014)
 
