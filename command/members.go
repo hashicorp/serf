@@ -3,6 +3,7 @@ package command
 import (
 	"flag"
 	"fmt"
+	"github.com/hashicorp/serf/command/agent"
 	"github.com/mitchellh/cli"
 	"net"
 	"regexp"
@@ -70,11 +71,17 @@ Options:
 
   -role=<regexp>            If provided, output is filtered to only nodes matching
                             the regular expression for role
+                            '-role' is deprecated in favor of '-tag role=foo'.
 
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
 
   -status=<regexp>			If provided, output is filtered to only nodes matching
                             the regular expression for status
+
+  -tag <key>=<regexp>       If provided, output is filtered to only nodes with the
+                            tag <key> with value matching the regular expression.
+                            tag can be specified multiple times to filter on
+                            multiple keys.
 `
 	return strings.TrimSpace(helpText)
 }
@@ -82,15 +89,23 @@ Options:
 func (c *MembersCommand) Run(args []string) int {
 	var detailed bool
 	var roleFilter, statusFilter, format string
+	var tags []string
+	var tagRes map[string](*regexp.Regexp)
 	cmdFlags := flag.NewFlagSet("members", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.BoolVar(&detailed, "detailed", false, "detailed output")
 	cmdFlags.StringVar(&roleFilter, "role", ".*", "role filter")
 	cmdFlags.StringVar(&statusFilter, "status", ".*", "status filter")
 	cmdFlags.StringVar(&format, "format", "text", "output format")
+	cmdFlags.Var((*agent.AppendSliceValue)(&tags), "tag", "tag filter")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
+	}
+
+	// Deprecation warning for role
+	if roleFilter != ".*" {
+		c.Ui.Output("Deprecation warning: 'Role' has been replaced with 'Tags'")
 	}
 
 	// Compile the regexp
@@ -103,6 +118,20 @@ func (c *MembersCommand) Run(args []string) int {
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Failed to compile status regexp: %v", err))
 		return 1
+	}
+	tagRes = make(map[string](*regexp.Regexp))
+	for _, tag := range tags {
+		parts := strings.SplitN(tag, "=", 2)
+		if len(parts) != 2 {
+			c.Ui.Error(fmt.Sprintf("Invalid tag '%s' provided", tag))
+			return 1
+		}
+		tagRe, err := regexp.Compile(parts[1])
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Failed to compile status regexp: %v", err))
+			return 1
+		}
+		tagRes[parts[0]] = tagRe
 	}
 
 	client, err := RPCClient(*rpcAddr)
@@ -121,8 +150,16 @@ func (c *MembersCommand) Run(args []string) int {
 	result := MemberContainer{}
 
 	for _, member := range members {
+		allTagsMatch := true
+		for tag, re := range tagRes {
+			value, ok := member.Tags[tag]
+			if !ok || !re.MatchString(value) {
+				allTagsMatch = false
+			}
+		}
+
 		// Skip the non-matching members
-		if !roleRe.MatchString(member.Tags["role"]) || !statusRe.MatchString(member.Status) {
+		if !allTagsMatch || !roleRe.MatchString(member.Tags["role"]) || !statusRe.MatchString(member.Status) {
 			continue
 		}
 
