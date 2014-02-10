@@ -1,14 +1,21 @@
-## 0.4.1 (Febuary 3, 2014)
+## 0.4.2 (Unreleased)
 
 IMPROVEMENTS:
 
- * mDNS service uses the advertise address instead of bind address
  * Upstart receipe logs output thanks to @breerly [GH-128]
+
+ * `members` can filter on any tag thanks to @hmrm [GH-124]
 
 BUG FIXES:
 
  * -config-dir would cause protocol to be set to 0 if there are no
  configuration files in the directory [GH-129]
+
+## 0.4.1 (Febuary 3, 2014)
+
+IMPROVEMENTS:
+
+ * mDNS service uses the advertise address instead of bind address
 
 ## 0.4.0 (January 31, 2014)
 
