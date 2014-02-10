@@ -104,7 +104,7 @@ func TestDecodeConfig(t *testing.T) {
 		t.Fatalf("bad: %#v", config)
 	}
 
-	if config.Protocol != DefaultConfig().Protocol {
+	if config.Protocol != 0 {
 		t.Fatalf("bad: %#v", config)
 	}
 

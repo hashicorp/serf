@@ -179,11 +179,6 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 		return nil, err
 	}
 
-	// If we never set the protocol, then set it to the default
-	if !containsKey(md.Keys, "protocol") {
-		result.Protocol = serf.ProtocolVersionMax
-	}
-
 	return &result, nil
 }
 
@@ -230,7 +225,7 @@ func MergeConfig(a, b *Config) *Config {
 	if b.LogLevel != "" {
 		result.LogLevel = b.LogLevel
 	}
-	if b.Protocol >= 0 {
+	if b.Protocol > 0 {
 		result.Protocol = b.Protocol
 	}
 	if b.RPCAddr != "" {
