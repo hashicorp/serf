@@ -32,6 +32,7 @@ Available commands are:
     leave          Gracefully leaves the Serf cluster and shuts down
     members        Lists the members of a Serf cluster
     monitor        Stream logs from a Serf agent
+    tags           Modify tags of a running Serf agent
     version        Prints the Serf version
 ```
 

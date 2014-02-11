@@ -19,6 +19,7 @@ const (
 	stopCommand       = "stop"
 	monitorCommand    = "monitor"
 	leaveCommand      = "leave"
+	tagsCommand       = "tags"
 )
 
 const (
@@ -80,6 +81,11 @@ type streamRequest struct {
 
 type stopRequest struct {
 	Stop uint64
+}
+
+type tagsRequest struct {
+	Tags       map[string]string
+	DeleteTags []string
 }
 
 type logRecord struct {

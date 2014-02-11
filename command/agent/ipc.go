@@ -51,6 +51,7 @@ const (
 	stopCommand       = "stop"
 	monitorCommand    = "monitor"
 	leaveCommand      = "leave"
+	tagsCommand       = "tags"
 )
 
 const (
@@ -112,6 +113,11 @@ type streamRequest struct {
 
 type stopRequest struct {
 	Stop uint64
+}
+
+type tagsRequest struct {
+	Tags       map[string]string
+	DeleteTags []string
 }
 
 type logRecord struct {
@@ -364,6 +370,9 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 	case leaveCommand:
 		return i.handleLeave(client, seq)
 
+	case tagsCommand:
+		return i.handleTags(client, seq)
+
 	default:
 		respHeader := responseHeader{Seq: seq, Error: unsupportedCommand}
 		client.Send(&respHeader, nil)
@@ -600,6 +609,34 @@ func (i *AgentIPC) handleLeave(client *IPCClient, seq uint64) error {
 		i.logger.Printf("[ERR] agent.ipc: shutdown failed: %v", err)
 	}
 	return err
+}
+
+func (i *AgentIPC) handleTags(client *IPCClient, seq uint64) error {
+	var req tagsRequest
+	if err := client.dec.Decode(&req); err != nil {
+		return fmt.Errorf("decode failed: %v", err)
+	}
+
+	tags := make(map[string]string)
+
+	for key, val := range i.agent.SerfConfig().Tags {
+		var delTag bool
+		for _, delkey := range req.DeleteTags {
+			delTag = (delTag || delkey == key)
+		}
+		if !delTag {
+			tags[key] = val
+		}
+	}
+
+	for key, val := range req.Tags {
+		tags[key] = val
+	}
+
+	err := i.agent.serf.SetTags(tags)
+
+	resp := responseHeader{Seq: seq, Error: errToString(err)}
+	return client.Send(&resp, nil)
 }
 
 // Used to convert an error to a string representation
