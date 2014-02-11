@@ -82,7 +82,6 @@ There are currently four types of events that Serf invokes:
   didn't properly respond to ping requests.
 * `member-update` - One or more members have updated, likely to update the
   associated tags
-* `tags` - The local serf agent's tags have been updated.
 * `user` - A custom user event, covered later in this guide.
 
 ## Multiple Event Scripts, Filtering, And More

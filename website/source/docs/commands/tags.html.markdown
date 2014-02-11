@@ -12,12 +12,9 @@ The tags command modifies a member's tags while the Serf agent is running.
 The changed tags will be immediately propagated to other members in the
 cluster.
 
-Tag modifications can be persisted using Serf agent's snapshot functionality.
-This is important when modifying tags dynamically so that tag values are not
-lost during agent restarts.
-
-When starting the Serf agent, any tags passed in on the command line will
-overwrite any tags from previous snapshots.
+Currently the `serf tags` command will not persist tag data. Tag changes can be
+handled using <a href="/intro/getting-started/event-handlers.html">event
+handlers</a> and the `member-update` event.
 
 ## Usage
 
