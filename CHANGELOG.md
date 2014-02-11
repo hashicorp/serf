@@ -1,5 +1,10 @@
 ## 0.4.2 (Unreleased)
 
+FEATURES:
+
+ * New `tags` command is available to dynamically update tags without
+ reloading the agent. Thanks to @ryanuber. [GH-126]
+
 IMPROVEMENTS:
 
  * Upstart receipe logs output thanks to @breerly [GH-128]
