@@ -16,6 +16,8 @@ BUG FIXES:
  * -config-dir would cause protocol to be set to 0 if there are no
  configuration files in the directory [GH-129]
 
+ * Event handlers can filter on 'member-update'
+
 ## 0.4.1 (Febuary 3, 2014)
 
 IMPROVEMENTS:
