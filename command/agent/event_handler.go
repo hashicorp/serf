@@ -95,6 +95,7 @@ func (s *EventFilter) Valid() bool {
 	case "member-join":
 	case "member-leave":
 	case "member-failed":
+	case "member-update":
 	case "user":
 	case "*":
 	default:

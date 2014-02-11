@@ -192,6 +192,7 @@ func TestEventScriptValid(t *testing.T) {
 		{"member-join", true},
 		{"member-leave", true},
 		{"member-failed", true},
+		{"member-update", true},
 		{"user", true},
 		{"User", false},
 		{"member", false},
