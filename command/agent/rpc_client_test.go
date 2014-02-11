@@ -64,7 +64,7 @@ func TestRPCClientForceLeave(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	time.Sleep(a1.conf.MemberlistConfig.ProbeInterval * 7)
+	time.Sleep(a1.conf.MemberlistConfig.ProbeInterval * 10)
 
 	if err := client.ForceLeave(a2.conf.NodeName); err != nil {
 		t.Fatalf("err: %s", err)
