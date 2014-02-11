@@ -23,8 +23,8 @@ Usage: serf tags [options] ...
 Options:
 
   -rpc-addr=127.0.0.1:7373  RPC Address of the Serf agent.
-  -set  key=value           Creates or modifies the value of a tag
-  -delete                   Removes a tag, if present
+  -set key=value            Creates or modifies the value of a tag
+  -delete key               Removes a tag, if present
 `
 	return strings.TrimSpace(helpText)
 }
