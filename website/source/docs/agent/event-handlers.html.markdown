@@ -23,7 +23,7 @@ Every time an event handler is invoked, Serf sets some environmental
 variables:
 
 * `SERF_EVENT` is the event type that is occuring. This will be one of
-  `member-join`, `member-leave`, `member-failed`, or `user`.
+  `member-join`, `member-leave`, `member-failed`, `member-update` or `user`.
 
 * `SERF_SELF_NAME` is the name of the node that is executing the event handler.
 
