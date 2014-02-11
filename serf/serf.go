@@ -368,11 +368,6 @@ func (s *Serf) SetTags(tags map[string]string) error {
 			memberlist.MetaMaxSize)
 	}
 
-	// No need to do anything if there are no tags
-	if len(tags) == 0 {
-		return nil
-	}
-
 	// Update the config
 	s.config.Tags = tags
 
@@ -708,7 +703,6 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 			Members: []Member{member.Member},
 		}
 	}
-
 }
 
 // handleNodeLeave is called when a node leave event is received
