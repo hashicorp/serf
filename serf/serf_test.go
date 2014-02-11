@@ -42,9 +42,8 @@ func testMember(t *testing.T, members []Member, name string, status MemberStatus
 	for _, m := range members {
 		if m.Name == name {
 			if m.Status != status {
-				t.Fatalf("bad state for %s: %d", name, m.Status)
+				panic(fmt.Sprintf("bad state for %s: %d", name, m.Status))
 			}
-
 			return
 		}
 	}
@@ -54,7 +53,7 @@ func testMember(t *testing.T, members []Member, name string, status MemberStatus
 		return
 	}
 
-	t.Fatalf("node not found: %s", name)
+	panic(fmt.Sprintf("node not found: %s", name))
 }
 
 func TestCreate_badProtocolVersion(t *testing.T) {
@@ -941,7 +940,7 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 	if err := s2.Shutdown(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 5)
+	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 10)
 
 	// Verify that s2 is "failed"
 	testMember(t, s1.Members(), s2Config.NodeName, StatusFailed)
@@ -966,6 +965,7 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 	defer s2.Shutdown()
 
 	// Wait for the node to auto rejoin
+	testutil.Yield()
 	testutil.Yield()
 	testutil.Yield()
 	testutil.Yield()
