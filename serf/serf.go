@@ -240,7 +240,6 @@ func Create(conf *Config) (*Serf, error) {
 	// Try access the snapshot
 	var oldClock, oldEventClock LamportTime
 	var prev []*PreviousNode
-	var prev_tags map[string]string
 	if conf.SnapshotPath != "" {
 		eventCh, snap, err := NewSnapshotter(conf.SnapshotPath, snapshotSizeLimit,
 			serf.logger, &serf.clock, conf.EventCh, serf.shutdownCh)
@@ -250,7 +249,6 @@ func Create(conf *Config) (*Serf, error) {
 		serf.snapshotter = snap
 		conf.EventCh = eventCh
 		prev = snap.AliveNodes()
-		prev_tags = snap.Tags()
 		oldClock = snap.LastClock()
 		oldEventClock = snap.LastEventClock()
 		serf.eventMinTime = oldEventClock + 1
@@ -317,17 +315,6 @@ func Create(conf *Config) (*Serf, error) {
 		go serf.handleRejoin(prev)
 	}
 
-	// Restore any tags from previous state, merging passed configuration from
-	// the CLI over the snapshot.
-	tags := make(map[string]string)
-	for name, value := range prev_tags {
-		tags[name] = value
-	}
-	for name, value := range serf.config.Tags {
-		tags[name] = value
-	}
-	serf.SetTags(tags)
-
 	return serf, nil
 }
 
@@ -388,15 +375,6 @@ func (s *Serf) SetTags(tags map[string]string) error {
 
 	// Update the config
 	s.config.Tags = tags
-
-	// Register an event. This is what triggers a state save for tags
-	// while snapshots are being used.
-	if s.config.EventCh != nil {
-		s.config.EventCh <- TagsEvent{
-			Type: EventTags,
-			Tags: tags,
-		}
-	}
 
 	// Trigger a memberlist update
 	return s.memberlist.UpdateNode(s.config.BroadcastTimeout)
