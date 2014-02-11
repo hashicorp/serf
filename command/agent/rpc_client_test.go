@@ -393,3 +393,48 @@ func TestRPCClientStream_Member(t *testing.T) {
 		t.Fatalf("should have event")
 	}
 }
+
+func TestRPCClientUpdateTags(t *testing.T) {
+	client, a1, ipc := testRPCClient(t)
+	defer ipc.Shutdown()
+	defer client.Close()
+	defer a1.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	mem, err := client.Members()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if len(mem) != 1 {
+		t.Fatalf("bad: %#v", mem)
+	}
+
+	m0 := mem[0]
+	if _, ok := m0.Tags["testing"]; ok {
+		t.Fatalf("have testing tag")
+	}
+
+	if err := client.UpdateTags(map[string]string{"testing": "1"}, nil); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	mem, err = client.Members()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if len(mem) != 1 {
+		t.Fatalf("bad: %#v", mem)
+	}
+
+	m0 = mem[0]
+	if _, ok := m0.Tags["testing"]; !ok {
+		t.Fatalf("missing testing tag")
+	}
+}
