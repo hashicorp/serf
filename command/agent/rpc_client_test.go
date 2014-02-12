@@ -64,13 +64,22 @@ func TestRPCClientForceLeave(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	time.Sleep(a1.conf.MemberlistConfig.ProbeInterval * 10)
+	start := time.Now()
+WAIT:
+	time.Sleep(a1.conf.MemberlistConfig.ProbeInterval * 3)
+	m := a1.Serf().Members()
+	if len(m) != 2 {
+		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
+	}
+	if m[1].Status != serf.StatusFailed && time.Now().Sub(start) < 3*time.Second {
+		goto WAIT
+	}
 
 	if err := client.ForceLeave(a2.conf.NodeName); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	m := a1.Serf().Members()
+	m = a1.Serf().Members()
 	if len(m) != 2 {
 		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
 	}

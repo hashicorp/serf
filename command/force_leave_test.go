@@ -33,7 +33,17 @@ func TestForceLeaveCommandRun(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	time.Sleep(a2.SerfConfig().MemberlistConfig.ProbeInterval * 5)
+	start := time.Now()
+WAIT:
+	time.Sleep(a2.SerfConfig().MemberlistConfig.ProbeInterval * 3)
+	m := a1.Serf().Members()
+	if len(m) != 2 {
+		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
+	}
+
+	if m[1].Status != serf.StatusFailed && time.Now().Sub(start) < 3*time.Second {
+		goto WAIT
+	}
 
 	ui := new(cli.MockUi)
 	c := &ForceLeaveCommand{Ui: ui}
@@ -47,7 +57,7 @@ func TestForceLeaveCommandRun(t *testing.T) {
 		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
 	}
 
-	m := a1.Serf().Members()
+	m = a1.Serf().Members()
 	if len(m) != 2 {
 		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
 	}
