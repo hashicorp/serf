@@ -15,6 +15,8 @@ be used as a fast IPC mechanism to allow applications to
 receive events immediately instead of using the fork/exec
 model of event handlers.
 
+A reference implementation in Go can be found [here](https://github.com/hashicorp/serf/blob/master/client/rpc_client.go).
+
 ## Implementation Details
 
 The RPC protocol is implemented using [MsgPack](http://msgpack.org/)
