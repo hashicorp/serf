@@ -136,7 +136,7 @@ func userEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.UserEvent)
 		payload = append(payload, '\n')
 	}
 
-	if _, err := stdin.Write(e.Payload); err != nil {
+	if _, err := stdin.Write(payload); err != nil {
 		logger.Printf("[ERR] Error writing user event payload: %s", err)
 		return
 	}

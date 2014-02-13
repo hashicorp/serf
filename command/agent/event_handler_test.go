@@ -133,7 +133,7 @@ func TestScriptUserEventHandler(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	expected := "ourname ourrole\neast-aws\nuser baz\nuser 1\n"
+	expected := "ourname ourrole\neast-aws\nuser baz\nuser 1\nfoobar\n"
 	if string(result) != expected {
 		t.Fatalf("bad: %#v. Expected: %#v", string(result), expected)
 	}
