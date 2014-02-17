@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/serf/command/agent"
 	"github.com/mitchellh/cli"
+	"github.com/ryanuber/columnize"
 	"net"
 	"regexp"
 	"strings"
@@ -34,7 +35,7 @@ type MemberContainer struct {
 }
 
 func (c MemberContainer) String() string {
-	var result string
+	var result []string
 	for _, member := range c.Members {
 		// Format the tags as tag1=v1,tag2=v2,...
 		var tagPairs []string
@@ -43,16 +44,17 @@ func (c MemberContainer) String() string {
 		}
 		tags := strings.Join(tagPairs, ",")
 
-		result += fmt.Sprintf("%s     %s    %s    %s",
+		line := fmt.Sprintf("%s|%s|%s|%s",
 			member.Name, member.Addr, member.Status, tags)
 		if member.detail {
-			result += fmt.Sprintf(
-				"    Protocol Version: %d    Available Protocol Range: [%d, %d]",
+			line += fmt.Sprintf(
+				"|Protocol Version: %d|Available Protocol Range: [%d, %d]",
 				member.Proto["version"], member.Proto["min"], member.Proto["max"])
 		}
-		result += "\n"
+		result = append(result, line)
 	}
-	return result
+	output, _ := columnize.SimpleFormat(result)
+	return output
 }
 
 func (c *MembersCommand) Help() string {
