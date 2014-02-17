@@ -100,18 +100,20 @@ type userEventRecord struct {
 	Coalesce bool
 }
 
+// Member is used to represent a single member of the
+// Serf cluster
 type Member struct {
-	Name        string
-	Addr        net.IP
-	Port        uint16
+	Name        string // Node name
+	Addr        net.IP // Address of the Serf node
+	Port        uint16 // Gossip port used by Serf
 	Tags        map[string]string
 	Status      string
-	ProtocolMin uint8
-	ProtocolMax uint8
-	ProtocolCur uint8
-	DelegateMin uint8
-	DelegateMax uint8
-	DelegateCur uint8
+	ProtocolMin uint8 // Minimum supported Memberlist protocol
+	ProtocolMax uint8 // Maximum supported Memberlist protocol
+	ProtocolCur uint8 // Currently set Memberlist protocol
+	DelegateMin uint8 // Minimum supported Serf protocol
+	DelegateMax uint8 // Maximum supported Serf protocol
+	DelegateCur uint8 // Currently set Serf protocol
 }
 
 type memberEventRecord struct {

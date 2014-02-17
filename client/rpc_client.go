@@ -30,7 +30,9 @@ type seqHandler interface {
 	Cleanup()
 }
 
-// RPCClient is the RPC client to make requests to the agent RPC.
+// RPCClient is the used to make requests to the Agent using an RPC mechanism.
+// Additionally, the client manages event streams and monitors, enabling a client
+// to easily receive event notifications instead of using the fork/exec mechanism.
 type RPCClient struct {
 	seq uint64
 
@@ -76,8 +78,9 @@ func (c *RPCClient) send(header *requestHeader, obj interface{}) error {
 	return nil
 }
 
-// NewRPCClient is used to create a new RPC client given the address.
-// This will properly dial, handshake, and start listening
+// NewRPCClient is used to create a new RPC client given the
+// RPC address of the Serf agent. This will return a client,
+// or an error if the connection could not be established.
 func NewRPCClient(addr string) (*RPCClient, error) {
 	// Try to dial to serf
 	conn, err := net.Dial("tcp", addr)
@@ -180,7 +183,7 @@ func (c *RPCClient) UserEvent(name string, payload []byte, coalesce bool) error 
 	return c.genericRPC(&header, &req, nil)
 }
 
-// Leave is used to trigger a graceful leave and shutdown
+// Leave is used to trigger a graceful leave and shutdown of the agent
 func (c *RPCClient) Leave() error {
 	header := requestHeader{
 		Command: leaveCommand,
