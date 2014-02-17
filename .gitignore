@@ -29,3 +29,4 @@ _testmain.go
 
 # Website
 website/build/
+.vagrant
