@@ -30,7 +30,7 @@ type seqHandler interface {
 	Cleanup()
 }
 
-// RPCClient is the used to make requests to the Agent using an RPC mechanism.
+// RPCClient is used to make requests to the Agent using an RPC mechanism.
 // Additionally, the client manages event streams and monitors, enabling a client
 // to easily receive event notifications instead of using the fork/exec mechanism.
 type RPCClient struct {
