@@ -10,7 +10,7 @@ Command: `serf members`
 
 The members command outputs the current list of members that a Serf
 agent knows about, along with their state. The state of a node can only
-be "alive" or "failed".
+be "alive", "left" or "failed".
 
 Nodes in the "failed" state are still listed because Serf attempts to
 reconnect with failed nodes for a certain amount of time in the case
@@ -38,7 +38,8 @@ The command-line flags are all optional. The list of available flags are:
 
 * `-status` - If provided, output is filtered to only nodes matching
   the regular expression for status
-* `-tag If provided, output is filtered to only nodes with the specified
+
+* `-tag key=value` - If provided, output is filtered to only nodes with the specified
   tag if its value matches the regular expression. tag can be specified
   multiple times to filter on multiple keys.`
 
