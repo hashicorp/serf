@@ -11,12 +11,18 @@ IMPROVEMENTS:
 
  * `members` can filter on any tag thanks to @hmrm [GH-124]
 
+ * Added vagrant demo to make a simple cluster
+
+ * `members` now columnizes the output thanks to @ryanuber [GH-138]
+
 BUG FIXES:
 
  * -config-dir would cause protocol to be set to 0 if there are no
  configuration files in the directory [GH-129]
 
  * Event handlers can filter on 'member-update'
+
+ * User event handler appends new line, this was being omitted
 
 ## 0.4.1 (Febuary 3, 2014)
 
