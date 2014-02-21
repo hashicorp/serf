@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/serf/serf"
 	"io/ioutil"
 	"net"
+	"os"
 	"testing"
 )
 
@@ -13,6 +14,7 @@ RESULT_FILE="%s"
 echo $SERF_SELF_NAME $SERF_SELF_ROLE >>${RESULT_FILE}
 echo $SERF_TAG_DC >> ${RESULT_FILE}
 echo $SERF_EVENT $SERF_USER_EVENT "$@" >>${RESULT_FILE}
+echo $os_env_var >> ${RESULT_FILE}
 while read line; do
 	printf "${line}\n" >>${RESULT_FILE}
 done
@@ -59,6 +61,8 @@ func testEventScript(t *testing.T, script string) (string, string) {
 }
 
 func TestScriptEventHandler(t *testing.T) {
+	os.Setenv("os_env_var", "os-env-foo")
+
 	script, results := testEventScript(t, eventScript)
 
 	h := &ScriptEventHandler{
@@ -94,8 +98,8 @@ func TestScriptEventHandler(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	expected1 := "ourname ourrole\neast-aws\nmember-join\nfoo\t1.2.3.4\tbar\trole=bar,foo=bar\n"
-	expected2 := "ourname ourrole\neast-aws\nmember-join\nfoo\t1.2.3.4\tbar\tfoo=bar,role=bar\n"
+	expected1 := "ourname ourrole\neast-aws\nmember-join\nos-env-foo\nfoo\t1.2.3.4\tbar\trole=bar,foo=bar\n"
+	expected2 := "ourname ourrole\neast-aws\nmember-join\nos-env-foo\nfoo\t1.2.3.4\tbar\tfoo=bar,role=bar\n"
 	if string(result) != expected1 && string(result) != expected2 {
 		t.Fatalf("bad: %#v. Expected: %#v or %v", string(result), expected1, expected2)
 	}
