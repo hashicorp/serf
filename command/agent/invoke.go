@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/serf/serf"
 	"io"
 	"log"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -42,7 +43,7 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 
 	cmd := exec.Command(shell, flag, script)
 	cmd.Args[0] = "serf-event"
-	cmd.Env = append(cmd.Env,
+	cmd.Env = append(os.Environ(),
 		"SERF_EVENT="+event.EventType().String(),
 		"SERF_SELF_NAME="+self.Name,
 		"SERF_SELF_ROLE="+self.Tags["role"],
