@@ -15,6 +15,8 @@ IMPROVEMENTS:
 
  * `members` now columnizes the output thanks to @ryanuber [GH-138]
 
+ * Agent passes its own environment variables through thanks to @mcroydon [GH-142]
+
 BUG FIXES:
 
  * -config-dir would cause protocol to be set to 0 if there are no
