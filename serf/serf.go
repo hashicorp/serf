@@ -10,6 +10,7 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -1164,4 +1165,21 @@ func (s *Serf) decodeTags(buf []byte) map[string]string {
 		s.logger.Printf("[ERR] Failed to decode tags: %v", err)
 	}
 	return tags
+}
+
+// Stats is used to provide operator debugging information
+func (s *Serf) Stats() map[string]string {
+	toString := func(v uint64) string {
+		return strconv.FormatUint(v, 10)
+	}
+	stats := map[string]string{
+		"members":      toString(uint64(len(s.members))),
+		"failed":       toString(uint64(len(s.failedMembers))),
+		"left":         toString(uint64(len(s.leftMembers))),
+		"member-time":  toString(uint64(s.clock.Time())),
+		"event-time":   toString(uint64(s.eventClock.Time())),
+		"intent-queue": toString(uint64(s.broadcasts.NumQueued())),
+		"event-queue":  toString(uint64(s.eventBroadcasts.NumQueued())),
+	}
+	return stats
 }
