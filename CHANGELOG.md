@@ -1,4 +1,4 @@
-## 0.4.2 (Unreleased)
+## 0.4.5 (Unreleased)
 
 FEATURES:
 
@@ -16,6 +16,8 @@ IMPROVEMENTS:
  * `members` now columnizes the output thanks to @ryanuber [GH-138]
 
  * Agent passes its own environment variables through thanks to @mcroydon [GH-142]
+
+ * `-iface` flag can be used to bind to interfaces [GH-145]
 
 BUG FIXES:
 
