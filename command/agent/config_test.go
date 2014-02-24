@@ -199,6 +199,17 @@ func TestDecodeConfig(t *testing.T) {
 	if config.Discover != "foobar" {
 		t.Fatalf("bad: %#v", config)
 	}
+
+	// Interface
+	input = `{"interface": "eth0"}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.Interface != "eth0" {
+		t.Fatalf("bad: %#v", config)
+	}
 }
 
 func TestMergeConfig(t *testing.T) {
@@ -220,6 +231,7 @@ func TestMergeConfig(t *testing.T) {
 		LeaveOnTerm:    true,
 		SkipLeaveOnInt: true,
 		Discover:       "tubez",
+		Interface:      "eth0",
 	}
 
 	c := MergeConfig(a, b)
@@ -254,6 +266,10 @@ func TestMergeConfig(t *testing.T) {
 
 	if c.Discover != "tubez" {
 		t.Fatalf("Bad: %v", c.Discover)
+	}
+
+	if c.Interface != "eth0" {
+		t.Fatalf("Bad: %v", c.Interface)
 	}
 
 	expected := []string{"foo", "bar"}

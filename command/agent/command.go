@@ -65,6 +65,7 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.Var((*AppendSliceValue)(&tags), "tag",
 		"tag pair, specified as key=value")
 	cmdFlags.StringVar(&cmdConfig.Discover, "discover", "", "mDNS discovery name")
+	cmdFlags.StringVar(&cmdConfig.Interface, "iface", "", "interface to bind to")
 	if err := cmdFlags.Parse(c.args); err != nil {
 		return nil
 	}

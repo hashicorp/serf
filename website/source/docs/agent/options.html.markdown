@@ -36,6 +36,10 @@ The options below are all specified on the command-line.
   introduces support for non-consistent ports across the cluster. For more information,
   see the [compatibility page](/docs/compatibility.html).
 
+* `-iface` - This flag can be used to provide a binding interface. It can be
+  used instead of `-bind` if the interface is known but not the address. This flag
+  also affects the multicast device used for `-discover`.
+
 * `-advertise` - The advertise flag is used to change the address that we
   advertise to other nodes in the cluster. By default, the bind address is
   advertised. However, in some cases (specifically NAT traversal), there may
@@ -170,6 +174,8 @@ at a single JSON object with configuration within it.
   the `tag` command-line flag once per tag.
 
 * `bind` - Equivalent to the `-bind` command-line flag.
+
+* `interface` - Equivalent to the `-iface` command-line flag.
 
 * `advertise` - Equivalent to the `-advertise` command-line flag.
 

@@ -113,6 +113,12 @@ type Config struct {
 	// to look for peers. For peers on a network that supports multicast, this
 	// allows Serf agents to join each other with zero configuration.
 	Discover string `mapstructure:"discover"`
+
+	// Interface is used to provide a binding interface to use. It can be
+	// used instead of providing a bind address, as Serf will discover the
+	// address of the provided interface. It is also used to set the multicast
+	// device used with `-discover`.
+	Interface string `mapstructure:"interface"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -153,6 +159,15 @@ func (c *Config) EventScripts() []EventScript {
 		result = append(result, part...)
 	}
 	return result
+}
+
+// Networkinterface is used to get the associated network
+// interface from the configured value
+func (c *Config) NetworkInterface() (*net.Interface, error) {
+	if c.Interface == "" {
+		return nil, nil
+	}
+	return net.InterfaceByName(c.Interface)
 }
 
 // DecodeConfig reads the configuration from the given reader in JSON
@@ -248,6 +263,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.Discover != "" {
 		result.Discover = b.Discover
+	}
+	if b.Interface != "" {
+		result.Interface = b.Interface
 	}
 
 	// Copy the event handlers
