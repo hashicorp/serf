@@ -111,6 +111,13 @@ func (c *Command) readConfig() *Config {
 		}
 	}
 
+	// Check if we have an interface
+	_, err := config.NetworkInterface()
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Invalid network interface: %s", err))
+		return nil
+	}
+
 	// Backward compatibility hack for 'Role'
 	if config.Role != "" {
 		c.Ui.Output("Deprecation warning: 'Role' has been replaced with 'Tags'")
@@ -235,8 +242,11 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 		// Use the advertise addr and port
 		local := agent.Serf().Memberlist().LocalNode()
 
+		// Get the bind interface if any
+		iface, _ := config.NetworkInterface()
+
 		_, err := NewAgentMDNS(agent, logOutput, config.ReplayOnJoin,
-			config.NodeName, config.Discover, local.Addr, int(local.Port))
+			config.NodeName, config.Discover, iface, local.Addr, int(local.Port))
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error starting mDNS listener: %s", err))
 			return nil

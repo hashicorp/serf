@@ -27,7 +27,7 @@ type AgentMDNS struct {
 
 // NewAgentMDNS is used to create a new AgentMDNS
 func NewAgentMDNS(agent *Agent, logOutput io.Writer, replay bool,
-	node, discover string, bind net.IP, port int) (*AgentMDNS, error) {
+	node, discover string, iface *net.Interface, bind net.IP, port int) (*AgentMDNS, error) {
 	// Create the service
 	service := &mdns.MDNSService{
 		Instance: node,
@@ -40,8 +40,14 @@ func NewAgentMDNS(agent *Agent, logOutput io.Writer, replay bool,
 		return nil, err
 	}
 
+	// Configure mdns server
+	conf := &mdns.Config{
+		Zone:  service,
+		Iface: iface,
+	}
+
 	// Create the server
-	server, err := mdns.NewServer(&mdns.Config{Zone: service})
+	server, err := mdns.NewServer(conf)
 	if err != nil {
 		return nil, err
 	}
