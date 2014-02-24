@@ -158,10 +158,6 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 				if addr.IP.IsLinkLocalUnicast() {
 					continue
 				}
-				// Skip localhost
-				if addr.IP.IsLoopback() {
-					continue
-				}
 
 				// Found an IP
 				found = true
