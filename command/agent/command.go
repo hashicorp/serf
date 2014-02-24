@@ -111,9 +111,8 @@ func (c *Command) readConfig() *Config {
 		}
 	}
 
-	// Check if we have an interface
-	_, err := config.NetworkInterface()
-	if err != nil {
+	// Check for a valid interface
+	if _, err := config.NetworkInterface(); err != nil {
 		c.Ui.Error(fmt.Sprintf("Invalid network interface: %s", err))
 		return nil
 	}
@@ -133,6 +132,75 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Invalid bind address: %s", err))
 		return nil
+	}
+
+	// Check if we have an interface
+	if iface, _ := config.NetworkInterface(); iface != nil {
+		addrs, err := iface.Addrs()
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Failed to get interface addresses: %s", err))
+			return nil
+		}
+		if len(addrs) == 0 {
+			c.Ui.Error(fmt.Sprintf("Interface '%s' has no addresses", config.Interface))
+			return nil
+		}
+
+		// If there is no bind IP, pick an address
+		if bindIP == "0.0.0.0" {
+			found := false
+			for _, a := range addrs {
+				addr, ok := a.(*net.IPNet)
+				if !ok {
+					continue
+				}
+				// Skip self-assigned IPs
+				if addr.IP.IsLinkLocalUnicast() {
+					continue
+				}
+				// Skip localhost
+				if addr.IP.IsLoopback() {
+					continue
+				}
+
+				// Found an IP
+				found = true
+				bindIP = addr.IP.String()
+				c.Ui.Output(fmt.Sprintf("Using interface '%s' address '%s'",
+					config.Interface, bindIP))
+
+				// Update the configuration
+				bindAddr := &net.TCPAddr{
+					IP:   net.ParseIP(bindIP),
+					Port: bindPort,
+				}
+				config.BindAddr = bindAddr.String()
+				break
+			}
+			if !found {
+				c.Ui.Error(fmt.Sprintf("Failed to find usable address for interface '%s'", config.Interface))
+				return nil
+			}
+
+		} else {
+			// If there is a bind IP, ensure it is available
+			found := false
+			for _, a := range addrs {
+				addr, ok := a.(*net.IPNet)
+				if !ok {
+					continue
+				}
+				if addr.IP.String() == bindIP {
+					found = true
+					break
+				}
+			}
+			if !found {
+				c.Ui.Error(fmt.Sprintf("Interface '%s' has no '%s' address",
+					config.Interface, bindIP))
+				return nil
+			}
+		}
 	}
 
 	var advertiseIP string

@@ -37,8 +37,9 @@ The options below are all specified on the command-line.
   see the [compatibility page](/docs/compatibility.html).
 
 * `-iface` - This flag can be used to provide a binding interface. It can be
-  used instead of `-bind` if the interface is known but not the address. This flag
-  also affects the multicast device used for `-discover`.
+  used instead of `-bind` if the interface is known but not the address. If both
+  are provided, then Serf verifies that the interface has the bind address that is
+  provided. This flag also sets the multicast device used for `-discover`.
 
 * `-advertise` - The advertise flag is used to change the address that we
   advertise to other nodes in the cluster. By default, the bind address is
