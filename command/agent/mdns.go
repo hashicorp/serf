@@ -23,6 +23,7 @@ type AgentMDNS struct {
 	seen     map[string]struct{}
 	server   *mdns.Server
 	replay   bool
+	iface    *net.Interface
 }
 
 // NewAgentMDNS is used to create a new AgentMDNS
@@ -60,6 +61,7 @@ func NewAgentMDNS(agent *Agent, logOutput io.Writer, replay bool,
 		seen:     make(map[string]struct{}),
 		server:   server,
 		replay:   replay,
+		iface:    iface,
 	}
 
 	// Start the background workers
@@ -115,7 +117,12 @@ func (m *AgentMDNS) run() {
 
 // poll is invoked periodically to check for new hosts
 func (m *AgentMDNS) poll(hosts chan *mdns.ServiceEntry) {
-	if err := mdns.Lookup(mdnsName(m.discover), hosts); err != nil {
+	params := mdns.QueryParam{
+		Service:   mdnsName(m.discover),
+		Interface: m.iface,
+		Entries:   hosts,
+	}
+	if err := mdns.Query(&params); err != nil {
 		m.logger.Printf("[ERR] agent.mdns: Failed to poll for new hosts: %v", err)
 	}
 }
