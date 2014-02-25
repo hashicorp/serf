@@ -14,7 +14,7 @@ sudo apt-get install -y unzip
 
 # Download and install Serf
 cd /tmp
-until wget -O serf.zip https://dl.bintray.com/mitchellh/serf/0.4.0_linux_amd64.zip; do
+until wget -O serf.zip https://dl.bintray.com/mitchellh/serf/0.4.5_linux_amd64.zip; do
     sleep 1
 done
 unzip serf.zip
