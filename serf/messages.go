@@ -83,6 +83,7 @@ type messageQueryResponse struct {
 	LTime   LamportTime // Event lamport time
 	ID      uint32      // Query ID
 	From    string      // Node name
+	Ack     bool        // Is this an Ack, or reply
 	Payload []byte      // Optional response payload
 }
 
