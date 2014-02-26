@@ -95,7 +95,7 @@ func (c *MembersCommand) Run(args []string) int {
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.BoolVar(&detailed, "detailed", false, "detailed output")
 	cmdFlags.StringVar(&roleFilter, "role", ".*", "role filter")
-	cmdFlags.StringVar(&statusFilter, "status", ".*", "status filter")
+	cmdFlags.StringVar(&statusFilter, "status", "", "status filter")
 	cmdFlags.StringVar(&format, "format", "text", "output format")
 	cmdFlags.Var((*agent.AppendSliceValue)(&tags), "tag", "tag filter")
 	rpcAddr := RPCAddrFlag(cmdFlags)

@@ -476,6 +476,8 @@ func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
 
 	for _, m := range raw {
 		add := true
+
+		// Check if tags were passed, and if they match
 		for key, val := range req.Tags {
 			if _, ok := m.Tags[key]; !ok {
 				add = false
@@ -493,6 +495,12 @@ func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
 				add = false
 			}
 		}
+
+		// Check if status matches
+		if req.Status != "" && req.Status != m.Status.String() {
+			add = false
+		}
+
 		if add {
 			sm := Member{
 				Name:        m.Name,
