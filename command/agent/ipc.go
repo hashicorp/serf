@@ -34,6 +34,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"regexp"
 )
 
 const (
@@ -471,13 +472,24 @@ func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
 	}
 
 	members := make([]Member, 0, len(raw))
+	tagsRe := make(map[string]*regexp.Regexp)
+
 	for _, m := range raw {
 		add := true
 		for key, val := range req.Tags {
 			if _, ok := m.Tags[key]; !ok {
 				add = false
+				break
 			}
-			if add && m.Tags[key] != val {
+			reStr := fmt.Sprintf("^%s$", strings.Replace(val, "*", ".*", -1))
+			res, err := regexp.Compile(reStr)
+			if err != nil {
+				return fmt.Errorf("Failed to apply regex: %v", err)
+			}
+			tagsRe[key] = res
+		}
+		for tag, re := range tagsRe {
+			if !re.MatchString(m.Tags[tag]) {
 				add = false
 			}
 		}
