@@ -99,6 +99,11 @@ type joinResponse struct {
 	Num int32
 }
 
+type membersRequest struct {
+	Tags map[string]string
+	Status string
+}
+
 type membersResponse struct {
 	Members []Member
 }
@@ -460,8 +465,22 @@ func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
 	serf := i.agent.Serf()
 	raw := serf.Members()
 
+	var req membersRequest
+	if err := client.dec.Decode(&req); err != nil {
+		return fmt.Errorf("decode failed: %v", err)
+	}
+
 	members := make([]Member, 0, len(raw))
 	for _, m := range raw {
+		add := true
+		for key, val := range req.Tags {
+			if _, ok := m.Tags[key]; !ok {
+				add = false
+			}
+			if add && m.Tags[key] != val {
+				add = false
+			}
+		}
 		sm := Member{
 			Name:        m.Name,
 			Addr:        m.Addr,
@@ -475,7 +494,9 @@ func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
 			DelegateMax: m.DelegateMax,
 			DelegateCur: m.DelegateCur,
 		}
-		members = append(members, sm)
+		if add {
+			members = append(members, sm)
+		}
 	}
 
 	header := responseHeader{

@@ -67,6 +67,11 @@ type joinResponse struct {
 	Num int32
 }
 
+type membersRequest struct {
+	Tags   map[string]string
+	Status string
+}
+
 type membersResponse struct {
 	Members []Member
 }

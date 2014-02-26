@@ -158,14 +158,18 @@ func (c *RPCClient) Join(addrs []string, replay bool) (int, error) {
 }
 
 // Members is used to fetch a list of known members
-func (c *RPCClient) Members() ([]Member, error) {
+func (c *RPCClient) Members(tags map[string]string, status string) ([]Member, error) {
 	header := requestHeader{
 		Command: membersCommand,
 		Seq:     c.getSeq(),
 	}
+	req := membersRequest{
+		Tags:   tags,
+		Status: status,
+	}
 	var resp membersResponse
 
-	err := c.genericRPC(&header, nil, &resp)
+	err := c.genericRPC(&header, &req, &resp)
 	return resp.Members, err
 }
 
