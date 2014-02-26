@@ -481,20 +481,20 @@ func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
 				add = false
 			}
 		}
-		sm := Member{
-			Name:        m.Name,
-			Addr:        m.Addr,
-			Port:        m.Port,
-			Tags:        m.Tags,
-			Status:      m.Status.String(),
-			ProtocolMin: m.ProtocolMin,
-			ProtocolMax: m.ProtocolMax,
-			ProtocolCur: m.ProtocolCur,
-			DelegateMin: m.DelegateMin,
-			DelegateMax: m.DelegateMax,
-			DelegateCur: m.DelegateCur,
-		}
 		if add {
+			sm := Member{
+				Name:        m.Name,
+				Addr:        m.Addr,
+				Port:        m.Port,
+				Tags:        m.Tags,
+				Status:      m.Status.String(),
+				ProtocolMin: m.ProtocolMin,
+				ProtocolMax: m.ProtocolMax,
+				ProtocolCur: m.ProtocolCur,
+				DelegateMin: m.DelegateMin,
+				DelegateMax: m.DelegateMax,
+				DelegateCur: m.DelegateCur,
+			}
 			members = append(members, sm)
 		}
 	}
