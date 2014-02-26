@@ -44,6 +44,7 @@ type Serf struct {
 	// in this struct due to Golang issue #599.
 	clock      LamportClock
 	eventClock LamportClock
+	queryClock LamportClock
 
 	broadcasts    *memberlist.TransmitLimitedQueue
 	config        *Config
@@ -65,6 +66,9 @@ type Serf struct {
 	eventJoinIgnore bool
 	eventMinTime    LamportTime
 	eventLock       sync.RWMutex
+
+	queryBroadcasts *memberlist.TransmitLimitedQueue
+	queryLock       sync.RWMutex
 
 	logger     *log.Logger
 	joinLock   sync.Mutex
@@ -255,8 +259,8 @@ func Create(conf *Config) (*Serf, error) {
 		serf.eventMinTime = oldEventClock + 1
 	}
 
-	// Setup the broadcast queue, which we use to send our own custom
-	// broadcasts along the gossip channel.
+	// Setup the various broadcast queues, which we use to send our own
+	// custom broadcasts along the gossip channel.
 	serf.broadcasts = &memberlist.TransmitLimitedQueue{
 		NumNodes: func() int {
 			return len(serf.members)
@@ -264,6 +268,12 @@ func Create(conf *Config) (*Serf, error) {
 		RetransmitMult: conf.MemberlistConfig.RetransmitMult,
 	}
 	serf.eventBroadcasts = &memberlist.TransmitLimitedQueue{
+		NumNodes: func() int {
+			return len(serf.members)
+		},
+		RetransmitMult: conf.MemberlistConfig.RetransmitMult,
+	}
+	serf.queryBroadcasts = &memberlist.TransmitLimitedQueue{
 		NumNodes: func() int {
 			return len(serf.members)
 		},
@@ -941,6 +951,17 @@ func (s *Serf) handleUserEvent(eventMsg *messageUserEvent) bool {
 		}
 	}
 	return true
+}
+
+// handleQuery is called when a query broadcast is
+// received. Returns if the message should be rebroadcast.
+func (s *Serf) handleQuery(query *messageQuery) bool {
+	return false
+}
+
+// handleResponse is called when a query response is
+// received.
+func (s *Serf) handleQueryResponse(resp *messageResponse) {
 }
 
 // handleNodeConflict is invoked when a join detects a conflict over a name.
