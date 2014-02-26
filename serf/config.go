@@ -128,6 +128,14 @@ type Config struct {
 	// buffer gets overrun and messages are not delivered.
 	EventBuffer int
 
+	// QueryBuffer is used to control how many queries are buffered.
+	// This is used to prevent re-delivery of queries to a client. The buffer
+	// must be large enough to handle all "recent" events, since Serf will not
+	// deliver queries older than the oldest entry in the buffer.
+	// Thus if a client is generating too many queries, it's possible that the
+	// buffer gets overrun and messages are not delivered.
+	QueryBuffer int
+
 	// MemberlistConfig is the memberlist configuration that Serf will
 	// use to do the underlying membership management and gossip. Some
 	// fields in the MemberlistConfig will be overwritten by Serf no
@@ -172,6 +180,7 @@ func DefaultConfig() *Config {
 		NodeName:           hostname,
 		BroadcastTimeout:   5 * time.Second,
 		EventBuffer:        512,
+		QueryBuffer:        512,
 		LogOutput:          os.Stderr,
 		ProtocolVersion:    ProtocolVersionMax,
 		ReapInterval:       15 * time.Second,
