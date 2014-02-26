@@ -14,6 +14,17 @@ const (
 	messageJoinType
 	messagePushPullType
 	messageUserEventType
+	messageQueryType
+	messageQueryResponseType
+)
+
+// filterType is used with a queryFilter to specify the type of
+// filter we are sending
+type filterType uint8
+
+const (
+	filterNodeType filterType = iota
+	filterTagType
 )
 
 // messageJoin is the message broadcasted after we join to
@@ -46,6 +57,33 @@ type messageUserEvent struct {
 	Name    string
 	Payload []byte
 	CC      bool // "Can Coalesce". Zero value is compatible with Serf 0.1
+}
+
+// messageQuery is used for query events
+type messageQuery struct {
+	LTime   LamportTime    // Event lamport time
+	ID      uint32         // Query ID, randomly generated
+	Addr    []byte         // Source address, used for a direct reply
+	Port    uint16         // Source port, used for a direct reply
+	Filters []*queryFilter // Potential query filters
+	Ack     bool           // True if requesting an ack
+	Name    string         // Query name
+	Payload []byte         // Query payload
+}
+
+// queryFilter is set with a messageUserQuery to filter
+// the set of nodes that need to reply
+type queryFilter struct {
+	Type filterType // Specify the type of filter
+	Val  []byte     // Opaque blob, depends on the filter type
+}
+
+// messageQueryResponse is used to respond to a query
+type messageQueryResponse struct {
+	LTime   LamportTime // Event lamport time
+	ID      uint32      // Query ID
+	From    string      // Node name
+	Payload []byte      // Optional response payload
 }
 
 func decodeMessage(buf []byte, out interface{}) error {
