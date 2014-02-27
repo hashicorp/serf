@@ -79,7 +79,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			break
 		}
 
-		d.serf.logger.Printf("[DEBUG] serf: messageQueryResponseType: %v", resp.ID)
+		d.serf.logger.Printf("[DEBUG] serf: messageQueryResponseType: %v", resp.From)
 		d.serf.handleQueryResponse(&resp)
 
 	default:
