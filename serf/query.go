@@ -130,7 +130,8 @@ func (r *QueryResponse) Finished() bool {
 }
 
 // AckCh returns a channel that can be used to listen for acks
-// Channel will be closed when the query is finished.
+// Channel will be closed when the query is finished. This is nil,
+// if the query did not specify RequestAck.
 func (r *QueryResponse) AckCh() <-chan string {
 	return r.ackCh
 }

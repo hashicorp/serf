@@ -133,11 +133,25 @@ func TestUserEvent(t *testing.T) {
 	}
 }
 
+func TestQuery(t *testing.T) {
+	q := Query{
+		LTime:   42,
+		Name:    "update",
+		Payload: []byte("abcd1234"),
+	}
+	if q.EventType() != EventQuery {
+		t.Fatalf("Bad")
+	}
+	if q.String() != "query: update" {
+		t.Fatalf("bad: %v", q.String())
+	}
+}
+
 func TestEventType_String(t *testing.T) {
 	events := []EventType{EventMemberJoin, EventMemberLeave, EventMemberFailed,
-		EventMemberUpdate, EventUser}
+		EventMemberUpdate, EventUser, EventQuery}
 	expect := []string{"member-join", "member-leave", "member-failed",
-		"member-update", "user"}
+		"member-update", "user", "query"}
 
 	for idx, event := range events {
 		if event.String() != expect[idx] {
