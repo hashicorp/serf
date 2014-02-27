@@ -3,6 +3,7 @@ package serf
 import (
 	"bytes"
 	"github.com/ugorji/go/codec"
+	"time"
 )
 
 // messageType are the types of gossip messages Serf will send along
@@ -61,14 +62,15 @@ type messageUserEvent struct {
 
 // messageQuery is used for query events
 type messageQuery struct {
-	LTime   LamportTime // Event lamport time
-	ID      uint32      // Query ID, randomly generated
-	Addr    []byte      // Source address, used for a direct reply
-	Port    uint16      // Source port, used for a direct reply
-	Filters [][]byte    // Potential query filters
-	Ack     bool        // True if requesting an ack
-	Name    string      // Query name
-	Payload []byte      // Query payload
+	LTime   LamportTime   // Event lamport time
+	ID      uint32        // Query ID, randomly generated
+	Addr    []byte        // Source address, used for a direct reply
+	Port    uint16        // Source port, used for a direct reply
+	Filters [][]byte      // Potential query filters
+	Ack     bool          // True if requesting an ack
+	Timeout time.Duration // Maximum time between delivery and response
+	Name    string        // Query name
+	Payload []byte        // Query payload
 }
 
 // filterNode is used with the filterNodeType, and is a list
