@@ -1139,6 +1139,7 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 			LTime:    query.LTime,
 			Name:     query.Name,
 			Payload:  query.Payload,
+			serf:     s,
 			id:       query.ID,
 			addr:     query.Addr,
 			port:     query.Port,
