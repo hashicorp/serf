@@ -160,6 +160,21 @@ func TestRPCClientMembers(t *testing.T) {
 		t.Fatalf("bad: %#v", mem)
 	}
 
+	// Make sure that filters work on member tags
+	err = client.UpdateTags(map[string]string{"tag1": "val1"}, []string{})
+	if err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+
+	mem, err = client.Members(map[string]string{"tag1": "val*"}, "");
+	if err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+	if len(mem) != 1 {
+		t.Fatalf("Should have 1 member: %#v", mem)
+	}
+
+	// Make sure that filters work on member status
 	if err := client.ForceLeave(a2.conf.NodeName); err != nil {
 		t.Fatalf("bad: %s", err)
 	}
@@ -170,7 +185,7 @@ func TestRPCClientMembers(t *testing.T) {
 	}
 
 	if len(mem) != 1 {
-		t.Fatalf("bad: %#v", mem)
+		t.Fatalf("should have 1 member: %#v", mem)
 	}
 
 	mem, err = client.Members(map[string]string{}, "leaving")
@@ -179,7 +194,7 @@ func TestRPCClientMembers(t *testing.T) {
 	}
 
 	if len(mem) != 1 {
-		t.Fatalf("bad: %#v", mem)
+		t.Fatalf("should have 1 member: %#v", mem)
 	}
 }
 
