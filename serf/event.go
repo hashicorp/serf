@@ -14,6 +14,7 @@ const (
 	EventMemberFailed
 	EventMemberUpdate
 	EventUser
+	EventQuery
 )
 
 func (t EventType) String() string {
@@ -28,6 +29,8 @@ func (t EventType) String() string {
 		return "member-update"
 	case EventUser:
 		return "user"
+	case EventQuery:
+		return "query"
 	default:
 		panic(fmt.Sprintf("unknown event type: %d", t))
 	}
@@ -82,4 +85,28 @@ func (u UserEvent) EventType() EventType {
 
 func (u UserEvent) String() string {
 	return fmt.Sprintf("user-event: %s", u.Name)
+}
+
+// Query is the struct used EventQuery type events
+type Query struct {
+	LTime   LamportTime
+	Name    string
+	Payload []byte
+
+	id   uint32 // ID is not exported, since it may change
+	addr []byte // Address to respond to
+	port uint16 // Port to respond to
+}
+
+func (q Query) EventType() EventType {
+	return EventQuery
+}
+
+func (q Query) String() string {
+	return fmt.Sprintf("query: %s", q.Name)
+}
+
+// Respond is used to send a response to the user query
+func (q Query) Respond([]byte) {
+	// TODO: Send response
 }

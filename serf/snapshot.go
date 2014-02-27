@@ -38,6 +38,7 @@ type Snapshotter struct {
 	lastFsync      time.Time
 	lastClock      LamportTime
 	lastEventClock LamportTime
+	lastQueryClock LamportTime
 	leaveCh        chan struct{}
 	leaving        bool
 	logger         *log.Logger
@@ -89,6 +90,7 @@ func NewSnapshotter(path string, maxSize int, logger *log.Logger, clock *Lamport
 		inCh:           inCh,
 		lastClock:      0,
 		lastEventClock: 0,
+		lastQueryClock: 0,
 		leaveCh:        make(chan struct{}),
 		logger:         logger,
 		maxSize:        int64(maxSize),
@@ -118,6 +120,11 @@ func (s *Snapshotter) LastClock() LamportTime {
 // LastEventClock returns the last known event clock time
 func (s *Snapshotter) LastEventClock() LamportTime {
 	return s.lastEventClock
+}
+
+// LastQueryClock returns the last known query clock time
+func (s *Snapshotter) LastQueryClock() LamportTime {
+	return s.lastQueryClock
 }
 
 // AliveNodes returns the last known alive nodes
@@ -178,6 +185,8 @@ func (s *Snapshotter) stream() {
 				s.processMemberEvent(typed)
 			case UserEvent:
 				s.processUserEvent(typed)
+			case Query:
+				s.processQuery(typed)
 			default:
 				s.logger.Printf("[ERR] serf: Unknown event to snapshot: %#v", e)
 			}
@@ -236,6 +245,16 @@ func (s *Snapshotter) processUserEvent(e UserEvent) {
 	}
 	s.lastEventClock = e.LTime
 	s.tryAppend(fmt.Sprintf("event-clock: %d\n", e.LTime))
+}
+
+// processQuery is used to handle a single query event
+func (s *Snapshotter) processQuery(q Query) {
+	// Ignore old clocks
+	if q.LTime <= s.lastQueryClock {
+		return
+	}
+	s.lastQueryClock = q.LTime
+	s.tryAppend(fmt.Sprintf("query-clock: %d\n", q.LTime))
 }
 
 // tryAppend will invoke append line but will not return an error
@@ -311,6 +330,14 @@ func (s *Snapshotter) compact() error {
 	}
 	offset += int64(n)
 
+	line = fmt.Sprintf("query-clock: %d\n", s.lastQueryClock)
+	n, err = fh.WriteString(line)
+	if err != nil {
+		fh.Close()
+		return err
+	}
+	offset += int64(n)
+
 	// Switch the files
 	if err := os.Rename(newPath, s.path); err != nil {
 		fh.Close()
@@ -378,6 +405,15 @@ func (s *Snapshotter) replay() error {
 				continue
 			}
 			s.lastEventClock = LamportTime(timeInt)
+
+		} else if strings.HasPrefix(line, "query-clock: ") {
+			timeStr := strings.TrimPrefix(line, "query-clock: ")
+			timeInt, err := strconv.ParseUint(timeStr, 10, 64)
+			if err != nil {
+				s.logger.Printf("[WARN] serf: Failed to convert query clock time: %v", err)
+				continue
+			}
+			s.lastQueryClock = LamportTime(timeInt)
 
 		} else if line == "leave" {
 			s.aliveNodes = make(map[string]string)

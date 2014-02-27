@@ -33,6 +33,13 @@ func TestSnapshoter(t *testing.T) {
 	}
 	inCh <- ue
 
+	// Write some queries
+	q := Query{
+		LTime: 50,
+		Name:  "uptime",
+	}
+	inCh <- q
+
 	// Write some member events
 	clock.Witness(100)
 	meJoin := MemberEvent{
@@ -64,6 +71,15 @@ func TestSnapshoter(t *testing.T) {
 	case e := <-outCh:
 		if !reflect.DeepEqual(e, ue) {
 			t.Fatalf("expected user event: %#v", e)
+		}
+	case <-time.After(200 * time.Millisecond):
+		t.Fatalf("timeout")
+	}
+
+	select {
+	case e := <-outCh:
+		if !reflect.DeepEqual(e, q) {
+			t.Fatalf("expected query event: %#v", e)
 		}
 	case <-time.After(200 * time.Millisecond):
 		t.Fatalf("timeout")
@@ -115,6 +131,9 @@ func TestSnapshoter(t *testing.T) {
 	if snap.LastEventClock() != 42 {
 		t.Fatalf("bad clock %d", snap.LastEventClock())
 	}
+	if snap.LastQueryClock() != 50 {
+		t.Fatalf("bad clock %d", snap.LastQueryClock())
+	}
 
 	prev := snap.AliveNodes()
 	if len(prev) != 1 {
@@ -154,6 +173,14 @@ func TestSnapshoter_forceCompact(t *testing.T) {
 		inCh <- ue
 	}
 
+	// Write lots of queries
+	for i := 0; i < 1024; i++ {
+		q := Query{
+			LTime: LamportTime(i),
+		}
+		inCh <- q
+	}
+
 	// Wait for drain
 	for len(inCh) > 0 {
 		time.Sleep(20 * time.Millisecond)
@@ -174,6 +201,10 @@ func TestSnapshoter_forceCompact(t *testing.T) {
 	// Check the values
 	if snap.LastEventClock() != 1023 {
 		t.Fatalf("bad clock %d", snap.LastEventClock())
+	}
+
+	if snap.LastQueryClock() != 1023 {
+		t.Fatalf("bad clock %d", snap.LastQueryClock())
 	}
 
 	close(stopCh)
@@ -202,6 +233,13 @@ func TestSnapshoter_leave(t *testing.T) {
 		Name:  "bar",
 	}
 	inCh <- ue
+
+	// Write a query
+	q := Query{
+		LTime: 50,
+		Name:  "uptime",
+	}
+	inCh <- q
 
 	// Write some member events
 	clock.Witness(100)
@@ -238,6 +276,9 @@ func TestSnapshoter_leave(t *testing.T) {
 	}
 	if snap.LastEventClock() != 0 {
 		t.Fatalf("bad clock %d", snap.LastEventClock())
+	}
+	if snap.LastQueryClock() != 0 {
+		t.Fatalf("bad clock %d", snap.LastQueryClock())
 	}
 
 	prev := snap.AliveNodes()
