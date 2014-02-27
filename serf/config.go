@@ -136,6 +136,18 @@ type Config struct {
 	// buffer gets overrun and messages are not delivered.
 	QueryBuffer int
 
+	// QueryTimeoutMult configures the default timeout multipler for a query to run if no
+	// specific value is provided. Queries are real-time by nature, where the
+	// reply is time sensitive. As a result, results are collected in an async
+	// fashion, however the query must have a bounded duration. We want the timeout
+	// to be long enough that all nodes have time to receive the message, run a handler,
+	// and generate a reply. Once the timeout is exceeded, any further replies are ignored.
+	// The default value is
+	//
+	// Timeout = GossipInterval * QueryTimeoutMult * log(N+1)
+	//
+	QueryTimeoutMult int
+
 	// MemberlistConfig is the memberlist configuration that Serf will
 	// use to do the underlying membership management and gossip. Some
 	// fields in the MemberlistConfig will be overwritten by Serf no
@@ -191,5 +203,6 @@ func DefaultConfig() *Config {
 		MaxQueueDepth:      4096,
 		TombstoneTimeout:   24 * time.Hour,
 		MemberlistConfig:   memberlist.DefaultLANConfig(),
+		QueryTimeoutMult:   16,
 	}
 }
