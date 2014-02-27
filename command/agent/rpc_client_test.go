@@ -159,6 +159,28 @@ func TestRPCClientMembers(t *testing.T) {
 	if len(mem) != 2 {
 		t.Fatalf("bad: %#v", mem)
 	}
+
+	if err := client.ForceLeave(a2.conf.NodeName); err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+
+	mem, err = client.Members(map[string]string{}, "alive")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if len(mem) != 1 {
+		t.Fatalf("bad: %#v", mem)
+	}
+
+	mem, err = client.Members(map[string]string{}, "leaving")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if len(mem) != 1 {
+		t.Fatalf("bad: %#v", mem)
+	}
 }
 
 func TestRPCClientUserEvent(t *testing.T) {
