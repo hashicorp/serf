@@ -112,6 +112,11 @@ func (q Query) String() string {
 	return fmt.Sprintf("query: %s", q.Name)
 }
 
+// Deadline returns the time by which a response must be sent
+func (q Query) Deadline() time.Time {
+	return q.deadline
+}
+
 // Respond is used to send a response to the user query
 func (q Query) Respond(buf []byte) error {
 	q.respLock.Lock()
