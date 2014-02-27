@@ -1168,6 +1168,12 @@ func TestSerf_Query(t *testing.T) {
 			acks = append(acks, a)
 
 		case r := <-respCh:
+			if r.From != s1Config.NodeName {
+				t.Fatalf("bad: %v", r)
+			}
+			if string(r.Payload) != "test" {
+				t.Fatalf("bad: %v", r)
+			}
 			responses = append(responses, r.From)
 
 		case <-time.After(time.Second):
