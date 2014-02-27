@@ -40,7 +40,7 @@ func TestTagsCommandRun(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	mem, err := rpcClient.Members()
+	mem, err := rpcClient.Members(map[string]string{}, "")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}

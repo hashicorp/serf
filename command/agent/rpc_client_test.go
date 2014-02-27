@@ -135,7 +135,7 @@ func TestRPCClientMembers(t *testing.T) {
 
 	testutil.Yield()
 
-	mem, err := client.Members()
+	mem, err := client.Members(map[string]string{}, "")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -151,7 +151,7 @@ func TestRPCClientMembers(t *testing.T) {
 
 	testutil.Yield()
 
-	mem, err = client.Members()
+	mem, err = client.Members(map[string]string{}, "")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -415,7 +415,7 @@ func TestRPCClientUpdateTags(t *testing.T) {
 
 	testutil.Yield()
 
-	mem, err := client.Members()
+	mem, err := client.Members(map[string]string{}, "")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -433,7 +433,7 @@ func TestRPCClientUpdateTags(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	mem, err = client.Members()
+	mem, err = client.Members(map[string]string{}, "")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}

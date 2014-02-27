@@ -94,7 +94,7 @@ func (c *MembersCommand) Run(args []string) int {
 	cmdFlags := flag.NewFlagSet("members", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.BoolVar(&detailed, "detailed", false, "detailed output")
-	cmdFlags.StringVar(&roleFilter, "role", ".*", "role filter")
+	cmdFlags.StringVar(&roleFilter, "role", "", "role filter")
 	cmdFlags.StringVar(&statusFilter, "status", "", "status filter")
 	cmdFlags.StringVar(&format, "format", "text", "output format")
 	cmdFlags.Var((*agent.AppendSliceValue)(&tags), "tag", "tag filter")
@@ -104,8 +104,9 @@ func (c *MembersCommand) Run(args []string) int {
 	}
 
 	// Deprecation warning for role
-	if roleFilter != ".*" {
+	if roleFilter != "" {
 		c.Ui.Output("Deprecation warning: 'Role' has been replaced with 'Tags'")
+		tags = append(tags, fmt.Sprintf("role=%s", roleFilter))
 	}
 
 	reqtags := make(map[string]string)

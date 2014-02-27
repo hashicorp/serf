@@ -93,7 +93,7 @@ func TestCommandRun_rpc(t *testing.T) {
 	}
 	defer client.Close()
 
-	members, err := client.Members()
+	members, err := client.Members(map[string]string{}, "")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -201,7 +201,7 @@ func TestCommandRun_advertiseAddr(t *testing.T) {
 	}
 	defer client.Close()
 
-	members, err := client.Members()
+	members, err := client.Members(map[string]string{}, "")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -291,7 +291,7 @@ func TestCommandRun_mDNS(t *testing.T) {
 	}
 	defer client.Close()
 
-	members, err := client.Members()
+	members, err := client.Members(map[string]string{}, "")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
