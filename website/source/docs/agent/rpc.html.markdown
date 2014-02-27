@@ -124,8 +124,18 @@ The body returns the number of nodes successfully joined.
 
 ### members
 
-The members command is used to return all the known members and associated
-information. There is no request body, but the response looks like:
+The members command is used to return the known members and associated
+information. It takes the following body:
+
+```
+    {"Tags": {"key": "val"}, "Status": "alive"}
+```
+
+The `Tags` are used to filter nodes based on tag values. Each tag value may be
+either a plain string or a regular expression pattern. The `Status` is used to
+filter nodes based on operational status. This can also be passed as a regex.
+
+The response will look like this:
 
 ```
     {"Members": [
