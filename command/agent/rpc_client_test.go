@@ -166,7 +166,7 @@ func TestRPCClientMembers(t *testing.T) {
 		t.Fatalf("bad: %s", err)
 	}
 
-	mem, err = client.Members(map[string]string{"tag1": "val*"}, "");
+	mem, err = client.Members(map[string]string{"tag1": "val*"}, "")
 	if err != nil {
 		t.Fatalf("bad: %s", err)
 	}

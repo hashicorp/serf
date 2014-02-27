@@ -32,9 +32,9 @@ import (
 	"log"
 	"net"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
-	"regexp"
 )
 
 const (
@@ -101,7 +101,7 @@ type joinResponse struct {
 }
 
 type membersRequest struct {
-	Tags map[string]string
+	Tags   map[string]string
 	Status string
 }
 
