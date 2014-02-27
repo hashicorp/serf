@@ -368,7 +368,7 @@ func (s *Serf) ProtocolVersion() uint8 {
 func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
 	// Check the size limit
 	if len(name)+len(payload) > UserEventSizeLimit {
-		return fmt.Errorf("user event payload exceeds limit of %d bytes", UserEventSizeLimit)
+		return fmt.Errorf("user event exceeds limit of %d bytes", UserEventSizeLimit)
 	}
 
 	// Create a message

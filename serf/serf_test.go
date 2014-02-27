@@ -264,7 +264,10 @@ func TestSerf_eventsUser_sizeLimit(t *testing.T) {
 	name := "this is too large an event"
 	payload := make([]byte, UserEventSizeLimit)
 	err = s1.UserEvent(name, payload, false)
-	if strings.HasPrefix(err.Error(), "user event exceeds limit of ") {
+	if err == nil {
+		t.Fatalf("expect error")
+	}
+	if !strings.HasPrefix(err.Error(), "user event exceeds limit of ") {
 		t.Fatalf("should get size limit error")
 	}
 }
@@ -1186,5 +1189,25 @@ func TestSerf_Query(t *testing.T) {
 	}
 	if len(responses) != 1 {
 		t.Fatalf("missing responses: %v", responses)
+	}
+}
+
+func TestSerf_Query_sizeLimit(t *testing.T) {
+	// Create the s1 config with an event channel so we can listen
+	s1Config := testConfig()
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	name := "this is too large a query"
+	payload := make([]byte, QuerySizeLimit)
+	_, err = s1.Query(name, payload, nil)
+	if err == nil {
+		t.Fatalf("should get error")
+	}
+	if !strings.HasPrefix(err.Error(), "query exceeds limit of ") {
+		t.Fatalf("should get size limit error: %v", err)
 	}
 }
