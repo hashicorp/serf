@@ -367,3 +367,76 @@ func TestSerf_userEvent_sameClock(t *testing.T) {
 		[]string{"first", "first", "second"},
 		[][]byte{[]byte("test"), []byte("newpayload"), []byte("other")})
 }
+
+func TestSerf_query_oldMessage(t *testing.T) {
+	c := testConfig()
+	s, err := Create(c)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s.Shutdown()
+
+	// increase the ltime artifically
+	s.queryClock.Witness(LamportTime(c.QueryBuffer + 1000))
+
+	msg := messageQuery{
+		LTime:   1,
+		Name:    "old",
+		Payload: nil,
+	}
+	if s.handleQuery(&msg) {
+		t.Fatalf("should not rebroadcast")
+	}
+}
+
+func TestSerf_query_sameClock(t *testing.T) {
+	eventCh := make(chan Event, 4)
+	c := testConfig()
+	c.EventCh = eventCh
+	s, err := Create(c)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s.Shutdown()
+
+	msg := messageQuery{
+		LTime:   1,
+		ID:      1,
+		Name:    "foo",
+		Payload: []byte("test"),
+	}
+	if !s.handleQuery(&msg) {
+		t.Fatalf("should rebroadcast")
+	}
+	if s.handleQuery(&msg) {
+		t.Fatalf("should not rebroadcast")
+	}
+	msg = messageQuery{
+		LTime:   1,
+		ID:      2,
+		Name:    "bar",
+		Payload: []byte("newpayload"),
+	}
+	if !s.handleQuery(&msg) {
+		t.Fatalf("should rebroadcast")
+	}
+	if s.handleQuery(&msg) {
+		t.Fatalf("should not rebroadcast")
+	}
+	msg = messageQuery{
+		LTime:   1,
+		ID:      3,
+		Name:    "baz",
+		Payload: []byte("other"),
+	}
+	if !s.handleQuery(&msg) {
+		t.Fatalf("should rebroadcast")
+	}
+	if s.handleQuery(&msg) {
+		t.Fatalf("should not rebroadcast")
+	}
+
+	testQueryEvents(t, eventCh,
+		[]string{"foo", "bar", "baz"},
+		[][]byte{[]byte("test"), []byte("newpayload"), []byte("other")})
+}

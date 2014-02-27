@@ -75,6 +75,40 @@ TESTEVENTLOOP:
 
 }
 
+// testQueryEvents tests that the given sequence of queries
+// on the event channel took place.
+func testQueryEvents(t *testing.T, ch <-chan Event, expectedName []string, expectedPayload [][]byte) {
+	actualName := make([]string, 0, len(expectedName))
+	actualPayload := make([][]byte, 0, len(expectedPayload))
+
+TESTEVENTLOOP:
+	for {
+		select {
+		case r, ok := <-ch:
+			if !ok {
+				break TESTEVENTLOOP
+			}
+			q, ok := r.(Query)
+			if !ok {
+				continue
+			}
+
+			actualName = append(actualName, q.Name)
+			actualPayload = append(actualPayload, q.Payload)
+		case <-time.After(10 * time.Millisecond):
+			break TESTEVENTLOOP
+		}
+	}
+
+	if !reflect.DeepEqual(actualName, expectedName) {
+		t.Fatalf("expected names: %v. Got: %v", expectedName, actualName)
+	}
+	if !reflect.DeepEqual(actualPayload, expectedPayload) {
+		t.Fatalf("expected payloads: %v. Got: %v", expectedPayload, actualPayload)
+	}
+
+}
+
 func TestMemberEvent(t *testing.T) {
 	me := MemberEvent{
 		Type:    EventMemberJoin,
