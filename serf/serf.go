@@ -961,7 +961,7 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 
 // handleResponse is called when a query response is
 // received.
-func (s *Serf) handleQueryResponse(resp *messageResponse) {
+func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 }
 
 // handleNodeConflict is invoked when a join detects a conflict over a name.
