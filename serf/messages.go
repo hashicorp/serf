@@ -61,21 +61,25 @@ type messageUserEvent struct {
 
 // messageQuery is used for query events
 type messageQuery struct {
-	LTime   LamportTime    // Event lamport time
-	ID      uint32         // Query ID, randomly generated
-	Addr    []byte         // Source address, used for a direct reply
-	Port    uint16         // Source port, used for a direct reply
-	Filters []*queryFilter // Potential query filters
-	Ack     bool           // True if requesting an ack
-	Name    string         // Query name
-	Payload []byte         // Query payload
+	LTime   LamportTime // Event lamport time
+	ID      uint32      // Query ID, randomly generated
+	Addr    []byte      // Source address, used for a direct reply
+	Port    uint16      // Source port, used for a direct reply
+	Filters [][]byte    // Potential query filters
+	Ack     bool        // True if requesting an ack
+	Name    string      // Query name
+	Payload []byte      // Query payload
 }
 
-// queryFilter is set with a messageUserQuery to filter
-// the set of nodes that need to reply
-type queryFilter struct {
-	Type filterType // Specify the type of filter
-	Val  []byte     // Opaque blob, depends on the filter type
+// filterNode is used with the filterNodeType, and is a list
+// of node names
+type filterNode []string
+
+// filterTag is used with the filterTagType and is a regular
+// expression to apply to a tag
+type filterTag struct {
+	Tag  string
+	Expr string
 }
 
 // messageQueryResponse is used to respond to a query
@@ -89,7 +93,7 @@ type messageQueryResponse struct {
 
 func decodeMessage(buf []byte, out interface{}) error {
 	var handle codec.MsgpackHandle
-	return codec.NewDecoder(bytes.NewBuffer(buf), &handle).Decode(out)
+	return codec.NewDecoder(bytes.NewReader(buf), &handle).Decode(out)
 }
 
 func encodeMessage(t messageType, msg interface{}) ([]byte, error) {
@@ -99,5 +103,15 @@ func encodeMessage(t messageType, msg interface{}) ([]byte, error) {
 	handle := codec.MsgpackHandle{}
 	encoder := codec.NewEncoder(buf, &handle)
 	err := encoder.Encode(msg)
+	return buf.Bytes(), err
+}
+
+func encodeFilter(f filterType, filt interface{}) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	buf.WriteByte(uint8(f))
+
+	handle := codec.MsgpackHandle{}
+	encoder := codec.NewEncoder(buf, &handle)
+	err := encoder.Encode(filt)
 	return buf.Bytes(), err
 }
