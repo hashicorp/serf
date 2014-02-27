@@ -483,8 +483,7 @@ func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
 				add = false
 				break
 			}
-			reStr := fmt.Sprintf("^%s$", strings.Replace(val, "*", ".*", -1))
-			res, err := regexp.Compile(reStr)
+			res, err := regexp.Compile(fmt.Sprintf("^%s$", val))
 			if err != nil {
 				return fmt.Errorf("Failed to apply regex: %v", err)
 			}
@@ -498,8 +497,7 @@ func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
 
 		// Check if status matches
 		if req.Status != "" {
-			reStr := fmt.Sprintf("^%s$", strings.Replace(req.Status, "*", ".*", -1))
-			re, err := regexp.Compile(reStr)
+			re, err := regexp.Compile(fmt.Sprintf("^%s$", req.Status))
 			if err != nil {
 				return fmt.Errorf("Failed to apply regex: %v", err)
 			}
