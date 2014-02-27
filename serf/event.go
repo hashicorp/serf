@@ -2,6 +2,9 @@ package serf
 
 import (
 	"fmt"
+	"net"
+	"sync"
+	"time"
 )
 
 // EventType are all the types of events that may occur and be sent
@@ -93,9 +96,12 @@ type Query struct {
 	Name    string
 	Payload []byte
 
-	id   uint32 // ID is not exported, since it may change
-	addr []byte // Address to respond to
-	port uint16 // Port to respond to
+	serf     *Serf
+	id       uint32    // ID is not exported, since it may change
+	addr     []byte    // Address to respond to
+	port     uint16    // Port to respond to
+	deadline time.Time // Must respond by this deadline
+	respLock sync.Mutex
 }
 
 func (q Query) EventType() EventType {
@@ -107,6 +113,46 @@ func (q Query) String() string {
 }
 
 // Respond is used to send a response to the user query
-func (q Query) Respond([]byte) {
-	// TODO: Send response
+func (q Query) Respond(buf []byte) error {
+	q.respLock.Lock()
+	defer q.respLock.Unlock()
+
+	// Check if we've already responded
+	if q.deadline.IsZero() {
+		return fmt.Errorf("Response already sent")
+	}
+
+	// Ensure we aren't past our response deadline
+	if time.Now().After(q.deadline) {
+		return fmt.Errorf("Response is past the deadline")
+	}
+
+	// Create response
+	resp := messageQueryResponse{
+		LTime:   q.LTime,
+		ID:      q.id,
+		From:    q.serf.config.NodeName,
+		Payload: buf,
+	}
+
+	// Format the response
+	raw, err := encodeMessage(messageQueryResponseType, &resp)
+	if err != nil {
+		return fmt.Errorf("Failed to format response: %v", err)
+	}
+
+	// Check the size limit
+	if len(raw) > QueryResponseSizeLimit {
+		return fmt.Errorf("response exceeds limit of %d bytes", QueryResponseSizeLimit)
+	}
+
+	// Send the response
+	addr := net.UDPAddr{IP: q.addr, Port: int(q.port)}
+	if err := q.serf.memberlist.SendTo(&addr, raw); err != nil {
+		return err
+	}
+
+	// Clera the deadline, response sent
+	q.deadline = time.Time{}
+	return nil
 }
