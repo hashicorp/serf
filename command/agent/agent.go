@@ -157,6 +157,13 @@ func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
 	return a.serf.UserEvent(name, payload, coalesce)
 }
 
+// Query sends a Query on Serf, see Serf.Query.
+func (a *Agent) Query(name string, payload []byte, params *serf.QueryParam) (*serf.QueryResponse, error) {
+	a.logger.Printf("[DEBUG] agent: Requesting query send: %s. Payload: %#v",
+		name, string(payload))
+	return a.serf.Query(name, payload, params)
+}
+
 // RegisterEventHandler adds an event handler to recieve event notifications
 func (a *Agent) RegisterEventHandler(eh EventHandler) {
 	a.eventHandlersLock.Lock()
