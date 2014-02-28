@@ -126,7 +126,7 @@ func (c *MembersCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
-	members, err := client.Members(reqtags, statusFilter)
+	members, err := client.FilteredMembers(reqtags, statusFilter)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error retrieving members: %s", err))
 		return 1

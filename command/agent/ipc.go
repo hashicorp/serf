@@ -43,16 +43,17 @@ const (
 )
 
 const (
-	handshakeCommand  = "handshake"
-	eventCommand      = "event"
-	forceLeaveCommand = "force-leave"
-	joinCommand       = "join"
-	membersCommand    = "members"
-	streamCommand     = "stream"
-	stopCommand       = "stop"
-	monitorCommand    = "monitor"
-	leaveCommand      = "leave"
-	tagsCommand       = "tags"
+	handshakeCommand       = "handshake"
+	eventCommand           = "event"
+	forceLeaveCommand      = "force-leave"
+	joinCommand            = "join"
+	membersCommand         = "members"
+	filteredMembersCommand = "filtered-members"
+	streamCommand          = "stream"
+	stopCommand            = "stop"
+	monitorCommand         = "monitor"
+	leaveCommand           = "leave"
+	tagsCommand            = "tags"
 )
 
 const (
@@ -355,8 +356,8 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 	case eventCommand:
 		return i.handleEvent(client, seq)
 
-	case membersCommand:
-		return i.handleMembers(client, seq)
+	case membersCommand, filteredMembersCommand:
+		return i.handleMembers(client, command, seq)
 
 	case streamCommand:
 		return i.handleStream(client, seq)
@@ -462,66 +463,38 @@ func (i *AgentIPC) handleJoin(client *IPCClient, seq uint64) error {
 	return client.Send(&header, &resp)
 }
 
-func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
+func (i *AgentIPC) handleMembers(client *IPCClient, command string, seq uint64) error {
 	serf := i.agent.Serf()
 	raw := serf.Members()
+	members := make([]Member, 0, len(raw))
 
-	var req membersRequest
-	if err := client.dec.Decode(&req); err != nil {
-		return fmt.Errorf("decode failed: %v", err)
+	if command == filteredMembersCommand {
+		var req membersRequest
+		err := client.dec.Decode(&req)
+		if err != nil {
+			return fmt.Errorf("decode failed: %v", err)
+		}
+		raw, err = i.filterMembers(raw, req.Tags, req.Status)
+		if err != nil {
+			return err
+		}
 	}
 
-	members := make([]Member, 0, len(raw))
-	tagsRe := make(map[string]*regexp.Regexp)
-
 	for _, m := range raw {
-		add := true
-
-		// Check if tags were passed, and if they match
-		for key, val := range req.Tags {
-			if _, ok := m.Tags[key]; !ok {
-				add = false
-				break
-			}
-			res, err := regexp.Compile(fmt.Sprintf("^%s$", val))
-			if err != nil {
-				return fmt.Errorf("Failed to apply regex: %v", err)
-			}
-			tagsRe[key] = res
+		sm := Member{
+			Name:        m.Name,
+			Addr:        m.Addr,
+			Port:        m.Port,
+			Tags:        m.Tags,
+			Status:      m.Status.String(),
+			ProtocolMin: m.ProtocolMin,
+			ProtocolMax: m.ProtocolMax,
+			ProtocolCur: m.ProtocolCur,
+			DelegateMin: m.DelegateMin,
+			DelegateMax: m.DelegateMax,
+			DelegateCur: m.DelegateCur,
 		}
-		for tag, re := range tagsRe {
-			if !re.MatchString(m.Tags[tag]) {
-				add = false
-			}
-		}
-
-		// Check if status matches
-		if req.Status != "" {
-			re, err := regexp.Compile(fmt.Sprintf("^%s$", req.Status))
-			if err != nil {
-				return fmt.Errorf("Failed to apply regex: %v", err)
-			}
-			if !re.MatchString(m.Status.String()) {
-				add = false
-			}
-		}
-
-		if add {
-			sm := Member{
-				Name:        m.Name,
-				Addr:        m.Addr,
-				Port:        m.Port,
-				Tags:        m.Tags,
-				Status:      m.Status.String(),
-				ProtocolMin: m.ProtocolMin,
-				ProtocolMax: m.ProtocolMax,
-				ProtocolCur: m.ProtocolCur,
-				DelegateMin: m.DelegateMin,
-				DelegateMax: m.DelegateMax,
-				DelegateCur: m.DelegateCur,
-			}
-			members = append(members, sm)
-		}
+		members = append(members, sm)
 	}
 
 	header := responseHeader{
@@ -532,6 +505,51 @@ func (i *AgentIPC) handleMembers(client *IPCClient, seq uint64) error {
 		Members: members,
 	}
 	return client.Send(&header, &resp)
+}
+
+func (i *AgentIPC) filterMembers(members []serf.Member, tags map[string]string,
+		status string) ([]serf.Member, error) {
+	result := make([]serf.Member, 0, len(members))
+	tagsRe := make(map[string]*regexp.Regexp)
+
+	for _, m := range members {
+		add := true
+
+		// Check if tags were passed, and if they match
+		for key, val := range tags {
+			if _, ok := m.Tags[key]; !ok {
+				add = false
+				break
+			}
+			res, err := regexp.Compile(fmt.Sprintf("^%s$", val))
+			if err != nil {
+				return nil, fmt.Errorf("Failed to apply regex: %v", err)
+			}
+			tagsRe[key] = res
+		}
+		for tag, re := range tagsRe {
+			if !re.MatchString(m.Tags[tag]) {
+				add = false
+			}
+		}
+
+		// Check if status matches
+		if status != "" {
+			re, err := regexp.Compile(fmt.Sprintf("^%s$", status))
+			if err != nil {
+				return nil, fmt.Errorf("Failed to apply regex: %v", err)
+			}
+			if !re.MatchString(m.Status.String()) {
+				add = false
+			}
+		}
+
+		if add {
+			result = append(result, m)
+		}
+	}
+
+	return result, nil
 }
 
 func (i *AgentIPC) handleStream(client *IPCClient, seq uint64) error {
