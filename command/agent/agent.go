@@ -65,7 +65,7 @@ func Create(conf *serf.Config, logOutput io.Writer) (*Agent, error) {
 // create so that there isn't a race condition between creating the
 // agent and registering handlers
 func (a *Agent) Start() error {
-	a.logger.Printf("[INFO] Serf agent starting")
+	a.logger.Printf("[INFO] agent: Serf agent starting")
 
 	// Create serf first
 	serf, err := serf.Create(a.conf)
@@ -142,7 +142,7 @@ func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
 
 // ForceLeave is used to eject a failed node from the cluster
 func (a *Agent) ForceLeave(node string) error {
-	a.logger.Printf("[INFO] Force leaving node: %s", node)
+	a.logger.Printf("[INFO] agent: Force leaving node: %s", node)
 	err := a.serf.RemoveFailedNode(node)
 	if err != nil {
 		a.logger.Printf("[WARN] agent: failed to remove node: %v", err)
