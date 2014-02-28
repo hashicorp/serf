@@ -10,16 +10,17 @@ const (
 )
 
 const (
-	handshakeCommand  = "handshake"
-	eventCommand      = "event"
-	forceLeaveCommand = "force-leave"
-	joinCommand       = "join"
-	membersCommand    = "members"
-	streamCommand     = "stream"
-	stopCommand       = "stop"
-	monitorCommand    = "monitor"
-	leaveCommand      = "leave"
-	tagsCommand       = "tags"
+	handshakeCommand       = "handshake"
+	eventCommand           = "event"
+	forceLeaveCommand      = "force-leave"
+	joinCommand            = "join"
+	membersCommand         = "members"
+	filteredMembersCommand = "filtered-members"
+	streamCommand          = "stream"
+	stopCommand            = "stop"
+	monitorCommand         = "monitor"
+	leaveCommand           = "leave"
+	tagsCommand            = "tags"
 )
 
 const (
