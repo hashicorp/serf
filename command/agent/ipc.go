@@ -101,7 +101,7 @@ type joinResponse struct {
 	Num int32
 }
 
-type membersRequest struct {
+type membersFilteredRequest struct {
 	Tags   map[string]string
 	Status string
 }
@@ -469,7 +469,7 @@ func (i *AgentIPC) handleMembers(client *IPCClient, command string, seq uint64) 
 	members := make([]Member, 0, len(raw))
 
 	if command == membersFilteredCommand {
-		var req membersRequest
+		var req membersFilteredRequest
 		err := client.dec.Decode(&req)
 		if err != nil {
 			return fmt.Errorf("decode failed: %v", err)

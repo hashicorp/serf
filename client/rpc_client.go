@@ -175,7 +175,7 @@ func (c *RPCClient) MembersFiltered(tags map[string]string, status string) ([]Me
 		Command: membersFilteredCommand,
 		Seq:     c.getSeq(),
 	}
-	req := membersRequest{
+	req := membersFilteredRequest{
 		Tags:   tags,
 		Status: status,
 	}
