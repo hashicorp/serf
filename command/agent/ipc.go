@@ -48,7 +48,7 @@ const (
 	forceLeaveCommand      = "force-leave"
 	joinCommand            = "join"
 	membersCommand         = "members"
-	filteredMembersCommand = "filtered-members"
+	membersFilteredCommand = "members-filtered"
 	streamCommand          = "stream"
 	stopCommand            = "stop"
 	monitorCommand         = "monitor"
@@ -356,7 +356,7 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 	case eventCommand:
 		return i.handleEvent(client, seq)
 
-	case membersCommand, filteredMembersCommand:
+	case membersCommand, membersFilteredCommand:
 		return i.handleMembers(client, command, seq)
 
 	case streamCommand:
@@ -468,7 +468,7 @@ func (i *AgentIPC) handleMembers(client *IPCClient, command string, seq uint64) 
 	raw := serf.Members()
 	members := make([]Member, 0, len(raw))
 
-	if command == filteredMembersCommand {
+	if command == membersFilteredCommand {
 		var req membersRequest
 		err := client.dec.Decode(&req)
 		if err != nil {

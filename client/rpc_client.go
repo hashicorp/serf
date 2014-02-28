@@ -169,10 +169,10 @@ func (c *RPCClient) Members() ([]Member, error) {
 	return resp.Members, err
 }
 
-// Members is used to fetch a list of known members
-func (c *RPCClient) FilteredMembers(tags map[string]string, status string) ([]Member, error) {
+// MembersFiltered returns a subset of members filtered by tags or status
+func (c *RPCClient) MembersFiltered(tags map[string]string, status string) ([]Member, error) {
 	header := requestHeader{
-		Command: filteredMembersCommand,
+		Command: membersFilteredCommand,
 		Seq:     c.getSeq(),
 	}
 	req := membersRequest{

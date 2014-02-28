@@ -15,7 +15,7 @@ const (
 	forceLeaveCommand      = "force-leave"
 	joinCommand            = "join"
 	membersCommand         = "members"
-	filteredMembersCommand = "filtered-members"
+	membersFilteredCommand = "members-filtered"
 	streamCommand          = "stream"
 	stopCommand            = "stop"
 	monitorCommand         = "monitor"
