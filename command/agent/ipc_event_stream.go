@@ -45,7 +45,7 @@ HANDLE:
 	select {
 	case es.eventCh <- e:
 	default:
-		es.logger.Printf("[WARN] Dropping event to %v", es.client)
+		es.logger.Printf("[WARN] agent.ipc: Dropping event to %v", es.client)
 	}
 }
 
@@ -65,7 +65,7 @@ func (es *eventStream) stream() {
 			err = fmt.Errorf("Unknown event type: %s", event.EventType().String())
 		}
 		if err != nil {
-			es.logger.Printf("[ERR] Failed to stream event to %v: %v",
+			es.logger.Printf("[ERR] agent.ipc: Failed to stream event to %v: %v",
 				es.client, err)
 			return
 		}

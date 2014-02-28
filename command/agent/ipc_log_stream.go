@@ -41,7 +41,7 @@ func (ls *logStream) HandleLog(l string) {
 		// from the logWriter, and a log will need to invoke Write() which
 		// already holds the lock. We must therefor do the log async, so
 		// as to not deadlock
-		go ls.logger.Printf("[WARN] Dropping logs to %v", ls.client)
+		go ls.logger.Printf("[WARN] agent.ipc: Dropping logs to %v", ls.client)
 	}
 }
 
@@ -56,7 +56,7 @@ func (ls *logStream) stream() {
 	for line := range ls.logCh {
 		rec.Log = line
 		if err := ls.client.Send(&header, &rec); err != nil {
-			ls.logger.Printf("[ERR] Failed to stream log to %v: %v",
+			ls.logger.Printf("[ERR] agent.ipc: Failed to stream log to %v: %v",
 				ls.client, err)
 			return
 		}
