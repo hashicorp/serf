@@ -52,6 +52,7 @@ Possible commands include:
 * force-leave - Removes a failed node from the cluster
 * join - Requests Serf join another node
 * members - Returns the list of members
+* members-filtered - Returns a subset of members
 * stream - Starts streaming events over the connection
 * monitor - Starts streaming logs over the connection
 * stop - Stops streaming logs or events
@@ -124,18 +125,8 @@ The body returns the number of nodes successfully joined.
 
 ### members
 
-The members command is used to return the known members and associated
-information. It takes the following body:
-
-```
-    {"Tags": {"key": "val"}, "Status": "alive"}
-```
-
-The `Tags` are used to filter nodes based on tag values. Each tag value may be
-either a plain string or a regular expression pattern. The `Status` is used to
-filter nodes based on operational status. This can also be passed as a regex.
-
-The response will look like this:
+The members command is used to return all the known members and associated
+information. There is no request body, but the response looks like:
 
 ```
     {"Members": [
@@ -157,6 +148,24 @@ The response will look like this:
         ...]
     }
 ```
+
+### members-filtered
+
+The members-filtered command is used to return a subset of the known members
+based on their metadata. It takes the following body:
+
+```
+    {"Tags": {"key": "val"}, "Status": "alive"}
+```
+
+The `Tags` are used to filter nodes based on tag values. Each tag value may be
+either a plain string or a regular expression pattern. The `Status` is used to
+filter nodes based on operational status. This can also be passed as a regex.
+
+Note that regex patterns will automatically be placed between start (`^`) and
+end (`$`) anchors.
+
+The response will be in the same format as the `members` command.
 
 ### stream
 

@@ -508,7 +508,7 @@ func (i *AgentIPC) handleMembers(client *IPCClient, command string, seq uint64) 
 }
 
 func (i *AgentIPC) filterMembers(members []serf.Member, tags map[string]string,
-		status string) ([]serf.Member, error) {
+	status string) ([]serf.Member, error) {
 	result := make([]serf.Member, 0, len(members))
 	tagsRe := make(map[string]*regexp.Regexp)
 
