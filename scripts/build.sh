@@ -31,4 +31,4 @@ go build \
     -ldflags "-X main.GitCommit ${GIT_COMMIT}${GIT_DIRTY}" \
     -v \
     -o bin/serf${EXTENSION}
-cp bin/serf${EXTENSION} $GOPATH/bin
+cp bin/serf${EXTENSION} $(echo $GOPATH | sed -e 's/:.*//g')/bin
