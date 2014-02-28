@@ -35,6 +35,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -54,6 +55,7 @@ const (
 	monitorCommand         = "monitor"
 	leaveCommand           = "leave"
 	tagsCommand            = "tags"
+	queryCommand           = "query"
 )
 
 const (
@@ -64,6 +66,12 @@ const (
 	monitorExists         = "Monitor already exists"
 	invalidFilter         = "Invalid event filter"
 	streamExists          = "Stream with given sequence exists"
+)
+
+const (
+	queryRecordAck      = "ack"
+	queryRecordResponse = "response"
+	queryRecordDone     = "done"
 )
 
 // Request header is sent before each request
@@ -125,6 +133,21 @@ type stopRequest struct {
 type tagsRequest struct {
 	Tags       map[string]string
 	DeleteTags []string
+}
+
+type queryRequest struct {
+	FilterNodes []string
+	FilterTags  map[string]string
+	RequestAck  bool
+	Timeout     time.Duration
+	Name        string
+	Payload     []byte
+}
+
+type queryRecord struct {
+	Type    string
+	From    string
+	Payload []byte
 }
 
 type logRecord struct {
@@ -379,6 +402,9 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 
 	case tagsCommand:
 		return i.handleTags(client, seq)
+
+	case queryCommand:
+		return i.handleQuery(client, seq)
 
 	default:
 		respHeader := responseHeader{Seq: seq, Error: unsupportedCommand}
@@ -700,6 +726,39 @@ func (i *AgentIPC) handleTags(client *IPCClient, seq uint64) error {
 	err := i.agent.serf.SetTags(tags)
 
 	resp := responseHeader{Seq: seq, Error: errToString(err)}
+	return client.Send(&resp, nil)
+}
+
+func (i *AgentIPC) handleQuery(client *IPCClient, seq uint64) error {
+	var req queryRequest
+	if err := client.dec.Decode(&req); err != nil {
+		return fmt.Errorf("decode failed: %v", err)
+	}
+
+	// Setup the query
+	params := serf.QueryParam{
+		FilterNodes: req.FilterNodes,
+		FilterTags:  req.FilterTags,
+		RequestAck:  req.RequestAck,
+		Timeout:     req.Timeout,
+	}
+
+	// Start the query
+	queryResp, err := i.agent.Query(req.Name, req.Payload, &params)
+
+	// Stream the query responses
+	if err == nil {
+		qs := newQueryResponseStream(client, seq, i.logger)
+		defer func() {
+			go qs.Stream(queryResp)
+		}()
+	}
+
+	// Respond
+	resp := responseHeader{
+		Seq:   seq,
+		Error: errToString(err),
+	}
 	return client.Send(&resp, nil)
 }
 
