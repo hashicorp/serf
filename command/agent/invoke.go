@@ -67,7 +67,11 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 	case serf.UserEvent:
 		cmd.Env = append(cmd.Env, "SERF_USER_EVENT="+e.Name)
 		cmd.Env = append(cmd.Env, fmt.Sprintf("SERF_USER_LTIME=%d", e.LTime))
-		go userEventStdin(logger, stdin, &e)
+		go streamPayload(logger, stdin, e.Payload)
+	case serf.Query:
+		cmd.Env = append(cmd.Env, "SERF_QUERY_NAME="+e.Name)
+		cmd.Env = append(cmd.Env, fmt.Sprintf("SERF_QUERY_LTIME=%d", e.LTime))
+		go streamPayload(logger, stdin, e.Payload)
 	default:
 		return fmt.Errorf("Unknown event type: %s", event.EventType().String())
 	}
@@ -77,8 +81,16 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 	}
 
 	err = cmd.Wait()
-	logger.Printf("[DEBUG] Event '%s' script output: %s",
+	logger.Printf("[DEBUG] agent: Event '%s' script output: %s",
 		event.EventType().String(), output.String())
+
+	// If this is a query and we have output, respond
+	if query, ok := event.(serf.Query); ok && len(output.Bytes()) > 0 {
+		if err := query.Respond(output.Bytes()); err != nil {
+			logger.Printf("[WARN] agent: Failed to respond to query '%s': %s",
+				event.String(), err)
+		}
+	}
 
 	if err != nil {
 		return err
@@ -124,20 +136,20 @@ func memberEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.MemberEv
 	}
 }
 
-// Sends data on stdin for a user event. The stdin simply contains the
-// payload (if any) of the event.
+// Sends data on stdin for an event. The stdin simply contains the
+// payload (if any).
 // Most shells read implementations need a newline, force it to be there
-func userEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.UserEvent) {
+func streamPayload(logger *log.Logger, stdin io.WriteCloser, buf []byte) {
 	defer stdin.Close()
 
 	// Append a newline to payload if missing
-	payload := e.Payload
+	payload := buf
 	if len(payload) > 0 && payload[len(payload)-1] != '\n' {
 		payload = append(payload, '\n')
 	}
 
 	if _, err := stdin.Write(payload); err != nil {
-		logger.Printf("[ERR] Error writing user event payload: %s", err)
+		logger.Printf("[ERR] Error writing payload: %s", err)
 		return
 	}
 }
