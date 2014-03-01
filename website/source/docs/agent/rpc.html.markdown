@@ -52,6 +52,7 @@ Possible commands include:
 * force-leave - Removes a failed node from the cluster
 * join - Requests Serf join another node
 * members - Returns the list of members
+* tags - Modifies tags on a running Serf agent
 * stream - Starts streaming events over the connection
 * monitor - Starts streaming logs over the connection
 * stop - Stops streaming logs or events
@@ -146,6 +147,17 @@ information. There is no request body, but the response looks like:
         },
         ...]
     }
+```
+
+### tags
+
+The tags command is used to alter the tags on a Serf agent while it is running.
+A `member-update` event will be triggered immediately to notify the other agents
+in the cluster of the change. The tags command can add new tags, modify existing
+tags, or delete tags. The request body looks like:
+
+```
+    {"Tags": {"tag1": "val1"}, "DeleteTags": ["tag2"]}
 ```
 
 ### stream
