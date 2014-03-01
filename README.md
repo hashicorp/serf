@@ -105,6 +105,8 @@ $ bin/serf
 ...
 ```
 
+*note: `make` will also place a copy of the binary in the first part of your $GOPATH*
+
 You can run tests by typing `make test`.
 
 If you make any changes to the code, run `make format` in order to automatically
