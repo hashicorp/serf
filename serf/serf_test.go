@@ -264,7 +264,10 @@ func TestSerf_eventsUser_sizeLimit(t *testing.T) {
 	name := "this is too large an event"
 	payload := make([]byte, UserEventSizeLimit)
 	err = s1.UserEvent(name, payload, false)
-	if strings.HasPrefix(err.Error(), "user event exceeds limit of ") {
+	if err == nil {
+		t.Fatalf("expect error")
+	}
+	if !strings.HasPrefix(err.Error(), "user event exceeds limit of ") {
 		t.Fatalf("should get size limit error")
 	}
 }
@@ -1103,5 +1106,194 @@ func TestSerf_SetTags(t *testing.T) {
 
 	if m := m2m_tags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
 		t.Fatalf("bad: %v", m1m_tags)
+	}
+}
+
+func TestSerf_Query(t *testing.T) {
+	eventCh := make(chan Event, 4)
+	s1Config := testConfig()
+	s1Config.EventCh = eventCh
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	// Listen for the query
+	go func() {
+		for {
+			select {
+			case e := <-eventCh:
+				if e.EventType() != EventQuery {
+					continue
+				}
+				q := e.(Query)
+				if err := q.Respond([]byte("test")); err != nil {
+					t.Fatalf("err: %s", err)
+				}
+				return
+			case <-time.After(time.Second):
+				t.Fatalf("timeout")
+			}
+		}
+	}()
+
+	s2Config := testConfig()
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	testutil.Yield()
+
+	// Start a query from s2
+	params := s2.DefaultQueryParams()
+	params.RequestAck = true
+	resp, err := s2.Query("load", []byte("sup girl"), params)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	var acks []string
+	var responses []string
+
+	ackCh := resp.AckCh()
+	respCh := resp.ResponseCh()
+	for i := 0; i < 3; i++ {
+		select {
+		case a := <-ackCh:
+			acks = append(acks, a)
+
+		case r := <-respCh:
+			if r.From != s1Config.NodeName {
+				t.Fatalf("bad: %v", r)
+			}
+			if string(r.Payload) != "test" {
+				t.Fatalf("bad: %v", r)
+			}
+			responses = append(responses, r.From)
+
+		case <-time.After(time.Second):
+			t.Fatalf("timeout")
+		}
+	}
+
+	if len(acks) != 2 {
+		t.Fatalf("missing acks: %v", acks)
+	}
+	if len(responses) != 1 {
+		t.Fatalf("missing responses: %v", responses)
+	}
+}
+
+func TestSerf_Query_Filter(t *testing.T) {
+	eventCh := make(chan Event, 4)
+	s1Config := testConfig()
+	s1Config.EventCh = eventCh
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	// Listen for the query
+	go func() {
+		for {
+			select {
+			case e := <-eventCh:
+				if e.EventType() != EventQuery {
+					continue
+				}
+				q := e.(Query)
+				if err := q.Respond([]byte("test")); err != nil {
+					t.Fatalf("err: %s", err)
+				}
+				return
+			case <-time.After(time.Second):
+				t.Fatalf("timeout")
+			}
+		}
+	}()
+
+	s2Config := testConfig()
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	testutil.Yield()
+
+	// Filter to only s1!
+	params := s2.DefaultQueryParams()
+	params.FilterNodes = []string{s1Config.NodeName}
+	params.RequestAck = true
+
+	// Start a query from s2
+	resp, err := s2.Query("load", []byte("sup girl"), params)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	var acks []string
+	var responses []string
+
+	ackCh := resp.AckCh()
+	respCh := resp.ResponseCh()
+	for i := 0; i < 2; i++ {
+		select {
+		case a := <-ackCh:
+			acks = append(acks, a)
+
+		case r := <-respCh:
+			if r.From != s1Config.NodeName {
+				t.Fatalf("bad: %v", r)
+			}
+			if string(r.Payload) != "test" {
+				t.Fatalf("bad: %v", r)
+			}
+			responses = append(responses, r.From)
+
+		case <-time.After(time.Second):
+			t.Fatalf("timeout")
+		}
+	}
+
+	if len(acks) != 1 {
+		t.Fatalf("missing acks: %v", acks)
+	}
+	if len(responses) != 1 {
+		t.Fatalf("missing responses: %v", responses)
+	}
+}
+
+func TestSerf_Query_sizeLimit(t *testing.T) {
+	// Create the s1 config with an event channel so we can listen
+	s1Config := testConfig()
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	name := "this is too large a query"
+	payload := make([]byte, QuerySizeLimit)
+	_, err = s1.Query(name, payload, nil)
+	if err == nil {
+		t.Fatalf("should get error")
+	}
+	if !strings.HasPrefix(err.Error(), "query exceeds limit of ") {
+		t.Fatalf("should get size limit error: %v", err)
 	}
 }

@@ -20,13 +20,19 @@ import (
 // version to memberlist below.
 const (
 	ProtocolVersionMin uint8 = 1
-	ProtocolVersionMax       = 3
+	ProtocolVersionMax       = 4
 )
 
 const (
 	// Used to detect if the meta data is tags
 	// or if it is a raw role
 	tagMagicByte uint8 = 255
+)
+
+var (
+	// FeatureNotSupported is returned if a feature cannot be used
+	// due to an older protocol version being used.
+	FeatureNotSupported = fmt.Errorf("Feature not supported")
 )
 
 func init() {
@@ -44,6 +50,7 @@ type Serf struct {
 	// in this struct due to Golang issue #599.
 	clock      LamportClock
 	eventClock LamportClock
+	queryClock LamportClock
 
 	broadcasts    *memberlist.TransmitLimitedQueue
 	config        *Config
@@ -65,6 +72,12 @@ type Serf struct {
 	eventJoinIgnore bool
 	eventMinTime    LamportTime
 	eventLock       sync.RWMutex
+
+	queryBroadcasts *memberlist.TransmitLimitedQueue
+	queryBuffer     []*queries
+	queryMinTime    LamportTime
+	queryResponse   map[LamportTime]*QueryResponse
+	queryLock       sync.RWMutex
 
 	logger     *log.Logger
 	joinLock   sync.Mutex
@@ -184,9 +197,17 @@ type userEvents struct {
 	Events []userEvent
 }
 
+// queries stores all the query ids at a specific time
+type queries struct {
+	LTime    LamportTime
+	QueryIDs []uint32
+}
+
 const (
-	UserEventSizeLimit = 256        // Maximum byte size for event name and payload
-	snapshotSizeLimit  = 128 * 1024 // Maximum 128 KB snapshot
+	UserEventSizeLimit     = 256        // Maximum byte size for event name and payload
+	QuerySizeLimit         = 1024       // Maximum byte size for query
+	QueryResponseSizeLimit = 1024       // Maximum bytes size for response
+	snapshotSizeLimit      = 128 * 1024 // Maximum 128 KB snapshot
 )
 
 // Create creates a new Serf instance, starting all the background tasks
@@ -205,11 +226,12 @@ func Create(conf *Config) (*Serf, error) {
 	}
 
 	serf := &Serf{
-		config:     conf,
-		logger:     log.New(conf.LogOutput, "", log.LstdFlags),
-		members:    make(map[string]*memberState),
-		shutdownCh: make(chan struct{}),
-		state:      SerfAlive,
+		config:        conf,
+		logger:        log.New(conf.LogOutput, "", log.LstdFlags),
+		members:       make(map[string]*memberState),
+		queryResponse: make(map[LamportTime]*QueryResponse),
+		shutdownCh:    make(chan struct{}),
+		state:         SerfAlive,
 	}
 
 	// Check that the meta data length is okay
@@ -239,7 +261,7 @@ func Create(conf *Config) (*Serf, error) {
 	}
 
 	// Try access the snapshot
-	var oldClock, oldEventClock LamportTime
+	var oldClock, oldEventClock, oldQueryClock LamportTime
 	var prev []*PreviousNode
 	if conf.SnapshotPath != "" {
 		eventCh, snap, err := NewSnapshotter(conf.SnapshotPath, snapshotSizeLimit,
@@ -252,11 +274,13 @@ func Create(conf *Config) (*Serf, error) {
 		prev = snap.AliveNodes()
 		oldClock = snap.LastClock()
 		oldEventClock = snap.LastEventClock()
+		oldQueryClock = snap.LastQueryClock()
 		serf.eventMinTime = oldEventClock + 1
+		serf.queryMinTime = oldQueryClock + 1
 	}
 
-	// Setup the broadcast queue, which we use to send our own custom
-	// broadcasts along the gossip channel.
+	// Setup the various broadcast queues, which we use to send our own
+	// custom broadcasts along the gossip channel.
 	serf.broadcasts = &memberlist.TransmitLimitedQueue{
 		NumNodes: func() int {
 			return len(serf.members)
@@ -269,22 +293,31 @@ func Create(conf *Config) (*Serf, error) {
 		},
 		RetransmitMult: conf.MemberlistConfig.RetransmitMult,
 	}
+	serf.queryBroadcasts = &memberlist.TransmitLimitedQueue{
+		NumNodes: func() int {
+			return len(serf.members)
+		},
+		RetransmitMult: conf.MemberlistConfig.RetransmitMult,
+	}
 
 	// Create the buffer for recent intents
 	serf.recentJoin = make([]nodeIntent, conf.RecentIntentBuffer)
 	serf.recentLeave = make([]nodeIntent, conf.RecentIntentBuffer)
 
-	// Create a buffer for events
+	// Create a buffer for events and queries
 	serf.eventBuffer = make([]*userEvents, conf.EventBuffer)
+	serf.queryBuffer = make([]*queries, conf.QueryBuffer)
 
 	// Ensure our lamport clock is at least 1, so that the default
 	// join LTime of 0 does not cause issues
 	serf.clock.Increment()
 	serf.eventClock.Increment()
+	serf.queryClock.Increment()
 
 	// Restore the clock from snap if we have one
 	serf.clock.Witness(oldClock)
 	serf.eventClock.Witness(oldEventClock)
+	serf.queryClock.Witness(oldQueryClock)
 
 	// Modify the memberlist configuration with keys that we set
 	conf.MemberlistConfig.Events = &eventDelegate{serf: serf}
@@ -311,6 +344,7 @@ func Create(conf *Config) (*Serf, error) {
 	go serf.handleReconnect()
 	go serf.checkQueueDepth("Intent", serf.broadcasts)
 	go serf.checkQueueDepth("Event", serf.eventBroadcasts)
+	go serf.checkQueueDepth("Query", serf.queryBroadcasts)
 
 	// Attempt to re-join the cluster if we have known nodes
 	if len(prev) != 0 {
@@ -334,7 +368,7 @@ func (s *Serf) ProtocolVersion() uint8 {
 func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
 	// Check the size limit
 	if len(name)+len(payload) > UserEventSizeLimit {
-		return fmt.Errorf("user event payload exceeds limit of %d bytes", UserEventSizeLimit)
+		return fmt.Errorf("user event exceeds limit of %d bytes", UserEventSizeLimit)
 	}
 
 	// Create a message
@@ -358,6 +392,89 @@ func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
 		msg: raw,
 	})
 	return nil
+}
+
+// Query is used to broadcast a new query. The query must be fairly small,
+// and an error will be returned if the size limit is exceeded. This is only
+// available with protocol version 4 and newer. Query parameters are optional,
+// and if not provided, a sane set of defaults will be used.
+func (s *Serf) Query(name string, payload []byte, params *QueryParam) (*QueryResponse, error) {
+	// Check that the latest protocol is in use
+	if s.ProtocolVersion() < 4 {
+		return nil, FeatureNotSupported
+	}
+
+	// Provide default parameters if none given
+	if params == nil {
+		params = s.DefaultQueryParams()
+	} else if params.Timeout == 0 {
+		params.Timeout = s.DefaultQueryTimeout()
+	}
+
+	// Get the local node
+	local := s.memberlist.LocalNode()
+
+	// Encode the filters
+	filters, err := params.encodeFilters()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to format filters: %v", err)
+	}
+
+	// Create a message
+	q := messageQuery{
+		LTime:   s.queryClock.Time(),
+		ID:      uint32(rand.Int31()),
+		Addr:    local.Addr,
+		Port:    local.Port,
+		Filters: filters,
+		Ack:     params.RequestAck,
+		Timeout: params.Timeout,
+		Name:    name,
+		Payload: payload,
+	}
+
+	// Encode the query
+	raw, err := encodeMessage(messageQueryType, &q)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check the size
+	if len(raw) > QuerySizeLimit {
+		return nil, fmt.Errorf("query exceeds limit of %d bytes", QuerySizeLimit)
+	}
+
+	// Register QueryResponse to track acks and responses
+	resp := newQueryResponse(s.memberlist.NumMembers(), &q)
+	s.registerQueryResponse(params.Timeout, resp)
+
+	// Process query locally
+	s.handleQuery(&q)
+
+	// Start broadcasting the event
+	s.queryBroadcasts.QueueBroadcast(&broadcast{
+		msg: raw,
+	})
+	return resp, nil
+}
+
+// registerQueryResponse is used to setup the listeners for the query,
+// and to schedule closing the query after the timeout.
+func (s *Serf) registerQueryResponse(timeout time.Duration, resp *QueryResponse) {
+	s.queryLock.Lock()
+	defer s.queryLock.Unlock()
+
+	// Map the LTime to the QueryResponse. This is necessarily 1-to-1,
+	// since we increment the time for each new query.
+	s.queryResponse[resp.lTime] = resp
+
+	// Setup a timer to close the response and deregister after the timeout
+	time.AfterFunc(timeout, func() {
+		s.queryLock.Lock()
+		delete(s.queryResponse, resp.lTime)
+		resp.Close()
+		s.queryLock.Unlock()
+	})
 }
 
 // SetTags is used to dynamically update the tags associated with
@@ -943,6 +1060,138 @@ func (s *Serf) handleUserEvent(eventMsg *messageUserEvent) bool {
 	return true
 }
 
+// handleQuery is called when a query broadcast is
+// received. Returns if the message should be rebroadcast.
+func (s *Serf) handleQuery(query *messageQuery) bool {
+	// Witness a potentially newer time
+	s.queryClock.Witness(query.LTime)
+
+	s.queryLock.Lock()
+	defer s.queryLock.Unlock()
+
+	// Ignore if it is before our minimum query time
+	if query.LTime < s.queryMinTime {
+		return false
+	}
+
+	// Check if this message is too old
+	curTime := s.queryClock.Time()
+	if curTime > LamportTime(len(s.queryBuffer)) &&
+		query.LTime < curTime-LamportTime(len(s.queryBuffer)) {
+		s.logger.Printf(
+			"[WARN] serf: received old query %s from time %d (current: %d)",
+			query.Name,
+			query.LTime,
+			s.queryClock.Time())
+		return false
+	}
+
+	// Check if we've already seen this
+	idx := query.LTime % LamportTime(len(s.queryBuffer))
+	seen := s.queryBuffer[idx]
+	if seen != nil && seen.LTime == query.LTime {
+		for _, previous := range seen.QueryIDs {
+			if previous == query.ID {
+				// Seen this ID already
+				return false
+			}
+		}
+	} else {
+		seen = &queries{LTime: query.LTime}
+		s.queryBuffer[idx] = seen
+	}
+
+	// Add to recent queries
+	seen.QueryIDs = append(seen.QueryIDs, query.ID)
+
+	// Update some metrics
+	metrics.IncrCounter([]string{"serf", "queries"}, 1)
+	metrics.IncrCounter([]string{"serf", "queries", query.Name}, 1)
+
+	// Filter the query
+	if !s.shouldProcessQuery(query.Filters) {
+		// Even if we don't process it further, we should rebroadcast,
+		// since it is the first time we've seen this.
+		return true
+	}
+
+	// Send ack if requested, without waiting for client to Respond()
+	if query.Ack {
+		ack := messageQueryResponse{
+			LTime: query.LTime,
+			ID:    query.ID,
+			From:  s.config.NodeName,
+			Ack:   true,
+		}
+		raw, err := encodeMessage(messageQueryResponseType, &ack)
+		if err != nil {
+			s.logger.Printf("[ERR] serf: failed to format ack: %v", err)
+		} else {
+			addr := net.UDPAddr{IP: query.Addr, Port: int(query.Port)}
+			if err := s.memberlist.SendTo(&addr, raw); err != nil {
+				s.logger.Printf("[ERR] serf: failed to send ack: %v", err)
+			}
+		}
+	}
+
+	if s.config.EventCh != nil {
+		s.config.EventCh <- Query{
+			LTime:    query.LTime,
+			Name:     query.Name,
+			Payload:  query.Payload,
+			serf:     s,
+			id:       query.ID,
+			addr:     query.Addr,
+			port:     query.Port,
+			deadline: time.Now().Add(query.Timeout),
+		}
+	}
+	return true
+}
+
+// handleResponse is called when a query response is
+// received.
+func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
+	// Look for a corresponding QueryResponse
+	s.queryLock.RLock()
+	query, ok := s.queryResponse[resp.LTime]
+	s.queryLock.RUnlock()
+	if !ok {
+		s.logger.Printf("[WARN] serf: reply for non-running query (LTime: %d, ID: %d) From: %s",
+			resp.LTime, resp.ID, resp.From)
+		return
+	}
+
+	// Verify the ID matches
+	if query.id != resp.ID {
+		s.logger.Printf("[WARN] serf: query reply ID mismatch (Local: %d, Response: %d)",
+			query.id, resp.ID)
+		return
+	}
+
+	// Check if the query is closed
+	if query.Finished() {
+		return
+	}
+
+	// Process each type of response
+	if resp.Ack {
+		metrics.IncrCounter([]string{"serf", "query_acks"}, 1)
+		select {
+		case query.ackCh <- resp.From:
+		default:
+			s.logger.Printf("[WARN] serf: Failed to delivery query ack, dropping")
+		}
+	} else {
+		metrics.IncrCounter([]string{"serf", "query_responses"}, 1)
+		select {
+		case query.respCh <- NodeResponse{From: resp.From, Payload: resp.Payload}:
+		default:
+			s.logger.Printf("[WARN] serf: Failed to delivery query response, dropping")
+		}
+	}
+}
+
 // handleNodeConflict is invoked when a join detects a conflict over a name.
 // This means two different nodes (IP/Port) are claiming the same name. Memberlist
 // will reject the "new" node mapping, but we can still be notified
@@ -1176,10 +1425,11 @@ func (s *Serf) Stats() map[string]string {
 		"members":      toString(uint64(len(s.members))),
 		"failed":       toString(uint64(len(s.failedMembers))),
 		"left":         toString(uint64(len(s.leftMembers))),
-		"member-time":  toString(uint64(s.clock.Time())),
-		"event-time":   toString(uint64(s.eventClock.Time())),
-		"intent-queue": toString(uint64(s.broadcasts.NumQueued())),
-		"event-queue":  toString(uint64(s.eventBroadcasts.NumQueued())),
+		"member_time":  toString(uint64(s.clock.Time())),
+		"event_time":   toString(uint64(s.eventClock.Time())),
+		"intent_queue": toString(uint64(s.broadcasts.NumQueued())),
+		"event_queue":  toString(uint64(s.eventBroadcasts.NumQueued())),
+		"query_queue":  toString(uint64(s.queryBroadcasts.NumQueued())),
 	}
 	return stats
 }

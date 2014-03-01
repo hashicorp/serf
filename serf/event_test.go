@@ -75,6 +75,40 @@ TESTEVENTLOOP:
 
 }
 
+// testQueryEvents tests that the given sequence of queries
+// on the event channel took place.
+func testQueryEvents(t *testing.T, ch <-chan Event, expectedName []string, expectedPayload [][]byte) {
+	actualName := make([]string, 0, len(expectedName))
+	actualPayload := make([][]byte, 0, len(expectedPayload))
+
+TESTEVENTLOOP:
+	for {
+		select {
+		case r, ok := <-ch:
+			if !ok {
+				break TESTEVENTLOOP
+			}
+			q, ok := r.(Query)
+			if !ok {
+				continue
+			}
+
+			actualName = append(actualName, q.Name)
+			actualPayload = append(actualPayload, q.Payload)
+		case <-time.After(10 * time.Millisecond):
+			break TESTEVENTLOOP
+		}
+	}
+
+	if !reflect.DeepEqual(actualName, expectedName) {
+		t.Fatalf("expected names: %v. Got: %v", expectedName, actualName)
+	}
+	if !reflect.DeepEqual(actualPayload, expectedPayload) {
+		t.Fatalf("expected payloads: %v. Got: %v", expectedPayload, actualPayload)
+	}
+
+}
+
 func TestMemberEvent(t *testing.T) {
 	me := MemberEvent{
 		Type:    EventMemberJoin,
@@ -133,11 +167,25 @@ func TestUserEvent(t *testing.T) {
 	}
 }
 
+func TestQuery(t *testing.T) {
+	q := Query{
+		LTime:   42,
+		Name:    "update",
+		Payload: []byte("abcd1234"),
+	}
+	if q.EventType() != EventQuery {
+		t.Fatalf("Bad")
+	}
+	if q.String() != "query: update" {
+		t.Fatalf("bad: %v", q.String())
+	}
+}
+
 func TestEventType_String(t *testing.T) {
 	events := []EventType{EventMemberJoin, EventMemberLeave, EventMemberFailed,
-		EventMemberUpdate, EventUser}
+		EventMemberUpdate, EventUser, EventQuery}
 	expect := []string{"member-join", "member-leave", "member-failed",
-		"member-update", "user"}
+		"member-update", "user", "query"}
 
 	for idx, event := range events {
 		if event.String() != expect[idx] {

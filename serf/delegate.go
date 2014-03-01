@@ -61,6 +61,27 @@ func (d *delegate) NotifyMsg(buf []byte) {
 		rebroadcast = d.serf.handleUserEvent(&event)
 		rebroadcastQueue = d.serf.eventBroadcasts
 
+	case messageQueryType:
+		var query messageQuery
+		if err := decodeMessage(buf[1:], &query); err != nil {
+			d.serf.logger.Printf("[ERR] serf: Error decoding query message: %s", err)
+			break
+		}
+
+		d.serf.logger.Printf("[DEBUG] serf: messageQueryType: %s", query.Name)
+		rebroadcast = d.serf.handleQuery(&query)
+		rebroadcastQueue = d.serf.queryBroadcasts
+
+	case messageQueryResponseType:
+		var resp messageQueryResponse
+		if err := decodeMessage(buf[1:], &resp); err != nil {
+			d.serf.logger.Printf("[ERR] serf: Error decoding query response message: %s", err)
+			break
+		}
+
+		d.serf.logger.Printf("[DEBUG] serf: messageQueryResponseType: %v", resp.From)
+		d.serf.handleQueryResponse(&resp)
+
 	default:
 		d.serf.logger.Printf("[WARN] serf: Received message of unknown type: %d", t)
 	}
@@ -92,9 +113,20 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 	eventMsgs := d.serf.eventBroadcasts.GetBroadcasts(overhead, limit-bytesUsed)
 	if eventMsgs != nil {
 		for _, m := range eventMsgs {
-			metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(len(m)))
+			lm := len(m)
+			bytesUsed += lm + overhead
+			metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(lm))
 		}
 		msgs = append(msgs, eventMsgs...)
+	}
+
+	// Get any additional query broadcasts
+	queryMsgs := d.serf.queryBroadcasts.GetBroadcasts(overhead, limit-bytesUsed)
+	if queryMsgs != nil {
+		for _, m := range queryMsgs {
+			metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(len(m)))
+		}
+		msgs = append(msgs, queryMsgs...)
 	}
 
 	return msgs

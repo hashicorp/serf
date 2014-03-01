@@ -2,6 +2,9 @@ package serf
 
 import (
 	"fmt"
+	"net"
+	"sync"
+	"time"
 )
 
 // EventType are all the types of events that may occur and be sent
@@ -14,6 +17,7 @@ const (
 	EventMemberFailed
 	EventMemberUpdate
 	EventUser
+	EventQuery
 )
 
 func (t EventType) String() string {
@@ -28,6 +32,8 @@ func (t EventType) String() string {
 		return "member-update"
 	case EventUser:
 		return "user"
+	case EventQuery:
+		return "query"
 	default:
 		panic(fmt.Sprintf("unknown event type: %d", t))
 	}
@@ -82,4 +88,71 @@ func (u UserEvent) EventType() EventType {
 
 func (u UserEvent) String() string {
 	return fmt.Sprintf("user-event: %s", u.Name)
+}
+
+// Query is the struct used EventQuery type events
+type Query struct {
+	LTime   LamportTime
+	Name    string
+	Payload []byte
+
+	serf     *Serf
+	id       uint32    // ID is not exported, since it may change
+	addr     []byte    // Address to respond to
+	port     uint16    // Port to respond to
+	deadline time.Time // Must respond by this deadline
+	respLock sync.Mutex
+}
+
+func (q Query) EventType() EventType {
+	return EventQuery
+}
+
+func (q Query) String() string {
+	return fmt.Sprintf("query: %s", q.Name)
+}
+
+// Respond is used to send a response to the user query
+func (q Query) Respond(buf []byte) error {
+	q.respLock.Lock()
+	defer q.respLock.Unlock()
+
+	// Check if we've already responded
+	if q.deadline.IsZero() {
+		return fmt.Errorf("Response already sent")
+	}
+
+	// Ensure we aren't past our response deadline
+	if time.Now().After(q.deadline) {
+		return fmt.Errorf("Response is past the deadline")
+	}
+
+	// Create response
+	resp := messageQueryResponse{
+		LTime:   q.LTime,
+		ID:      q.id,
+		From:    q.serf.config.NodeName,
+		Payload: buf,
+	}
+
+	// Format the response
+	raw, err := encodeMessage(messageQueryResponseType, &resp)
+	if err != nil {
+		return fmt.Errorf("Failed to format response: %v", err)
+	}
+
+	// Check the size limit
+	if len(raw) > QueryResponseSizeLimit {
+		return fmt.Errorf("response exceeds limit of %d bytes", QueryResponseSizeLimit)
+	}
+
+	// Send the response
+	addr := net.UDPAddr{IP: q.addr, Port: int(q.port)}
+	if err := q.serf.memberlist.SendTo(&addr, raw); err != nil {
+		return err
+	}
+
+	// Clera the deadline, response sent
+	q.deadline = time.Time{}
+	return nil
 }
