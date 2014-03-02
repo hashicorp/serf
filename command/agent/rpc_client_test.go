@@ -184,12 +184,10 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	err = client.UpdateTags(map[string]string{"tag1": "val1"}, []string{})
-	if err != nil {
-		t.Fatalf("bad: %s", err)
-	}
-
-	err = client.UpdateTags(map[string]string{"tag2": "val2"}, []string{})
+	err = client.UpdateTags(map[string]string{
+		"tag1": "val1",
+		"tag2": "val2",
+	}, []string{})
 	if err != nil {
 		t.Fatalf("bad: %s", err)
 	}
