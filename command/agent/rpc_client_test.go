@@ -177,33 +177,36 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
+	testutil.Yield()
+
 	_, err := client.Join([]string{a2.conf.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	testutil.Yield()
-
-	// Make sure that filters work on member tags
 	err = client.UpdateTags(map[string]string{"tag1": "val1"}, []string{})
 	if err != nil {
 		t.Fatalf("bad: %s", err)
 	}
 
-	mem, err := client.MembersFiltered(map[string]string{"tag1": "val.*"}, "")
-	if err != nil {
-		t.Fatalf("bad: %s", err)
-	}
-	if len(mem) != 1 {
-		t.Fatalf("should have matched 1 member: %#v", mem)
-	}
-
-	// Make sure tag filters work on multiple tags
 	err = client.UpdateTags(map[string]string{"tag2": "val2"}, []string{})
 	if err != nil {
 		t.Fatalf("bad: %s", err)
 	}
 
+	testutil.Yield()
+
+	// Make sure that filters work on member tags
+	mem, err := client.MembersFiltered(map[string]string{"tag1": "val.*"}, "")
+	if err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+
+	if len(mem) != 1 {
+		t.Fatalf("should have matched 1 member: %#v", mem)
+	}
+
+	// Make sure tag filters work on multiple tags
 	mem, err = client.MembersFiltered(map[string]string{
 		"tag1": "val.*",
 		"tag2": "val2",
