@@ -22,9 +22,13 @@ func (m *MockStreamClient) Send(h *responseHeader, o interface{}) error {
 	return m.err
 }
 
+func (m *MockStreamClient) RegisterQuery(q *serf.Query) uint64 {
+	return 42
+}
+
 func TestIPCEventStream(t *testing.T) {
 	sc := &MockStreamClient{}
-	filters := ParseEventFilter("user:foobar,member-join")
+	filters := ParseEventFilter("user:foobar,member-join,query:deploy")
 	es := newEventStream(sc, filters, 42, log.New(os.Stderr, "", log.LstdFlags))
 	defer es.Stop()
 
@@ -58,10 +62,15 @@ func TestIPCEventStream(t *testing.T) {
 			},
 		},
 	})
+	es.HandleEvent(&serf.Query{
+		LTime:   125,
+		Name:    "deploy",
+		Payload: []byte("test"),
+	})
 
 	time.Sleep(5 * time.Millisecond)
 
-	if len(sc.headers) != 2 {
+	if len(sc.headers) != 3 {
 		t.Fatalf("expected 2 messages!")
 	}
 	for _, h := range sc.headers {
@@ -125,4 +134,22 @@ func TestIPCEventStream(t *testing.T) {
 	if mem1.DelegateCur != 0 {
 		t.Fatalf("bad member: %#v", mem1)
 	}
+
+	obj3 := sc.objs[2].(*queryEventRecord)
+	if obj3.Event != "query" {
+		t.Fatalf("bad query: %#v", obj3)
+	}
+	if obj3.ID != 42 {
+		t.Fatalf("bad query: %#v", obj3)
+	}
+	if obj3.LTime != 125 {
+		t.Fatalf("bad query: %#v", obj3)
+	}
+	if obj3.Name != "deploy" {
+		t.Fatalf("bad query: %#v", obj3)
+	}
+	if bytes.Compare(obj3.Payload, []byte("test")) != 0 {
+		t.Fatalf("bad query: %#v", obj3)
+	}
+
 }

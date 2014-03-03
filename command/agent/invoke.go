@@ -68,7 +68,7 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 		cmd.Env = append(cmd.Env, "SERF_USER_EVENT="+e.Name)
 		cmd.Env = append(cmd.Env, fmt.Sprintf("SERF_USER_LTIME=%d", e.LTime))
 		go streamPayload(logger, stdin, e.Payload)
-	case serf.Query:
+	case *serf.Query:
 		cmd.Env = append(cmd.Env, "SERF_QUERY_NAME="+e.Name)
 		cmd.Env = append(cmd.Env, fmt.Sprintf("SERF_QUERY_LTIME=%d", e.LTime))
 		go streamPayload(logger, stdin, e.Payload)
@@ -81,14 +81,14 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 	}
 
 	err = cmd.Wait()
-	logger.Printf("[DEBUG] agent: Event '%s' script output: %s, err: %v",
+	logger.Printf("[DEBUG] agent: Event '%s' script output: %s",
 		event.EventType().String(), output.String())
 	if err != nil {
 		return err
 	}
 
 	// If this is a query and we have output, respond
-	if query, ok := event.(serf.Query); ok && len(output.Bytes()) > 0 {
+	if query, ok := event.(*serf.Query); ok && len(output.Bytes()) > 0 {
 		if err := query.Respond(output.Bytes()); err != nil {
 			logger.Printf("[WARN] agent: Failed to respond to query '%s': %s",
 				event.String(), err)

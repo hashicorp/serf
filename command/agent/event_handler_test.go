@@ -172,7 +172,7 @@ func TestScriptQueryEventHandler(t *testing.T) {
 		},
 	}
 
-	query := serf.Query{
+	query := &serf.Query{
 		LTime:   42,
 		Name:    "uptime",
 		Payload: []byte("load average"),
@@ -229,17 +229,17 @@ func TestEventScriptInvoke(t *testing.T) {
 		},
 		{
 			EventScript{EventFilter{"query", "deploy"}, "script.sh"},
-			serf.Query{Name: "deploy"},
+			&serf.Query{Name: "deploy"},
 			true,
 		},
 		{
 			EventScript{EventFilter{"query", "uptime"}, "script.sh"},
-			serf.Query{Name: "deploy"},
+			&serf.Query{Name: "deploy"},
 			false,
 		},
 		{
 			EventScript{EventFilter{"query", ""}, "script.sh"},
-			serf.Query{Name: "deploy"},
+			&serf.Query{Name: "deploy"},
 			true,
 		},
 	}

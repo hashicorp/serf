@@ -87,7 +87,7 @@ func (s *EventFilter) Invoke(e serf.Event) bool {
 	}
 
 	if s.Event == "query" && s.Name != "" {
-		query, ok := e.(serf.Query)
+		query, ok := e.(*serf.Query)
 		if !ok {
 			return false
 		}

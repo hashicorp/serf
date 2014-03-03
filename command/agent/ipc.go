@@ -35,6 +35,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -162,6 +163,14 @@ type userEventRecord struct {
 	Coalesce bool
 }
 
+type queryEventRecord struct {
+	Event   string
+	ID      uint64 // ID is opaque to client, used to respond
+	LTime   serf.LamportTime
+	Name    string
+	Payload []byte
+}
+
 type Member struct {
 	Name        string
 	Addr        net.IP
@@ -193,6 +202,7 @@ type AgentIPC struct {
 }
 
 type IPCClient struct {
+	queryID      uint64 // Used to increment query IDs
 	name         string
 	conn         net.Conn
 	reader       *bufio.Reader
@@ -203,6 +213,9 @@ type IPCClient struct {
 	version      int32 // From the handshake, 0 before
 	logStreamer  *logStream
 	eventStreams map[uint64]*eventStream
+
+	pendingQueries map[uint64]*serf.Query
+	queryLock      sync.Mutex
 }
 
 // send is used to send an object using the MsgPack encoding. send
@@ -230,6 +243,37 @@ func (c *IPCClient) Send(header *responseHeader, obj interface{}) error {
 
 func (c *IPCClient) String() string {
 	return fmt.Sprintf("ipc.client: %v", c.conn)
+}
+
+// nextQueryID safely generates a new query ID
+func (c *IPCClient) nextQueryID() uint64 {
+	return atomic.AddUint64(&c.queryID, 1)
+}
+
+// RegisterQuery is used to register a pending query that may
+// get a response. The ID of the query is returned
+func (c IPCClient) RegisterQuery(q *serf.Query) uint64 {
+	// Generate a unique-per-client ID
+	id := c.nextQueryID()
+
+	// Ensure the query deadline is in the future
+	timeout := q.Deadline().Sub(time.Now())
+	if timeout < 0 {
+		return id
+	}
+
+	// Register the query
+	c.queryLock.Lock()
+	c.pendingQueries[id] = q
+	c.queryLock.Unlock()
+
+	// Setup a timer to deregister after the timeout
+	time.AfterFunc(timeout, func() {
+		c.queryLock.Lock()
+		delete(c.pendingQueries, id)
+		c.queryLock.Unlock()
+	})
+	return id
 }
 
 // NewAgentIPC is used to create a new Agent IPC handler
@@ -285,11 +329,12 @@ func (i *AgentIPC) listen() {
 
 		// Wrap the connection in a client
 		client := &IPCClient{
-			name:         conn.RemoteAddr().String(),
-			conn:         conn,
-			reader:       bufio.NewReader(conn),
-			writer:       bufio.NewWriter(conn),
-			eventStreams: make(map[uint64]*eventStream),
+			name:           conn.RemoteAddr().String(),
+			conn:           conn,
+			reader:         bufio.NewReader(conn),
+			writer:         bufio.NewWriter(conn),
+			eventStreams:   make(map[uint64]*eventStream),
+			pendingQueries: make(map[uint64]*serf.Query),
 		}
 		client.dec = codec.NewDecoder(client.reader,
 			&codec.MsgpackHandle{RawToString: true, WriteExt: true})

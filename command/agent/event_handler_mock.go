@@ -22,12 +22,12 @@ func (h *MockEventHandler) HandleEvent(e serf.Event) {
 // it always responds to a query with a given response
 type MockQueryHandler struct {
 	Response []byte
-	Queries  []serf.Query
+	Queries  []*serf.Query
 	sync.Mutex
 }
 
 func (h *MockQueryHandler) HandleEvent(e serf.Event) {
-	query, ok := e.(serf.Query)
+	query, ok := e.(*serf.Query)
 	if !ok {
 		return
 	}
