@@ -109,6 +109,17 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 		metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(lm))
 	}
 
+	// Get any additional query broadcasts
+	queryMsgs := d.serf.queryBroadcasts.GetBroadcasts(overhead, limit-bytesUsed)
+	if queryMsgs != nil {
+		for _, m := range queryMsgs {
+			lm := len(m)
+			bytesUsed += lm + overhead
+			metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(lm))
+		}
+		msgs = append(msgs, queryMsgs...)
+	}
+
 	// Get any additional event broadcasts
 	eventMsgs := d.serf.eventBroadcasts.GetBroadcasts(overhead, limit-bytesUsed)
 	if eventMsgs != nil {
@@ -118,15 +129,6 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 			metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(lm))
 		}
 		msgs = append(msgs, eventMsgs...)
-	}
-
-	// Get any additional query broadcasts
-	queryMsgs := d.serf.queryBroadcasts.GetBroadcasts(overhead, limit-bytesUsed)
-	if queryMsgs != nil {
-		for _, m := range queryMsgs {
-			metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(len(m)))
-		}
-		msgs = append(msgs, queryMsgs...)
 	}
 
 	return msgs
