@@ -57,6 +57,7 @@ const (
 	leaveCommand           = "leave"
 	tagsCommand            = "tags"
 	queryCommand           = "query"
+	respondCommand         = "respond"
 )
 
 const (
@@ -67,6 +68,7 @@ const (
 	monitorExists         = "Monitor already exists"
 	invalidFilter         = "Invalid event filter"
 	streamExists          = "Stream with given sequence exists"
+	invalidQueryID        = "No pending queries matching ID"
 )
 
 const (
@@ -143,6 +145,11 @@ type queryRequest struct {
 	Timeout     time.Duration
 	Name        string
 	Payload     []byte
+}
+
+type respondRequest struct {
+	ID       uint64
+	Response []byte
 }
 
 type queryRecord struct {
@@ -450,6 +457,9 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 
 	case queryCommand:
 		return i.handleQuery(client, seq)
+
+	case respondCommand:
+		return i.handleRespond(client, seq)
 
 	default:
 		respHeader := responseHeader{Seq: seq, Error: unsupportedCommand}
@@ -797,6 +807,33 @@ func (i *AgentIPC) handleQuery(client *IPCClient, seq uint64) error {
 		defer func() {
 			go qs.Stream(queryResp)
 		}()
+	}
+
+	// Respond
+	resp := responseHeader{
+		Seq:   seq,
+		Error: errToString(err),
+	}
+	return client.Send(&resp, nil)
+}
+
+func (i *AgentIPC) handleRespond(client *IPCClient, seq uint64) error {
+	var req respondRequest
+	if err := client.dec.Decode(&req); err != nil {
+		return fmt.Errorf("decode failed: %v", err)
+	}
+
+	// Lookup the query
+	client.queryLock.Lock()
+	query, ok := client.pendingQueries[req.ID]
+	client.queryLock.Unlock()
+
+	// Respond if we have a pending query
+	var err error
+	if ok {
+		err = query.Respond(req.Response)
+	} else {
+		err = fmt.Errorf(invalidQueryID)
 	}
 
 	// Respond
