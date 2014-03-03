@@ -10,16 +10,17 @@ const (
 )
 
 const (
-	handshakeCommand  = "handshake"
-	eventCommand      = "event"
-	forceLeaveCommand = "force-leave"
-	joinCommand       = "join"
-	membersCommand    = "members"
-	streamCommand     = "stream"
-	stopCommand       = "stop"
-	monitorCommand    = "monitor"
-	leaveCommand      = "leave"
-	tagsCommand       = "tags"
+	handshakeCommand       = "handshake"
+	eventCommand           = "event"
+	forceLeaveCommand      = "force-leave"
+	joinCommand            = "join"
+	membersCommand         = "members"
+	membersFilteredCommand = "members-filtered"
+	streamCommand          = "stream"
+	stopCommand            = "stop"
+	monitorCommand         = "monitor"
+	leaveCommand           = "leave"
+	tagsCommand            = "tags"
 )
 
 const (
@@ -65,6 +66,11 @@ type joinRequest struct {
 
 type joinResponse struct {
 	Num int32
+}
+
+type membersFilteredRequest struct {
+	Tags   map[string]string
+	Status string
 }
 
 type membersResponse struct {

@@ -169,6 +169,22 @@ func (c *RPCClient) Members() ([]Member, error) {
 	return resp.Members, err
 }
 
+// MembersFiltered returns a subset of members filtered by tags or status
+func (c *RPCClient) MembersFiltered(tags map[string]string, status string) ([]Member, error) {
+	header := requestHeader{
+		Command: membersFilteredCommand,
+		Seq:     c.getSeq(),
+	}
+	req := membersFilteredRequest{
+		Tags:   tags,
+		Status: status,
+	}
+	var resp membersResponse
+
+	err := c.genericRPC(&header, &req, &resp)
+	return resp.Members, err
+}
+
 // UserEvent is used to trigger sending an event
 func (c *RPCClient) UserEvent(name string, payload []byte, coalesce bool) error {
 	header := requestHeader{

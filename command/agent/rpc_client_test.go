@@ -161,6 +161,101 @@ func TestRPCClientMembers(t *testing.T) {
 	}
 }
 
+func TestRPCClientMembersFiltered(t *testing.T) {
+	client, a1, ipc := testRPCClient(t)
+	a2 := testAgent(nil)
+	defer ipc.Shutdown()
+	defer client.Close()
+	defer a1.Shutdown()
+	defer a2.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if err := a2.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	_, err := client.Join([]string{a2.conf.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	err = client.UpdateTags(map[string]string{
+		"tag1": "val1",
+		"tag2": "val2",
+	}, []string{})
+	if err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Make sure that filters work on member tags
+	mem, err := client.MembersFiltered(map[string]string{"tag1": "val.*"}, "")
+	if err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+
+	if len(mem) != 1 {
+		t.Fatalf("should have matched 1 member: %#v", mem)
+	}
+
+	// Make sure tag filters work on multiple tags
+	mem, err = client.MembersFiltered(map[string]string{
+		"tag1": "val.*",
+		"tag2": "val2",
+	}, "")
+
+	if err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+
+	if len(mem) != 1 {
+		t.Fatalf("should have matched one member: %#v", mem)
+	}
+
+	// Make sure all tags match when multiple tags are passed
+	mem, err = client.MembersFiltered(map[string]string{
+		"tag1": "val1",
+		"tag2": "bad",
+	}, "")
+
+	if err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+
+	if len(mem) != 0 {
+		t.Fatalf("should have matched 0 members: %#v", mem)
+	}
+
+	// Make sure that filters work on member status
+	if err := client.ForceLeave(a2.conf.NodeName); err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+
+	mem, err = client.MembersFiltered(map[string]string{}, "alive")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if len(mem) != 1 {
+		t.Fatalf("should have matched 1 member: %#v", mem)
+	}
+
+	mem, err = client.MembersFiltered(map[string]string{}, "leaving")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if len(mem) != 1 {
+		t.Fatalf("should have matched 1 member: %#v", mem)
+	}
+}
+
 func TestRPCClientUserEvent(t *testing.T) {
 	client, a1, ipc := testRPCClient(t)
 	defer ipc.Shutdown()

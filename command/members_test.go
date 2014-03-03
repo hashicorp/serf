@@ -40,7 +40,7 @@ func TestMembersCommandRun_statusFilter(t *testing.T) {
 	c := &MembersCommand{Ui: ui}
 	args := []string{
 		"-rpc-addr=" + rpcAddr,
-		"-status=a.*e",
+		"-status=alive",
 	}
 
 	code := c.Run(args)
@@ -63,7 +63,7 @@ func TestMembersCommandRun_statusFilter_failed(t *testing.T) {
 	c := &MembersCommand{Ui: ui}
 	args := []string{
 		"-rpc-addr=" + rpcAddr,
-		"-status=(fail|left)",
+		"-status=(failed|left)",
 	}
 
 	code := c.Run(args)
