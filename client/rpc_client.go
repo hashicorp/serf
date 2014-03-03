@@ -222,6 +222,20 @@ func (c *RPCClient) UpdateTags(tags map[string]string, delTags []string) error {
 	return c.genericRPC(&header, &req, nil)
 }
 
+// Respond allows a client to respond to a query event. The ID is the
+// ID of the Query to respond to, and the given payload is the response.
+func (c *RPCClient) Respond(id uint64, buf []byte) error {
+	header := requestHeader{
+		Command: respondCommand,
+		Seq:     c.getSeq(),
+	}
+	req := respondRequest{
+		ID:       id,
+		Response: buf,
+	}
+	return c.genericRPC(&header, &req, nil)
+}
+
 type monitorHandler struct {
 	client *RPCClient
 	closed bool

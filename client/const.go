@@ -23,6 +23,7 @@ const (
 	leaveCommand           = "leave"
 	tagsCommand            = "tags"
 	queryCommand           = "query"
+	respondCommand         = "respond"
 )
 
 const (
@@ -33,6 +34,7 @@ const (
 	monitorExists         = "Monitor already exists"
 	invalidFilter         = "Invalid event filter"
 	streamExists          = "Stream with given sequence exists"
+	invalidQueryID        = "No pending queries matching ID"
 )
 
 const (
@@ -109,6 +111,11 @@ type queryRequest struct {
 	Timeout     time.Duration
 	Name        string
 	Payload     []byte
+}
+
+type respondRequest struct {
+	ID       uint64
+	Response []byte
 }
 
 type queryRecord struct {
