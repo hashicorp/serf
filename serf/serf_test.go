@@ -1131,7 +1131,7 @@ func TestSerf_Query(t *testing.T) {
 				if e.EventType() != EventQuery {
 					continue
 				}
-				q := e.(Query)
+				q := e.(*Query)
 				if err := q.Respond([]byte("test")); err != nil {
 					t.Fatalf("err: %s", err)
 				}
@@ -1214,7 +1214,7 @@ func TestSerf_Query_Filter(t *testing.T) {
 				if e.EventType() != EventQuery {
 					continue
 				}
-				q := e.(Query)
+				q := e.(*Query)
 				if err := q.Respond([]byte("test")); err != nil {
 					t.Fatalf("err: %s", err)
 				}

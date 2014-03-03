@@ -34,7 +34,7 @@ func TestSnapshoter(t *testing.T) {
 	inCh <- ue
 
 	// Write some queries
-	q := Query{
+	q := &Query{
 		LTime: 50,
 		Name:  "uptime",
 	}
@@ -175,7 +175,7 @@ func TestSnapshoter_forceCompact(t *testing.T) {
 
 	// Write lots of queries
 	for i := 0; i < 1024; i++ {
-		q := Query{
+		q := &Query{
 			LTime: LamportTime(i),
 		}
 		inCh <- q
@@ -235,7 +235,7 @@ func TestSnapshoter_leave(t *testing.T) {
 	inCh <- ue
 
 	// Write a query
-	q := Query{
+	q := &Query{
 		LTime: 50,
 		Name:  "uptime",
 	}

@@ -1147,7 +1147,7 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 	}
 
 	if s.config.EventCh != nil {
-		s.config.EventCh <- Query{
+		s.config.EventCh <- &Query{
 			LTime:    query.LTime,
 			Name:     query.Name,
 			Payload:  query.Payload,

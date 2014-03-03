@@ -185,7 +185,7 @@ func (s *Snapshotter) stream() {
 				s.processMemberEvent(typed)
 			case UserEvent:
 				s.processUserEvent(typed)
-			case Query:
+			case *Query:
 				s.processQuery(typed)
 			default:
 				s.logger.Printf("[ERR] serf: Unknown event to snapshot: %#v", e)
@@ -248,7 +248,7 @@ func (s *Snapshotter) processUserEvent(e UserEvent) {
 }
 
 // processQuery is used to handle a single query event
-func (s *Snapshotter) processQuery(q Query) {
+func (s *Snapshotter) processQuery(q *Query) {
 	// Ignore old clocks
 	if q.LTime <= s.lastQueryClock {
 		return

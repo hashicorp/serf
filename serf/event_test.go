@@ -88,7 +88,7 @@ TESTEVENTLOOP:
 			if !ok {
 				break TESTEVENTLOOP
 			}
-			q, ok := r.(Query)
+			q, ok := r.(*Query)
 			if !ok {
 				continue
 			}
