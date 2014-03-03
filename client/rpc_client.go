@@ -230,8 +230,8 @@ func (c *RPCClient) Respond(id uint64, buf []byte) error {
 		Seq:     c.getSeq(),
 	}
 	req := respondRequest{
-		ID:       id,
-		Response: buf,
+		ID:      id,
+		Payload: buf,
 	}
 	return c.genericRPC(&header, &req, nil)
 }

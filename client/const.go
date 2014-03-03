@@ -114,8 +114,8 @@ type queryRequest struct {
 }
 
 type respondRequest struct {
-	ID       uint64
-	Response []byte
+	ID      uint64
+	Payload []byte
 }
 
 type queryRecord struct {

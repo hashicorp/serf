@@ -148,8 +148,8 @@ type queryRequest struct {
 }
 
 type respondRequest struct {
-	ID       uint64
-	Response []byte
+	ID      uint64
+	Payload []byte
 }
 
 type queryRecord struct {
@@ -831,7 +831,7 @@ func (i *AgentIPC) handleRespond(client *IPCClient, seq uint64) error {
 	// Respond if we have a pending query
 	var err error
 	if ok {
-		err = query.Respond(req.Response)
+		err = query.Respond(req.Payload)
 	} else {
 		err = fmt.Errorf(invalidQueryID)
 	}
