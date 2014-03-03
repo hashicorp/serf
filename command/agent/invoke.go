@@ -81,8 +81,11 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 	}
 
 	err = cmd.Wait()
-	logger.Printf("[DEBUG] agent: Event '%s' script output: %s",
+	logger.Printf("[DEBUG] agent: Event '%s' script output: %s, err: %v",
 		event.EventType().String(), output.String())
+	if err != nil {
+		return err
+	}
 
 	// If this is a query and we have output, respond
 	if query, ok := event.(serf.Query); ok && len(output.Bytes()) > 0 {
@@ -90,10 +93,6 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 			logger.Printf("[WARN] agent: Failed to respond to query '%s': %s",
 				event.String(), err)
 		}
-	}
-
-	if err != nil {
-		return err
 	}
 
 	return nil
