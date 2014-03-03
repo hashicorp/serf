@@ -105,7 +105,7 @@ func newQueryResponse(n int, q *messageQuery) *QueryResponse {
 		lTime:    q.LTime,
 		respCh:   make(chan NodeResponse, n),
 	}
-	if q.Ack {
+	if q.Ack() {
 		resp.ackCh = make(chan string, n)
 	}
 	return resp

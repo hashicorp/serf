@@ -5,6 +5,15 @@ import (
 	"testing"
 )
 
+func TestQueryFlags(t *testing.T) {
+	if queryFlagAck != 1 {
+		t.Fatalf("Bad: %v", queryFlagAck)
+	}
+	if queryFlagNoBroadcast != 2 {
+		t.Fatalf("Bad: %v", queryFlagNoBroadcast)
+	}
+}
+
 func TestEncodeMessage(t *testing.T) {
 	in := &messageLeave{Node: "foo"}
 	raw, err := encodeMessage(messageLeaveType, in)
