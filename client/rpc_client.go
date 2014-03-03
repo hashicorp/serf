@@ -259,7 +259,9 @@ func (mh *monitorHandler) Cleanup() {
 			mh.init = true
 			mh.initCh <- fmt.Errorf("Stream closed")
 		}
-		close(mh.logCh)
+		if mh.logCh != nil {
+			close(mh.logCh)
+		}
 		mh.closed = true
 	}
 }
@@ -339,7 +341,9 @@ func (sh *streamHandler) Cleanup() {
 			sh.init = true
 			sh.initCh <- fmt.Errorf("Stream closed")
 		}
-		close(sh.eventCh)
+		if sh.eventCh != nil {
+			close(sh.eventCh)
+		}
 		sh.closed = true
 	}
 }
@@ -438,8 +442,12 @@ func (qh *queryHandler) Cleanup() {
 			qh.init = true
 			qh.initCh <- fmt.Errorf("Stream closed")
 		}
-		close(qh.ackCh)
-		close(qh.respCh)
+		if qh.ackCh != nil {
+			close(qh.ackCh)
+		}
+		if qh.respCh != nil {
+			close(qh.respCh)
+		}
 		qh.closed = true
 	}
 }
