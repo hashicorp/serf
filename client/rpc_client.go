@@ -9,6 +9,7 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 var (
@@ -378,6 +379,127 @@ func (c *RPCClient) Stream(filter string, ch chan<- map[string]interface{}) (Str
 	case <-c.shutdownCh:
 		c.deregisterHandler(seq)
 		return 0, clientClosed
+	}
+}
+
+type queryHandler struct {
+	client *RPCClient
+	closed bool
+	init   bool
+	initCh chan<- error
+	ackCh  chan<- string
+	respCh chan<- NodeResponse
+	seq    uint64
+}
+
+func (qh *queryHandler) Handle(resp *responseHeader) {
+	// Initialize on the first response
+	if !qh.init {
+		qh.init = true
+		qh.initCh <- strToError(resp.Error)
+		return
+	}
+
+	// Decode the query response
+	var rec queryRecord
+	if err := qh.client.dec.Decode(&rec); err != nil {
+		log.Printf("[ERR] Failed to decode query response: %v", err)
+		qh.client.deregisterHandler(qh.seq)
+		return
+	}
+
+	switch rec.Type {
+	case queryRecordAck:
+		select {
+		case qh.ackCh <- rec.From:
+		default:
+			log.Printf("[ERR] Dropping query ack, channel full")
+		}
+
+	case queryRecordResponse:
+		select {
+		case qh.respCh <- NodeResponse{rec.From, rec.Payload}:
+		default:
+			log.Printf("[ERR] Dropping query response, channel full")
+		}
+
+	case queryRecordDone:
+		// No further records coming
+		qh.client.deregisterHandler(qh.seq)
+
+	default:
+		log.Printf("[ERR] Unrecognized query record type: %s", rec.Type)
+	}
+}
+
+func (qh *queryHandler) Cleanup() {
+	if !qh.closed {
+		if !qh.init {
+			qh.init = true
+			qh.initCh <- fmt.Errorf("Stream closed")
+		}
+		close(qh.ackCh)
+		close(qh.respCh)
+		qh.closed = true
+	}
+}
+
+// QueryParam is provided to query set various settings.
+type QueryParam struct {
+	FilterNodes []string            // A list of node names to restrict query to
+	FilterTags  map[string]string   // A map of tag name to regex to filter on
+	RequestAck  bool                // Should nodes ack the query receipt
+	Timeout     time.Duration       // Maximum query duration. Optional, will be set automatically.
+	Name        string              // Opaque query name
+	Payload     []byte              // Opaque query payload
+	AckCh       chan<- string       // Channel to send Ack replies on
+	RespCh      chan<- NodeResponse // Channel to send responses on
+}
+
+// Query initiates a new query message using the given parameters, and streams
+// acks and responses over the given channels. The channels will not block on
+// sends and should be buffered. At the end of the query, the channels will be
+// closed.
+func (c *RPCClient) Query(params *QueryParam) error {
+	// Setup the request
+	seq := c.getSeq()
+	header := requestHeader{
+		Command: queryCommand,
+		Seq:     seq,
+	}
+	req := queryRequest{
+		FilterNodes: params.FilterNodes,
+		FilterTags:  params.FilterTags,
+		RequestAck:  params.RequestAck,
+		Timeout:     params.Timeout,
+		Name:        params.Name,
+		Payload:     params.Payload,
+	}
+
+	// Create a query handler
+	initCh := make(chan error, 1)
+	handler := &queryHandler{
+		client: c,
+		initCh: initCh,
+		ackCh:  params.AckCh,
+		respCh: params.RespCh,
+		seq:    seq,
+	}
+	c.handleSeq(seq, handler)
+
+	// Send the request
+	if err := c.send(&header, &req); err != nil {
+		c.deregisterHandler(seq)
+		return err
+	}
+
+	// Wait for a response
+	select {
+	case err := <-initCh:
+		return err
+	case <-c.shutdownCh:
+		c.deregisterHandler(seq)
+		return clientClosed
 	}
 }
 

@@ -3,6 +3,7 @@ package client
 import (
 	"github.com/hashicorp/serf/serf"
 	"net"
+	"time"
 )
 
 const (
@@ -21,6 +22,7 @@ const (
 	monitorCommand         = "monitor"
 	leaveCommand           = "leave"
 	tagsCommand            = "tags"
+	queryCommand           = "query"
 )
 
 const (
@@ -31,6 +33,12 @@ const (
 	monitorExists         = "Monitor already exists"
 	invalidFilter         = "Invalid event filter"
 	streamExists          = "Stream with given sequence exists"
+)
+
+const (
+	queryRecordAck      = "ack"
+	queryRecordResponse = "response"
+	queryRecordDone     = "done"
 )
 
 // Request header is sent before each request
@@ -92,6 +100,27 @@ type stopRequest struct {
 type tagsRequest struct {
 	Tags       map[string]string
 	DeleteTags []string
+}
+
+type queryRequest struct {
+	FilterNodes []string
+	FilterTags  map[string]string
+	RequestAck  bool
+	Timeout     time.Duration
+	Name        string
+	Payload     []byte
+}
+
+type queryRecord struct {
+	Type    string
+	From    string
+	Payload []byte
+}
+
+// NodeResponse is used to return the response of a query
+type NodeResponse struct {
+	From    string
+	Payload []byte
 }
 
 type logRecord struct {
