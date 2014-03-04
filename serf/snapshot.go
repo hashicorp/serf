@@ -419,6 +419,7 @@ func (s *Snapshotter) replay() error {
 			s.aliveNodes = make(map[string]string)
 			s.lastClock = 0
 			s.lastEventClock = 0
+			s.lastQueryClock = 0
 
 		} else if strings.HasPrefix(line, "#") {
 			// Skip comment lines
