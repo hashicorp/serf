@@ -1,3 +1,19 @@
+## 0.5.0 (Unreleased)
+
+FEATURES:
+
+ * New `query` command provides a request/response mechanism to do realtime
+ queries across the cluster. [GH-139]
+
+IMPROVEMENTS:
+
+ * New RPC command "members-filtered" to move filtering logic to the agent.
+ Thanks to @ryanuber. [GH-149]
+
+BUG FIXES:
+
+ * Event handlers are correctly invoked when BusyBox is the shell. [GH-156]
+
 ## 0.4.5 (Febuary 25, 2014)
 
 FEATURES:
