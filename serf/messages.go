@@ -59,6 +59,7 @@ type messagePushPull struct {
 	LeftMembers  []string               // List of left nodes
 	EventLTime   LamportTime            // Lamport time for event clock
 	Events       []*userEvents          // Recent events
+	QueryLTime   LamportTime            // Lamport time for query clock
 }
 
 // messageUserEvent is used for user-generated events

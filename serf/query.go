@@ -120,8 +120,12 @@ func (r *QueryResponse) Close() {
 		return
 	}
 	r.closed = true
-	close(r.ackCh)
-	close(r.respCh)
+	if r.ackCh != nil {
+		close(r.ackCh)
+	}
+	if r.respCh != nil {
+		close(r.respCh)
+	}
 }
 
 // Deadline returns the ending deadline of the query

@@ -147,6 +147,7 @@ func (d *delegate) LocalState(join bool) []byte {
 		LeftMembers:  make([]string, 0, len(d.serf.leftMembers)),
 		EventLTime:   d.serf.eventClock.Time(),
 		Events:       d.serf.eventBuffer,
+		QueryLTime:   d.serf.queryClock.Time(),
 	}
 
 	// Add all the join LTimes
@@ -186,6 +187,7 @@ func (d *delegate) MergeRemoteState(buf []byte, isJoin bool) {
 	// We subtract 1 since no message with that clock has been sent yet
 	d.serf.clock.Witness(pp.LTime - 1)
 	d.serf.eventClock.Witness(pp.EventLTime - 1)
+	d.serf.queryClock.Witness(pp.QueryLTime - 1)
 
 	// Process the left nodes first to avoid the LTimes from being increment
 	// in the wrong order

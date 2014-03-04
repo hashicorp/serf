@@ -87,6 +87,11 @@ func TestDelegate_LocalState(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
+	_, err = s1.Query("foo", nil, nil)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
 	// s2 can leave now
 	s2.Leave()
 
@@ -126,6 +131,10 @@ func TestDelegate_LocalState(t *testing.T) {
 	if len(pp.Events) != s1.config.EventBuffer {
 		t.Fatalf("should send full event buffer")
 	}
+
+	if pp.QueryLTime != s1.queryClock.Time() {
+		t.Fatalf("clock mismatch")
+	}
 }
 
 // internals
@@ -160,6 +169,7 @@ func TestDelegate_MergeRemoteState(t *testing.T) {
 				},
 			},
 		},
+		QueryLTime: 100,
 	}
 
 	buf, err := encodeMessage(messagePushPullType, &pp)
@@ -195,5 +205,9 @@ func TestDelegate_MergeRemoteState(t *testing.T) {
 	}
 	if s1.eventBuffer[45].Events[0].Name != "test" {
 		t.Fatalf("missing event")
+	}
+
+	if s1.queryClock.Time() != 100 {
+		t.Fatalf("bad query clock")
 	}
 }
