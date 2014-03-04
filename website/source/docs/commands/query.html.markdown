@@ -16,6 +16,9 @@ Example use cases of queries are to request load average, ask for the
 version of an app that is deployed, or to trigger deploys across web nodes
 by sending a "deploy" query, possibly with a commit payload.
 
+The command will wait until the query finishes (by reaching a timeout) and
+will report all acknowledgements and responses that are received.
+
 The open ended nature of `serf query` allows you to send and respond to
 queries in _any way_ you want.
 

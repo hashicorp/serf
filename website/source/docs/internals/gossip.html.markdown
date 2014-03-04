@@ -64,7 +64,7 @@ The changes from SWIM are noted here:
 * Serf does a full state sync over TCP periodically. SWIM only propagates
   changes over gossip. While both are eventually consistent, Serf is able to
   more quickly reach convergence, as well as gracefully recover from network
-  partitions.
+  partitions. This is
 
 * Serf has a dedicated gossip layer separate from the failure detection
   protocol. SWIM only piggybacks gossip messages on top of probe/ack messages.
@@ -97,7 +97,7 @@ When a node joins the cluster, Serf sends a _join intent_. The purpose
 of this intent is solely to attach a lamport clock time to a join so that
 it can be ordered properly in case a leave comes out of order.
 
-For custom events, Serf sends a _user event_ message. This message contains
-a lamport time, event name, and event payload. Because user events are sent
-along the gossip layer, which uses UDP, the payload and entire message framing
+For custom events and queries, Serf sends either a _user event_,
+or _user query_ message. This message contains a lamport time, event name, and event payload.
+Because user events are sent along the gossip layer, which uses UDP, the payload and entire message framing
 must fit within a single UDP packet.
