@@ -10,7 +10,7 @@ At this point you should know [what Serf is](/intro/index.html) and
 the high-level features Serf provides. This page lists a handful of
 concrete use cases of Serf. Note that this list is not exhaustive by
 any means. Serf is a general purpose tool and has infinitely many more
-use cases. But this list should give you a good idea of how Serf 
+use cases. But this list should give you a good idea of how Serf
 might be useful to you.
 
 It is important to remember that all the use cases available below
@@ -46,6 +46,14 @@ By using Serf, the DNS server can know within seconds when nodes join,
 leave, or fail, and can update records appropriately. No more stale DNS
 records, or waiting for a Chef or Puppet run to clear out the records
 within X minutes. With Serf, the records can be updated nearly instantly.
+
+#### Simple Observability
+
+Serf provider queries which can be used as a simple request/response
+mechanism. It can be used very simply to provide cluster and application
+observability. Calling `serf query load` can trigger all the nodes to
+call `uptime` and send their load averages to the query initiator, making
+it easy to check on the cluster health.
 
 #### A Building Block for Service Discovery
 
