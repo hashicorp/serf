@@ -12,6 +12,11 @@ import (
 	"time"
 )
 
+const (
+	// This is the default IO timeout for the client
+	DefaultTimeout = 10 * time.Second
+)
+
 var (
 	clientClosed = fmt.Errorf("client closed")
 )
@@ -37,6 +42,7 @@ type seqHandler interface {
 type RPCClient struct {
 	seq uint64
 
+	timeout   time.Duration
 	conn      *net.TCPConn
 	reader    *bufio.Reader
 	writer    *bufio.Writer
@@ -62,6 +68,12 @@ func (c *RPCClient) send(header *requestHeader, obj interface{}) error {
 		return clientClosed
 	}
 
+	// Setup an IO deadline, this way we won't wait indefinitely
+	// if the client has hung.
+	if err := c.conn.SetDeadline(time.Now().Add(c.timeout)); err != nil {
+		return err
+	}
+
 	if err := c.enc.Encode(header); err != nil {
 		return err
 	}
@@ -82,9 +94,17 @@ func (c *RPCClient) send(header *requestHeader, obj interface{}) error {
 // NewRPCClient is used to create a new RPC client given the
 // RPC address of the Serf agent. This will return a client,
 // or an error if the connection could not be established.
+// This will use the DefaultTimeout for the client.
 func NewRPCClient(addr string) (*RPCClient, error) {
+	return NewRPCClientTimeout(addr, DefaultTimeout)
+}
+
+// NewRPCClientTimeout is used to create a new RPC client given the
+// RPC address of the Serf agent and an IO timeout. This will return a client,
+// or an error if the connection could not be established.
+func NewRPCClientTimeout(addr string, timeout time.Duration) (*RPCClient, error) {
 	// Try to dial to serf
-	conn, err := net.Dial("tcp", addr)
+	conn, err := net.DialTimeout("tcp", addr, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -92,6 +112,7 @@ func NewRPCClient(addr string) (*RPCClient, error) {
 	// Create the client
 	client := &RPCClient{
 		seq:        0,
+		timeout:    timeout,
 		conn:       conn.(*net.TCPConn),
 		reader:     bufio.NewReader(conn),
 		writer:     bufio.NewWriter(conn),
