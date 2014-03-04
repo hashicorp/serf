@@ -132,7 +132,14 @@ OUTER:
 				break OUTER
 			}
 			numResp++
-			c.Ui.Info(fmt.Sprintf("Response from '%s':", r.From, r.Payload))
+
+			// Remove the trailing newline if there is one
+			payload := r.Payload
+			if n := len(payload); n > 0 && payload[n-1] == '\n' {
+				payload = payload[:n-1]
+			}
+
+			c.Ui.Info(fmt.Sprintf("Response from '%s': %s", r.From, payload))
 
 		case <-c.ShutdownCh:
 			return 1
