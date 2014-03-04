@@ -542,3 +542,205 @@ func TestRPCClientUpdateTags(t *testing.T) {
 		t.Fatalf("missing testing tag")
 	}
 }
+
+func TestRPCClientQuery(t *testing.T) {
+	cl, a1, ipc := testRPCClient(t)
+	defer ipc.Shutdown()
+	defer cl.Close()
+	defer a1.Shutdown()
+
+	handler := new(MockQueryHandler)
+	handler.Response = []byte("ok")
+	a1.RegisterEventHandler(handler)
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	ackCh := make(chan string, 1)
+	respCh := make(chan client.NodeResponse, 1)
+	params := client.QueryParam{
+		RequestAck: true,
+		Timeout:    200 * time.Millisecond,
+		Name:       "deploy",
+		Payload:    []byte("foo"),
+		AckCh:      ackCh,
+		RespCh:     respCh,
+	}
+	if err := cl.Query(&params); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	handler.Lock()
+	defer handler.Unlock()
+
+	if len(handler.Queries) == 0 {
+		t.Fatal("no queries")
+	}
+
+	query := handler.Queries[0]
+	if query.Name != "deploy" {
+		t.Fatalf("bad: %#v", query)
+	}
+
+	if string(query.Payload) != "foo" {
+		t.Fatalf("bad: %#v", query)
+	}
+
+	select {
+	case a := <-ackCh:
+		if a != a1.conf.NodeName {
+			t.Fatalf("Bad ack from: %v", a)
+		}
+	default:
+		t.Fatalf("missing ack")
+	}
+
+	select {
+	case r := <-respCh:
+		if r.From != a1.conf.NodeName {
+			t.Fatalf("Bad resp from: %v", r)
+		}
+		if string(r.Payload) != "ok" {
+			t.Fatalf("Bad resp from: %v", r)
+		}
+	default:
+		t.Fatalf("missing response")
+	}
+}
+
+func TestRPCClientStream_Query(t *testing.T) {
+	cl, a1, ipc := testRPCClient(t)
+	defer ipc.Shutdown()
+	defer cl.Close()
+	defer a1.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	eventCh := make(chan map[string]interface{}, 64)
+	if handle, err := cl.Stream("query", eventCh); err != nil {
+		t.Fatalf("err: %s", err)
+	} else {
+		defer cl.Stop(handle)
+	}
+
+	testutil.Yield()
+
+	params := client.QueryParam{
+		Timeout: 200 * time.Millisecond,
+		Name:    "deploy",
+		Payload: []byte("foo"),
+	}
+	if err := cl.Query(&params); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	select {
+	case e := <-eventCh:
+		if e["Event"].(string) != "query" {
+			t.Fatalf("bad query: %#v", e)
+		}
+		if e["ID"].(int64) != 1 {
+			t.Fatalf("bad query: %#v", e)
+		}
+		if e["LTime"].(int64) != 1 {
+			t.Fatalf("bad query: %#v", e)
+		}
+		if e["Name"].(string) != "deploy" {
+			t.Fatalf("bad query: %#v", e)
+		}
+		if bytes.Compare(e["Payload"].([]byte), []byte("foo")) != 0 {
+			t.Fatalf("bad query: %#v", e)
+		}
+
+	default:
+		t.Fatalf("should have query")
+	}
+}
+
+func TestRPCClientStream_Query_Respond(t *testing.T) {
+	cl, a1, ipc := testRPCClient(t)
+	defer ipc.Shutdown()
+	defer cl.Close()
+	defer a1.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	eventCh := make(chan map[string]interface{}, 64)
+	if handle, err := cl.Stream("query", eventCh); err != nil {
+		t.Fatalf("err: %s", err)
+	} else {
+		defer cl.Stop(handle)
+	}
+
+	testutil.Yield()
+
+	ackCh := make(chan string, 1)
+	respCh := make(chan client.NodeResponse, 1)
+	params := client.QueryParam{
+		RequestAck: true,
+		Timeout:    500 * time.Millisecond,
+		Name:       "ping",
+		AckCh:      ackCh,
+		RespCh:     respCh,
+	}
+	if err := cl.Query(&params); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	select {
+	case e := <-eventCh:
+		if e["Event"].(string) != "query" {
+			t.Fatalf("bad query: %#v", e)
+		}
+		if e["Name"].(string) != "ping" {
+			t.Fatalf("bad query: %#v", e)
+		}
+
+		// Send a response
+		id := e["ID"].(int64)
+		if err := cl.Respond(uint64(id), []byte("pong")); err != nil {
+			t.Fatalf("err: %v", err)
+		}
+
+	default:
+		t.Fatalf("should have query")
+	}
+
+	testutil.Yield()
+
+	// Should have ack
+	select {
+	case a := <-ackCh:
+		if a != a1.conf.NodeName {
+			t.Fatalf("Bad ack from: %v", a)
+		}
+	default:
+		t.Fatalf("missing ack")
+	}
+
+	// Should have response
+	select {
+	case r := <-respCh:
+		if r.From != a1.conf.NodeName {
+			t.Fatalf("Bad resp from: %v", r)
+		}
+		if string(r.Payload) != "pong" {
+			t.Fatalf("Bad resp from: %v", r)
+		}
+	default:
+		t.Fatalf("missing response")
+	}
+}

@@ -58,6 +58,8 @@ Possible commands include:
 * monitor - Starts streaming logs over the connection
 * stop - Stops streaming logs or events
 * leave - Serf agent performs a graceful leave and shutdown
+* query - Initiates a new query
+* respond - Responds to an incoming query
 
 Below each command is documented along with any request or
 response body that is applicable.
@@ -232,6 +234,15 @@ we may start getting messages like:
             ...
         ]
     }
+
+    {"Seq": 50, "Error": ""}
+    {
+        "Event": "query",
+        "ID": 1023,
+        "LTime": 125,
+        "Name": "load",
+        "Payload": "15m",
+    }
 ```
 
 It is important to realize that these messages are sent asyncronously,
@@ -298,4 +309,72 @@ There is no special response body.
 
 The leave command is used trigger a graceful leave and shutdown.
 There is no request body, or special response body.
+
+### query
+
+The query command is used to issue a new query. It takes the following request body:
+
+```
+    {
+        "FilterNodes": ["foo", "bar"],
+        "FilterTags": {"role": ".*web.*"},
+	    "RequestAck": true,
+        "Timeout": 0,
+        "Name": "load",
+        "Payload": "15m",
+    }
+```
+
+The `Name` is a string, but `Payload` is just opaque bytes. The remaining fields are
+optional. `FilterNodes` is used to restrict the nodes that should respond to only
+those named. `FilterTags` is used to filter tags using a regular expression on each
+tag. `RequestAck` is used to ask that nodes send an "ack" once the message is received,
+otherwise only responses are delivered. `Timeout` can be provided (in nanoseconds) to
+optionally override the default.
+
+The server will respond with a standard response hedaer indicating if the query
+was successful. However, the channel is now subscribed to receive any acks or
+responses. This is similar to `stream`, except scoped only to this query. The same
+`Seq` is used as the query command that matches.
+
+We will start to get the following:
+
+```
+    {"Seq": 50, "Error": ""}
+    {
+        "Type": "ack",
+        "From": "foo",
+    }
+
+    {"Seq": 50, "Error": ""}
+    {
+        "Type": "response",
+        "From": "foo",
+        "Payload": "1.02",
+    }
+
+    {"Seq": 50, "Error": ""}
+    {
+        "Type": "done",
+    }
+```
+
+Each query record has a `Type` to indicate what is being represented. This is
+one of `ack`, `response` or `done`. Once `done` is received the client should
+not expect any futher messages corresponding to that query.
+
+### respond
+
+The respond command is with `stream` to subscribe to queries and then respond.
+It takes the following request body:
+
+```
+	{"ID": 1023, "Payload": "my response"}
+```
+
+The `ID` is an opaque value that is assigned by the IPC layer. This number is
+unique per client connection and cannot be used across connections. `Payload` is
+just opaque bytes.
+
+There is no special response body.
 

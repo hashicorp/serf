@@ -7,7 +7,9 @@ sidebar_current: "gettingstarted-userevents"
 # Custom User Events
 
 In addition to the standard membership-related events that Serf fires,
-Serf is able to propagate custom events across the cluster. Custom events
+Serf is able to propagate custom events across the cluster. Events are
+"fire-and-forget". There is no originating node, an event has no response,
+and Serf works hard to ensure it is delivered to all nodes. Custom events
 are useful for tasks such as: triggering deploys, telling the cluster to
 restart, etc.
 

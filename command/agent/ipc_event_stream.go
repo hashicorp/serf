@@ -8,6 +8,7 @@ import (
 
 type streamClient interface {
 	Send(*responseHeader, interface{}) error
+	RegisterQuery(*serf.Query) uint64
 }
 
 // eventStream is used to stream events to a client over IPC
@@ -45,7 +46,7 @@ HANDLE:
 	select {
 	case es.eventCh <- e:
 	default:
-		es.logger.Printf("[WARN] Dropping event to %v", es.client)
+		es.logger.Printf("[WARN] agent.ipc: Dropping event to %v", es.client)
 	}
 }
 
@@ -61,11 +62,13 @@ func (es *eventStream) stream() {
 			err = es.sendMemberEvent(e)
 		case serf.UserEvent:
 			err = es.sendUserEvent(e)
+		case *serf.Query:
+			err = es.sendQuery(e)
 		default:
 			err = fmt.Errorf("Unknown event type: %s", event.EventType().String())
 		}
 		if err != nil {
-			es.logger.Printf("[ERR] Failed to stream event to %v: %v",
+			es.logger.Printf("[ERR] agent.ipc: Failed to stream event to %v: %v",
 				es.client, err)
 			return
 		}
@@ -115,6 +118,24 @@ func (es *eventStream) sendUserEvent(ue serf.UserEvent) error {
 		Name:     ue.Name,
 		Payload:  ue.Payload,
 		Coalesce: ue.Coalesce,
+	}
+	return es.client.Send(&header, &rec)
+}
+
+// sendQuery is used to send a single query event
+func (es *eventStream) sendQuery(q *serf.Query) error {
+	id := es.client.RegisterQuery(q)
+
+	header := responseHeader{
+		Seq:   es.seq,
+		Error: "",
+	}
+	rec := queryEventRecord{
+		Event:   q.EventType().String(),
+		ID:      id,
+		LTime:   q.LTime,
+		Name:    q.Name,
+		Payload: q.Payload,
 	}
 	return es.client.Send(&header, &rec)
 }

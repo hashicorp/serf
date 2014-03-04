@@ -109,6 +109,17 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 		metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(lm))
 	}
 
+	// Get any additional query broadcasts
+	queryMsgs := d.serf.queryBroadcasts.GetBroadcasts(overhead, limit-bytesUsed)
+	if queryMsgs != nil {
+		for _, m := range queryMsgs {
+			lm := len(m)
+			bytesUsed += lm + overhead
+			metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(lm))
+		}
+		msgs = append(msgs, queryMsgs...)
+	}
+
 	// Get any additional event broadcasts
 	eventMsgs := d.serf.eventBroadcasts.GetBroadcasts(overhead, limit-bytesUsed)
 	if eventMsgs != nil {
@@ -118,15 +129,6 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 			metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(lm))
 		}
 		msgs = append(msgs, eventMsgs...)
-	}
-
-	// Get any additional query broadcasts
-	queryMsgs := d.serf.queryBroadcasts.GetBroadcasts(overhead, limit-bytesUsed)
-	if queryMsgs != nil {
-		for _, m := range queryMsgs {
-			metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(len(m)))
-		}
-		msgs = append(msgs, queryMsgs...)
 	}
 
 	return msgs
@@ -145,6 +147,7 @@ func (d *delegate) LocalState(join bool) []byte {
 		LeftMembers:  make([]string, 0, len(d.serf.leftMembers)),
 		EventLTime:   d.serf.eventClock.Time(),
 		Events:       d.serf.eventBuffer,
+		QueryLTime:   d.serf.queryClock.Time(),
 	}
 
 	// Add all the join LTimes
@@ -184,6 +187,7 @@ func (d *delegate) MergeRemoteState(buf []byte, isJoin bool) {
 	// We subtract 1 since no message with that clock has been sent yet
 	d.serf.clock.Witness(pp.LTime - 1)
 	d.serf.eventClock.Witness(pp.EventLTime - 1)
+	d.serf.queryClock.Witness(pp.QueryLTime - 1)
 
 	// Process the left nodes first to avoid the LTimes from being increment
 	// in the wrong order

@@ -420,6 +420,12 @@ func (s *Serf) Query(name string, payload []byte, params *QueryParam) (*QueryRes
 		return nil, fmt.Errorf("Failed to format filters: %v", err)
 	}
 
+	// Setup the flags
+	var flags uint32
+	if params.RequestAck {
+		flags |= queryFlagAck
+	}
+
 	// Create a message
 	q := messageQuery{
 		LTime:   s.queryClock.Time(),
@@ -427,7 +433,7 @@ func (s *Serf) Query(name string, payload []byte, params *QueryParam) (*QueryRes
 		Addr:    local.Addr,
 		Port:    local.Port,
 		Filters: filters,
-		Ack:     params.RequestAck,
+		Flags:   flags,
 		Timeout: params.Timeout,
 		Name:    name,
 		Payload: payload,
@@ -1108,20 +1114,26 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 	metrics.IncrCounter([]string{"serf", "queries"}, 1)
 	metrics.IncrCounter([]string{"serf", "queries", query.Name}, 1)
 
+	// Check if we should rebroadcast, this may be disabled by a flag
+	rebroadcast := true
+	if query.NoBroadcast() {
+		rebroadcast = false
+	}
+
 	// Filter the query
 	if !s.shouldProcessQuery(query.Filters) {
 		// Even if we don't process it further, we should rebroadcast,
 		// since it is the first time we've seen this.
-		return true
+		return rebroadcast
 	}
 
 	// Send ack if requested, without waiting for client to Respond()
-	if query.Ack {
+	if query.Ack() {
 		ack := messageQueryResponse{
 			LTime: query.LTime,
 			ID:    query.ID,
 			From:  s.config.NodeName,
-			Ack:   true,
+			Flags: queryFlagAck,
 		}
 		raw, err := encodeMessage(messageQueryResponseType, &ack)
 		if err != nil {
@@ -1135,7 +1147,7 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 	}
 
 	if s.config.EventCh != nil {
-		s.config.EventCh <- Query{
+		s.config.EventCh <- &Query{
 			LTime:    query.LTime,
 			Name:     query.Name,
 			Payload:  query.Payload,
@@ -1146,7 +1158,7 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 			deadline: time.Now().Add(query.Timeout),
 		}
 	}
-	return true
+	return rebroadcast
 }
 
 // handleResponse is called when a query response is
@@ -1175,7 +1187,7 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 	}
 
 	// Process each type of response
-	if resp.Ack {
+	if resp.Ack() {
 		metrics.IncrCounter([]string{"serf", "query_acks"}, 1)
 		select {
 		case query.ackCh <- resp.From:

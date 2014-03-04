@@ -35,6 +35,8 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 )
 
 const (
@@ -54,6 +56,8 @@ const (
 	monitorCommand         = "monitor"
 	leaveCommand           = "leave"
 	tagsCommand            = "tags"
+	queryCommand           = "query"
+	respondCommand         = "respond"
 )
 
 const (
@@ -64,6 +68,13 @@ const (
 	monitorExists         = "Monitor already exists"
 	invalidFilter         = "Invalid event filter"
 	streamExists          = "Stream with given sequence exists"
+	invalidQueryID        = "No pending queries matching ID"
+)
+
+const (
+	queryRecordAck      = "ack"
+	queryRecordResponse = "response"
+	queryRecordDone     = "done"
 )
 
 // Request header is sent before each request
@@ -127,6 +138,26 @@ type tagsRequest struct {
 	DeleteTags []string
 }
 
+type queryRequest struct {
+	FilterNodes []string
+	FilterTags  map[string]string
+	RequestAck  bool
+	Timeout     time.Duration
+	Name        string
+	Payload     []byte
+}
+
+type respondRequest struct {
+	ID      uint64
+	Payload []byte
+}
+
+type queryRecord struct {
+	Type    string
+	From    string
+	Payload []byte
+}
+
 type logRecord struct {
 	Log string
 }
@@ -137,6 +168,14 @@ type userEventRecord struct {
 	Name     string
 	Payload  []byte
 	Coalesce bool
+}
+
+type queryEventRecord struct {
+	Event   string
+	ID      uint64 // ID is opaque to client, used to respond
+	LTime   serf.LamportTime
+	Name    string
+	Payload []byte
 }
 
 type Member struct {
@@ -170,6 +209,7 @@ type AgentIPC struct {
 }
 
 type IPCClient struct {
+	queryID      uint64 // Used to increment query IDs
 	name         string
 	conn         net.Conn
 	reader       *bufio.Reader
@@ -180,6 +220,9 @@ type IPCClient struct {
 	version      int32 // From the handshake, 0 before
 	logStreamer  *logStream
 	eventStreams map[uint64]*eventStream
+
+	pendingQueries map[uint64]*serf.Query
+	queryLock      sync.Mutex
 }
 
 // send is used to send an object using the MsgPack encoding. send
@@ -206,7 +249,38 @@ func (c *IPCClient) Send(header *responseHeader, obj interface{}) error {
 }
 
 func (c *IPCClient) String() string {
-	return fmt.Sprintf("ipc.client: %v", c.conn)
+	return fmt.Sprintf("ipc.client: %v", c.conn.RemoteAddr())
+}
+
+// nextQueryID safely generates a new query ID
+func (c *IPCClient) nextQueryID() uint64 {
+	return atomic.AddUint64(&c.queryID, 1)
+}
+
+// RegisterQuery is used to register a pending query that may
+// get a response. The ID of the query is returned
+func (c *IPCClient) RegisterQuery(q *serf.Query) uint64 {
+	// Generate a unique-per-client ID
+	id := c.nextQueryID()
+
+	// Ensure the query deadline is in the future
+	timeout := q.Deadline().Sub(time.Now())
+	if timeout < 0 {
+		return id
+	}
+
+	// Register the query
+	c.queryLock.Lock()
+	c.pendingQueries[id] = q
+	c.queryLock.Unlock()
+
+	// Setup a timer to deregister after the timeout
+	time.AfterFunc(timeout, func() {
+		c.queryLock.Lock()
+		delete(c.pendingQueries, id)
+		c.queryLock.Unlock()
+	})
+	return id
 }
 
 // NewAgentIPC is used to create a new Agent IPC handler
@@ -262,11 +336,12 @@ func (i *AgentIPC) listen() {
 
 		// Wrap the connection in a client
 		client := &IPCClient{
-			name:         conn.RemoteAddr().String(),
-			conn:         conn,
-			reader:       bufio.NewReader(conn),
-			writer:       bufio.NewWriter(conn),
-			eventStreams: make(map[uint64]*eventStream),
+			name:           conn.RemoteAddr().String(),
+			conn:           conn,
+			reader:         bufio.NewReader(conn),
+			writer:         bufio.NewWriter(conn),
+			eventStreams:   make(map[uint64]*eventStream),
+			pendingQueries: make(map[uint64]*serf.Query),
 		}
 		client.dec = codec.NewDecoder(client.reader,
 			&codec.MsgpackHandle{RawToString: true, WriteExt: true})
@@ -379,6 +454,12 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 
 	case tagsCommand:
 		return i.handleTags(client, seq)
+
+	case queryCommand:
+		return i.handleQuery(client, seq)
+
+	case respondCommand:
+		return i.handleRespond(client, seq)
 
 	default:
 		respHeader := responseHeader{Seq: seq, Error: unsupportedCommand}
@@ -700,6 +781,66 @@ func (i *AgentIPC) handleTags(client *IPCClient, seq uint64) error {
 	err := i.agent.serf.SetTags(tags)
 
 	resp := responseHeader{Seq: seq, Error: errToString(err)}
+	return client.Send(&resp, nil)
+}
+
+func (i *AgentIPC) handleQuery(client *IPCClient, seq uint64) error {
+	var req queryRequest
+	if err := client.dec.Decode(&req); err != nil {
+		return fmt.Errorf("decode failed: %v", err)
+	}
+
+	// Setup the query
+	params := serf.QueryParam{
+		FilterNodes: req.FilterNodes,
+		FilterTags:  req.FilterTags,
+		RequestAck:  req.RequestAck,
+		Timeout:     req.Timeout,
+	}
+
+	// Start the query
+	queryResp, err := i.agent.Query(req.Name, req.Payload, &params)
+
+	// Stream the query responses
+	if err == nil {
+		qs := newQueryResponseStream(client, seq, i.logger)
+		defer func() {
+			go qs.Stream(queryResp)
+		}()
+	}
+
+	// Respond
+	resp := responseHeader{
+		Seq:   seq,
+		Error: errToString(err),
+	}
+	return client.Send(&resp, nil)
+}
+
+func (i *AgentIPC) handleRespond(client *IPCClient, seq uint64) error {
+	var req respondRequest
+	if err := client.dec.Decode(&req); err != nil {
+		return fmt.Errorf("decode failed: %v", err)
+	}
+
+	// Lookup the query
+	client.queryLock.Lock()
+	query, ok := client.pendingQueries[req.ID]
+	client.queryLock.Unlock()
+
+	// Respond if we have a pending query
+	var err error
+	if ok {
+		err = query.Respond(req.Payload)
+	} else {
+		err = fmt.Errorf(invalidQueryID)
+	}
+
+	// Respond
+	resp := responseHeader{
+		Seq:   seq,
+		Error: errToString(err),
+	}
 	return client.Send(&resp, nil)
 }
 

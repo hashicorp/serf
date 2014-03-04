@@ -65,7 +65,7 @@ func Create(conf *serf.Config, logOutput io.Writer) (*Agent, error) {
 // create so that there isn't a race condition between creating the
 // agent and registering handlers
 func (a *Agent) Start() error {
-	a.logger.Printf("[INFO] Serf agent starting")
+	a.logger.Printf("[INFO] agent: Serf agent starting")
 
 	// Create serf first
 	serf, err := serf.Create(a.conf)
@@ -142,7 +142,7 @@ func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
 
 // ForceLeave is used to eject a failed node from the cluster
 func (a *Agent) ForceLeave(node string) error {
-	a.logger.Printf("[INFO] Force leaving node: %s", node)
+	a.logger.Printf("[INFO] agent: Force leaving node: %s", node)
 	err := a.serf.RemoveFailedNode(node)
 	if err != nil {
 		a.logger.Printf("[WARN] agent: failed to remove node: %v", err)
@@ -155,6 +155,13 @@ func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
 	a.logger.Printf("[DEBUG] agent: Requesting user event send: %s. Coalesced: %#v. Payload: %#v",
 		name, coalesce, string(payload))
 	return a.serf.UserEvent(name, payload, coalesce)
+}
+
+// Query sends a Query on Serf, see Serf.Query.
+func (a *Agent) Query(name string, payload []byte, params *serf.QueryParam) (*serf.QueryResponse, error) {
+	a.logger.Printf("[DEBUG] agent: Requesting query send: %s. Payload: %#v",
+		name, string(payload))
+	return a.serf.Query(name, payload, params)
 }
 
 // RegisterEventHandler adds an event handler to recieve event notifications

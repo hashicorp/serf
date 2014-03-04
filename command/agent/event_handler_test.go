@@ -31,6 +31,17 @@ while read line; do
 done
 `
 
+const queryScript = `#!/bin/sh
+RESULT_FILE="%s"
+echo $SERF_SELF_NAME $SERF_SELF_ROLE >>${RESULT_FILE}
+echo $SERF_TAG_DC >> ${RESULT_FILE}
+echo $SERF_EVENT $SERF_QUERY_NAME "$@" >>${RESULT_FILE}
+echo $SERF_EVENT $SERF_QUERY_LTIME "$@" >>${RESULT_FILE}
+while read line; do
+	printf "${line}\n" >>${RESULT_FILE}
+done
+`
+
 // testEventScript creates an event script that can be used with the
 // agent. It returns the path to the event script itself and a path to
 // the file that will contain the events that that script receives.
@@ -143,6 +154,43 @@ func TestScriptUserEventHandler(t *testing.T) {
 	}
 }
 
+func TestScriptQueryEventHandler(t *testing.T) {
+	script, results := testEventScript(t, queryScript)
+
+	h := &ScriptEventHandler{
+		Self: serf.Member{
+			Name: "ourname",
+			Tags: map[string]string{"role": "ourrole", "dc": "east-aws"},
+		},
+		Scripts: []EventScript{
+			{
+				EventFilter: EventFilter{
+					Event: "*",
+				},
+				Script: script,
+			},
+		},
+	}
+
+	query := &serf.Query{
+		LTime:   42,
+		Name:    "uptime",
+		Payload: []byte("load average"),
+	}
+
+	h.HandleEvent(query)
+
+	result, err := ioutil.ReadFile(results)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	expected := "ourname ourrole\neast-aws\nquery uptime\nquery 42\nload average\n"
+	if string(result) != expected {
+		t.Fatalf("bad: %#v. Expected: %#v", string(result), expected)
+	}
+}
+
 func TestEventScriptInvoke(t *testing.T) {
 	testCases := []struct {
 		script EventScript
@@ -179,6 +227,21 @@ func TestEventScriptInvoke(t *testing.T) {
 			serf.MemberEvent{Type: serf.EventMemberLeave},
 			false,
 		},
+		{
+			EventScript{EventFilter{"query", "deploy"}, "script.sh"},
+			&serf.Query{Name: "deploy"},
+			true,
+		},
+		{
+			EventScript{EventFilter{"query", "uptime"}, "script.sh"},
+			&serf.Query{Name: "deploy"},
+			false,
+		},
+		{
+			EventScript{EventFilter{"query", ""}, "script.sh"},
+			&serf.Query{Name: "deploy"},
+			true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -201,6 +264,8 @@ func TestEventScriptValid(t *testing.T) {
 		{"user", true},
 		{"User", false},
 		{"member", false},
+		{"query", true},
+		{"Query", false},
 		{"*", true},
 	}
 
@@ -246,13 +311,26 @@ func TestParseEventScript(t *testing.T) {
 		},
 
 		{
-			"foo,user:blah,bar=script.sh",
+			"foo,user:blah,bar,query:tubez=script.sh",
 			false,
 			[]EventScript{
 				{EventFilter{"foo", ""}, "script.sh"},
 				{EventFilter{"user", "blah"}, "script.sh"},
 				{EventFilter{"bar", ""}, "script.sh"},
+				{EventFilter{"query", "tubez"}, "script.sh"},
 			},
+		},
+
+		{
+			"query:load=script.sh",
+			false,
+			[]EventScript{{EventFilter{"query", "load"}, "script.sh"}},
+		},
+
+		{
+			"query=script.sh",
+			false,
+			[]EventScript{{EventFilter{"query", ""}, "script.sh"}},
 		},
 	}
 
@@ -275,8 +353,8 @@ func TestParseEventScript(t *testing.T) {
 				t.Errorf("Events not equal: %s %s", r.Event, expected.Event)
 			}
 
-			if r.UserEvent != expected.UserEvent {
-				t.Errorf("User events not equal: %s %s", r.UserEvent, expected.UserEvent)
+			if r.Name != expected.Name {
+				t.Errorf("User events not equal: %s %s", r.Name, expected.Name)
 			}
 
 			if r.Script != expected.Script {
@@ -322,6 +400,11 @@ func TestParseEventFilter(t *testing.T) {
 				EventFilter{"bar", ""},
 			},
 		},
+
+		{
+			"query:load",
+			[]EventFilter{EventFilter{"query", "load"}},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -343,8 +426,8 @@ func TestParseEventFilter(t *testing.T) {
 				t.Errorf("Events not equal: %s %s", r.Event, expected.Event)
 			}
 
-			if r.UserEvent != expected.UserEvent {
-				t.Errorf("User events not equal: %s %s", r.UserEvent, expected.UserEvent)
+			if r.Name != expected.Name {
+				t.Errorf("User events not equal: %s %s", r.Name, expected.Name)
 			}
 		}
 	}

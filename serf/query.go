@@ -81,8 +81,8 @@ type QueryResponse struct {
 	// ackCh is used to send the name of a node for which we've received an ack
 	ackCh chan string
 
-	// endTime is the query end time (start + query timeout)
-	endTime time.Time
+	// deadline is the query end time (start + query timeout)
+	deadline time.Time
 
 	// Query ID
 	id uint32
@@ -100,12 +100,12 @@ type QueryResponse struct {
 // newQueryResponse is used to construct a new query response
 func newQueryResponse(n int, q *messageQuery) *QueryResponse {
 	resp := &QueryResponse{
-		endTime: time.Now().Add(q.Timeout),
-		id:      q.ID,
-		lTime:   q.LTime,
-		respCh:  make(chan NodeResponse, n),
+		deadline: time.Now().Add(q.Timeout),
+		id:       q.ID,
+		lTime:    q.LTime,
+		respCh:   make(chan NodeResponse, n),
 	}
-	if q.Ack {
+	if q.Ack() {
 		resp.ackCh = make(chan string, n)
 	}
 	return resp
@@ -120,13 +120,22 @@ func (r *QueryResponse) Close() {
 		return
 	}
 	r.closed = true
-	close(r.ackCh)
-	close(r.respCh)
+	if r.ackCh != nil {
+		close(r.ackCh)
+	}
+	if r.respCh != nil {
+		close(r.respCh)
+	}
+}
+
+// Deadline returns the ending deadline of the query
+func (r *QueryResponse) Deadline() time.Time {
+	return r.deadline
 }
 
 // Finished returns if the query is finished running
 func (r *QueryResponse) Finished() bool {
-	return r.closed || time.Now().After(r.endTime)
+	return r.closed || time.Now().After(r.deadline)
 }
 
 // AckCh returns a channel that can be used to listen for acks

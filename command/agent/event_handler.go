@@ -60,8 +60,8 @@ func (h *ScriptEventHandler) UpdateScripts(scripts []EventScript) {
 
 // EventFilter is used to filter which events are processed
 type EventFilter struct {
-	Event     string
-	UserEvent string
+	Event string
+	Name  string
 }
 
 // Invoke tests whether or not this event script should be invoked
@@ -75,13 +75,24 @@ func (s *EventFilter) Invoke(e serf.Event) bool {
 		return false
 	}
 
-	if s.UserEvent != "" {
+	if s.Event == "user" && s.Name != "" {
 		userE, ok := e.(serf.UserEvent)
 		if !ok {
 			return false
 		}
 
-		if userE.Name != s.UserEvent {
+		if userE.Name != s.Name {
+			return false
+		}
+	}
+
+	if s.Event == "query" && s.Name != "" {
+		query, ok := e.(*serf.Query)
+		if !ok {
+			return false
+		}
+
+		if query.Name != s.Name {
 			return false
 		}
 	}
@@ -97,6 +108,7 @@ func (s *EventFilter) Valid() bool {
 	case "member-failed":
 	case "member-update":
 	case "user":
+	case "query":
 	case "*":
 	default:
 		return false
@@ -113,8 +125,8 @@ type EventScript struct {
 }
 
 func (s *EventScript) String() string {
-	if s.UserEvent != "" {
-		return fmt.Sprintf("Event 'user:%s' invoking '%s'", s.UserEvent, s.Script)
+	if s.Name != "" {
+		return fmt.Sprintf("Event '%s:%s' invoking '%s'", s.Event, s.Name, s.Script)
 	}
 	return fmt.Sprintf("Event '%s' invoking '%s'", s.Event, s.Script)
 }
@@ -155,15 +167,18 @@ func ParseEventFilter(v string) []EventFilter {
 	results := make([]EventFilter, 0, len(events))
 	for _, event := range events {
 		var result EventFilter
-		var userEvent string
+		var name string
 
 		if strings.HasPrefix(event, "user:") {
-			userEvent = event[len("user:"):]
+			name = event[len("user:"):]
 			event = "user"
+		} else if strings.HasPrefix(event, "query:") {
+			name = event[len("query:"):]
+			event = "query"
 		}
 
 		result.Event = event
-		result.UserEvent = userEvent
+		result.Name = name
 		results = append(results, result)
 	}
 

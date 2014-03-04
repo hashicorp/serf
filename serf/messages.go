@@ -19,6 +19,15 @@ const (
 	messageQueryResponseType
 )
 
+const (
+	// Ack flag is used to force receiver to send an ack back
+	queryFlagAck uint32 = 1 << iota
+
+	// NoBroadcast is used to prevent re-broadcast of a query.
+	// this can be used to selectively send queries to individual members
+	queryFlagNoBroadcast
+)
+
 // filterType is used with a queryFilter to specify the type of
 // filter we are sending
 type filterType uint8
@@ -50,6 +59,7 @@ type messagePushPull struct {
 	LeftMembers  []string               // List of left nodes
 	EventLTime   LamportTime            // Lamport time for event clock
 	Events       []*userEvents          // Recent events
+	QueryLTime   LamportTime            // Lamport time for query clock
 }
 
 // messageUserEvent is used for user-generated events
@@ -67,10 +77,20 @@ type messageQuery struct {
 	Addr    []byte        // Source address, used for a direct reply
 	Port    uint16        // Source port, used for a direct reply
 	Filters [][]byte      // Potential query filters
-	Ack     bool          // True if requesting an ack
+	Flags   uint32        // Used to provide various flags
 	Timeout time.Duration // Maximum time between delivery and response
 	Name    string        // Query name
 	Payload []byte        // Query payload
+}
+
+// Ack checks if the ack flag is set
+func (m *messageQuery) Ack() bool {
+	return (m.Flags & queryFlagAck) != 0
+}
+
+// NoBroadcast checks if the no broadcast flag is set
+func (m *messageQuery) NoBroadcast() bool {
+	return (m.Flags & queryFlagNoBroadcast) != 0
 }
 
 // filterNode is used with the filterNodeType, and is a list
@@ -89,8 +109,13 @@ type messageQueryResponse struct {
 	LTime   LamportTime // Event lamport time
 	ID      uint32      // Query ID
 	From    string      // Node name
-	Ack     bool        // Is this an Ack, or reply
+	Flags   uint32      // Used to provide various flags
 	Payload []byte      // Optional response payload
+}
+
+// Ack checks if the ack flag is set
+func (m *messageQueryResponse) Ack() bool {
+	return (m.Flags & queryFlagAck) != 0
 }
 
 func decodeMessage(buf []byte, out interface{}) error {

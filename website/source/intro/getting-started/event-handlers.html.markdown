@@ -83,6 +83,7 @@ There are currently four types of events that Serf invokes:
 * `member-update` - One or more members have updated, likely to update the
   associated tags
 * `user` - A custom user event, covered later in this guide.
+* `query` - A query event, covered later in this guide
 
 ## Multiple Event Scripts, Filtering, And More
 
@@ -94,3 +95,4 @@ for only certain Serf events.
 
 To learn more about these features, see the full documentation section
 of [event handlers](/docs/agent/event-handlers.html).
+
