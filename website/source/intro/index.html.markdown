@@ -34,8 +34,11 @@ to solve three major problems:
   Serf will attempt to recover failed nodes by reconnecting to them
   periodically.
 
-* **Custom event propagation**: Serf can broadcast custom events to the cluster.
-  These can be used to trigger deploys, propagate configuration, etc.
+* **Custom event propagation**: Serf can broadcast custom events and queries
+  to the cluster. These can be used to trigger deploys, propagate configuration, etc.
+  Events are simply fire-and-forget broadcast, and Serf makes a best effort to
+  deliver messages in the face of offline nodes or network partitions. Queries
+  provide a simple realtime request/response mechanism.
 
 See the [use cases page](/intro/use-cases.html) for a list of concrete use
 cases built on top of the features Serf provides. See the page on

@@ -6,10 +6,11 @@ sidebar_current: "gettingstarted-queries"
 
 # Custom Queries
 
-In addition to the standard membership-related events that Serf fires,
-Serf is able to request and respond to custom queries across the cluster.
-Custom queries provide even more flexibility than events, since the target
-nodes can be filtered, and nodes can both acknowledge query receipt and respond.
+While custom events provide an efficient "fire-and-forget" mechansim, queries
+send a request and nodes can provide responds. Custom queries provide even more
+flexibility than events, since the target nodes can be filtered, delivery
+can be acknowledged and custom responses can be sent back. This makes queries
+useful for gathering information about a running cluster in real-time.
 
 ## Sending Custom Queries
 
