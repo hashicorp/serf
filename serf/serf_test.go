@@ -968,10 +968,10 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 	defer s2.Shutdown()
 
 	// Wait for the node to auto rejoin
-	testutil.Yield()
-	testutil.Yield()
-	testutil.Yield()
-	testutil.Yield()
+	start := time.Now()
+	for len(s1.Members()) == 1 && time.Now().Sub(start) < time.Second {
+		time.Sleep(10 * time.Millisecond)
+	}
 
 	// Verify that s2 is "alive"
 	testMember(t, s1.Members(), s2Config.NodeName, StatusAlive)
