@@ -249,7 +249,7 @@ func (c *IPCClient) Send(header *responseHeader, obj interface{}) error {
 }
 
 func (c *IPCClient) String() string {
-	return fmt.Sprintf("ipc.client: %v", c.conn)
+	return fmt.Sprintf("ipc.client: %v", c.conn.RemoteAddr())
 }
 
 // nextQueryID safely generates a new query ID
@@ -259,7 +259,7 @@ func (c *IPCClient) nextQueryID() uint64 {
 
 // RegisterQuery is used to register a pending query that may
 // get a response. The ID of the query is returned
-func (c IPCClient) RegisterQuery(q *serf.Query) uint64 {
+func (c *IPCClient) RegisterQuery(q *serf.Query) uint64 {
 	// Generate a unique-per-client ID
 	id := c.nextQueryID()
 
