@@ -969,7 +969,11 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 
 	// Wait for the node to auto rejoin
 	start := time.Now()
-	for len(s1.Members()) == 1 && time.Now().Sub(start) < time.Second {
+	for time.Now().Sub(start) < time.Second {
+		members := s1.Members()
+		if len(members) == 2 && members[0].Status == StatusAlive && members[1].Status == StatusAlive {
+			break
+		}
 		time.Sleep(10 * time.Millisecond)
 	}
 
