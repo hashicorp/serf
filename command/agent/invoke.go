@@ -42,7 +42,6 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 	}
 
 	cmd := exec.Command(shell, flag, script)
-	cmd.Args[0] = "serf-event"
 	cmd.Env = append(os.Environ(),
 		"SERF_EVENT="+event.EventType().String(),
 		"SERF_SELF_NAME="+self.Name,
