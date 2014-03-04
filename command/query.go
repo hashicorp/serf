@@ -139,7 +139,9 @@ OUTER:
 		}
 	}
 
-	c.Ui.Output(fmt.Sprintf("Total Acks: %d", numAcks))
+	if !noAck {
+		c.Ui.Output(fmt.Sprintf("Total Acks: %d", numAcks))
+	}
 	c.Ui.Output(fmt.Sprintf("Total Responses: %d", numResp))
 	return 0
 }
