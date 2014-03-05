@@ -36,6 +36,20 @@ type seqHandler interface {
 	Cleanup()
 }
 
+// Config is provided to ClientFromConfig to make
+// a new RPCClient from the given configuration
+type Config struct {
+	// Addr must be the RPC address to contact
+	Addr string
+
+	// If provided, the client will perform key based auth
+	AuthKey string
+
+	// If provided, overrides the DefaultTimeout used for
+	// IO deadlines
+	Timeout time.Duration
+}
+
 // RPCClient is used to make requests to the Agent using an RPC mechanism.
 // Additionally, the client manages event streams and monitors, enabling a client
 // to easily receive event notifications instead of using the fork/exec mechanism.
@@ -96,15 +110,21 @@ func (c *RPCClient) send(header *requestHeader, obj interface{}) error {
 // or an error if the connection could not be established.
 // This will use the DefaultTimeout for the client.
 func NewRPCClient(addr string) (*RPCClient, error) {
-	return NewRPCClientTimeout(addr, DefaultTimeout)
+	conf := Config{Addr: addr}
+	return ClientFromConfig(&conf)
 }
 
-// NewRPCClientTimeout is used to create a new RPC client given the
-// RPC address of the Serf agent and an IO timeout. This will return a client,
-// or an error if the connection could not be established.
-func NewRPCClientTimeout(addr string, timeout time.Duration) (*RPCClient, error) {
+// ClientFromConfig is used to create a new RPC client given the
+// configuration object. This will return a client, or an error if
+// the connection could not be established.
+func ClientFromConfig(c *Config) (*RPCClient, error) {
+	// Setup the defaults
+	if c.Timeout == 0 {
+		c.Timeout = DefaultTimeout
+	}
+
 	// Try to dial to serf
-	conn, err := net.DialTimeout("tcp", addr, timeout)
+	conn, err := net.DialTimeout("tcp", c.Addr, c.Timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +132,7 @@ func NewRPCClientTimeout(addr string, timeout time.Duration) (*RPCClient, error)
 	// Create the client
 	client := &RPCClient{
 		seq:        0,
-		timeout:    timeout,
+		timeout:    c.Timeout,
 		conn:       conn.(*net.TCPConn),
 		reader:     bufio.NewReader(conn),
 		writer:     bufio.NewWriter(conn),
@@ -130,6 +150,15 @@ func NewRPCClientTimeout(addr string, timeout time.Duration) (*RPCClient, error)
 		client.Close()
 		return nil, err
 	}
+
+	// Do the initial authentication if needed
+	if c.AuthKey != "" {
+		if err := client.auth(c.AuthKey); err != nil {
+			client.Close()
+			return nil, err
+		}
+	}
+
 	return client, err
 }
 
@@ -573,12 +602,28 @@ func (c *RPCClient) handshake() error {
 	return c.genericRPC(&header, &req, nil)
 }
 
+// auth is used to perform the initial authentication on connect
+func (c *RPCClient) auth(authKey string) error {
+	header := requestHeader{
+		Command: authCommand,
+		Seq:     c.getSeq(),
+	}
+	req := authRequest{
+		AuthKey: authKey,
+	}
+	return c.genericRPC(&header, &req, nil)
+}
+
 // genericRPC is used to send a request and wait for an
 // errorSequenceResponse, potentially returning an error
 func (c *RPCClient) genericRPC(header *requestHeader, req interface{}, resp interface{}) error {
 	// Setup a response handler
 	errCh := make(chan error, 1)
 	handler := func(respHeader *responseHeader) {
+		// If we get an auth error, we should not wait for a request body
+		if respHeader.Error == authRequired {
+			goto SEND_ERR
+		}
 		if resp != nil {
 			err := c.dec.Decode(resp)
 			if err != nil {
@@ -586,6 +631,7 @@ func (c *RPCClient) genericRPC(header *requestHeader, req interface{}, resp inte
 				return
 			}
 		}
+	SEND_ERR:
 		errCh <- strToError(respHeader.Error)
 	}
 	c.handleSeq(header.Seq, &seqCallback{handler: handler})
