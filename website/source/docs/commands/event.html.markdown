@@ -50,6 +50,10 @@ Every option is optional:
   to send this command. If this isn't specified, the command will contact
   "127.0.0.1:7373" which is the default RPC address of a Serf agent.
 
+* `-rpc-auth` - Optional RPC auth token. If the agent is configured to use
+  an auth token, then this must be provided or the agent will refuse the
+  command.
+
 ## Sending an Event
 
 To send an event, use `serf event NAME` where NAME is the name of the
