@@ -241,6 +241,12 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	serfConfig.QuiescentPeriod = time.Second
 	serfConfig.UserCoalescePeriod = 3 * time.Second
 	serfConfig.UserQuiescentPeriod = time.Second
+	if config.ReconnectInterval != 0 {
+		serfConfig.ReconnectInterval = config.ReconnectInterval
+	}
+	if config.ReconnectTimeout != 0 {
+		serfConfig.ReconnectTimeout = config.ReconnectTimeout
+	}
 
 	// Start Serf
 	c.Ui.Output("Starting Serf agent...")
