@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestConfigBindAddrParts(t *testing.T) {
@@ -210,6 +211,21 @@ func TestDecodeConfig(t *testing.T) {
 	if config.Interface != "eth0" {
 		t.Fatalf("bad: %#v", config)
 	}
+
+	// Reconnect intervals
+	input = `{"reconnect_interval": "15s", "reconnect_timeout": "48h"}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.ReconnectInterval != 15*time.Second {
+		t.Fatalf("bad: %#v", config)
+	}
+
+	if config.ReconnectTimeout != 48*time.Hour {
+		t.Fatalf("bad: %#v", config)
+	}
 }
 
 func TestMergeConfig(t *testing.T) {
@@ -223,15 +239,17 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	b := &Config{
-		NodeName:       "bname",
-		Protocol:       -1,
-		EncryptKey:     "foo",
-		EventHandlers:  []string{"bar"},
-		StartJoin:      []string{"bar"},
-		LeaveOnTerm:    true,
-		SkipLeaveOnInt: true,
-		Discover:       "tubez",
-		Interface:      "eth0",
+		NodeName:          "bname",
+		Protocol:          -1,
+		EncryptKey:        "foo",
+		EventHandlers:     []string{"bar"},
+		StartJoin:         []string{"bar"},
+		LeaveOnTerm:       true,
+		SkipLeaveOnInt:    true,
+		Discover:          "tubez",
+		Interface:         "eth0",
+		ReconnectInterval: 15 * time.Second,
+		ReconnectTimeout:  48 * time.Hour,
 	}
 
 	c := MergeConfig(a, b)
@@ -270,6 +288,14 @@ func TestMergeConfig(t *testing.T) {
 
 	if c.Interface != "eth0" {
 		t.Fatalf("Bad: %v", c.Interface)
+	}
+
+	if c.ReconnectInterval != 15*time.Second {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if c.ReconnectTimeout != 48*time.Hour {
+		t.Fatalf("bad: %#v", c)
 	}
 
 	expected := []string{"foo", "bar"}

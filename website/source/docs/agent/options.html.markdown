@@ -213,3 +213,9 @@ at a single JSON object with configuration within it.
   Interrupts are usually from a Control-C from a shell. (This was previously
   `leave_on_interrupt` but has since changed).
 
+* `reconnect_interval` - This controls how often the agent will attempt to
+  connect to a failed node. By default this is every 30 seconds.
+
+* `reconnect_timeout` - This controls for how long the agent attempts to connect
+  to a failed node before reaping it from the cluster. By default this is 24 hours.
+
