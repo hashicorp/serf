@@ -23,6 +23,7 @@ Usage: serf tags [options] ...
 Options:
 
   -rpc-addr=127.0.0.1:7373  RPC Address of the Serf agent.
+  -rpc-auth=""              RPC auth token of the Serf agent.
   -set key=value            Creates or modifies the value of a tag
   -delete key               Removes a tag, if present
 `
@@ -39,6 +40,7 @@ func (c *TagsCommand) Run(args []string) int {
 	cmdFlags.Var((*agent.AppendSliceValue)(&delTags), "delete",
 		"tag keys to unset")
 	rpcAddr := RPCAddrFlag(cmdFlags)
+	rpcAuth := RPCAuthFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
@@ -48,7 +50,7 @@ func (c *TagsCommand) Run(args []string) int {
 		return 1
 	}
 
-	client, err := RPCClient(*rpcAddr)
+	client, err := RPCClient(*rpcAddr, *rpcAuth)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
 		return 1

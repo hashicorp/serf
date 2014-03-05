@@ -280,6 +280,9 @@ func MergeConfig(a, b *Config) *Config {
 	if b.RPCAddr != "" {
 		result.RPCAddr = b.RPCAddr
 	}
+	if b.RPCAuthKey != "" {
+		result.RPCAuthKey = b.RPCAuthKey
+	}
 	if b.ReplayOnJoin != false {
 		result.ReplayOnJoin = b.ReplayOnJoin
 	}

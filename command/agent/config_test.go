@@ -226,6 +226,17 @@ func TestDecodeConfig(t *testing.T) {
 	if config.ReconnectTimeout != 48*time.Hour {
 		t.Fatalf("bad: %#v", config)
 	}
+
+	// RPC Auth
+	input = `{"rpc_auth": "foobar"}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.RPCAuthKey != "foobar" {
+		t.Fatalf("bad: %#v", config)
+	}
 }
 
 func TestMergeConfig(t *testing.T) {
@@ -250,6 +261,7 @@ func TestMergeConfig(t *testing.T) {
 		Interface:         "eth0",
 		ReconnectInterval: 15 * time.Second,
 		ReconnectTimeout:  48 * time.Hour,
+		RPCAuthKey:        "foobar",
 	}
 
 	c := MergeConfig(a, b)
@@ -295,6 +307,10 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	if c.ReconnectTimeout != 48*time.Hour {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if c.RPCAuthKey != "foobar" {
 		t.Fatalf("bad: %#v", c)
 	}
 

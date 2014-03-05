@@ -37,6 +37,8 @@ Options:
                             of the query
 
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
+
+  -rpc-auth=""              RPC auth token of the Serf agent.
 `
 	return strings.TrimSpace(helpText)
 }
@@ -53,6 +55,7 @@ func (c *QueryCommand) Run(args []string) int {
 	cmdFlags.DurationVar(&timeout, "timeout", 0, "query timeout")
 	cmdFlags.BoolVar(&noAck, "no-ack", false, "no-ack")
 	rpcAddr := RPCAddrFlag(cmdFlags)
+	rpcAuth := RPCAuthFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
@@ -87,7 +90,7 @@ func (c *QueryCommand) Run(args []string) int {
 		payload = []byte(args[1])
 	}
 
-	cl, err := RPCClient(*rpcAddr)
+	cl, err := RPCClient(*rpcAddr, *rpcAuth)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
 		return 1
