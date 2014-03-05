@@ -24,6 +24,7 @@ Options:
 
   -replay                   Replay past user events.
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
+  -rpc-auth=""              RPC auth token of the Serf agent.
 `
 	return strings.TrimSpace(helpText)
 }
@@ -35,6 +36,7 @@ func (c *JoinCommand) Run(args []string) int {
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.BoolVar(&replayEvents, "replay", false, "replay")
 	rpcAddr := RPCAddrFlag(cmdFlags)
+	rpcAuth := RPCAuthFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
@@ -47,7 +49,7 @@ func (c *JoinCommand) Run(args []string) int {
 		return 1
 	}
 
-	client, err := RPCClient(*rpcAddr)
+	client, err := RPCClient(*rpcAddr, *rpcAuth)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
 		return 1

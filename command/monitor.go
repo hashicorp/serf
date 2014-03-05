@@ -33,6 +33,7 @@ Options:
 
   -log-level=info          Log level of the agent.
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
+  -rpc-auth=""              RPC auth token of the Serf agent.
 `
 	return strings.TrimSpace(helpText)
 }
@@ -43,11 +44,12 @@ func (c *MonitorCommand) Run(args []string) int {
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.StringVar(&logLevel, "log-level", "INFO", "log level")
 	rpcAddr := RPCAddrFlag(cmdFlags)
+	rpcAuth := RPCAuthFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
 
-	client, err := RPCClient(*rpcAddr)
+	client, err := RPCClient(*rpcAddr, *rpcAuth)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
 		return 1

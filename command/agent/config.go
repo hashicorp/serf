@@ -76,6 +76,11 @@ type Config struct {
 	// interface.
 	RPCAddr string `mapstructure:"rpc_addr"`
 
+	// RPCAuthKey is a key that can be set to optionally require that
+	// RPC's provide an authentication key. This is meant to be
+	// a very simple authentication control
+	RPCAuthKey string `mapstructure:"rpc_auth"`
+
 	// Protocol is the Serf protocol version to use.
 	Protocol int `mapstructure:"protocol"`
 
@@ -274,6 +279,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.RPCAddr != "" {
 		result.RPCAddr = b.RPCAddr
+	}
+	if b.RPCAuthKey != "" {
+		result.RPCAuthKey = b.RPCAuthKey
 	}
 	if b.ReplayOnJoin != false {
 		result.ReplayOnJoin = b.ReplayOnJoin

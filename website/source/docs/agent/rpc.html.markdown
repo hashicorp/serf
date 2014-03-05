@@ -48,6 +48,7 @@ All responses may be accompanied by an error.
 Possible commands include:
 
 * handshake - Used to initialize the connection, set the version
+* auth - Used to authenticate a client
 * event - Fires a new user event
 * force-leave - Removes a failed node from the cluster
 * join - Requests Serf join another node
@@ -81,6 +82,20 @@ in the future.
 
 There is no special response body, but the client should wait for the
 response and check for an error.
+
+### auth
+
+If the agent is configured to use an auth key, then the client must
+issue an `auth` command after the handshake is complete.
+
+The auth request body looks like:
+
+```
+    {"AuthKey": "my-secret-auth-token"}
+```
+
+The `AuthKey` must be provided and is the authorization key.
+There is no special response body.
 
 ### event
 

@@ -24,6 +24,7 @@ const (
 	tagsCommand            = "tags"
 	queryCommand           = "query"
 	respondCommand         = "respond"
+	authCommand            = "auth"
 )
 
 const (
@@ -35,6 +36,8 @@ const (
 	invalidFilter         = "Invalid event filter"
 	streamExists          = "Stream with given sequence exists"
 	invalidQueryID        = "No pending queries matching ID"
+	authRequired          = "Authentication required"
+	invalidAuthToken      = "Invalid authentication token"
 )
 
 const (
@@ -57,6 +60,10 @@ type responseHeader struct {
 
 type handshakeRequest struct {
 	Version int32
+}
+
+type authRequest struct {
+	AuthKey string
 }
 
 type eventRequest struct {

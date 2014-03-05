@@ -22,6 +22,7 @@ Usage: serf leave
 Options:
 
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
+  -rpc-auth=""              RPC auth token of the Serf agent.
 `
 	return strings.TrimSpace(helpText)
 }
@@ -30,11 +31,12 @@ func (c *LeaveCommand) Run(args []string) int {
 	cmdFlags := flag.NewFlagSet("leave", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	rpcAddr := RPCAddrFlag(cmdFlags)
+	rpcAuth := RPCAuthFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
 
-	client, err := RPCClient(*rpcAddr)
+	client, err := RPCClient(*rpcAddr, *rpcAuth)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
 		return 1

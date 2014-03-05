@@ -76,6 +76,8 @@ Options:
 
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
 
+  -rpc-auth=""              RPC auth token of the Serf agent.
+
   -status=<regexp>			If provided, output is filtered to only nodes matching
                             the regular expression for status
 
@@ -99,6 +101,7 @@ func (c *MembersCommand) Run(args []string) int {
 	cmdFlags.StringVar(&format, "format", "text", "output format")
 	cmdFlags.Var((*agent.AppendSliceValue)(&tags), "tag", "tag filter")
 	rpcAddr := RPCAddrFlag(cmdFlags)
+	rpcAuth := RPCAuthFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
 	}
@@ -119,7 +122,7 @@ func (c *MembersCommand) Run(args []string) int {
 		reqtags[parts[0]] = parts[1]
 	}
 
-	client, err := RPCClient(*rpcAddr)
+	client, err := RPCClient(*rpcAddr, *rpcAuth)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
 		return 1
