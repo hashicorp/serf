@@ -13,6 +13,9 @@ IMPROVEMENTS:
  * `reconnect_interval` and `reconnect_timeout` can be provided to configure
  agent behavior for attempting to reconnect to failed nodes. [GH-155]
 
+ * Agent can be provided `rpc_auth` config to require that RPC is authenticated.
+ All commands can take a `-rpc-auth` flag now. [GH-148]
+
 BUG FIXES:
 
  * Event handlers are correctly invoked when BusyBox is the shell. [GH-156]
