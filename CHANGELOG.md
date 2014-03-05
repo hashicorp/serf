@@ -10,6 +10,9 @@ IMPROVEMENTS:
  * New RPC command "members-filtered" to move filtering logic to the agent.
  Thanks to @ryanuber. [GH-149]
 
+ * `reconnect_interval` and `reconnect_timeout` can be provided to configure
+ agent behavior for attempting to reconnect to failed nodes. [GH-155]
+
 BUG FIXES:
 
  * Event handlers are correctly invoked when BusyBox is the shell. [GH-156]
