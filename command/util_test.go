@@ -61,6 +61,6 @@ func testIPC(t *testing.T, a *agent.Agent) (string, *agent.AgentIPC) {
 
 	lw := agent.NewLogWriter(512)
 	mult := io.MultiWriter(os.Stderr, lw)
-	ipc := agent.NewAgentIPC(a, l, mult, lw)
+	ipc := agent.NewAgentIPC(a, "", l, mult, lw)
 	return rpcAddr, ipc
 }
