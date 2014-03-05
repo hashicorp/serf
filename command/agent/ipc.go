@@ -58,6 +58,7 @@ const (
 	tagsCommand            = "tags"
 	queryCommand           = "query"
 	respondCommand         = "respond"
+	authCommand            = "auth"
 )
 
 const (
@@ -69,6 +70,8 @@ const (
 	invalidFilter         = "Invalid event filter"
 	streamExists          = "Stream with given sequence exists"
 	invalidQueryID        = "No pending queries matching ID"
+	authRequired          = "Authentication required"
+	invalidAuthToken      = "Invalid authentication token"
 )
 
 const (
@@ -91,6 +94,10 @@ type responseHeader struct {
 
 type handshakeRequest struct {
 	Version int32
+}
+
+type authRequest struct {
+	AuthKey string
 }
 
 type eventRequest struct {
@@ -200,6 +207,7 @@ type memberEventRecord struct {
 type AgentIPC struct {
 	sync.Mutex
 	agent     *Agent
+	authKey   string
 	clients   map[string]*IPCClient
 	listener  net.Listener
 	logger    *log.Logger
@@ -223,6 +231,8 @@ type IPCClient struct {
 
 	pendingQueries map[uint64]*serf.Query
 	queryLock      sync.Mutex
+
+	didAuth bool // Did we get an auth token yet?
 }
 
 // send is used to send an object using the MsgPack encoding. send
@@ -284,13 +294,14 @@ func (c *IPCClient) RegisterQuery(q *serf.Query) uint64 {
 }
 
 // NewAgentIPC is used to create a new Agent IPC handler
-func NewAgentIPC(agent *Agent, listener net.Listener,
+func NewAgentIPC(agent *Agent, authKey string, listener net.Listener,
 	logOutput io.Writer, logWriter *logWriter) *AgentIPC {
 	if logOutput == nil {
 		logOutput = os.Stderr
 	}
 	ipc := &AgentIPC{
 		agent:     agent,
+		authKey:   authKey,
 		clients:   make(map[string]*IPCClient),
 		listener:  listener,
 		logger:    log.New(logOutput, "", log.LstdFlags),
@@ -423,10 +434,21 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 	}
 	metrics.IncrCounter([]string{"agent", "ipc", "command"}, 1)
 
+	// Ensure the client has authenticated after the handshake if necessary
+	if i.authKey != "" && !client.didAuth && command != authCommand && command != handshakeCommand {
+		i.logger.Printf("[WARN] agent.ipc: Client sending commands before auth")
+		respHeader := responseHeader{Seq: seq, Error: authRequired}
+		client.Send(&respHeader, nil)
+		return nil
+	}
+
 	// Dispatch command specific handlers
 	switch command {
 	case handshakeCommand:
 		return i.handleHandshake(client, seq)
+
+	case authCommand:
+		return i.handleAuth(client, seq)
 
 	case eventCommand:
 		return i.handleEvent(client, seq)
@@ -486,6 +508,26 @@ func (i *AgentIPC) handleHandshake(client *IPCClient, seq uint64) error {
 		resp.Error = duplicateHandshake
 	} else {
 		client.version = req.Version
+	}
+	return client.Send(&resp, nil)
+}
+
+func (i *AgentIPC) handleAuth(client *IPCClient, seq uint64) error {
+	var req authRequest
+	if err := client.dec.Decode(&req); err != nil {
+		return fmt.Errorf("decode failed: %v", err)
+	}
+
+	resp := responseHeader{
+		Seq:   seq,
+		Error: "",
+	}
+
+	// Check the token matches
+	if req.AuthKey == i.authKey {
+		client.didAuth = true
+	} else {
+		resp.Error = invalidAuthToken
 	}
 	return client.Send(&resp, nil)
 }

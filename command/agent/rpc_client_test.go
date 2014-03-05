@@ -25,7 +25,7 @@ func testRPCClient(t *testing.T) (*client.RPCClient, *Agent, *AgentIPC) {
 	mult := io.MultiWriter(os.Stderr, lw)
 
 	agent := testAgent(mult)
-	ipc := NewAgentIPC(agent, l, mult, lw)
+	ipc := NewAgentIPC(agent, "", l, mult, lw)
 
 	rpcClient, err := client.NewRPCClient(l.Addr().String())
 	if err != nil {
@@ -742,5 +742,36 @@ func TestRPCClientStream_Query_Respond(t *testing.T) {
 		}
 	default:
 		t.Fatalf("missing response")
+	}
+}
+
+func TestRPCClientAuth(t *testing.T) {
+	cl, a1, ipc := testRPCClient(t)
+	defer ipc.Shutdown()
+	defer cl.Close()
+	defer a1.Shutdown()
+
+	// Setup an auth key
+	ipc.authKey = "foobar"
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	testutil.Yield()
+
+	if err := cl.UserEvent("deploy", nil, false); err.Error() != authRequired {
+		t.Fatalf("err: %s", err)
+	}
+	testutil.Yield()
+
+	config := client.Config{Addr: ipc.listener.Addr().String(), AuthKey: "foobar"}
+	rpcClient, err := client.ClientFromConfig(&config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer rpcClient.Close()
+
+	if err := rpcClient.UserEvent("deploy", nil, false); err != nil {
+		t.Fatalf("err: %s", err)
 	}
 }
