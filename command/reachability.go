@@ -10,6 +10,19 @@ import (
 	"time"
 )
 
+const (
+	tooManyAcks        = `This could mean Serf is detecting false-failures due to a misconfiguration or network issue.`
+	tooFewAcks         = `This could mean Serf gossip packets are being lost due to a misconfiguration or network issue.`
+	duplicateResponses = `Duplicate responses means there is a misconfiguration. Verify that node names are unique.`
+	troubleshooting    = `
+Troubleshooting tips:
+* Ensure that the bind addr:port is accessible by all other nodes
+* If an advertise address is set, ensure it routes to the bind address
+* Check that no nodes are behind a NAT
+* If nodes are behind firewalls or iptables, check that Serf traffic is permitted (UDP and TCP)
+* Verify networking equipment is functional`
+)
+
 // ReachabilityCommand is a Command implementation that is used to trigger
 // a new reachability test
 type ReachabilityCommand struct {
@@ -66,9 +79,7 @@ func (c *ReachabilityCommand) Run(args []string) int {
 			liveMembers[m.Name] = struct{}{}
 		}
 	}
-	if verbose {
-		c.Ui.Output(fmt.Sprintf("Total members: %d, live members: %d", len(members), len(liveMembers)))
-	}
+	c.Ui.Output(fmt.Sprintf("Total members: %d, live members: %d", len(members), len(liveMembers)))
 
 	// Start the query
 	params := client.QueryParam{
@@ -85,6 +96,8 @@ func (c *ReachabilityCommand) Run(args []string) int {
 	last := time.Now()
 
 	// Track responses and acknowledgements
+	exit := 0
+	dups := false
 	numAcks := 0
 	acksFrom := make(map[string]struct{}, len(members))
 
@@ -96,10 +109,11 @@ OUTER:
 				break OUTER
 			}
 			if verbose {
-				c.Ui.Output(fmt.Sprintf("Ack from '%s'", a))
+				c.Ui.Output(fmt.Sprintf("\tAck from '%s'", a))
 			}
 			numAcks++
 			if _, ok := acksFrom[a]; ok {
+				dups = true
 				c.Ui.Output(fmt.Sprintf("Duplicate response from '%v'", a))
 			}
 			acksFrom[a] = struct{}{}
@@ -112,35 +126,44 @@ OUTER:
 	}
 
 	if verbose {
-		end := time.Now()
-		c.Ui.Output(fmt.Sprintf("Query time: %v, last response in: %v", end.Sub(start), last.Sub(start)))
+		total := float64(time.Now().Sub(start)) / float64(time.Second)
+		timeToLast := float64(last.Sub(start)) / float64(time.Second)
+		c.Ui.Output(fmt.Sprintf("Query time: %0.2f sec, time to last response: %0.2f sec", total, timeToLast))
+	}
+
+	// Print troubleshooting info for duplicate responses
+	if dups {
+		c.Ui.Output(duplicateResponses)
+		exit = 1
 	}
 
 	n := len(liveMembers)
 	if numAcks == n {
 		c.Ui.Output("Successfully contacted all live nodes")
-		return 0
 
 	} else if numAcks > n {
-		c.Ui.Output("Received more acks than live nodes! Non-live acks:")
+		c.Ui.Output("Received more acks than live nodes! Acks from non-live nodes:")
 		for m := range acksFrom {
 			if _, ok := liveMembers[m]; !ok {
 				c.Ui.Output(fmt.Sprintf("\t%s", m))
 			}
 		}
+		c.Ui.Output(tooManyAcks)
+		c.Ui.Output(troubleshooting)
 		return 1
 
 	} else if numAcks < n {
-		c.Ui.Output("Missing acks from:")
+		c.Ui.Output("Received less acks than live nodes! Missing acks from:")
 		for m := range liveMembers {
 			if _, ok := acksFrom[m]; !ok {
 				c.Ui.Output(fmt.Sprintf("\t%s", m))
 			}
 		}
+		c.Ui.Output(tooFewAcks)
+		c.Ui.Output(troubleshooting)
 		return 1
 	}
-
-	return 0
+	return exit
 }
 
 func (c *ReachabilityCommand) Synopsis() string {
