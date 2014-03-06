@@ -7,6 +7,8 @@ FEATURES:
 
 IMPROVEMENTS:
 
+ * `members` command has new `-name` filter flag. Thanks to @ryanuber [GH-164]
+
  * New RPC command "members-filtered" to move filtering logic to the agent.
  Thanks to @ryanuber. [GH-149]
 
