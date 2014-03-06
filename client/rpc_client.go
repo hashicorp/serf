@@ -84,7 +84,7 @@ func (c *RPCClient) send(header *requestHeader, obj interface{}) error {
 
 	// Setup an IO deadline, this way we won't wait indefinitely
 	// if the client has hung.
-	if err := c.conn.SetDeadline(time.Now().Add(c.timeout)); err != nil {
+	if err := c.conn.SetWriteDeadline(time.Now().Add(c.timeout)); err != nil {
 		return err
 	}
 
