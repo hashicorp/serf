@@ -173,15 +173,16 @@ The members-filtered command is used to return a subset of the known members
 based on their metadata. It takes the following body:
 
 ```
-    {"Tags": {"key": "val"}, "Status": "alive"}
+    {"Tags": {"key": "val"}, "Status": "alive", "Name": "node1"}
 ```
 
-The `Tags` are used to filter nodes based on tag values. Each tag value may be
-either a plain string or a regular expression pattern. The `Status` is used to
-filter nodes based on operational status. This can also be passed as a regex.
+`Tags` are used to filter nodes based on tag values. `Status` is used to filter
+nodes based on operational status. `Name` is used to filter based on node names.
+Both `Name` and `Status`, as well as all `Tags` values, can contain regular
+expression patterns.
 
-Note that regex patterns will automatically be placed between start (`^`) and
-end (`$`) anchors.
+Note that regular expression patterns will automatically be placed between start
+(`^`) and end (`$`) anchors.
 
 The response will be in the same format as the `members` command.
 

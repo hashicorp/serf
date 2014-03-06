@@ -47,3 +47,5 @@ The command-line flags are all optional. The list of available flags are:
   tag if its value matches the regular expression. tag can be specified
   multiple times to filter on multiple keys.`
 
+* `-name` - If provided, only members with names matching this regular
+  expression will be returned.
