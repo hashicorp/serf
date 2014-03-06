@@ -195,8 +195,27 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 
 	testutil.Yield()
 
+	// Make sure that filters work on member names
+	mem, err := client.MembersFiltered(map[string]string{}, "", "127.0.0.*")
+	if err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+
+	if len(mem) == 0 {
+		t.Fatalf("should have matched more than 0 members")
+	}
+
+	mem, err = client.MembersFiltered(map[string]string{}, "", "bad")
+	if err != nil {
+		t.Fatalf("bad: %s", err)
+	}
+
+	if len(mem) != 0 {
+		t.Fatalf("should have matched 0 members: %#v", mem)
+	}
+
 	// Make sure that filters work on member tags
-	mem, err := client.MembersFiltered(map[string]string{"tag1": "val.*"}, "")
+	mem, err = client.MembersFiltered(map[string]string{"tag1": "val.*"}, "", "")
 	if err != nil {
 		t.Fatalf("bad: %s", err)
 	}
@@ -209,7 +228,7 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 	mem, err = client.MembersFiltered(map[string]string{
 		"tag1": "val.*",
 		"tag2": "val2",
-	}, "")
+	}, "", "")
 
 	if err != nil {
 		t.Fatalf("bad: %s", err)
@@ -223,7 +242,7 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 	mem, err = client.MembersFiltered(map[string]string{
 		"tag1": "val1",
 		"tag2": "bad",
-	}, "")
+	}, "", "")
 
 	if err != nil {
 		t.Fatalf("bad: %s", err)
@@ -238,7 +257,7 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 		t.Fatalf("bad: %s", err)
 	}
 
-	mem, err = client.MembersFiltered(map[string]string{}, "alive")
+	mem, err = client.MembersFiltered(map[string]string{}, "alive", "")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -247,7 +266,7 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 		t.Fatalf("should have matched 1 member: %#v", mem)
 	}
 
-	mem, err = client.MembersFiltered(map[string]string{}, "leaving")
+	mem, err = client.MembersFiltered(map[string]string{}, "leaving", "")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
