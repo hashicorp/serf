@@ -9,6 +9,9 @@ FEATURES:
  internal query to determine which node is in the minority and perform a shutdown.
  [GH-167] [GH-119]
 
+ * New `reachability` command can be used to help diagnose network and configuration
+ issues.
+
 IMPROVEMENTS:
 
  * `members` command has new `-name` filter flag. Thanks to @ryanuber [GH-164]
