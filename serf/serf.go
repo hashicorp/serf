@@ -1282,13 +1282,13 @@ func (s *Serf) resolveNodeConflict() {
 	// Query over, determine if we should live
 	majority := (responses / 2) + 1
 	if matching >= majority {
-		s.logger.Printf("[INFO] serf: majority in name conflict resolution (%d, %d)",
+		s.logger.Printf("[INFO] serf: majority in name conflict resolution [%d / %d]",
 			matching, responses)
 		return
 	}
 
 	// Since we lost the vote, we need to exit
-	s.logger.Printf("[WARN] serf: minority in name conflict resolution, quiting (%d, %d)",
+	s.logger.Printf("[WARN] serf: minority in name conflict resolution, quiting [%d / %d]",
 		matching, responses)
 	if err := s.Shutdown(); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to shutdown: %v", err)
