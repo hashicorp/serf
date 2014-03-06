@@ -5,6 +5,10 @@ FEATURES:
  * New `query` command provides a request/response mechanism to do realtime
  queries across the cluster. [GH-139]
 
+ * Automatic conflict resolution. Serf will detect name conflicts, and use an
+ internal query to determine which node is in the minority and perform a shutdown.
+ [GH-167] [GH-119]
+
 IMPROVEMENTS:
 
  * `members` command has new `-name` filter flag. Thanks to @ryanuber [GH-164]
