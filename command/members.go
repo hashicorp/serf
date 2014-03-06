@@ -70,15 +70,14 @@ Options:
   -format                   If provided, output is returned in the specified
                             format. Valid formats are 'json', and 'text' (default)
 
+  -name=<regexp>            If provided, only members matching the regexp are
+                            returned.
+
   -role=<regexp>            If provided, output is filtered to only nodes matching
                             the regular expression for role
                             '-role' is deprecated in favor of '-tag role=foo'.
 
-  -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
-
-  -rpc-auth=""              RPC auth token of the Serf agent.
-
-  -status=<regexp>			If provided, output is filtered to only nodes matching
+  -status=<regexp>          If provided, output is filtered to only nodes matching
                             the regular expression for status
 
   -tag <key>=<regexp>       If provided, output is filtered to only nodes with the
@@ -86,8 +85,9 @@ Options:
                             tag can be specified multiple times to filter on
                             multiple keys.
 
-  -name=<regexp>            If provided, only members matching the regexp are
-                            returned.
+  -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
+
+  -rpc-auth=""              RPC auth token of the Serf agent.
 `
 	return strings.TrimSpace(helpText)
 }

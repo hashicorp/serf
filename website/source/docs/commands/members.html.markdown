@@ -28,9 +28,19 @@ The command-line flags are all optional. The list of available flags are:
 * `-format` - Controls the output format. Supports `text` and `json`.
   The default format is `text`.
 
+* `-name` - If provided, only members with names matching this regular
+  expression will be returned.
+
 * `-role` - If provided, output is filtered to only nodes matching
   the regular expression for role. `-role` is deprecated in favor of
   `-tag role=foo`
+
+* `-status` - If provided, output is filtered to only nodes matching
+  the regular expression for status
+
+* `-tag key=value` - If provided, output is filtered to only nodes with the specified
+  tag if its value matches the regular expression. tag can be specified
+  multiple times to filter on multiple keys.
 
 * `-rpc-addr` - Address to the RPC server of the agent you want to contact
   to send this command. If this isn't specified, the command will contact
@@ -40,12 +50,3 @@ The command-line flags are all optional. The list of available flags are:
   an auth token, then this must be provided or the agent will refuse the
   command.
 
-* `-status` - If provided, output is filtered to only nodes matching
-  the regular expression for status
-
-* `-tag key=value` - If provided, output is filtered to only nodes with the specified
-  tag if its value matches the regular expression. tag can be specified
-  multiple times to filter on multiple keys.`
-
-* `-name` - If provided, only members with names matching this regular
-  expression will be returned.
