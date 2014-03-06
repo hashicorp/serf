@@ -78,6 +78,13 @@ func init() {
 			}, nil
 		},
 
+		"reachability": func() (cli.Command, error) {
+			return &command.ReachabilityCommand{
+				ShutdownCh: makeShutdownCh(),
+				Ui:         ui,
+			}, nil
+		},
+
 		"version": func() (cli.Command, error) {
 			return &command.VersionCommand{
 				Revision:          GitCommit,
