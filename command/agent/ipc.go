@@ -647,24 +647,27 @@ func (i *AgentIPC) filterMembers(members []serf.Member, tags map[string]string,
 		return nil, fmt.Errorf("Failed to compile regex: %v", err)
 	}
 
+	for key, val := range tags {
+		res, err := regexp.Compile(fmt.Sprintf("^%s$", val))
+		if err != nil {
+			return nil, fmt.Errorf("Failed to apply regex: %v", err)
+		}
+		tagsRe[key] = res
+	}
+
 	for _, m := range members {
 		add := true
 
 		// Check if tags were passed, and if they match
-		for key, val := range tags {
-			if _, ok := m.Tags[key]; !ok {
+		for tag, re := range tagsRe {
+			if _, ok := m.Tags[tag]; !ok {
 				add = false
 				break
 			}
-			res, err := regexp.Compile(fmt.Sprintf("^%s$", val))
-			if err != nil {
-				return nil, fmt.Errorf("Failed to apply regex: %v", err)
-			}
-			tagsRe[key] = res
-		}
-		for tag, re := range tagsRe {
+
 			if !re.MatchString(m.Tags[tag]) {
 				add = false
+				break
 			}
 		}
 
