@@ -73,19 +73,11 @@ func (s *serfQueries) handleQuery(q *Query) {
 	queryName := q.Name[len(internalQueryPrefix):]
 	switch queryName {
 	case pingQuery:
-		s.handlePing(q)
+		// Nothing to do, we will ack the query
 	case conflictQuery:
 		s.handleConflict(q)
 	default:
 		s.logger.Printf("[WARN] serf: Unhandled internal query '%s'", queryName)
-	}
-}
-
-// handlePing is invoked when we get a ping query. This is used to
-// check for reachability.
-func (s *serfQueries) handlePing(q *Query) {
-	if err := q.Respond([]byte("pong")); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to respond to ping query: %v", err)
 	}
 }
 
