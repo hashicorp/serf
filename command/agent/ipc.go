@@ -122,6 +122,7 @@ type joinResponse struct {
 type membersFilteredRequest struct {
 	Tags   map[string]string
 	Status string
+	Name   string
 }
 
 type membersResponse struct {
@@ -597,7 +598,7 @@ func (i *AgentIPC) handleMembers(client *IPCClient, command string, seq uint64) 
 		if err != nil {
 			return fmt.Errorf("decode failed: %v", err)
 		}
-		raw, err = i.filterMembers(raw, req.Tags, req.Status)
+		raw, err = i.filterMembers(raw, req.Tags, req.Status, req.Name)
 		if err != nil {
 			return err
 		}
@@ -631,9 +632,20 @@ func (i *AgentIPC) handleMembers(client *IPCClient, command string, seq uint64) 
 }
 
 func (i *AgentIPC) filterMembers(members []serf.Member, tags map[string]string,
-	status string) ([]serf.Member, error) {
+	status string, name string) ([]serf.Member, error) {
+
 	result := make([]serf.Member, 0, len(members))
 	tagsRe := make(map[string]*regexp.Regexp)
+
+	statusRe, err := regexp.Compile(fmt.Sprintf("^%s$", status))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to compile regex: %v", err)
+	}
+
+	nameRe, err := regexp.Compile(fmt.Sprintf("^%s$", name))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to compile regex: %v", err)
+	}
 
 	for _, m := range members {
 		add := true
@@ -657,14 +669,13 @@ func (i *AgentIPC) filterMembers(members []serf.Member, tags map[string]string,
 		}
 
 		// Check if status matches
-		if status != "" {
-			re, err := regexp.Compile(fmt.Sprintf("^%s$", status))
-			if err != nil {
-				return nil, fmt.Errorf("Failed to apply regex: %v", err)
-			}
-			if !re.MatchString(m.Status.String()) {
-				add = false
-			}
+		if status != "" && !statusRe.MatchString(m.Status.String()) {
+			add = false
+		}
+
+		// Check if node name matches
+		if name != "" && !nameRe.MatchString(m.Name) {
+			add = false
 		}
 
 		if add {
