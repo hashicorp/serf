@@ -260,6 +260,15 @@ func Create(conf *Config) (*Serf, error) {
 			conf.UserCoalescePeriod, conf.UserQuiescentPeriod, c)
 	}
 
+	// Listen for internal Serf queries. This is setup before the snapshotter, since
+	// we want to capture the query-time, but the internal listener does not passthrough
+	// the queries
+	outCh, err := newSerfQueries(serf, serf.logger, conf.EventCh, serf.shutdownCh)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to setup serf query handler: %v", err)
+	}
+	conf.EventCh = outCh
+
 	// Try access the snapshot
 	var oldClock, oldEventClock, oldQueryClock LamportTime
 	var prev []*PreviousNode
@@ -727,6 +736,12 @@ func (s *Serf) Shutdown() error {
 	}
 
 	return nil
+}
+
+// ShutdownCh returns a channel that can be used to wait for
+// Serf to shutdown.
+func (s *Serf) ShutdownCh() <-chan struct{} {
+	return s.shutdownCh
 }
 
 // Memberlist is used to get access to the underlying Memberlist instance
@@ -1210,14 +1225,74 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 func (s *Serf) handleNodeConflict(existing, other *memberlist.Node) {
 	// Log a basic warning if the node is not us...
 	if existing.Name != s.config.NodeName {
-		s.logger.Printf("[WARN] Name conflict for '%s' both %s:%d and %s:%d are claiming",
+		s.logger.Printf("[WARN] serf: Name conflict for '%s' both %s:%d and %s:%d are claiming",
 			existing.Name, existing.Addr, existing.Port, other.Addr, other.Port)
 		return
 	}
 
 	// The current node is conflicting! This is an error
-	s.logger.Printf("[ERR] Node name conflicts with another node at %s:%d. Names must be unique!",
-		other.Addr, other.Port)
+	s.logger.Printf("[ERR] serf: Node name conflicts with another node at %s:%d. Names must be unique! (Resolution enabled: %v)",
+		other.Addr, other.Port, s.config.EnableNameConflictResolution)
+
+	// If automatic resolution is enabled, kick off the resolution
+	if s.config.EnableNameConflictResolution {
+		go s.resolveNodeConflict()
+	}
+}
+
+// resolveNodeConflict is used to determine which node should remain during
+// a name conflict. This is done by running an internal query.
+func (s *Serf) resolveNodeConflict() {
+	// Get the local node
+	local := s.memberlist.LocalNode()
+
+	// Start a name resolution query
+	qName := internalQueryName(conflictQuery)
+	payload := []byte(s.config.NodeName)
+	resp, err := s.Query(qName, payload, nil)
+	if err != nil {
+		s.logger.Printf("[ERR] serf: Failed to start name resolution query: %v", err)
+		return
+	}
+
+	// Counter to determine winner
+	var responses, matching int
+
+	// Gather responses
+	member := new(Member)
+	respCh := resp.ResponseCh()
+	for r := range respCh {
+		// Decode the response
+		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageConflictResponseType {
+			s.logger.Printf("[ERR] serf: Invalid conflict query response type: %v", r.Payload)
+			continue
+		}
+		if err := decodeMessage(r.Payload[1:], member); err != nil {
+			s.logger.Printf("[ERR] serf: Failed to decode conflict query response: %v", err)
+			continue
+		}
+
+		// Update the counters
+		responses++
+		if bytes.Equal(member.Addr, local.Addr) && member.Port == local.Port {
+			matching++
+		}
+	}
+
+	// Query over, determine if we should live
+	majority := (responses / 2) + 1
+	if matching >= majority {
+		s.logger.Printf("[INFO] serf: majority in name conflict resolution [%d / %d]",
+			matching, responses)
+		return
+	}
+
+	// Since we lost the vote, we need to exit
+	s.logger.Printf("[WARN] serf: minority in name conflict resolution, quiting [%d / %d]",
+		matching, responses)
+	if err := s.Shutdown(); err != nil {
+		s.logger.Printf("[ERR] serf: Failed to shutdown: %v", err)
+	}
 }
 
 // handleReap periodically reaps the list of failed and left members.

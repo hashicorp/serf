@@ -224,3 +224,13 @@ at a single JSON object with configuration within it.
 * `reconnect_timeout` - This controls for how long the agent attempts to connect
   to a failed node before reaping it from the cluster. By default this is 24 hours.
 
+* `disable_name_resolution` - If enabled, then Serf will not attempt to automatically
+  resolve name conflicts. Serf relies on the each node having a unique name, but as a
+  result of misconfiguration sometimes Serf agents have conflicting names. By default,
+  the agents that are conflicting will query the cluster to determine which node is
+  believed to be "correct" by the majority of other nodes. The node(s) that are in the
+  minority will shutdown at the end of the conflict resolution. Setting this flag prevents
+  this behavior, and instead Serf will merely log a warning. This is not recommanded since
+  the cluster will disagree about the mapping of NodeName -> IP:Port and cannot reconcile
+  this.
+

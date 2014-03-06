@@ -136,6 +136,12 @@ type Config struct {
 	// it from the cluster.
 	ReconnectTimeoutRaw string        `mapstructure:"reconnect_timeout"`
 	ReconnectTimeout    time.Duration `mapstructure:"-"`
+
+	// By default Serf will attempt to resolve name conflicts. This is done by
+	// determining which node the majority believe to be the proper node, and
+	// by having the minority node shutdown. If you want to disable this behavior,
+	// then this flag can be set to true.
+	DisableNameResolution bool `mapstructure:"disable_name_resolution"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -309,6 +315,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.ReconnectTimeout != 0 {
 		result.ReconnectTimeout = b.ReconnectTimeout
+	}
+	if b.DisableNameResolution {
+		result.DisableNameResolution = true
 	}
 
 	// Copy the event handlers

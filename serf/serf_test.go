@@ -1301,3 +1301,59 @@ func TestSerf_Query_sizeLimit(t *testing.T) {
 		t.Fatalf("should get size limit error: %v", err)
 	}
 }
+
+func TestSerf_NameResolution(t *testing.T) {
+	// Create the s1 config with an event channel so we can listen
+	s1Config := testConfig()
+	s2Config := testConfig()
+	s3Config := testConfig()
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+
+	// Create an artifical node name conflict!
+	s3Config.NodeName = s1Config.NodeName
+	s3, err := Create(s3Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s3.Shutdown()
+
+	testutil.Yield()
+
+	// Join s1 to s2 first. s2 should vote for s1 in conflict
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Wait for the query period to end
+	time.Sleep(s1.DefaultQueryTimeout() * 2)
+
+	// s3 should have shutdown, while s1 is running
+	if s1.State() != SerfAlive {
+		t.Fatalf("bad: %v", s1.State())
+	}
+	if s2.State() != SerfAlive {
+		t.Fatalf("bad: %v", s2.State())
+	}
+	if s3.State() != SerfShutdown {
+		t.Fatalf("bad: %v", s3.State())
+	}
+}

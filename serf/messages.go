@@ -17,6 +17,7 @@ const (
 	messageUserEventType
 	messageQueryType
 	messageQueryResponseType
+	messageConflictResponseType
 )
 
 const (
