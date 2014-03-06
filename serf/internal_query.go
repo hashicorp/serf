@@ -8,7 +8,7 @@ import (
 const (
 	// This is the prefix we use for queries that are internal to Serf.
 	// They are handled internally, and not forwarded to a client.
-	internalQueryPrefix = "_serf_"
+	InternalQueryPrefix = "_serf_"
 
 	// pingQuery is run to check for reachability
 	pingQuery = "ping"
@@ -19,7 +19,7 @@ const (
 
 // internalQueryName is used to generate a query name for an internal query
 func internalQueryName(name string) string {
-	return internalQueryPrefix + name
+	return InternalQueryPrefix + name
 }
 
 // serfQueries is used to listen for queries that start with
@@ -34,7 +34,7 @@ type serfQueries struct {
 
 // newSerfQueries is used to create a new serfQueries. We return an event
 // channel that is ingested and forwarded to an outCh. Any Queries that
-// have the internalQueryPrefix are handled instead of forwarded.
+// have the InternalQueryPrefix are handled instead of forwarded.
 func newSerfQueries(serf *Serf, logger *log.Logger, outCh chan<- Event, shutdownCh <-chan struct{}) (chan<- Event, error) {
 	inCh := make(chan Event, 1024)
 	q := &serfQueries{
@@ -54,7 +54,7 @@ func (s *serfQueries) stream() {
 		select {
 		case e := <-s.inCh:
 			// Check if this is a query we should process
-			if q, ok := e.(*Query); ok && strings.HasPrefix(q.Name, internalQueryPrefix) {
+			if q, ok := e.(*Query); ok && strings.HasPrefix(q.Name, InternalQueryPrefix) {
 				go s.handleQuery(q)
 
 			} else if s.outCh != nil {
@@ -70,7 +70,7 @@ func (s *serfQueries) stream() {
 // handleQuery is invoked when we get an internal query
 func (s *serfQueries) handleQuery(q *Query) {
 	// Get the queryName after the initial prefix
-	queryName := q.Name[len(internalQueryPrefix):]
+	queryName := q.Name[len(InternalQueryPrefix):]
 	switch queryName {
 	case pingQuery:
 		// Nothing to do, we will ack the query
