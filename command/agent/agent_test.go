@@ -3,6 +3,7 @@ package agent
 import (
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
+	"strings"
 	"testing"
 )
 
@@ -80,5 +81,22 @@ func TestAgentUserEvent(t *testing.T) {
 
 	if string(e.Payload) != "foo" {
 		t.Fatalf("bad: %#v", e)
+	}
+}
+
+func TestAgentQuery_BadPrefix(t *testing.T) {
+	a1 := testAgent(nil)
+	defer a1.Shutdown()
+	defer a1.Leave()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	_, err := a1.Query("_serf_test", nil, nil)
+	if err == nil || !strings.Contains(err.Error(), "cannot contain") {
+		t.Fatalf("err: %s", err)
 	}
 }
