@@ -180,6 +180,7 @@ func (a *Agent) DeregisterEventHandler(eh EventHandler) {
 
 // eventLoop listens to events from Serf and fans out to event handlers
 func (a *Agent) eventLoop() {
+	serfShutdownCh := a.serf.ShutdownCh()
 	for {
 		select {
 		case e := <-a.eventCh:
@@ -189,6 +190,11 @@ func (a *Agent) eventLoop() {
 				eh.HandleEvent(e)
 			}
 			a.eventHandlersLock.Unlock()
+
+		case <-serfShutdownCh:
+			a.logger.Printf("[WARN] agent: Serf shutdown detected, quitting")
+			a.Shutdown()
+			return
 
 		case <-a.shutdownCh:
 			return
