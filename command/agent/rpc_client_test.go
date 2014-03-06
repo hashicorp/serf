@@ -35,6 +35,16 @@ func testRPCClient(t *testing.T) (*client.RPCClient, *Agent, *AgentIPC) {
 	return rpcClient, agent, ipc
 }
 
+func findMember(t *testing.T, members []serf.Member, name string) serf.Member {
+	for _, m := range members {
+		if m.Name == name {
+			return m
+		}
+	}
+	t.Fatalf("%s not found", name)
+	return serf.Member{}
+}
+
 func TestRPCClientForceLeave(t *testing.T) {
 	client, a1, ipc := testRPCClient(t)
 	a2 := testAgent(nil)
@@ -71,7 +81,7 @@ WAIT:
 	if len(m) != 2 {
 		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
 	}
-	if m[1].Status != serf.StatusFailed && time.Now().Sub(start) < 3*time.Second {
+	if findMember(t, m, a2.conf.NodeName).Status != serf.StatusFailed && time.Now().Sub(start) < 3*time.Second {
 		goto WAIT
 	}
 
@@ -79,12 +89,14 @@ WAIT:
 		t.Fatalf("err: %s", err)
 	}
 
+	testutil.Yield()
+
 	m = a1.Serf().Members()
 	if len(m) != 2 {
 		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
 	}
 
-	if m[1].Status != serf.StatusLeft {
+	if findMember(t, m, a2.conf.NodeName).Status != serf.StatusLeft {
 		t.Fatalf("should be left: %#v", m[1])
 	}
 }
