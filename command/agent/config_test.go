@@ -237,6 +237,17 @@ func TestDecodeConfig(t *testing.T) {
 	if config.RPCAuthKey != "foobar" {
 		t.Fatalf("bad: %#v", config)
 	}
+
+	// DisableNameResolution
+	input = `{"disable_name_resolution": true}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !config.DisableNameResolution {
+		t.Fatalf("bad: %#v", config)
+	}
 }
 
 func TestMergeConfig(t *testing.T) {
@@ -250,18 +261,19 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	b := &Config{
-		NodeName:          "bname",
-		Protocol:          -1,
-		EncryptKey:        "foo",
-		EventHandlers:     []string{"bar"},
-		StartJoin:         []string{"bar"},
-		LeaveOnTerm:       true,
-		SkipLeaveOnInt:    true,
-		Discover:          "tubez",
-		Interface:         "eth0",
-		ReconnectInterval: 15 * time.Second,
-		ReconnectTimeout:  48 * time.Hour,
-		RPCAuthKey:        "foobar",
+		NodeName:              "bname",
+		Protocol:              -1,
+		EncryptKey:            "foo",
+		EventHandlers:         []string{"bar"},
+		StartJoin:             []string{"bar"},
+		LeaveOnTerm:           true,
+		SkipLeaveOnInt:        true,
+		Discover:              "tubez",
+		Interface:             "eth0",
+		ReconnectInterval:     15 * time.Second,
+		ReconnectTimeout:      48 * time.Hour,
+		RPCAuthKey:            "foobar",
+		DisableNameResolution: true,
 	}
 
 	c := MergeConfig(a, b)
@@ -311,6 +323,10 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	if c.RPCAuthKey != "foobar" {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if !c.DisableNameResolution {
 		t.Fatalf("bad: %#v", c)
 	}
 
