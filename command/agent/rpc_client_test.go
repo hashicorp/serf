@@ -196,7 +196,7 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 	testutil.Yield()
 
 	// Make sure that filters work on member names
-	mem, err := client.MembersFiltered(map[string]string{}, "", "127.0.0.*")
+	mem, err := client.MembersFiltered(map[string]string{}, "", ".*")
 	if err != nil {
 		t.Fatalf("bad: %s", err)
 	}

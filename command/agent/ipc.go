@@ -637,6 +637,16 @@ func (i *AgentIPC) filterMembers(members []serf.Member, tags map[string]string,
 	result := make([]serf.Member, 0, len(members))
 	tagsRe := make(map[string]*regexp.Regexp)
 
+	statusRe, err := regexp.Compile(fmt.Sprintf("^%s$", status))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to compile regex: %v", err)
+	}
+
+	nameRe, err := regexp.Compile(fmt.Sprintf("^%s$", name))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to compile regex: %v", err)
+	}
+
 	for _, m := range members {
 		add := true
 
@@ -659,25 +669,13 @@ func (i *AgentIPC) filterMembers(members []serf.Member, tags map[string]string,
 		}
 
 		// Check if status matches
-		if status != "" {
-			re, err := regexp.Compile(fmt.Sprintf("^%s$", status))
-			if err != nil {
-				return nil, fmt.Errorf("Failed to apply regex: %v", err)
-			}
-			if !re.MatchString(m.Status.String()) {
-				add = false
-			}
+		if status != "" && !statusRe.MatchString(m.Status.String()) {
+			add = false
 		}
 
-		// Check if node matches
-		if name != "" {
-			re, err := regexp.Compile(fmt.Sprintf("^%s$", name))
-			if err != nil {
-				return nil, fmt.Errorf("Failed to apply regex: %v", err)
-			}
-			if !re.MatchString(m.Name) {
-				add = false
-			}
+		// Check if node name matches
+		if name != "" && !nameRe.MatchString(m.Name) {
+			add = false
 		}
 
 		if add {
