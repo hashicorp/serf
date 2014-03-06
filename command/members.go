@@ -91,7 +91,7 @@ Options:
 
 func (c *MembersCommand) Run(args []string) int {
 	var detailed bool
-	var roleFilter, statusFilter, format string
+	var roleFilter, statusFilter, nameFilter, format string
 	var tags []string
 	cmdFlags := flag.NewFlagSet("members", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
@@ -100,6 +100,7 @@ func (c *MembersCommand) Run(args []string) int {
 	cmdFlags.StringVar(&statusFilter, "status", "", "status filter")
 	cmdFlags.StringVar(&format, "format", "text", "output format")
 	cmdFlags.Var((*agent.AppendSliceValue)(&tags), "tag", "tag filter")
+	cmdFlags.StringVar(&nameFilter, "name", "", "name filter")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	rpcAuth := RPCAuthFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
@@ -129,7 +130,7 @@ func (c *MembersCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
-	members, err := client.MembersFiltered(reqtags, statusFilter)
+	members, err := client.MembersFiltered(reqtags, statusFilter, nameFilter)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error retrieving members: %s", err))
 		return 1

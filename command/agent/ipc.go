@@ -122,6 +122,7 @@ type joinResponse struct {
 type membersFilteredRequest struct {
 	Tags   map[string]string
 	Status string
+	Name   string
 }
 
 type membersResponse struct {
@@ -631,7 +632,7 @@ func (i *AgentIPC) handleMembers(client *IPCClient, command string, seq uint64) 
 }
 
 func (i *AgentIPC) filterMembers(members []serf.Member, tags map[string]string,
-	status string) ([]serf.Member, error) {
+	status string, name string) ([]serf.Member, error) {
 	result := make([]serf.Member, 0, len(members))
 	tagsRe := make(map[string]*regexp.Regexp)
 
@@ -663,6 +664,17 @@ func (i *AgentIPC) filterMembers(members []serf.Member, tags map[string]string,
 				return nil, fmt.Errorf("Failed to apply regex: %v", err)
 			}
 			if !re.MatchString(m.Status.String()) {
+				add = false
+			}
+		}
+
+		// Check if node matches
+		if name != "" {
+			re, err := regexp.Compile(fmt.Sprintf("^%s$", name))
+			if err != nil {
+				return nil, fmt.Errorf("Failed to apply regex: %v", err)
+			}
+			if !re.MatchString(m.Name) {
 				add = false
 			}
 		}
