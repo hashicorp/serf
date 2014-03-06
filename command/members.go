@@ -85,6 +85,9 @@ Options:
                             tag <key> with value matching the regular expression.
                             tag can be specified multiple times to filter on
                             multiple keys.
+
+  -name=<regexp>            If provided, only members matching the regexp are
+                            returned.
 `
 	return strings.TrimSpace(helpText)
 }

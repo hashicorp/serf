@@ -598,7 +598,7 @@ func (i *AgentIPC) handleMembers(client *IPCClient, command string, seq uint64) 
 		if err != nil {
 			return fmt.Errorf("decode failed: %v", err)
 		}
-		raw, err = i.filterMembers(raw, req.Tags, req.Status)
+		raw, err = i.filterMembers(raw, req.Tags, req.Status, req.Name)
 		if err != nil {
 			return err
 		}
@@ -633,6 +633,7 @@ func (i *AgentIPC) handleMembers(client *IPCClient, command string, seq uint64) 
 
 func (i *AgentIPC) filterMembers(members []serf.Member, tags map[string]string,
 	status string, name string) ([]serf.Member, error) {
+
 	result := make([]serf.Member, 0, len(members))
 	tagsRe := make(map[string]*regexp.Regexp)
 

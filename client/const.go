@@ -88,6 +88,7 @@ type joinResponse struct {
 type membersFilteredRequest struct {
 	Tags   map[string]string
 	Status string
+	Name   string
 }
 
 type membersResponse struct {

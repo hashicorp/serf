@@ -220,8 +220,9 @@ func (c *RPCClient) Members() ([]Member, error) {
 	return resp.Members, err
 }
 
-// MembersFiltered returns a subset of members filtered by tags or status
-func (c *RPCClient) MembersFiltered(tags map[string]string, status string) ([]Member, error) {
+// MembersFiltered returns a subset of members
+func (c *RPCClient) MembersFiltered(tags map[string]string, status string,
+	name string) ([]Member, error) {
 	header := requestHeader{
 		Command: membersFilteredCommand,
 		Seq:     c.getSeq(),
@@ -229,6 +230,7 @@ func (c *RPCClient) MembersFiltered(tags map[string]string, status string) ([]Me
 	req := membersFilteredRequest{
 		Tags:   tags,
 		Status: status,
+		Name:   name,
 	}
 	var resp membersResponse
 

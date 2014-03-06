@@ -188,6 +188,7 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 		"tag1": "val1",
 		"tag2": "val2",
 	}, []string{})
+
 	if err != nil {
 		t.Fatalf("bad: %s", err)
 	}
