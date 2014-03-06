@@ -172,6 +172,16 @@ type Config struct {
 	// it will attempt to join all the previously known nodes until one
 	// succeeds and will also avoid replaying old user events.
 	SnapshotPath string
+
+	// EnableNameConflictResolution controls if Serf will actively attempt
+	// to resolve a name conflict. Since each Serf member must have a unique
+	// name, a cluster can run into issues if multiple nodes claim the same name.
+	// Without automatic resolution, Serf merely logs some warnings, but otherwise
+	// does not take any action. Automatic resolution detects the conflict and issues
+	// a special query which asks the cluster for the Name -> IP:Port mapping. If there
+	// is a simple majority of votes, that node stays while the other node will leave
+	// the cluster and exit.
+	EnableNameConflictResolution bool
 }
 
 // Init allocates the subdata structures
@@ -190,20 +200,21 @@ func DefaultConfig() *Config {
 	}
 
 	return &Config{
-		NodeName:           hostname,
-		BroadcastTimeout:   5 * time.Second,
-		EventBuffer:        512,
-		QueryBuffer:        512,
-		LogOutput:          os.Stderr,
-		ProtocolVersion:    ProtocolVersionMax,
-		ReapInterval:       15 * time.Second,
-		RecentIntentBuffer: 128,
-		ReconnectInterval:  30 * time.Second,
-		ReconnectTimeout:   24 * time.Hour,
-		QueueDepthWarning:  128,
-		MaxQueueDepth:      4096,
-		TombstoneTimeout:   24 * time.Hour,
-		MemberlistConfig:   memberlist.DefaultLANConfig(),
-		QueryTimeoutMult:   16,
+		NodeName:                     hostname,
+		BroadcastTimeout:             5 * time.Second,
+		EventBuffer:                  512,
+		QueryBuffer:                  512,
+		LogOutput:                    os.Stderr,
+		ProtocolVersion:              ProtocolVersionMax,
+		ReapInterval:                 15 * time.Second,
+		RecentIntentBuffer:           128,
+		ReconnectInterval:            30 * time.Second,
+		ReconnectTimeout:             24 * time.Hour,
+		QueueDepthWarning:            128,
+		MaxQueueDepth:                4096,
+		TombstoneTimeout:             24 * time.Hour,
+		MemberlistConfig:             memberlist.DefaultLANConfig(),
+		QueryTimeoutMult:             16,
+		EnableNameConflictResolution: true,
 	}
 }
