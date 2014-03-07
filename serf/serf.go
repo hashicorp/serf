@@ -653,6 +653,13 @@ func (s *Serf) hasAliveMembers() bool {
 	return hasAlive
 }
 
+// LocalMember returns the Member information for the local node
+func (s *Serf) LocalMember() Member {
+	s.memberLock.RLock()
+	defer s.memberLock.RUnlock()
+	return s.members[s.config.NodeName].Member
+}
+
 // Members returns a point-in-time snapshot of the members of this cluster.
 func (s *Serf) Members() []Member {
 	s.memberLock.RLock()

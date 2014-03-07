@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/serf/testutil"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -1355,5 +1356,38 @@ func TestSerf_NameResolution(t *testing.T) {
 	}
 	if s3.State() != SerfShutdown {
 		t.Fatalf("bad: %v", s3.State())
+	}
+}
+
+func TestSerf_LocalMember(t *testing.T) {
+	s1Config := testConfig()
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	m := s1.LocalMember()
+	if m.Name != s1Config.NodeName {
+		t.Fatalf("bad: %v", m)
+	}
+	if !reflect.DeepEqual(m.Tags, s1Config.Tags) {
+		t.Fatalf("bad: %v", m)
+	}
+	if m.Status != StatusAlive {
+		t.Fatalf("bad: %v", m)
+	}
+
+	newTags := map[string]string{
+		"foo":  "bar",
+		"test": "ing",
+	}
+	if err := s1.SetTags(newTags); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	m = s1.LocalMember()
+	if !reflect.DeepEqual(m.Tags, newTags) {
+		t.Fatalf("bad: %v", m)
 	}
 }
