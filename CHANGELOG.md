@@ -29,6 +29,11 @@ BUG FIXES:
 
  * Event handlers are correctly invoked when BusyBox is the shell. [GH-156]
 
+MISC:
+
+  * Support for protocol version 1 (Serf 0.2) has been removed. Serf 0.5 cannot
+  join a cluster that has members running version 0.2.
+
 ## 0.4.5 (Febuary 25, 2014)
 
 FEATURES:
