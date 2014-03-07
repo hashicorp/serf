@@ -48,6 +48,10 @@ upgrading, see the [upgrading page](/docs/upgrading.html).
 <td>0.4</td>
 <td>1, 2, 3&nbsp;&nbsp;&nbsp;<span class="label label-info">see warning below</span></td>
 </tr>
+<tr>
+<td>0.5</td>
+<td>2, 3, 4&nbsp;&nbsp;&nbsp;<span class="label label-info">see warning below</span></td>
+</tr>
 </table>
 
 <div class="alert alert-info">
@@ -67,5 +71,14 @@ compatible.
 agent to provide key/value tags and update them without restarting. This feature is only supported
 if all agents are running protocol version 3. If an agent is running an older protocol,
 then only the "role" tag is supported for backwards compatibility.
+</p>
+</div>
+
+<div class="alert alert-info">
+<p>
+<strong>Warning: </strong> Version 0.5 introduces support for queries, providing a real-time
+request/response mechanism. This feature is only supported if the agent is running protocol
+version 4. If an agent is running an older protocol, then attempting to start a query will
+return an error.
 </p>
 </div>

@@ -19,7 +19,7 @@ import (
 // Serf-level protocol versions that are passed down as the delegate
 // version to memberlist below.
 const (
-	ProtocolVersionMin uint8 = 1
+	ProtocolVersionMin uint8 = 2
 	ProtocolVersionMax       = 4
 )
 
