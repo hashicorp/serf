@@ -29,6 +29,9 @@ BUG FIXES:
 
  * Event handlers are correctly invoked when BusyBox is the shell. [GH-156]
 
+ * Event handlers were not being invoked with the correct SERF_TAG_* values
+ if tags were changed using the `tags` command. [GH-169]
+
 MISC:
 
   * Support for protocol version 1 (Serf 0.2) has been removed. Serf 0.5 cannot
