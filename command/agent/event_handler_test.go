@@ -77,9 +77,11 @@ func TestScriptEventHandler(t *testing.T) {
 	script, results := testEventScript(t, eventScript)
 
 	h := &ScriptEventHandler{
-		Self: serf.Member{
-			Name: "ourname",
-			Tags: map[string]string{"role": "ourrole", "dc": "east-aws"},
+		SelfFunc: func() serf.Member {
+			return serf.Member{
+				Name: "ourname",
+				Tags: map[string]string{"role": "ourrole", "dc": "east-aws"},
+			}
 		},
 		Scripts: []EventScript{
 			{
@@ -120,9 +122,11 @@ func TestScriptUserEventHandler(t *testing.T) {
 	script, results := testEventScript(t, userEventScript)
 
 	h := &ScriptEventHandler{
-		Self: serf.Member{
-			Name: "ourname",
-			Tags: map[string]string{"role": "ourrole", "dc": "east-aws"},
+		SelfFunc: func() serf.Member {
+			return serf.Member{
+				Name: "ourname",
+				Tags: map[string]string{"role": "ourrole", "dc": "east-aws"},
+			}
 		},
 		Scripts: []EventScript{
 			{
@@ -158,9 +162,11 @@ func TestScriptQueryEventHandler(t *testing.T) {
 	script, results := testEventScript(t, queryScript)
 
 	h := &ScriptEventHandler{
-		Self: serf.Member{
-			Name: "ourname",
-			Tags: map[string]string{"role": "ourrole", "dc": "east-aws"},
+		SelfFunc: func() serf.Member {
+			return serf.Member{
+				Name: "ourname",
+				Tags: map[string]string{"role": "ourrole", "dc": "east-aws"},
+			}
 		},
 		Scripts: []EventScript{
 			{

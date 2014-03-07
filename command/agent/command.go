@@ -289,12 +289,9 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	logWriter *logWriter, logOutput io.Writer) *AgentIPC {
 	// Add the script event handlers
 	c.scriptHandler = &ScriptEventHandler{
-		Self: serf.Member{
-			Name: config.NodeName,
-			Tags: config.Tags,
-		},
-		Scripts: config.EventScripts(),
-		Logger:  log.New(logOutput, "", log.LstdFlags),
+		SelfFunc: func() serf.Member { return agent.Serf().LocalMember() },
+		Scripts:  config.EventScripts(),
+		Logger:   log.New(logOutput, "", log.LstdFlags),
 	}
 	agent.RegisterEventHandler(c.scriptHandler)
 
@@ -524,9 +521,6 @@ func (c *Command) handleReload(config *Config, agent *Agent) *Config {
 		c.Ui.Error(fmt.Sprintf("Failed to update tags: %v", err))
 		return newConf
 	}
-
-	// Change the tags for the event handlers
-	c.scriptHandler.Self.Tags = newConf.Tags
 
 	return newConf
 }

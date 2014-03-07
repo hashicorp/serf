@@ -16,9 +16,9 @@ type EventHandler interface {
 
 // ScriptEventHandler invokes scripts for the events that it receives.
 type ScriptEventHandler struct {
-	Self    serf.Member
-	Scripts []EventScript
-	Logger  *log.Logger
+	SelfFunc func() serf.Member
+	Scripts  []EventScript
+	Logger   *log.Logger
 
 	scriptLock sync.Mutex
 	newScripts []EventScript
@@ -37,12 +37,13 @@ func (h *ScriptEventHandler) HandleEvent(e serf.Event) {
 		h.Logger = log.New(os.Stderr, "", log.LstdFlags)
 	}
 
+	self := h.SelfFunc()
 	for _, script := range h.Scripts {
 		if !script.Invoke(e) {
 			continue
 		}
 
-		err := invokeEventScript(h.Logger, script.Script, h.Self, e)
+		err := invokeEventScript(h.Logger, script.Script, self, e)
 		if err != nil {
 			h.Logger.Printf("[ERR] agent: Error invoking script '%s': %s",
 				script.Script, err)
