@@ -185,9 +185,15 @@ func (d *delegate) MergeRemoteState(buf []byte, isJoin bool) {
 
 	// Witness the Lamport clocks first.
 	// We subtract 1 since no message with that clock has been sent yet
-	d.serf.clock.Witness(pp.LTime - 1)
-	d.serf.eventClock.Witness(pp.EventLTime - 1)
-	d.serf.queryClock.Witness(pp.QueryLTime - 1)
+	if pp.LTime > 0 {
+		d.serf.clock.Witness(pp.LTime - 1)
+	}
+	if pp.EventLTime > 0 {
+		d.serf.eventClock.Witness(pp.EventLTime - 1)
+	}
+	if pp.QueryLTime > 0 {
+		d.serf.queryClock.Witness(pp.QueryLTime - 1)
+	}
 
 	// Process the left nodes first to avoid the LTimes from being increment
 	// in the wrong order
