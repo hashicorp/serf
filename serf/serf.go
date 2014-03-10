@@ -1521,6 +1521,7 @@ func (s *Serf) Stats() map[string]string {
 		"left":         toString(uint64(len(s.leftMembers))),
 		"member_time":  toString(uint64(s.clock.Time())),
 		"event_time":   toString(uint64(s.eventClock.Time())),
+		"query_time":   toString(uint64(s.queryClock.Time())),
 		"intent_queue": toString(uint64(s.broadcasts.NumQueued())),
 		"event_queue":  toString(uint64(s.eventBroadcasts.NumQueued())),
 		"query_queue":  toString(uint64(s.queryBroadcasts.NumQueued())),
