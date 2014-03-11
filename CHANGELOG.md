@@ -12,6 +12,10 @@ FEATURES:
  * New `reachability` command can be used to help diagnose network and configuration
  issues.
 
+ * Added `member-reap` event to get notified of when Serf removes a failed or left
+ node from the cluster. The reap interval is controlled by `reconnect_timeout` and
+ `tombstone_timeout` respectively. [GH-172]
+
 IMPROVEMENTS:
 
  * `members` command has new `-name` filter flag. Thanks to @ryanuber [GH-164]
@@ -21,6 +25,9 @@ IMPROVEMENTS:
 
  * `reconnect_interval` and `reconnect_timeout` can be provided to configure
  agent behavior for attempting to reconnect to failed nodes. [GH-155]
+
+ * `tombstone_interval` can be provided to configure the reap time for nodes
+ that have gracefully left. [GH_172]
 
  * Agent can be provided `rpc_auth` config to require that RPC is authenticated.
  All commands can take a `-rpc-auth` flag now. [GH-148]
