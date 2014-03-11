@@ -1,10 +1,10 @@
 ---
 layout: "docs"
-page_title: "Serf Recipe - Event Handler Router"
+page_title: "Event Handler Router - Serf Recipe"
 sidebar_current: "docs-recipes"
 ---
 
-# Recipe: Handler router
+# Recipe: Event handler router
 
 Typically you must configure a handler for each type of event you expect to
 encounter (more about events and handlers

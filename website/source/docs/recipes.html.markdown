@@ -13,5 +13,5 @@ request with your recipe.
 
 ## Recipes
 
-* [Event handler router](/docs/recipes/event-handler-router.html) -
-  Provides modular event handler configuration using a simple shell script.
+* [Event handler router](/docs/recipes/event-handler-router.html) - Provides
+  dynamic event handler configuration using a simple shell script.
