@@ -247,6 +247,9 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	if config.ReconnectTimeout != 0 {
 		serfConfig.ReconnectTimeout = config.ReconnectTimeout
 	}
+	if config.TombstoneTimeout != 0 {
+		serfConfig.TombstoneTimeout = config.TombstoneTimeout
+	}
 	serfConfig.EnableNameConflictResolution = !config.DisableNameResolution
 
 	// Start Serf
