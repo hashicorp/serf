@@ -43,12 +43,13 @@ work. It will act as a catch-all this way and be able to make decisions on what
 script handler to invoke based on the Serf environment variables.
 
 ```
-#!/bin/bash
+#!/bin/sh
 SERFDIR="/etc/serf"
-EVENT="$SERF_EVENT"
-if [ "$SERF_EVENT" == "user" -o "$SERF_EVENT" == "query" ]; then
-    EVENT="${EVENT}-${SERF_USER_EVENT}"
+if [ "$SERF_EVENT" == "user" ]; then
+    EVENT="user-$SERF_USER_EVENT"
+elif [ "$SERF_EVENT" == "query" ]; then
+    EVENT="query-$SERF_QUERY_NAME"
 fi
-HANDLER="${SERFDIR}/handlers/${EVENT}"
-[ -x "$HANDLER" ] && exec "$HANDLER"
+HANDLER="$SERFDIR/handlers/$EVENT"
+[ -f "$HANDLER" -a -x "$HANDLER" ] && exec "$HANDLER" || :
 ```
