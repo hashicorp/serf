@@ -1352,6 +1352,15 @@ func (s *Serf) reap(old []*memberState, timeout time.Duration) []*memberState {
 
 		// Delete from members
 		delete(s.members, m.Name)
+
+		// Send an event along
+		s.logger.Printf("[INFO] serf: EventMemberReap: %s", m.Name)
+		if s.config.EventCh != nil {
+			s.config.EventCh <- MemberEvent{
+				Type:    EventMemberReap,
+				Members: []Member{m.Member},
+			}
+		}
 	}
 
 	return old

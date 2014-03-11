@@ -124,7 +124,7 @@ func TestSerf_eventsFailed(t *testing.T) {
 
 	// Since s2 shutdown, we check the events to make sure we got failures.
 	testEvents(t, eventCh, s2Config.NodeName,
-		[]EventType{EventMemberJoin, EventMemberFailed})
+		[]EventType{EventMemberJoin, EventMemberFailed, EventMemberReap})
 }
 
 func TestSerf_eventsJoin(t *testing.T) {
