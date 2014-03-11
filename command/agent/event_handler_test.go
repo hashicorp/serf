@@ -234,6 +234,11 @@ func TestEventScriptInvoke(t *testing.T) {
 			false,
 		},
 		{
+			EventScript{EventFilter{"member-reap", ""}, "script.sh"},
+			serf.MemberEvent{Type: serf.EventMemberReap},
+			true,
+		},
+		{
 			EventScript{EventFilter{"query", "deploy"}, "script.sh"},
 			&serf.Query{Name: "deploy"},
 			true,
@@ -267,6 +272,7 @@ func TestEventScriptValid(t *testing.T) {
 		{"member-leave", true},
 		{"member-failed", true},
 		{"member-update", true},
+		{"member-reap", true},
 		{"user", true},
 		{"User", false},
 		{"member", false},
@@ -383,6 +389,11 @@ func TestParseEventFilter(t *testing.T) {
 		{
 			"member-join",
 			[]EventFilter{EventFilter{"member-join", ""}},
+		},
+
+		{
+			"member-reap",
+			[]EventFilter{EventFilter{"member-reap", ""}},
 		},
 
 		{
