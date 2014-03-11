@@ -41,6 +41,10 @@ func TestMemberEventCoalesce_Basic(t *testing.T) {
 			Type:    EventMemberUpdate,
 			Members: []Member{Member{Name: "zip", Tags: map[string]string{"role": "bar"}}},
 		},
+		MemberEvent{
+			Type:    EventMemberReap,
+			Members: []Member{Member{Name: "dead"}},
+		},
 	}
 
 	for _, e := range send {
@@ -60,7 +64,7 @@ MEMBEREVENTFORLOOP:
 		}
 	}
 
-	if len(events) != 2 {
+	if len(events) != 3 {
 		t.Fatalf("bad: %#v", events)
 	}
 
@@ -95,6 +99,19 @@ MEMBEREVENTFORLOOP:
 		}
 		if me.Members[0].Tags["role"] != "bar" {
 			t.Fatalf("bad: %#v", me.Members[0].Tags)
+		}
+	}
+
+	if e, ok := events[EventMemberReap]; !ok {
+		t.Fatalf("bad: %#v", events)
+	} else {
+		me := e.(MemberEvent)
+		if len(me.Members) != 1 {
+			t.Fatalf("bad: %#v", me)
+		}
+
+		if me.Members[0].Name != "dead" {
+			t.Fatalf("bad: %#v", me.Members)
 		}
 	}
 }
@@ -155,6 +172,8 @@ func TestMemberEventCoalesce_passThrough(t *testing.T) {
 		{MemberEvent{Type: EventMemberJoin}, true},
 		{MemberEvent{Type: EventMemberLeave}, true},
 		{MemberEvent{Type: EventMemberFailed}, true},
+		{MemberEvent{Type: EventMemberUpdate}, true},
+		{MemberEvent{Type: EventMemberReap}, true},
 	}
 
 	for _, tc := range cases {
