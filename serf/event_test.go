@@ -145,6 +145,14 @@ func TestMemberEvent(t *testing.T) {
 		t.Fatalf("bad string val")
 	}
 
+	me.Type = EventMemberReap
+	if me.EventType() != EventMemberReap {
+		t.Fatalf("bad event type")
+	}
+	if me.String() != "member-reap" {
+		t.Fatalf("bad string val")
+	}
+
 	defer func() {
 		if r := recover(); r == nil {
 			t.Fatalf("expected panic")
@@ -183,9 +191,9 @@ func TestQuery(t *testing.T) {
 
 func TestEventType_String(t *testing.T) {
 	events := []EventType{EventMemberJoin, EventMemberLeave, EventMemberFailed,
-		EventMemberUpdate, EventUser, EventQuery}
+		EventMemberUpdate, EventMemberReap, EventUser, EventQuery}
 	expect := []string{"member-join", "member-leave", "member-failed",
-		"member-update", "user", "query"}
+		"member-update", "member-reap", "user", "query"}
 
 	for idx, event := range events {
 		if event.String() != expect[idx] {
