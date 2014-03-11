@@ -132,10 +132,15 @@ type Config struct {
 	ReconnectInterval    time.Duration `mapstructure:"-"`
 
 	// ReconnectTimeoutRaw is the string reconnect timeout. This timeout controls
-	// for how long we atttempt to connect to a failed node before removing
+	// for how long we attempt to connect to a failed node before removing
 	// it from the cluster.
 	ReconnectTimeoutRaw string        `mapstructure:"reconnect_timeout"`
 	ReconnectTimeout    time.Duration `mapstructure:"-"`
+
+	// TombstoneTimeoutRaw is the string tombstone timeout. This timeout controls
+	// for how long we remember a left node before removing it from the cluster.
+	TombstoneTimeoutRaw string        `mapstructure:"tombstone_timeout"`
+	TombstoneTimeout    time.Duration `mapstructure:"-"`
 
 	// By default Serf will attempt to resolve name conflicts. This is done by
 	// determining which node the majority believe to be the proper node, and
@@ -234,6 +239,14 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 		result.ReconnectTimeout = dur
 	}
 
+	if result.TombstoneTimeoutRaw != "" {
+		dur, err := time.ParseDuration(result.TombstoneTimeoutRaw)
+		if err != nil {
+			return nil, err
+		}
+		result.TombstoneTimeout = dur
+	}
+
 	return &result, nil
 }
 
@@ -315,6 +328,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.ReconnectTimeout != 0 {
 		result.ReconnectTimeout = b.ReconnectTimeout
+	}
+	if b.TombstoneTimeout != 0 {
+		result.TombstoneTimeout = b.TombstoneTimeout
 	}
 	if b.DisableNameResolution {
 		result.DisableNameResolution = true

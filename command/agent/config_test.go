@@ -248,6 +248,17 @@ func TestDecodeConfig(t *testing.T) {
 	if !config.DisableNameResolution {
 		t.Fatalf("bad: %#v", config)
 	}
+
+	// Tombstone intervals
+	input = `{"tombstone_timeout": "48h"}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.TombstoneTimeout != 48*time.Hour {
+		t.Fatalf("bad: %#v", config)
+	}
 }
 
 func TestMergeConfig(t *testing.T) {
@@ -274,6 +285,7 @@ func TestMergeConfig(t *testing.T) {
 		ReconnectTimeout:      48 * time.Hour,
 		RPCAuthKey:            "foobar",
 		DisableNameResolution: true,
+		TombstoneTimeout:      36 * time.Hour,
 	}
 
 	c := MergeConfig(a, b)
@@ -319,6 +331,10 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	if c.ReconnectTimeout != 48*time.Hour {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if c.TombstoneTimeout != 36*time.Hour {
 		t.Fatalf("bad: %#v", c)
 	}
 

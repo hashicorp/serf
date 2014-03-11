@@ -224,6 +224,9 @@ at a single JSON object with configuration within it.
 * `reconnect_timeout` - This controls for how long the agent attempts to connect
   to a failed node before reaping it from the cluster. By default this is 24 hours.
 
+* `tombstone_timeout` - This controls for how long the agent remembers nodes that
+  have gracefully left the cluster before reaping. By default this is 24 hours.
+
 * `disable_name_resolution` - If enabled, then Serf will not attempt to automatically
   resolve name conflicts. Serf relies on the each node having a unique name, but as a
   result of misconfiguration sometimes Serf agents have conflicting names. By default,

@@ -20,6 +20,8 @@ func (c *memberEventCoalescer) Handle(e Event) bool {
 		return true
 	case EventMemberUpdate:
 		return true
+	case EventMemberReap:
+		return true
 	default:
 		return false
 	}
