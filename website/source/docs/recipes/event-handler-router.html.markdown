@@ -1,6 +1,6 @@
 ---
 layout: "docs"
-page_title: "Event Handler Router - Serf Recipe"
+page_title: "Event Handler Router Recipe"
 sidebar_current: "docs-recipes"
 ---
 
@@ -19,8 +19,8 @@ This removes the orchestration work of reloading the agents by allowing one to
 simply drop new executables with predictable names into a directory.
 
 Handler executables must be named by event type for this recipe to work
-(e.g. `member-join`). User events get prefixed with `user-` (`user-deploy`,
-`user-app-reload`, etc.).
+(e.g. `member-join`). User events get prefixed with "user-", and queries with
+"query-" (`user-deploy`, `query-uptime`, etc.).
 
 What you will end up with is a directory structure that looks like this:
 
@@ -33,7 +33,7 @@ $ tree /etc/serf
     ├── member-leave
     ├── member-update
     ├── user-deploy
-    └── user-app-reload
+    └── query-uptime
 ```
 
 ## Handler code
@@ -45,9 +45,10 @@ script handler to invoke based on the Serf environment variables.
 ```
 #!/bin/bash
 SERFDIR="/etc/serf"
-[ "$SERF_EVENT" == "user" ] && EVENT="user-${SERF_USER_EVENT}" ||
 EVENT="$SERF_EVENT"
+if [ "$SERF_EVENT" == "user" -o "$SERF_EVENT" == "query" ]; then
+    EVENT="${EVENT}-${SERF_USER_EVENT}"
+fi
 HANDLER="${SERFDIR}/handlers/${EVENT}"
-[ -x "$HANDLER" ] || HANDLER="${SERFDIR}/handlers/default"
-exec "$HANDLER"
+[ -x "$HANDLER" ] && exec "$HANDLER"
 ```
