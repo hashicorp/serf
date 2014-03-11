@@ -23,7 +23,8 @@ Every time an event handler is invoked, Serf sets some environmental
 variables:
 
 * `SERF_EVENT` is the event type that is occuring. This will be one of
-  `member-join`, `member-leave`, `member-failed`, `member-update`, `user`, or `query`.
+  `member-join`, `member-leave`, `member-failed`, `member-update`,
+  `member-reap`, `user`, or `query`.
 
 * `SERF_SELF_NAME` is the name of the node that is executing the event handler.
 
@@ -51,7 +52,7 @@ size or the response will fail to send due to size restrictions.
 
 #### Membership Event Data
 
-For membership related events (`member-join`, `member-leave`, `member-failed`, and `member-update`),
+For membership related events (`member-join`, `member-leave`, `member-failed`, `member-update`, and `member-reap`),
 stdin is the list of members that participated in that event. Each member is
 separated by a newline and each field about the member is separated by
 whitespace. The fields of a membership event are name, address, role, then tags.
