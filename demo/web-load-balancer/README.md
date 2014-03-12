@@ -76,7 +76,7 @@ On member-join, the following shell script is run. We'll talk about the
 function of the shell script after the code sample.
 
 ```sh
-if [ "x${SERF_SELF_ROLE}" != "xlb" ]; then
+if [ "x${SERF_TAG_ROLE}" != "xlb" ]; then
     echo "Not an lb. Ignoring member join."
     exit 0
 fi
@@ -115,7 +115,7 @@ This demo doesn't differentiate between the two events, treating both
 the same way and simply removing the node from the HAProxy configuration.
 
 ```sh
-if [ "x${SERF_SELF_ROLE}" != "xlb" ]; then
+if [ "x${SERF_TAG_ROLE}" != "xlb" ]; then
     echo "Not an lb. Ignoring member leave"
     exit 0
 fi
