@@ -64,6 +64,11 @@ Note that Serf can join _any_ node in the cluster. We just set a static IP
 on the load balancer for ease of automation, but in a real production
 environment you can use any existing node, potentially just using DNS.
 
+Web server roles also make use of a "serf-query" upstart task to dynamically
+update the index page they serve. By using a "load" query, each node asks
+the rest of the cluster for their current load. This information is used
+to dynamically generate the index page.
+
 ### Serf Configuration
 
 The Serf configuration is very simple. Each node runs a Serf agent. The
