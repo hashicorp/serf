@@ -23,7 +23,7 @@ func (c *memberEventCoalescer) Handle(e Event) bool {
 	case EventMemberReap:
 		return true
 	case EventMemberFailedReconnect:
-		return true
+		return false
 	default:
 		return false
 	}
