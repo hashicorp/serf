@@ -22,6 +22,8 @@ func (c *memberEventCoalescer) Handle(e Event) bool {
 		return true
 	case EventMemberReap:
 		return true
+	case EventMemberFailedReconnect:
+		return false
 	default:
 		return false
 	}

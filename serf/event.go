@@ -17,6 +17,7 @@ const (
 	EventMemberFailed
 	EventMemberUpdate
 	EventMemberReap
+	EventMemberFailedReconnect
 	EventUser
 	EventQuery
 )
@@ -33,6 +34,8 @@ func (t EventType) String() string {
 		return "member-update"
 	case EventMemberReap:
 		return "member-reap"
+	case EventMemberFailedReconnect:
+		return "member-failed-reconnect"
 	case EventUser:
 		return "user"
 	case EventQuery:
@@ -73,6 +76,8 @@ func (m MemberEvent) String() string {
 		return "member-update"
 	case EventMemberReap:
 		return "member-reap"
+	case EventMemberFailedReconnect:
+		return "member-failed-reconnect"
 	default:
 		panic(fmt.Sprintf("unknown event type: %d", m.Type))
 	}

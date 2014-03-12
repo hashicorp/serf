@@ -239,6 +239,11 @@ func TestEventScriptInvoke(t *testing.T) {
 			true,
 		},
 		{
+			EventScript{EventFilter{"member-failed-reconnect", ""}, "script.sh"},
+			serf.MemberEvent{Type: serf.EventMemberFailedReconnect},
+			true,
+		},
+		{
 			EventScript{EventFilter{"query", "deploy"}, "script.sh"},
 			&serf.Query{Name: "deploy"},
 			true,
