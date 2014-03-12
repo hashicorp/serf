@@ -1,4 +1,6 @@
 Source: serf
+Section: net
+Priority: optional
 Maintainer: Derp Ston <derpston@sleepygeek.org>
 Build-Depends:
 	debhelper
