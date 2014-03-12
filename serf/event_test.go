@@ -153,6 +153,14 @@ func TestMemberEvent(t *testing.T) {
 		t.Fatalf("bad string val")
 	}
 
+	me.Type = EventMemberFailedReconnect
+	if me.EventType() != EventMemberFailedReconnect {
+		t.Fatalf("bad event type")
+	}
+	if me.String() != "member-failed-reconnect" {
+		t.Fatalf("bad string val")
+	}
+
 	defer func() {
 		if r := recover(); r == nil {
 			t.Fatalf("expected panic")

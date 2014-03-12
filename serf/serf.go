@@ -1404,7 +1404,17 @@ func (s *Serf) reconnect() {
 	addr := mem.Addr.String()
 
 	// Attempt to join at the memberlist level
-	s.memberlist.Join([]string{addr})
+	num, err := s.memberlist.Join([]string{addr})
+	if num < 1 || err != nil {
+		// Send an event along
+		s.logger.Printf("[INFO] serf: EventMemberFailedReconnect: %s", mem.Name)
+		if s.config.EventCh != nil {
+			s.config.EventCh <- MemberEvent{
+				Type:    EventMemberFailedReconnect,
+				Members: []Member{mem.Member},
+			}
+		}
+	}
 }
 
 // checkQueueDepth periodically checks the size of a queue to see if
