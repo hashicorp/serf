@@ -20,5 +20,5 @@ request.
 * [Event handler router](/docs/recipes/event-handler-router.html) - Provides
   dynamic event handler configuration using a simple shell script.
 
-* [Get agent uptime](/docs/recipes/agent-uptime.html) - Expose the uptime of a
-  Serf agent.
+* [Get agent uptime](/docs/recipes/agent-uptime.html) - Expose the elapsed time
+  since startup of a Serf agent.
