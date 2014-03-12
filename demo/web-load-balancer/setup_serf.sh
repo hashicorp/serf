@@ -100,3 +100,19 @@ end script
 EOF
 sudo mv /tmp/join.conf /etc/init/serf-join.conf
 sudo start serf-join
+
+cat <<EOF >/tmp/query.conf
+description "Query the serf cluster load"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+respawn
+
+script
+    echo I am "${HOSTNAME}" > /var/www/index.html
+    serf query load >> /var/www/index.html
+end script
+EOF
+sudo mv /tmp/query.conf /etc/init/serf-query.conf
+sudo start serf-query
