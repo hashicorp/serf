@@ -14,7 +14,7 @@ sudo apt-get install -y unzip
 
 # Download and install Serf
 cd /tmp
-until wget -O serf.zip https://dl.bintray.com/mitchellh/serf/0.4.5_linux_amd64.zip; do
+until wget -O serf.zip https://dl.bintray.com/mitchellh/serf/0.5.0_linux_amd64.zip; do
     sleep 1
 done
 unzip serf.zip
@@ -110,8 +110,10 @@ stop on runlevel [!2345]
 respawn
 
 script
-    echo I am "${HOSTNAME}" > /var/www/index.html
-    serf query load >> /var/www/index.html
+    echo `date` I am "${HOSTNAME}<br>" > /var/www/index.html.1
+    serf query -no-ack load | sed 's|$|<br>|' >> /var/www/index.html.1
+    mv /var/www/index.html.1 /var/www/index.html
+    sleep 10
 end script
 EOF
 sudo mv /tmp/query.conf /etc/init/serf-query.conf
