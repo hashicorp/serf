@@ -18,6 +18,8 @@ FEATURES:
 
 IMPROVEMENTS:
 
+ * New Recipes section on the site to share Serf tips. Thanks to @ryanuber. [GH-177]
+
  * `members` command has new `-name` filter flag. Thanks to @ryanuber [GH-164]
 
  * New RPC command "members-filtered" to move filtering logic to the agent.
@@ -33,6 +35,8 @@ IMPROVEMENTS:
  All commands can take a `-rpc-auth` flag now. [GH-148]
 
 BUG FIXES:
+
+ * Fixed config folder in Upstart script. Thanks to @llchen223. [GH-174]
 
  * Event handlers are correctly invoked when BusyBox is the shell. [GH-156]
 
