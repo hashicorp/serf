@@ -3,10 +3,10 @@ package agent
 import (
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
-	"path/filepath"
 	"io/ioutil"
-	"reflect"
 	"os"
+	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -107,7 +107,7 @@ func TestAgentQuery_BadPrefix(t *testing.T) {
 
 func TestAgentTagsFile(t *testing.T) {
 	tags := map[string]string{
-		"role": "webserver",
+		"role":       "webserver",
 		"datacenter": "us-east",
 	}
 

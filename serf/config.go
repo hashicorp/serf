@@ -1,13 +1,13 @@
 package serf
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/hashicorp/memberlist"
 	"io"
 	"io/ioutil"
 	"os"
 	"time"
-	"fmt"
-	"encoding/json"
 )
 
 // ProtocolVersionMap is the mapping of Serf delegate protocol versions
