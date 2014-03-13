@@ -51,8 +51,9 @@ type Config struct {
 	// the 'role' key is special, and is used for backwards compatibility.
 	Tags map[string]string `mapstructure:"tags"`
 
-	// TagsFile is used to persist changes to tags while the Serf agent is
-	// running.
+	// TagsFile is the path to a file where Serf can store its tags. Tag
+	// persistence is desirable since tags may be set or deleted while the
+	// agent is running. Tags can be reloaded from this file on later starts.
 	TagsFile string `mapstructure:"tags_file"`
 
 	// BindAddr is the address that the Serf agent's communication ports
@@ -428,23 +429,18 @@ func ReadConfigPaths(paths []string) (*Config, error) {
 }
 
 // Read the tags from a tags file, and populate config.Tags
-func (c *Config) ReadTagsFile() (int, error) {
+func ReadTagsFile(c *Config) error {
 	tagData, err := ioutil.ReadFile(c.TagsFile)
 	if err != nil {
-		return 0, fmt.Errorf("Failed to read tags file: %s", err)
+		return fmt.Errorf("Failed to read tags file: %s", err)
 	}
 
-	var tags map[string]string
-
-	if err := json.Unmarshal(tagData, &tags); err != nil {
-		return 0, fmt.Errorf("Failed to decode tags json: %s", err)
+	if err := json.Unmarshal(tagData, &c.Tags); err != nil {
+		return fmt.Errorf("Failed to decode tags json: %s", err)
 	}
 
-	for tag, val := range tags {
-		c.Tags[tag] = val
-	}
-
-	return len(tags), nil
+	// Success!
+	return nil
 }
 
 // Implement the sort interface for dirEnts

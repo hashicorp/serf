@@ -263,15 +263,13 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	// Restore tags if a tags file exists
 	if config.TagsFile != "" {
 		if _, err := os.Stat(config.TagsFile); err == nil {
-			tagCount, err := config.ReadTagsFile()
-			if err != nil {
+			if err := ReadTagsFile(config); err != nil {
 				c.Ui.Error(fmt.Sprintf("Failed reading tags file: %s", err))
 				return nil
 			}
 			serfConfig.Tags = config.Tags
-
-			c.Ui.Output(fmt.Sprintf("Restored %d tags from %s", tagCount,
-				config.TagsFile))
+			c.Ui.Output(fmt.Sprintf("Restored %d tags from %s",
+				len(config.Tags), config.TagsFile))
 		}
 	}
 

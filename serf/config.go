@@ -1,11 +1,8 @@
 package serf
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/hashicorp/memberlist"
 	"io"
-	"io/ioutil"
 	"os"
 	"time"
 )
@@ -196,23 +193,6 @@ func (c *Config) Init() {
 	if c.Tags == nil {
 		c.Tags = make(map[string]string)
 	}
-}
-
-func (c *Config) PersistTags() error {
-	if c.TagsFile != "" {
-		encoded, err := json.MarshalIndent(c.Tags, "", "  ")
-		if err != nil {
-			return fmt.Errorf("Failed to encode tags: %s", err)
-		}
-
-		// Use 0600 for permissions, in case tag data is sensitive
-		if err = ioutil.WriteFile(c.TagsFile, encoded, 0600); err != nil {
-			return fmt.Errorf("Failed to write tags file: %s", err)
-		}
-	}
-
-	// Success!
-	return nil
 }
 
 // DefaultConfig returns a Config struct that contains reasonable defaults

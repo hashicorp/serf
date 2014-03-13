@@ -435,7 +435,9 @@ func TestReadTagsFile(t *testing.T) {
 
 	config := DefaultConfig()
 	config.TagsFile = file
-	config.ReadTagsFile()
+	if err := ReadTagsFile(config); err != nil {
+		t.Fatalf("err: %s", err)
+	}
 
 	if len(config.Tags) != 2 {
 		t.Fatalf("should have 2 tags, found %d", len(config.Tags))

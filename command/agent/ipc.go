@@ -828,6 +828,9 @@ func (i *AgentIPC) handleTags(client *IPCClient, seq uint64) error {
 	}
 
 	err := i.agent.serf.SetTags(tags)
+	if err == nil && i.agent.conf.TagsFile != "" {
+		err = i.agent.writeTagsFile()
+	}
 
 	resp := responseHeader{Seq: seq, Error: errToString(err)}
 	return client.Send(&resp, nil)

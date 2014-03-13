@@ -1,9 +1,11 @@
 package agent
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/serf/serf"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -208,4 +210,20 @@ func (a *Agent) eventLoop() {
 			return
 		}
 	}
+}
+
+// Write the tags to the tags file, if defined.
+func (a *Agent) writeTagsFile() error {
+	encoded, err := json.MarshalIndent(a.conf.Tags, "", "  ")
+	if err != nil {
+		return fmt.Errorf("Failed to encode tags: %s", err)
+	}
+
+	// Use 0600 for permissions, in case tag data is sensitive
+	if err = ioutil.WriteFile(a.conf.TagsFile, encoded, 0600); err != nil {
+		return fmt.Errorf("Failed to write tags file: %s", err)
+	}
+
+	// Success!
+	return nil
 }
