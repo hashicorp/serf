@@ -107,8 +107,8 @@ func TestAgentQuery_BadPrefix(t *testing.T) {
 
 func TestAgentTagsFile(t *testing.T) {
 	tags := map[string]string{
-		"tag1": "a",
-		"tag2": "b",
+		"role": "webserver",
+		"datacenter": "us-east",
 	}
 
 	td, err := ioutil.TempDir("", "serf")
@@ -125,6 +125,8 @@ func TestAgentTagsFile(t *testing.T) {
 	if err := a1.Start(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
+	defer a1.Shutdown()
+	defer a1.Leave()
 
 	testutil.Yield()
 
@@ -133,11 +135,6 @@ func TestAgentTagsFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-
-	testutil.Yield()
-
-	a1.Shutdown()
-	a1.Leave()
 
 	testutil.Yield()
 
