@@ -139,6 +139,12 @@ The options below are all specified on the command-line.
   of tags, but in practice dozens of tags may be used. Tags can be changed during
   a config reload.
 
+
+* `-tags-file` - The tags file is used to persist tag data. As an agent's tags
+  are changed, the tags file will be updated. Tags can be reloaded during later
+  agent starts. This option is incompatible with the `-tag` option and requires
+  there be no tags in the agent configuration file, if given.
+
 ## Configuration Files
 
 In addition to the command-line options, configuration can be put into
@@ -173,6 +179,8 @@ at a single JSON object with configuration within it.
 
 * `tags` - This is a dictionary of tag values. It is the same as specifying
   the `tag` command-line flag once per tag.
+
+* `tags_file` - Equivalent to the `-tags-file` command-line flag.
 
 * `bind` - Equivalent to the `-bind` command-line flag.
 
