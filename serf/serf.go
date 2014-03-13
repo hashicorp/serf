@@ -505,6 +505,9 @@ func (s *Serf) SetTags(tags map[string]string) error {
 	// Update the config
 	s.config.Tags = tags
 
+	// Persist the change
+	s.config.PersistTags()
+
 	// Trigger a memberlist update
 	return s.memberlist.UpdateNode(s.config.BroadcastTimeout)
 }

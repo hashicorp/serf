@@ -3,8 +3,11 @@ package serf
 import (
 	"github.com/hashicorp/memberlist"
 	"io"
+	"io/ioutil"
 	"os"
 	"time"
+	"fmt"
+	"encoding/json"
 )
 
 // ProtocolVersionMap is the mapping of Serf delegate protocol versions
@@ -32,6 +35,11 @@ type Config struct {
 	// Tags are deprecating 'Role', and instead it acts as a special key in this
 	// map.
 	Tags map[string]string
+
+	// TagsFile is the path to a file where Serf can store its tags. Tag
+	// persistence is desirable since tags may be set or deleted while the
+	// agent is running. Tags can be reloaded from this file on later starts.
+	TagsFile string
 
 	// EventCh is a channel that receives all the Serf events. The events
 	// are sent on this channel in proper ordering. Care must be taken that
@@ -188,6 +196,20 @@ func (c *Config) Init() {
 	if c.Tags == nil {
 		c.Tags = make(map[string]string)
 	}
+}
+
+func (c *Config) PersistTags() error {
+	encoded, err := json.MarshalIndent(c.Tags, "", "  ")
+	if err != nil {
+		return fmt.Errorf("Failed to encode tags: %s", err)
+	}
+	// Use 0600 for permissions, in case tag data is sensitive
+	if err = ioutil.WriteFile(c.TagsFile, encoded, 0600); err != nil {
+		return fmt.Errorf("Failed to write tags file: %s", err)
+	}
+
+	// Success!
+	return nil
 }
 
 // DefaultConfig returns a Config struct that contains reasonable defaults

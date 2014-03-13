@@ -66,7 +66,15 @@ func (c *Command) readConfig() *Config {
 		"tag pair, specified as key=value")
 	cmdFlags.StringVar(&cmdConfig.Discover, "discover", "", "mDNS discovery name")
 	cmdFlags.StringVar(&cmdConfig.Interface, "iface", "", "interface to bind to")
+	cmdFlags.StringVar(&cmdConfig.TagsFile, "tags-file", "", "tag persistence file")
 	if err := cmdFlags.Parse(c.args); err != nil {
+		return nil
+	}
+
+	// Avoid complications of passing tags on command line and restoring
+	// from a tags file
+	if len(tags) > 0 && cmdConfig.TagsFile != "" {
+		c.Ui.Error("-tag is incompatible with -tags-file")
 		return nil
 	}
 
@@ -86,6 +94,12 @@ func (c *Command) readConfig() *Config {
 		fileConfig, err := ReadConfigPaths(configFiles)
 		if err != nil {
 			c.Ui.Error(err.Error())
+			return nil
+		}
+
+		// Avoid complications of config file tags with tag files
+		if len(fileConfig.Tags) > 0 && cmdConfig.TagsFile != "" {
+			c.Ui.Error("Config file tags are incompatible with -tags-file")
 			return nil
 		}
 
@@ -235,6 +249,7 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	serfConfig.MemberlistConfig.SecretKey = encryptKey
 	serfConfig.NodeName = config.NodeName
 	serfConfig.Tags = config.Tags
+	serfConfig.TagsFile = config.TagsFile
 	serfConfig.SnapshotPath = config.SnapshotPath
 	serfConfig.ProtocolVersion = uint8(config.Protocol)
 	serfConfig.CoalescePeriod = 3 * time.Second
@@ -251,6 +266,21 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 		serfConfig.TombstoneTimeout = config.TombstoneTimeout
 	}
 	serfConfig.EnableNameConflictResolution = !config.DisableNameResolution
+
+	// Restore tags if a tags file exists
+	if config.TagsFile != "" {
+		if _, err := os.Stat(config.TagsFile); err == nil {
+			tagCount, err := config.ReadTagsFile()
+			if err != nil {
+				c.Ui.Error(fmt.Sprintf("Failed reading tags file: %s", err))
+				return nil
+			}
+			serfConfig.Tags = config.Tags
+
+			c.Ui.Output(fmt.Sprintf("Restored %d tags from %s", tagCount,
+				config.TagsFile))
+		}
+	}
 
 	// Start Serf
 	c.Ui.Output("Starting Serf agent...")
