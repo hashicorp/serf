@@ -140,7 +140,7 @@ func TestAgentTagsFile(t *testing.T) {
 
 	a2 := testAgentWithConfig(config, nil)
 
-	if err := a1.Start(); err != nil {
+	if err := a2.Start(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 	defer a2.Shutdown()
