@@ -53,3 +53,18 @@ func testAgent(logOutput io.Writer) *Agent {
 	}
 	return agent
 }
+
+func testAgentWithConfig(config *serf.Config, logOutput io.Writer) *Agent {
+	if logOutput == nil {
+		logOutput = os.Stderr
+	}
+	config.MemberlistConfig.ProbeInterval = 100 * time.Millisecond
+	config.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
+	config.NodeName = config.MemberlistConfig.BindAddr
+
+	agent, err := Create(config, logOutput)
+	if err != nil {
+		panic(err)
+	}
+	return agent
+}

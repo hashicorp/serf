@@ -3,6 +3,10 @@ package agent
 import (
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
+	"path/filepath"
+	"io/ioutil"
+	"reflect"
+	"os"
 	"strings"
 	"testing"
 )
@@ -98,5 +102,58 @@ func TestAgentQuery_BadPrefix(t *testing.T) {
 	_, err := a1.Query("_serf_test", nil, nil)
 	if err == nil || !strings.Contains(err.Error(), "cannot contain") {
 		t.Fatalf("err: %s", err)
+	}
+}
+
+func TestAgentTagsFile(t *testing.T) {
+	tags := map[string]string{
+		"tag1": "a",
+		"tag2": "b",
+	}
+
+	td, err := ioutil.TempDir("", "serf")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer os.RemoveAll(td)
+
+	config := serf.DefaultConfig()
+	config.TagsFile = filepath.Join(td, "tags.json")
+
+	a1 := testAgentWithConfig(config, nil)
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	err = a1.Serf().SetTags(tags)
+
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	a1.Shutdown()
+	a1.Leave()
+
+	testutil.Yield()
+
+	a2 := testAgentWithConfig(config, nil)
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer a2.Shutdown()
+	defer a2.Leave()
+
+	testutil.Yield()
+
+	m := a2.Serf().LocalMember()
+
+	if !reflect.DeepEqual(m.Tags, tags) {
+		t.Fatalf("tags not restored: %v", m.Tags)
 	}
 }
