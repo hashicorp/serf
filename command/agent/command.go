@@ -71,13 +71,6 @@ func (c *Command) readConfig() *Config {
 		return nil
 	}
 
-	// Avoid complications of passing tags on command line and restoring
-	// from a tags file
-	if len(tags) > 0 && cmdConfig.TagsFile != "" {
-		c.Ui.Error("-tag is incompatible with -tags-file")
-		return nil
-	}
-
 	// Parse any command line tag values
 	cmdConfig.Tags = make(map[string]string)
 	for _, tag := range tags {
@@ -97,16 +90,16 @@ func (c *Command) readConfig() *Config {
 			return nil
 		}
 
-		// Avoid complications of config file tags with tag files
-		if len(fileConfig.Tags) > 0 && cmdConfig.TagsFile != "" {
-			c.Ui.Error("Config file tags are incompatible with -tags-file")
-			return nil
-		}
-
 		config = MergeConfig(config, fileConfig)
 	}
 
 	config = MergeConfig(config, &cmdConfig)
+
+	// Avoid passing tags and using a tags file at the same time
+	if len(config.Tags) > 0 && config.TagsFile != "" {
+		c.Ui.Error("Tags cannot be defined while using a tags file")
+		return nil
+	}
 
 	if config.NodeName == "" {
 		hostname, err := os.Hostname()
