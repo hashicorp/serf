@@ -199,13 +199,16 @@ func (c *Config) Init() {
 }
 
 func (c *Config) PersistTags() error {
-	encoded, err := json.MarshalIndent(c.Tags, "", "  ")
-	if err != nil {
-		return fmt.Errorf("Failed to encode tags: %s", err)
-	}
-	// Use 0600 for permissions, in case tag data is sensitive
-	if err = ioutil.WriteFile(c.TagsFile, encoded, 0600); err != nil {
-		return fmt.Errorf("Failed to write tags file: %s", err)
+	if c.TagsFile != "" {
+		encoded, err := json.MarshalIndent(c.Tags, "", "  ")
+		if err != nil {
+			return fmt.Errorf("Failed to encode tags: %s", err)
+		}
+
+		// Use 0600 for permissions, in case tag data is sensitive
+		if err = ioutil.WriteFile(c.TagsFile, encoded, 0600); err != nil {
+			return fmt.Errorf("Failed to write tags file: %s", err)
+		}
 	}
 
 	// Success!
