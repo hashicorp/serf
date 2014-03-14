@@ -33,11 +33,6 @@ type Config struct {
 	// map.
 	Tags map[string]string
 
-	// TagsFile is the path to a file where Serf can store its tags. Tag
-	// persistence is desirable since tags may be set or deleted while the
-	// agent is running. Tags can be reloaded from this file on later starts.
-	TagsFile string
-
 	// EventCh is a channel that receives all the Serf events. The events
 	// are sent on this channel in proper ordering. Care must be taken that
 	// this channel doesn't block, either by processing the events quick

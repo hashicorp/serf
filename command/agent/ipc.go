@@ -828,8 +828,11 @@ func (i *AgentIPC) handleTags(client *IPCClient, seq uint64) error {
 	}
 
 	err := i.agent.serf.SetTags(tags)
-	if err == nil && i.agent.conf.TagsFile != "" {
+	if err == nil && i.agent.agentConf.TagsFile != "" {
 		err = i.agent.writeTagsFile()
+		if err != nil {
+			i.logger.Printf("[ERR] agent.ipc: %s", err)
+		}
 	}
 
 	resp := responseHeader{Seq: seq, Error: errToString(err)}

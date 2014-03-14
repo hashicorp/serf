@@ -117,10 +117,11 @@ func TestAgentTagsFile(t *testing.T) {
 	}
 	defer os.RemoveAll(td)
 
-	config := serf.DefaultConfig()
-	config.TagsFile = filepath.Join(td, "tags.json")
+	serfConfig := serf.DefaultConfig()
+	agentConfig := DefaultConfig()
+	agentConfig.TagsFile = filepath.Join(td, "tags.json")
 
-	a1 := testAgentWithConfig(config, nil)
+	a1 := testAgentWithConfig(agentConfig, serfConfig, nil)
 
 	if err := a1.Start(); err != nil {
 		t.Fatalf("err: %s", err)
@@ -138,7 +139,7 @@ func TestAgentTagsFile(t *testing.T) {
 
 	testutil.Yield()
 
-	a2 := testAgentWithConfig(config, nil)
+	a2 := testAgentWithConfig(agentConfig, serfConfig, nil)
 
 	if err := a2.Start(); err != nil {
 		t.Fatalf("err: %s", err)

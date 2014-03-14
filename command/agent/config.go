@@ -436,7 +436,7 @@ func ReadTagsFile(c *Config) error {
 	}
 
 	if err := json.Unmarshal(tagData, &c.Tags); err != nil {
-		return fmt.Errorf("Failed to decode tags json: %s", err)
+		return fmt.Errorf("Failed to decode tags file: %s", err)
 	}
 
 	// Success!

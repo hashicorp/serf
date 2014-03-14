@@ -19,6 +19,9 @@ type Agent struct {
 	// Stores the serf configuration
 	conf *serf.Config
 
+	// Stores the agent configuration
+	agentConf *Config
+
 	// eventCh is used for Serf to deliver events on
 	eventCh chan serf.Event
 
@@ -39,7 +42,7 @@ type Agent struct {
 }
 
 // Start creates a new agent, potentially returning an error
-func Create(conf *serf.Config, logOutput io.Writer) (*Agent, error) {
+func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, error) {
 	// Ensure we have a log sink
 	if logOutput == nil {
 		logOutput = os.Stderr
@@ -56,6 +59,7 @@ func Create(conf *serf.Config, logOutput io.Writer) (*Agent, error) {
 	// Setup the agent
 	agent := &Agent{
 		conf:          conf,
+		agentConf:     agentConf,
 		eventCh:       eventCh,
 		eventHandlers: make(map[EventHandler]struct{}),
 		logger:        log.New(logOutput, "", log.LstdFlags),
@@ -220,7 +224,7 @@ func (a *Agent) writeTagsFile() error {
 	}
 
 	// Use 0600 for permissions, in case tag data is sensitive
-	if err = ioutil.WriteFile(a.conf.TagsFile, encoded, 0600); err != nil {
+	if err = ioutil.WriteFile(a.agentConf.TagsFile, encoded, 0600); err != nil {
 		return fmt.Errorf("Failed to write tags file: %s", err)
 	}
 

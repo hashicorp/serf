@@ -97,7 +97,7 @@ func (c *Command) readConfig() *Config {
 
 	// Avoid passing tags and using a tags file at the same time
 	if len(config.Tags) > 0 && config.TagsFile != "" {
-		c.Ui.Error("Tags cannot be defined while using a tags file")
+		c.Ui.Error("Tags config cannot be passed while using tag files")
 		return nil
 	}
 
@@ -242,7 +242,6 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	serfConfig.MemberlistConfig.SecretKey = encryptKey
 	serfConfig.NodeName = config.NodeName
 	serfConfig.Tags = config.Tags
-	serfConfig.TagsFile = config.TagsFile
 	serfConfig.SnapshotPath = config.SnapshotPath
 	serfConfig.ProtocolVersion = uint8(config.Protocol)
 	serfConfig.CoalescePeriod = 3 * time.Second
@@ -264,7 +263,7 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	if config.TagsFile != "" {
 		if _, err := os.Stat(config.TagsFile); err == nil {
 			if err := ReadTagsFile(config); err != nil {
-				c.Ui.Error(fmt.Sprintf("Failed reading tags file: %s", err))
+				c.Ui.Error(fmt.Sprintf("Error: %s", err))
 				return nil
 			}
 			serfConfig.Tags = config.Tags
@@ -275,7 +274,7 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 
 	// Start Serf
 	c.Ui.Output("Starting Serf agent...")
-	agent, err := Create(serfConfig, logOutput)
+	agent, err := Create(config, serfConfig, logOutput)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Failed to start the Serf agent: %v", err))
 		return nil
