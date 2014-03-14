@@ -216,9 +216,23 @@ func (a *Agent) eventLoop() {
 	}
 }
 
+// SetTags is used to update the tags. The agent will make sure to
+// persist tags if necessary before gossiping to the cluster.
+func (a *Agent) SetTags(tags map[string]string) error {
+	// Update the tags file if we have one
+	if a.agentConf.TagsFile != "" {
+		if err := a.writeTagsFile(tags); err != nil {
+			return err
+		}
+	}
+
+	// Set the tags in Serf, start gossiping out
+	return a.serf.SetTags(tags)
+}
+
 // Write the tags to the tags file, if defined.
-func (a *Agent) writeTagsFile() error {
-	encoded, err := json.MarshalIndent(a.conf.Tags, "", "  ")
+func (a *Agent) writeTagsFile(tags map[string]string) error {
+	encoded, err := json.MarshalIndent(tags, "", "  ")
 	if err != nil {
 		return fmt.Errorf("Failed to encode tags: %s", err)
 	}

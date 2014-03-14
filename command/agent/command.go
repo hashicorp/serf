@@ -539,8 +539,7 @@ func (c *Command) handleReload(config *Config, agent *Agent) *Config {
 	c.scriptHandler.UpdateScripts(config.EventScripts())
 
 	// Update the tags in serf
-	serf := agent.Serf()
-	if err := serf.SetTags(newConf.Tags); err != nil {
+	if err := agent.SetTags(newConf.Tags); err != nil {
 		c.Ui.Error(fmt.Sprintf("Failed to update tags: %v", err))
 		return newConf
 	}
