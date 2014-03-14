@@ -417,3 +417,37 @@ func TestReadConfigPaths_dir(t *testing.T) {
 		t.Fatalf("bad: %#v", config)
 	}
 }
+
+func TestReadTagsFile(t *testing.T) {
+	td, err := ioutil.TempDir("", "serf")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer os.RemoveAll(td)
+
+	file := filepath.Join(td, "tags.json")
+
+	err = ioutil.WriteFile(file,
+		[]byte(`{"role":"webserver","datacenter":"us-east"}`), 0644)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	config := DefaultConfig()
+	config.TagsFile = file
+	if err := ReadTagsFile(config); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if len(config.Tags) != 2 {
+		t.Fatalf("should have 2 tags, found %d", len(config.Tags))
+	}
+
+	if config.Tags["role"] != "webserver" {
+		t.Fatalf("bad: %#v", config.Tags["role"])
+	}
+
+	if config.Tags["datacenter"] != "us-east" {
+		t.Fatalf("bad: %#v", config.Tags["datacenter"])
+	}
+}

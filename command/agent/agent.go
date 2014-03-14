@@ -1,9 +1,11 @@
 package agent
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/serf/serf"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -16,6 +18,9 @@ import (
 type Agent struct {
 	// Stores the serf configuration
 	conf *serf.Config
+
+	// Stores the agent configuration
+	agentConf *Config
 
 	// eventCh is used for Serf to deliver events on
 	eventCh chan serf.Event
@@ -37,7 +42,7 @@ type Agent struct {
 }
 
 // Start creates a new agent, potentially returning an error
-func Create(conf *serf.Config, logOutput io.Writer) (*Agent, error) {
+func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, error) {
 	// Ensure we have a log sink
 	if logOutput == nil {
 		logOutput = os.Stderr
@@ -54,6 +59,7 @@ func Create(conf *serf.Config, logOutput io.Writer) (*Agent, error) {
 	// Setup the agent
 	agent := &Agent{
 		conf:          conf,
+		agentConf:     agentConf,
 		eventCh:       eventCh,
 		eventHandlers: make(map[EventHandler]struct{}),
 		logger:        log.New(logOutput, "", log.LstdFlags),
@@ -208,4 +214,20 @@ func (a *Agent) eventLoop() {
 			return
 		}
 	}
+}
+
+// Write the tags to the tags file, if defined.
+func (a *Agent) writeTagsFile() error {
+	encoded, err := json.MarshalIndent(a.conf.Tags, "", "  ")
+	if err != nil {
+		return fmt.Errorf("Failed to encode tags: %s", err)
+	}
+
+	// Use 0600 for permissions, in case tag data is sensitive
+	if err = ioutil.WriteFile(a.agentConf.TagsFile, encoded, 0600); err != nil {
+		return fmt.Errorf("Failed to write tags file: %s", err)
+	}
+
+	// Success!
+	return nil
 }

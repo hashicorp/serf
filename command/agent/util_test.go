@@ -39,15 +39,20 @@ func getRPCAddr() string {
 }
 
 func testAgent(logOutput io.Writer) *Agent {
+	return testAgentWithConfig(DefaultConfig(), serf.DefaultConfig(), logOutput)
+}
+
+func testAgentWithConfig(agentConfig *Config, serfConfig *serf.Config,
+	logOutput io.Writer) *Agent {
+
 	if logOutput == nil {
 		logOutput = os.Stderr
 	}
-	config := serf.DefaultConfig()
-	config.MemberlistConfig.ProbeInterval = 100 * time.Millisecond
-	config.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
-	config.NodeName = config.MemberlistConfig.BindAddr
+	serfConfig.MemberlistConfig.ProbeInterval = 100 * time.Millisecond
+	serfConfig.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
+	serfConfig.NodeName = serfConfig.MemberlistConfig.BindAddr
 
-	agent, err := Create(config, logOutput)
+	agent, err := Create(agentConfig, serfConfig, logOutput)
 	if err != nil {
 		panic(err)
 	}

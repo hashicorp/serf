@@ -66,6 +66,7 @@ func (c *Command) readConfig() *Config {
 		"tag pair, specified as key=value")
 	cmdFlags.StringVar(&cmdConfig.Discover, "discover", "", "mDNS discovery name")
 	cmdFlags.StringVar(&cmdConfig.Interface, "iface", "", "interface to bind to")
+	cmdFlags.StringVar(&cmdConfig.TagsFile, "tags-file", "", "tag persistence file")
 	if err := cmdFlags.Parse(c.args); err != nil {
 		return nil
 	}
@@ -93,6 +94,12 @@ func (c *Command) readConfig() *Config {
 	}
 
 	config = MergeConfig(config, &cmdConfig)
+
+	// Avoid passing tags and using a tags file at the same time
+	if len(config.Tags) > 0 && config.TagsFile != "" {
+		c.Ui.Error("Tags config cannot be passed while using tag files")
+		return nil
+	}
 
 	if config.NodeName == "" {
 		hostname, err := os.Hostname()
@@ -252,9 +259,22 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	}
 	serfConfig.EnableNameConflictResolution = !config.DisableNameResolution
 
+	// Restore tags if a tags file exists
+	if config.TagsFile != "" {
+		if _, err := os.Stat(config.TagsFile); err == nil {
+			if err := ReadTagsFile(config); err != nil {
+				c.Ui.Error(fmt.Sprintf("Error: %s", err))
+				return nil
+			}
+			serfConfig.Tags = config.Tags
+			c.Ui.Output(fmt.Sprintf("Restored %d tags from %s",
+				len(config.Tags), config.TagsFile))
+		}
+	}
+
 	// Start Serf
 	c.Ui.Output("Starting Serf agent...")
-	agent, err := Create(serfConfig, logOutput)
+	agent, err := Create(config, serfConfig, logOutput)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Failed to start the Serf agent: %v", err))
 		return nil
@@ -575,6 +595,11 @@ Options:
 						   and avoid event replay on restart.
   -tag key=value           Tag can be specified multiple times to attach multiple
                            key/value tag pairs to the given node.
+  -tags-file=/path/to/file The tags file is used to persist tag data. As an agent's
+                           tags are changed, the tags file will be updated. Tags
+                           can be reloaded during later agent starts. This option
+                           is incompatible with the '-tag' option and requires there
+                           be no tags in the agent configuration file, if given.
 
 Event handlers:
 

@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/serf/serf"
 	"github.com/mitchellh/mapstructure"
 	"io"
+	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -49,6 +50,11 @@ type Config struct {
 	// replaced 'Role' as a more flexible meta data mechanism. For compatibility,
 	// the 'role' key is special, and is used for backwards compatibility.
 	Tags map[string]string `mapstructure:"tags"`
+
+	// TagsFile is the path to a file where Serf can store its tags. Tag
+	// persistence is desirable since tags may be set or deleted while the
+	// agent is running. Tags can be reloaded from this file on later starts.
+	TagsFile string `mapstructure:"tags_file"`
 
 	// BindAddr is the address that the Serf agent's communication ports
 	// will bind to. Serf will use this address to bind to for both TCP
@@ -335,6 +341,9 @@ func MergeConfig(a, b *Config) *Config {
 	if b.DisableNameResolution {
 		result.DisableNameResolution = true
 	}
+	if b.TagsFile != "" {
+		result.TagsFile = b.TagsFile
+	}
 
 	// Copy the event handlers
 	result.EventHandlers = make([]string, 0, len(a.EventHandlers)+len(b.EventHandlers))
@@ -417,6 +426,21 @@ func ReadConfigPaths(paths []string) (*Config, error) {
 	}
 
 	return result, nil
+}
+
+// Read the tags from a tags file, and populate config.Tags
+func ReadTagsFile(c *Config) error {
+	tagData, err := ioutil.ReadFile(c.TagsFile)
+	if err != nil {
+		return fmt.Errorf("Failed to read tags file: %s", err)
+	}
+
+	if err := json.Unmarshal(tagData, &c.Tags); err != nil {
+		return fmt.Errorf("Failed to decode tags file: %s", err)
+	}
+
+	// Success!
+	return nil
 }
 
 // Implement the sort interface for dirEnts
