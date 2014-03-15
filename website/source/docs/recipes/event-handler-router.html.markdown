@@ -45,9 +45,9 @@ script handler to invoke based on the Serf environment variables.
 ```
 #!/bin/sh
 SERFDIR="/etc/serf"
-if [ "$SERF_EVENT" == "user" ]; then
+if [ "$SERF_EVENT" = "user" ]; then
     EVENT="user-$SERF_USER_EVENT"
-elif [ "$SERF_EVENT" == "query" ]; then
+elif [ "$SERF_EVENT" = "query" ]; then
     EVENT="query-$SERF_QUERY_NAME"
 fi
 HANDLER="$SERFDIR/handlers/$EVENT"
