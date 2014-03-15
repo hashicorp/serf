@@ -67,8 +67,10 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 	}
 
 	// Restore agent tags from a tags file
-	if err := agent.loadTagsFile(agentConf.TagsFile); err != nil {
-		return nil, err
+	if agentConf.TagsFile != "" {
+		if  err := agent.loadTagsFile(agentConf.TagsFile); err != nil {
+			return nil, err
+		}
 	}
 
 	return agent, nil
