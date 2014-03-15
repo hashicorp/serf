@@ -65,6 +65,12 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 		logger:        log.New(logOutput, "", log.LstdFlags),
 		shutdownCh:    make(chan struct{}),
 	}
+
+	// Restore agent tags from a tags file
+	if err := agent.loadTagsFile(agentConf.TagsFile); err != nil {
+		return nil, err
+	}
+
 	return agent, nil
 }
 
@@ -222,6 +228,7 @@ func (a *Agent) SetTags(tags map[string]string) error {
 	// Update the tags file if we have one
 	if a.agentConf.TagsFile != "" {
 		if err := a.writeTagsFile(tags); err != nil {
+			a.logger.Printf("[ERR] agent: %s", err)
 			return err
 		}
 	}
@@ -230,7 +237,31 @@ func (a *Agent) SetTags(tags map[string]string) error {
 	return a.serf.SetTags(tags)
 }
 
-// Write the tags to the tags file, if defined.
+// loadTagsFile will load agent tags out of a file and set them in the
+// current serf configuration.
+func (a *Agent) loadTagsFile(tagsFile string) error {
+	// Avoid passing tags and using a tags file at the same time
+	if len(a.agentConf.Tags) > 0 {
+		return fmt.Errorf("Tags config not allowed while using tag files")
+	}
+
+	if _, err := os.Stat(tagsFile); err == nil {
+		tagData, err := ioutil.ReadFile(tagsFile)
+		if err != nil {
+			return fmt.Errorf("Failed to read tags file: %s", err)
+		}
+		if err := json.Unmarshal(tagData, &a.conf.Tags); err != nil {
+			return fmt.Errorf("Failed to decode tags file: %s", err)
+		}
+		a.logger.Printf("[INFO] agent: Restored %d tag(s) from %s",
+			len(a.conf.Tags), tagsFile)
+	}
+
+	// Success!
+	return nil
+}
+
+// writeTagsFile will write the current tags to the configured tags file.
 func (a *Agent) writeTagsFile(tags map[string]string) error {
 	encoded, err := json.MarshalIndent(tags, "", "  ")
 	if err != nil {

@@ -117,11 +117,10 @@ func TestAgentTagsFile(t *testing.T) {
 	}
 	defer os.RemoveAll(td)
 
-	serfConfig := serf.DefaultConfig()
 	agentConfig := DefaultConfig()
 	agentConfig.TagsFile = filepath.Join(td, "tags.json")
 
-	a1 := testAgentWithConfig(agentConfig, serfConfig, nil)
+	a1 := testAgentWithConfig(agentConfig, serf.DefaultConfig(), nil)
 
 	if err := a1.Start(); err != nil {
 		t.Fatalf("err: %s", err)
@@ -131,7 +130,7 @@ func TestAgentTagsFile(t *testing.T) {
 
 	testutil.Yield()
 
-	err = a1.Serf().SetTags(tags)
+	err = a1.SetTags(tags)
 
 	if err != nil {
 		t.Fatalf("err: %s", err)
@@ -139,7 +138,7 @@ func TestAgentTagsFile(t *testing.T) {
 
 	testutil.Yield()
 
-	a2 := testAgentWithConfig(agentConfig, serfConfig, nil)
+	a2 := testAgentWithConfig(agentConfig, serf.DefaultConfig(), nil)
 
 	if err := a2.Start(); err != nil {
 		t.Fatalf("err: %s", err)
@@ -152,6 +151,6 @@ func TestAgentTagsFile(t *testing.T) {
 	m := a2.Serf().LocalMember()
 
 	if !reflect.DeepEqual(m.Tags, tags) {
-		t.Fatalf("tags not restored: %v", m.Tags)
+		t.Fatalf("tags not restored: %#v", m.Tags)
 	}
 }

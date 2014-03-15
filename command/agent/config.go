@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/serf/serf"
 	"github.com/mitchellh/mapstructure"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -426,21 +425,6 @@ func ReadConfigPaths(paths []string) (*Config, error) {
 	}
 
 	return result, nil
-}
-
-// Read the tags from a tags file, and populate config.Tags
-func ReadTagsFile(c *Config) error {
-	tagData, err := ioutil.ReadFile(c.TagsFile)
-	if err != nil {
-		return fmt.Errorf("Failed to read tags file: %s", err)
-	}
-
-	if err := json.Unmarshal(tagData, &c.Tags); err != nil {
-		return fmt.Errorf("Failed to decode tags file: %s", err)
-	}
-
-	// Success!
-	return nil
 }
 
 // Implement the sort interface for dirEnts
