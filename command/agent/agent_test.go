@@ -154,3 +154,16 @@ func TestAgentTagsFile(t *testing.T) {
 		t.Fatalf("tags not restored: %#v", m.Tags)
 	}
 }
+
+func TestAgentTagsFile_BadOptions(t *testing.T) {
+	agentConfig := DefaultConfig()
+	agentConfig.TagsFile = "/some/path"
+	agentConfig.Tags = map[string]string{
+		"tag1": "val1",
+	}
+
+	_, err := Create(agentConfig, serf.DefaultConfig(), nil)
+	if err == nil || !strings.Contains(err.Error(), "not allowed") {
+		t.Fatalf("err: %s", err)
+	}
+}

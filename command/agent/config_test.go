@@ -190,6 +190,17 @@ func TestDecodeConfig(t *testing.T) {
 		t.Fatalf("bad: %#v", config)
 	}
 
+	// tags file
+	input = `{"tags_file": "/some/path"}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.TagsFile != "/some/path" {
+		t.Fatalf("bad: %#v", config)
+	}
+
 	// Discover
 	input = `{"discover": "foobar"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
