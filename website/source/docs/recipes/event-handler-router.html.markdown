@@ -53,3 +53,7 @@ fi
 HANDLER="$SERFDIR/handlers/$EVENT"
 [ -f "$HANDLER" -a -x "$HANDLER" ] && exec "$HANDLER" || :
 ```
+
+## serf-master
+
+The [serf-master](https://github.com/garethr/serf-master) project provides the same functionality but allows you to write handlers strictly in Python. Using serf-master might be a better approach if you are more comfortable with Python than Bash.
