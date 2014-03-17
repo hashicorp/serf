@@ -68,7 +68,7 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 
 	// Restore agent tags from a tags file
 	if agentConf.TagsFile != "" {
-		if  err := agent.loadTagsFile(agentConf.TagsFile); err != nil {
+		if err := agent.loadTagsFile(agentConf.TagsFile); err != nil {
 			return nil, err
 		}
 	}
@@ -151,7 +151,12 @@ func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
 	a.logger.Printf("[INFO] agent: joining: %v replay: %v", addrs, replay)
 	ignoreOld := !replay
 	n, err = a.serf.Join(addrs, ignoreOld)
-	a.logger.Printf("[INFO] agent: joined: %d Err: %v", n, err)
+	if n > 0 {
+		a.logger.Printf("[INFO] agent: joined: %d nodes", n)
+	}
+	if err != nil {
+		a.logger.Printf("[INFO] agent: error joining: %v", err)
+	}
 	return
 }
 
@@ -169,7 +174,11 @@ func (a *Agent) ForceLeave(node string) error {
 func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
 	a.logger.Printf("[DEBUG] agent: Requesting user event send: %s. Coalesced: %#v. Payload: %#v",
 		name, coalesce, string(payload))
-	return a.serf.UserEvent(name, payload, coalesce)
+	err := a.serf.UserEvent(name, payload, coalesce)
+	if err != nil {
+		a.logger.Printf("[WARN] agent: failed to send user event: %v", err)
+	}
+	return err
 }
 
 // Query sends a Query on Serf, see Serf.Query.
@@ -183,7 +192,11 @@ func (a *Agent) Query(name string, payload []byte, params *serf.QueryParam) (*se
 	}
 	a.logger.Printf("[DEBUG] agent: Requesting query send: %s. Payload: %#v",
 		name, string(payload))
-	return a.serf.Query(name, payload, params)
+	resp, err := a.serf.Query(name, payload, params)
+	if err != nil {
+		a.logger.Printf("[WARN] agent: failed to start user query: %v", err)
+	}
+	return resp, err
 }
 
 // RegisterEventHandler adds an event handler to recieve event notifications
