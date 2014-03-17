@@ -155,7 +155,7 @@ func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
 		a.logger.Printf("[INFO] agent: joined: %d nodes", n)
 	}
 	if err != nil {
-		a.logger.Printf("[INFO] agent: error joining: %v", err)
+		a.logger.Printf("[WARN] agent: error joining: %v", err)
 	}
 	return
 }
