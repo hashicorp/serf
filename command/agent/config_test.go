@@ -272,6 +272,14 @@ func TestDecodeConfig(t *testing.T) {
 	}
 }
 
+func TestDecodeConfig_unknownDirective(t *testing.T) {
+	input := `{"unknown_directive": "titi"}`
+	_, err := DecodeConfig(bytes.NewReader([]byte(input)))
+	if err == nil {
+		t.Fatal("should have err")
+	}
+}
+
 func TestMergeConfig(t *testing.T) {
 	a := &Config{
 		NodeName:      "foo",
