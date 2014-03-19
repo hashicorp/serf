@@ -1,0 +1,5 @@
+serf (0.5.0) unstable; urgency=low
+
+  * Initial deb package.
+
+ -- Derp Ston <derpston@sleepygeek.org>  Wed, 12 Mar 2014 00:30:00 +0000
