@@ -218,6 +218,7 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 	msdec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Metadata: &md,
 		Result:   &result,
+		ErrorUnused: true,
 	})
 	if err != nil {
 		return nil, err
