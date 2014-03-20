@@ -167,3 +167,43 @@ func TestAgentTagsFile_BadOptions(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 }
+
+func TestAgent_MarshalTags(t *testing.T) {
+	tags := map[string]string{
+		"tag1": "val1",
+		"tag2": "val2",
+	}
+
+	expected := []string{
+		"tag1=val1",
+		"tag2=val2",
+	}
+
+	tagPairs := MarshalTags(tags)
+
+	if !reflect.DeepEqual(tagPairs, expected) {
+		t.Fatalf("bad: %v", tagPairs)
+	}
+}
+
+func TestAgent_UnarshalTags(t *testing.T) {
+	tagPairs := []string{
+		"tag1=val1",
+		"tag2=val2",
+	}
+
+	expected := map[string]string{
+		"tag1": "val1",
+		"tag2": "val2",
+	}
+
+	tags, err := UnmarshalTags(tagPairs)
+
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !reflect.DeepEqual(tags, expected) {
+		t.Fatalf("bad: %v", tags)
+	}
+}
