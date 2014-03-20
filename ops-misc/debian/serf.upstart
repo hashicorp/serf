@@ -11,6 +11,9 @@ kill timeout 90
 env SERF=/usr/bin/serf
 env SERFCONFIG=/etc/serf.json
 
+setuid _serf
+setgid _serf
+
 # Serf emits log messages to stdout, and upstart will write that to
 # /var/log/upstart/serf.log
 exec $SERF agent -config-file $SERFCONFIG
