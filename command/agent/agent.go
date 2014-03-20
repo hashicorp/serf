@@ -291,3 +291,27 @@ func (a *Agent) writeTagsFile(tags map[string]string) error {
 	// Success!
 	return nil
 }
+
+// MarshalTags is a utility function which takes a map of tag key/value pairs
+// and returns the same tags as strings in 'key=value' format.
+func MarshalTags(tags map[string]string) []string {
+	var result []string
+	for name, value := range tags {
+		result = append(result, fmt.Sprintf("%s=%s", name, value))
+	}
+	return result
+}
+
+// UnmarshalTags is a utility function which takes a slice of strings in
+// key=value format and returns them as a tag mapping.
+func UnmarshalTags(tags []string) (map[string]string, error) {
+	result := make(map[string]string)
+	for _, tag := range tags {
+		parts := strings.SplitN(tag, "=", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("Invalid tag: '%s'", tag)
+		}
+		result[parts[0]] = parts[1]
+	}
+	return result, nil
+}

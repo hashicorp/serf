@@ -61,14 +61,10 @@ func (c *QueryCommand) Run(args []string) int {
 	}
 
 	// Setup the filter tags
-	filterTags := make(map[string]string)
-	for _, tag := range tags {
-		parts := strings.SplitN(tag, "=", 2)
-		if len(parts) != 2 {
-			c.Ui.Error(fmt.Sprintf("Invalid tag '%s' provided", tag))
-			return 1
-		}
-		filterTags[parts[0]] = parts[1]
+	filterTags, err := agent.UnmarshalTags(tags)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error: %s", err))
+		return 1
 	}
 
 	args = cmdFlags.Args()
