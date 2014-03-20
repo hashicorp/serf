@@ -64,7 +64,7 @@ The changes from SWIM are noted here:
 * Serf does a full state sync over TCP periodically. SWIM only propagates
   changes over gossip. While both are eventually consistent, Serf is able to
   more quickly reach convergence, as well as gracefully recover from network
-  partitions. This is
+  partitions.
 
 * Serf has a dedicated gossip layer separate from the failure detection
   protocol. SWIM only piggybacks gossip messages on top of probe/ack messages.
