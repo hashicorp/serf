@@ -17,6 +17,8 @@
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="Serf Agent"
 NAME=serf
+USER=_serf
+GROUP=_serf
 DAEMON=/usr/bin/serf
 DAEMON_ARGS="-config-file /etc/serf.json"
 PIDFILE=/var/run/$NAME.pid
@@ -45,7 +47,9 @@ do_start()
 	#   2 if daemon could not be started
 	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
 		|| return 1
-	start-stop-daemon --start --quiet --make-pidfile --pidfile $PIDFILE --background --exec $DAEMON -- \
+	start-stop-daemon --start --quiet --make-pidfile --pidfile $PIDFILE --background \
+		--chuid $USER:$GROUP \
+		--exec $DAEMON -- \
 		agent $DAEMON_ARGS \
 		|| return 2
 }
