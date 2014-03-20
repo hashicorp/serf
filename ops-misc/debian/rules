@@ -5,16 +5,7 @@
 #export DH_VERBOSE=1
 #export DH_OPTIONS=-v
 
-build:
-	dh build
-
-clean:
-	dh_testdir
-	dh_auto_clean
-	dh_clean
-
 %:
-	echo "target" $@
 	dh $@
 
 override_dh_auto_test:

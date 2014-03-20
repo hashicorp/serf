@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Derp Ston <derpston@sleepygeek.org>
 Build-Depends:
-	debhelper
+	debhelper (>= 7.0.50~)
 
 Package: serf
 Architecture: amd64
