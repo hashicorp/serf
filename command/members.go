@@ -36,7 +36,7 @@ type MemberContainer struct {
 func (c MemberContainer) String() string {
 	var result []string
 	for _, member := range c.Members {
-		tags := agent.MarshalTags(member.Tags)
+		tags := strings.Join(agent.MarshalTags(member.Tags), ",")
 		line := fmt.Sprintf("%s|%s|%s|%s",
 			member.Name, member.Addr, member.Status, tags)
 		if member.detail {
@@ -112,7 +112,7 @@ func (c *MembersCommand) Run(args []string) int {
 
 	reqtags, err := agent.UnmarshalTags(tags)
 	if err != nil {
-		c.Ui.Output(fmt.Sprintf("Error parsing tags: %s", err))
+		c.Ui.Error(fmt.Sprintf("Error: %s", err))
 		return 1
 	}
 

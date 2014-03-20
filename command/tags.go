@@ -57,15 +57,12 @@ func (c *TagsCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
-	tags := make(map[string]string)
-	for _, tag := range tagPairs {
-		parts := strings.SplitN(tag, "=", 2)
-		if len(parts) != 2 {
-			c.Ui.Error(fmt.Sprintf("Invalid tag '%s' provided", tag))
-			return 1
-		}
-		tags[parts[0]] = parts[1]
+	tags, err := agent.UnmarshalTags(tagPairs)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error: %s", err))
+		return 1
 	}
+
 	if err := client.UpdateTags(tags, delTags); err != nil {
 		c.Ui.Error(fmt.Sprintf("Error setting tags: %s", err))
 		return 1
