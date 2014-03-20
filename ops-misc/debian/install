@@ -1,2 +1,2 @@
 bin/serf /usr/bin/
-debian/serf.json /etc/
+debian/serf.json.example /etc/serf/

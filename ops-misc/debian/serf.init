@@ -20,7 +20,7 @@ NAME=serf
 USER=_serf
 GROUP=_serf
 DAEMON=/usr/bin/serf
-DAEMON_ARGS="-config-file /etc/serf.json"
+DAEMON_ARGS="-config-dir /etc/serf"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 

@@ -9,14 +9,14 @@ respawn
 kill timeout 90
 
 env SERF=/usr/bin/serf
-env SERFCONFIG=/etc/serf.json
+env SERFCONFIG=/etc/serf
 
 setuid _serf
 setgid _serf
 
 # Serf emits log messages to stdout, and upstart will write that to
 # /var/log/upstart/serf.log
-exec $SERF agent -config-file $SERFCONFIG
+exec $SERF agent -config-dir $SERFCONFIG
 
 # Wait ten seconds before respawn attempts. This will also cause a delay
 # when stopping serf normally, which is pretty weird, but upstart doesn't
