@@ -95,6 +95,11 @@ The options below are all specified on the command-line.
   to an agent at any log level. The log level can be changed during a
   config reload.
 
+* `-syslog` - If set, Serf agent will log to syslog instead of logging
+  to standard error. In this case, the provided log level is
+  ignored. You can always connect via `serf monitor` to an agent to
+  get the logs as well.
+
 * `-node` - The name of this node in the cluster. This must be unique within
   the cluster. By default this is the hostname of the machine.
 
@@ -193,6 +198,8 @@ at a single JSON object with configuration within it.
 * `encrypt_key` - Equivalent to the `-encrypt` command-line flag.
 
 * `log_level` - Equivalent to the `-log-level` command-line flag.
+
+* `syslog` - Equivalent to the `-syslog` command-line flag.
 
 * `profile` - Equivalent to the `-profile` command-line flag.
 

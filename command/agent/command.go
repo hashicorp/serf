@@ -55,6 +55,7 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.BoolVar(&cmdConfig.ReplayOnJoin, "replay", false,
 		"replay events for startup join")
 	cmdFlags.StringVar(&cmdConfig.LogLevel, "log-level", "", "log level")
+	cmdFlags.BoolVar(&cmdConfig.Syslog, "syslog", false, "log to syslog")
 	cmdFlags.StringVar(&cmdConfig.NodeName, "node", "", "node name")
 	cmdFlags.IntVar(&cmdConfig.Protocol, "protocol", -1, "protocol version")
 	cmdFlags.StringVar(&cmdConfig.Role, "role", "", "role name")
@@ -263,8 +264,8 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	return agent
 }
 
-// setupLoggers is used to setup the logGate, logWriter, and our logOutput
-func (c *Command) setupLoggers(config *Config) (*GatedWriter, *logWriter, io.Writer) {
+// setupIoLoggers is used to setup logging to standard error
+func (c *Command) setupIoLoggers(config *Config) (*GatedWriter, io.Writer) {
 	// Setup logging. First create the gated log writer, which will
 	// store logs until we're ready to show them. Then create the level
 	// filter, filtering logs of the specified level.
@@ -279,12 +280,25 @@ func (c *Command) setupLoggers(config *Config) (*GatedWriter, *logWriter, io.Wri
 		c.Ui.Error(fmt.Sprintf(
 			"Invalid log level: %s. Valid log levels are: %v",
 			c.logFilter.MinLevel, c.logFilter.Levels))
-		return nil, nil, nil
+		return nil, nil
+	}
+
+	return logGate, c.logFilter
+}
+
+// setupLoggers is used to setup the logGate, logWriter, and our logOutput
+func (c *Command) setupLoggers(config *Config) (*GatedWriter, *logWriter, io.Writer) {
+	var logGate *GatedWriter
+	var logger io.Writer
+	if !config.Syslog {
+		logGate, logger = c.setupIoLoggers(config)
+	} else {
+		logger = SyslogWriter()
 	}
 
 	// Create a log writer, and wrap a logOutput around it
 	logWriter := NewLogWriter(512)
-	logOutput := io.MultiWriter(c.logFilter, logWriter)
+	logOutput := io.MultiWriter(logger, logWriter)
 	return logGate, logWriter, logOutput
 }
 
@@ -428,7 +442,9 @@ func (c *Command) Run(args []string) int {
 	// Enable log streaming
 	c.Ui.Info("")
 	c.Ui.Output("Log data will now stream in as it occurs:\n")
-	logGate.Flush()
+	if logGate != nil {
+		logGate.Flush()
+	}
 
 	// Wait for exit
 	return c.handleSignals(config, agent)
@@ -504,16 +520,18 @@ func (c *Command) handleReload(config *Config, agent *Agent) *Config {
 	}
 
 	// Change the log level
-	minLevel := logutils.LogLevel(strings.ToUpper(newConf.LogLevel))
-	if ValidateLevelFilter(minLevel, c.logFilter) {
-		c.logFilter.SetMinLevel(minLevel)
-	} else {
-		c.Ui.Error(fmt.Sprintf(
-			"Invalid log level: %s. Valid log levels are: %v",
-			minLevel, c.logFilter.Levels))
+	if c.logFilter != nil {
+		minLevel := logutils.LogLevel(strings.ToUpper(newConf.LogLevel))
+		if ValidateLevelFilter(minLevel, c.logFilter) {
+			c.logFilter.SetMinLevel(minLevel)
+		} else {
+			c.Ui.Error(fmt.Sprintf(
+				"Invalid log level: %s. Valid log levels are: %v",
+				minLevel, c.logFilter.Levels))
 
-		// Keep the current log level
-		newConf.LogLevel = config.LogLevel
+			// Keep the current log level
+			newConf.LogLevel = config.LogLevel
+		}
 	}
 
 	// Change the event handlers
