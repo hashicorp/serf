@@ -36,13 +36,7 @@ type MemberContainer struct {
 func (c MemberContainer) String() string {
 	var result []string
 	for _, member := range c.Members {
-		// Format the tags as tag1=v1,tag2=v2,...
-		var tagPairs []string
-		for name, value := range member.Tags {
-			tagPairs = append(tagPairs, fmt.Sprintf("%s=%s", name, value))
-		}
-		tags := strings.Join(tagPairs, ",")
-
+		tags := agent.MarshalTags(member.Tags)
 		line := fmt.Sprintf("%s|%s|%s|%s",
 			member.Name, member.Addr, member.Status, tags)
 		if member.detail {
@@ -116,14 +110,10 @@ func (c *MembersCommand) Run(args []string) int {
 		tags = append(tags, fmt.Sprintf("role=%s", roleFilter))
 	}
 
-	reqtags := make(map[string]string)
-	for _, tag := range tags {
-		parts := strings.SplitN(tag, "=", 2)
-		if len(parts) != 2 {
-			c.Ui.Error(fmt.Sprintf("Invalid tag '%s' provided", tag))
-			return 1
-		}
-		reqtags[parts[0]] = parts[1]
+	reqtags, err := agent.UnmarshalTags(tags)
+	if err != nil {
+		c.Ui.Output(fmt.Sprintf("Error parsing tags: %s", err))
+		return 1
 	}
 
 	client, err := RPCClient(*rpcAddr, *rpcAuth)

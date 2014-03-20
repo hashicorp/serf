@@ -291,3 +291,23 @@ func (a *Agent) writeTagsFile(tags map[string]string) error {
 	// Success!
 	return nil
 }
+
+func MarshalTags(tags map[string]string) []string {
+	var result []string
+	for name, value := range tags {
+		result = append(result, fmt.Sprintf("%s=%s", name, value))
+	}
+	return result
+}
+
+func UnmarshalTags(tags []string) (map[string]string, error) {
+	result := make(map[string]string)
+	for _, tag := range tags {
+		parts := strings.SplitN(tag, "=", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("Invalid tag: '%s'", tag)
+		}
+		result[parts[0]] = parts[1]
+	}
+	return result, nil
+}
