@@ -1,4 +1,4 @@
-serf (0.5.0) unstable; urgency=low
+serf (0.5.0-0) unstable; urgency=low
 
   * Initial deb package.
 
