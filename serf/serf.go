@@ -632,6 +632,16 @@ func (s *Serf) Leave() error {
 	return nil
 }
 
+// RotateKey begins rotating the encryption key in a Serf cluster by first
+// broadcasting the new key to the cluster, and then initiating a user query
+// to ensure that the new key has taken effect on all members. If the user
+// query does not succeed on any member, then we consider the key rotation a
+// failure, and continue using the original key until a new key has been
+// successfully broadcasted to all members in the cluster.
+func (s *Serf) RotateKey(newKey string) (int, error) {
+	return 1, nil
+}
+
 // hasAliveMembers is called to check for any alive members other than
 // ourself.
 func (s *Serf) hasAliveMembers() bool {

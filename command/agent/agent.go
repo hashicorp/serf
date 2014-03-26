@@ -199,6 +199,19 @@ func (a *Agent) Query(name string, payload []byte, params *serf.QueryParam) (*se
 	return resp, err
 }
 
+// RotateKey initiates the process of rotating the encryption key
+func (a *Agent) RotateKey(newKey string) (n int, err error) {
+	a.logger.Printf("[INFO] agent: initiating key rotation")
+	n, err = a.serf.RotateKey(newKey)
+	if n > 0 {
+		a.logger.Printf("[INFO] agent: rotated key on %d nodes", n)
+	}
+	if err != nil {
+		a.logger.Printf("[WARN] agent: error rotating key: %v", err)
+	}
+	return
+}
+
 // RegisterEventHandler adds an event handler to recieve event notifications
 func (a *Agent) RegisterEventHandler(eh EventHandler) {
 	a.eventHandlersLock.Lock()
