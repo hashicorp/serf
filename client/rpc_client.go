@@ -288,6 +288,21 @@ func (c *RPCClient) Respond(id uint64, buf []byte) error {
 	return c.genericRPC(&header, &req, nil)
 }
 
+// RotateKey is used to initiate encryption key rotation for a Serf cluster
+func (c *RPCClient) RotateKey(newKey string) (int, error) {
+	header := requestHeader{
+		Command: rotateKeyCommand,
+		Seq:     c.getSeq(),
+	}
+	req := rotateKeyRequest{
+		NewKey: newKey,
+	}
+	var resp rotateKeyResponse
+
+	err := c.genericRPC(&header, &req, &resp)
+	return int(resp.Num), err
+}
+
 type monitorHandler struct {
 	client *RPCClient
 	closed bool
