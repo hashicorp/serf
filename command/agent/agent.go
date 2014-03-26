@@ -203,9 +203,6 @@ func (a *Agent) Query(name string, payload []byte, params *serf.QueryParam) (*se
 func (a *Agent) RotateKey(newKey string) (int, error) {
 	a.logger.Printf("[INFO] agent: initiating key rotation")
 	n, err := a.serf.RotateKey(newKey)
-	if n > 0 {
-		a.logger.Printf("[INFO] agent: rotated key on %d nodes", n)
-	}
 	if err != nil {
 		a.logger.Printf("[WARN] agent: error rotating key: %v", err)
 		return 0, err
