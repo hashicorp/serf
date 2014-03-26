@@ -639,6 +639,15 @@ func (s *Serf) Leave() error {
 // failure, and continue using the original key until a new key has been
 // successfully broadcasted to all members in the cluster.
 func (s *Serf) RotateKey(newKey string) (int, error) {
+	qName := internalQueryName(rotateKeyQuery)
+	payload := []byte(newKey)
+	_, err := s.Query(qName, payload, nil)
+	//resp, err := s.Query(qName, payload, nil)
+	if err != nil {
+		s.logger.Printf("[ERR] serf: Failed to start key rotation query: %v", err)
+		return 0, err
+	}
+
 	return 1, nil
 }
 

@@ -15,6 +15,9 @@ const (
 
 	// conflictQuery is run to resolve a name conflict
 	conflictQuery = "conflict"
+
+	// rotateKeyQuery is used to initiate key rotation
+	rotateKeyQuery = "rotate-key"
 )
 
 // internalQueryName is used to generate a query name for an internal query
@@ -76,6 +79,8 @@ func (s *serfQueries) handleQuery(q *Query) {
 		// Nothing to do, we will ack the query
 	case conflictQuery:
 		s.handleConflict(q)
+	case rotateKeyQuery:
+		s.handleRotateKey(q)
 	default:
 		s.logger.Printf("[WARN] serf: Unhandled internal query '%s'", queryName)
 	}
@@ -113,4 +118,9 @@ func (s *serfQueries) handleConflict(q *Query) {
 	if err := q.Respond(buf); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to respond to conflict query: %v", err)
 	}
+}
+
+func (s *serfQueries) handleRotateKey(q *Query) {
+	newKey := string(q.Payload)
+	s.logger.Printf("[INFO] serf: rotating key to %s", newKey)
 }
