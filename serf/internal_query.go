@@ -121,11 +121,13 @@ func (s *serfQueries) handleConflict(q *Query) {
 }
 
 // handleRotateKey is executed when an internal query to change out the
-// encryption key is received.
+// encryption key is received. This method only populates the Serf configuration
+// in preparation for doing the actual key swap.
 func (s *serfQueries) handleRotateKey(q *Query) {
 	newKey := string(q.Payload)
-	s.logger.Printf("[INFO] serf: rotating key from %#v to %#v", s.serf.config.EncryptKey[0], newKey)
-	s.serf.config.EncryptKey[1] = newKey
+
+	s.serf.config.NewEncryptKey = newKey
+	//s.serf.config.MemberlistConfig.SecretKey = newKey
 
 	buf, err := encodeMessage(messageRotateKeyResponseType, nil)
 	if err != nil {

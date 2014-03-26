@@ -182,13 +182,13 @@ type Config struct {
 	// node stays while the other node will leave the cluster and exit.
 	EnableNameConflictResolution bool
 
-	// EncryptKey contains a shared secret used to encrypt traffic before
-	// sending over the wire. It is contained in Serf's configuration to allow
-	// dynamic changing / updating (key rotation). There are a maximum of 2
-	// keys allowed; [0] is the current key, and [1] is the incoming
-	// replacement key, which will become [0] if all nodes succeed in updating
-	// the encryption key value.
-	EncryptKey [2]string
+	// NewEncryptKey is used to store the value of an encryption key until
+	// all nodes in a Serf cluster have received it. Once all nodes have
+	// received this key, an event will be triggered to copy this value into
+	// the MemberlistConfig.EncryptKey value, effectively rotating the key.
+	// This method is used to make sure that all nodes will be able to speak
+	// to eachother once the encryption key has been changed.
+	NewEncryptKey string
 }
 
 // Init allocates the subdata structures

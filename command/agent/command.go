@@ -251,9 +251,6 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	if config.TombstoneTimeout != 0 {
 		serfConfig.TombstoneTimeout = config.TombstoneTimeout
 	}
-	if config.EncryptKey != "" {
-		serfConfig.EncryptKey[0] = config.EncryptKey
-	}
 	serfConfig.EnableNameConflictResolution = !config.DisableNameResolution
 
 	// Start Serf

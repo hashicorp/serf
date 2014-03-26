@@ -639,9 +639,10 @@ func (s *Serf) Leave() error {
 // failure, and continue using the original key until a new key has been
 // successfully broadcasted to all members in the cluster.
 func (s *Serf) RotateKey(newKey string) (int, error) {
-	// Don't update the key again if it already matches
-	if newKey == s.config.EncryptKey[1] {
-		return 0, fmt.Errorf("new key matches current key")
+	// Do not rotate key if there was never a key to begin with. This would be
+	// dangerous because the new key would be broadcasted unencrypted.
+	if s.config.MemberlistConfig.SecretKey == nil {
+		return 0, fmt.Errorf("current encryption key is empty")
 	}
 
 	qName := internalQueryName(rotateKeyQuery)
