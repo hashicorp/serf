@@ -701,6 +701,17 @@ func (i *AgentIPC) handleRotateKey(client *IPCClient, seq uint64) error {
 	}
 
 	num, err := i.agent.RotateKey(req.NewKey)
+	if err != nil {
+		return err
+	}
+
+	totalMembers := len(i.agent.serf.Members())
+	if num != totalMembers {
+		return fmt.Errorf("%d/%d nodes replied, not finalizing key",
+			num, totalMembers)
+	}
+
+	i.agent.logger.Printf("should finalize!")
 
 	header := responseHeader{
 		Seq:   seq,
