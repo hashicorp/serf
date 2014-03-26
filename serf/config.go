@@ -174,13 +174,18 @@ type Config struct {
 
 	// EnableNameConflictResolution controls if Serf will actively attempt
 	// to resolve a name conflict. Since each Serf member must have a unique
-	// name, a cluster can run into issues if multiple nodes claim the same name.
-	// Without automatic resolution, Serf merely logs some warnings, but otherwise
-	// does not take any action. Automatic resolution detects the conflict and issues
-	// a special query which asks the cluster for the Name -> IP:Port mapping. If there
-	// is a simple majority of votes, that node stays while the other node will leave
-	// the cluster and exit.
+	// name, a cluster can run into issues if multiple nodes claim the same
+	// name. Without automatic resolution, Serf merely logs some warnings, but
+	// otherwise does not take any action. Automatic resolution detects the
+	// conflict and issues a special query which asks the cluster for the
+	// Name -> IP:Port mapping. If there is a simple majority of votes, that
+	// node stays while the other node will leave the cluster and exit.
 	EnableNameConflictResolution bool
+
+	// EncryptKey contains a shared secret used to encrypt traffic before
+	// sending over the wire. It is contained in Serf's configuration to allow
+	// dynamic changing / updating (key rotation)
+	EncryptKey string
 }
 
 // Init allocates the subdata structures

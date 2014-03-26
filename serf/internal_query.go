@@ -120,7 +120,10 @@ func (s *serfQueries) handleConflict(q *Query) {
 	}
 }
 
+// handleRotateKey is executed when an internal query to change out the
+// encryption key is received.
 func (s *serfQueries) handleRotateKey(q *Query) {
 	newKey := string(q.Payload)
-	s.logger.Printf("[INFO] serf: rotating key to %s", newKey)
+	s.logger.Printf("[INFO] serf: rotating key from %v to %v", s.serf.config.EncryptKey, newKey)
+	s.serf.config.EncryptKey = newKey
 }
