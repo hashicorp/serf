@@ -124,6 +124,16 @@ func (s *serfQueries) handleConflict(q *Query) {
 // encryption key is received.
 func (s *serfQueries) handleRotateKey(q *Query) {
 	newKey := string(q.Payload)
-	s.logger.Printf("[INFO] serf: rotating key from %v to %v", s.serf.config.EncryptKey, newKey)
-	s.serf.config.EncryptKey = newKey
+	s.logger.Printf("[INFO] serf: rotating key from %#v to %#v", s.serf.config.EncryptKey[0], newKey)
+	s.serf.config.EncryptKey[1] = newKey
+
+	buf, err := encodeMessage(messageRotateKeyResponseType, nil)
+	if err != nil {
+		s.logger.Printf("[ERR] serf: Failed to encode key rotate query response: %v", err)
+		return
+	}
+
+	if err := q.Respond(buf); err != nil {
+		s.logger.Printf("[ERR] serf: Failed to respond to key rotate query: %v", err)
+	}
 }

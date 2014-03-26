@@ -641,14 +641,23 @@ func (s *Serf) Leave() error {
 func (s *Serf) RotateKey(newKey string) (int, error) {
 	qName := internalQueryName(rotateKeyQuery)
 	payload := []byte(newKey)
-	_, err := s.Query(qName, payload, nil)
-	//resp, err := s.Query(qName, payload, nil)
+	resp, err := s.Query(qName, payload, nil)
 	if err != nil {
 		s.logger.Printf("[ERR] serf: Failed to start key rotation query: %v", err)
 		return 0, err
 	}
 
-	return 1, nil
+	responses := 0
+	respCh := resp.ResponseCh()
+	for r := range respCh {
+		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageRotateKeyResponseType {
+			s.logger.Printf("[ERR] serf: Invalid key rotate query response type: %v", r.Payload)
+			continue
+		}
+		responses++
+	}
+
+	return responses, nil
 }
 
 // hasAliveMembers is called to check for any alive members other than
@@ -1526,7 +1535,6 @@ func (s *Serf) decodeTags(buf []byte) map[string]string {
 	if len(buf) == 0 || buf[0] != tagMagicByte {
 		tags["role"] = string(buf)
 		return tags
-
 	}
 
 	// Decode the tags

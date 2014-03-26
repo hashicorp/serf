@@ -184,8 +184,11 @@ type Config struct {
 
 	// EncryptKey contains a shared secret used to encrypt traffic before
 	// sending over the wire. It is contained in Serf's configuration to allow
-	// dynamic changing / updating (key rotation)
-	EncryptKey string
+	// dynamic changing / updating (key rotation). There are a maximum of 2
+	// keys allowed; [0] is the current key, and [1] is the incoming
+	// replacement key, which will become [0] if all nodes succeed in updating
+	// the encryption key value.
+	EncryptKey [2]string
 }
 
 // Init allocates the subdata structures
