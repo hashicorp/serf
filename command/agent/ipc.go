@@ -700,19 +700,21 @@ func (i *AgentIPC) handleRotateKey(client *IPCClient, seq uint64) error {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
+	totalMembers := len(i.agent.serf.Members())
+
 	num, err := i.agent.RotateKey(req.NewKey)
 	if err != nil {
-		return err
+		goto SEND
 	}
 
-	totalMembers := len(i.agent.serf.Members())
 	if num != totalMembers {
-		return fmt.Errorf("%d/%d nodes replied, not finalizing key",
+		err = fmt.Errorf("%d/%d nodes replied, not finalizing key",
 			num, totalMembers)
 	}
 
-	i.agent.logger.Printf("should finalize!")
+	i.agent.logger.Printf("[INFO] agent: all nodes replied, finalizing key")
 
+SEND:
 	header := responseHeader{
 		Seq:   seq,
 		Error: errToString(err),
