@@ -639,11 +639,11 @@ func (s *Serf) Leave() error {
 // query does not succeed on any member, then we consider the key rotation a
 // failure, and continue using the original key until a new key has been
 // successfully broadcasted to all members in the cluster.
-func (s *Serf) RotateKey(newSecret string) (int, error) {
+func (s *Serf) RotateKey(newSecret string) error {
 	// Do not rotate key if there was never a key to begin with. This would be
 	// dangerous because the new key would be broadcasted unencrypted.
 	if s.config.MemberlistConfig.SecretKey == nil {
-		return 0, fmt.Errorf("current encryption key is empty")
+		return fmt.Errorf("current encryption key is empty")
 	}
 
 	// Decode the new key into raw bytes before storing it away. This ensures
@@ -651,13 +651,13 @@ func (s *Serf) RotateKey(newSecret string) (int, error) {
 	// there will be no decoding errors, which would cause cluster segmentation.
 	secret, err := base64.StdEncoding.DecodeString(newSecret)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	qName := internalQueryName(newSecretQuery)
 	resp, err := s.Query(qName, secret, nil)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
 	responses := 0
@@ -674,7 +674,7 @@ func (s *Serf) RotateKey(newSecret string) (int, error) {
 
 	// Bail if not all nodes ack'ed the new secret query
 	if responses < totalMembers {
-		return responses, fmt.Errorf("%d/%d nodes replied to request", responses, totalMembers)
+		return fmt.Errorf("%d/%d nodes replied to request", responses, totalMembers)
 	}
 
 	// Rotate our own key only after we have broadcasted everything out
@@ -683,21 +683,38 @@ func (s *Serf) RotateKey(newSecret string) (int, error) {
 	// Broadcast the key rotation
 	notifyCh := make(chan struct{})
 	if err := s.broadcast(messageRotateKeyType, nil, notifyCh); err != nil {
-		return responses, err
+		return err
 	}
 
 	// Wait for the broadcast
 	select {
 	case <-notifyCh:
 	case <-time.After(s.config.BroadcastTimeout):
-		return 0, fmt.Errorf("timed out broadcasting key rotation")
+		return fmt.Errorf("timed out broadcasting key rotation")
 	}
 
-	return responses, nil
+	return nil
 }
 
+// Handle swapping the new secret key in. This takes effect immediately and has
+// potential to cause a few messages to be rejected, since all nodes may not
+// handle the key swap at the same moment.
 func (s *Serf) handleRotateKey() {
+	// Swap the new secret key in
 	s.config.MemberlistConfig.SecretKey = s.config.NewSecretKey
+
+	// Pass along some metrics
+	metrics.IncrCounter([]string{"serf", "key_rotate"}, 1)
+
+	// Send an event
+	if s.config.EventCh != nil {
+		s.config.EventCh <- RotateKeyEvent{
+			NewSecretKey: s.config.NewSecretKey,
+		}
+	}
+
+	// Zero out NewSecretKey
+	s.config.NewSecretKey = nil
 }
 
 // hasAliveMembers is called to check for any alive members other than

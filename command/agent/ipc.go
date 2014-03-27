@@ -131,7 +131,7 @@ type membersResponse struct {
 }
 
 type rotateKeyRequest struct {
-	NewKey string
+	NewSecretKey string
 }
 
 type rotateKeyResponse struct {
@@ -700,15 +700,13 @@ func (i *AgentIPC) handleRotateKey(client *IPCClient, seq uint64) error {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	num, err := i.agent.RotateKey(req.NewKey)
+	err := i.agent.RotateKey(req.NewSecretKey)
 
 	header := responseHeader{
 		Seq:   seq,
 		Error: errToString(err),
 	}
-	resp := rotateKeyResponse{
-		Num: int32(num),
-	}
+	resp := rotateKeyResponse{}
 	return client.Send(&header, &resp)
 }
 

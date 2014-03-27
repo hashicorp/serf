@@ -98,15 +98,17 @@ func (u UserEvent) String() string {
 	return fmt.Sprintf("user-event: %s", u.Name)
 }
 
-// RotateKey is used to signal to all nodes in a cluster that they should
+// RotateKeyEvent is used to signal to all nodes in a cluster that they should
 // swap out their key for the staged NewEncryptKey carried by Serf.
-type RotateKey struct{}
+type RotateKeyEvent struct {
+	NewSecretKey []byte
+}
 
-func (r RotateKey) EventType() EventType {
+func (r RotateKeyEvent) EventType() EventType {
 	return EventRotateKey
 }
 
-func (r RotateKey) String() string {
+func (r RotateKeyEvent) String() string {
 	return "rotate-key"
 }
 

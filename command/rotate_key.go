@@ -52,13 +52,12 @@ func (c *RotateKeyCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
-	n, err := client.RotateKey(newKey[0])
-	if err != nil {
+	if err := client.RotateKey(newKey[0]); err != nil {
 		c.Ui.Error(fmt.Sprintf("Error rotating encryption key: %s", err))
 		return 1
 	}
 
-	c.Ui.Output(fmt.Sprintf("Successfully rotated encryption key on %d nodes", n))
+	c.Ui.Output("Successfully rotated cluster encryption key")
 	return 0
 }
 

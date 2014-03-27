@@ -97,7 +97,7 @@ type membersResponse struct {
 }
 
 type rotateKeyRequest struct {
-	NewKey string
+	NewSecretKey string
 }
 
 type rotateKeyResponse struct {

@@ -72,6 +72,8 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 		cmd.Env = append(cmd.Env, "SERF_QUERY_NAME="+e.Name)
 		cmd.Env = append(cmd.Env, fmt.Sprintf("SERF_QUERY_LTIME=%d", e.LTime))
 		go streamPayload(logger, stdin, e.Payload)
+	case serf.RotateKeyEvent:
+		go streamPayload(logger, stdin, e.NewSecretKey)
 	default:
 		return fmt.Errorf("Unknown event type: %s", event.EventType().String())
 	}
