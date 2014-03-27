@@ -2,6 +2,7 @@ package serf
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/armon/go-metrics"
@@ -683,7 +684,12 @@ func (s *Serf) RotateKey(newKey string) (int, error) {
 }
 
 func (s *Serf) handleRotateKey() {
-	s.config.MemberlistConfig.SecretKey = []byte(s.config.NewEncryptKey)
+	newKey, err := base64.StdEncoding.DecodeString(s.config.NewEncryptKey)
+	if err != nil {
+		s.logger.Printf("[ERR] serf: failed to decode new key: %s", err)
+		return
+	}
+	s.config.MemberlistConfig.SecretKey = newKey
 }
 
 // hasAliveMembers is called to check for any alive members other than
