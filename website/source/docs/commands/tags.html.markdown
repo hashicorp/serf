@@ -12,9 +12,14 @@ The tags command modifies a member's tags while the Serf agent is running.
 The changed tags will be immediately propagated to other members in the
 cluster.
 
-Currently the `serf tags` command will not persist tag data. Tag changes can be
-handled using <a href="/intro/getting-started/event-handlers.html">event
-handlers</a> and the `member-update` event.
+By default, any tag changes made at runtime are not written to disk.
+Tag persistence can be enabled using the `-tags-file` option to the Serf
+agent. More information is available on the
+<a href="/docs/agent/options.html">agent configuration options</a> page.
+
+Tag changes can also be handled using
+<a href="/intro/getting-started/event-handlers.html">event handlers</a> and the
+`member-update` event.
 
 ## Usage
 
@@ -37,4 +42,3 @@ flags are:
 * `-rpc-auth` - Optional RPC auth token. If the agent is configured to use
   an auth token, then this must be provided or the agent will refuse the
   command.
-
