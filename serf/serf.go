@@ -680,6 +680,11 @@ func (s *Serf) RotateKey(newSecret string) error {
 	// Rotate our own key only after we have broadcasted everything out
 	defer s.handleRotateKey()
 
+	// Don't bother broadcasting if we are the only member
+	if totalMembers < 2 {
+		return nil
+	}
+
 	// Broadcast the key rotation
 	notifyCh := make(chan struct{})
 	if err := s.broadcast(messageRotateKeyType, nil, notifyCh); err != nil {
@@ -715,7 +720,7 @@ func (s *Serf) handleRotateKey() {
 	// Send an event
 	if s.config.EventCh != nil {
 		s.config.EventCh <- RotateKeyEvent{
-			NewSecretKey: []byte(encoded),
+			NewSecretKey: encoded,
 		}
 	}
 }

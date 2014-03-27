@@ -101,7 +101,7 @@ func (u UserEvent) String() string {
 // RotateKeyEvent is used to signal to all nodes in a cluster that they should
 // swap out their key for the staged NewEncryptKey carried by Serf.
 type RotateKeyEvent struct {
-	NewSecretKey []byte
+	NewSecretKey string
 }
 
 func (r RotateKeyEvent) EventType() EventType {
