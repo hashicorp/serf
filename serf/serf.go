@@ -670,7 +670,7 @@ func (s *Serf) RotateKey(newSecret string) (int, error) {
 		responses++
 	}
 
-	totalMembers := len(s.Members())
+	totalMembers := s.memberlist.NumMembers()
 
 	// Bail if not all nodes ack'ed the new secret query
 	if responses < totalMembers {
@@ -683,7 +683,7 @@ func (s *Serf) RotateKey(newSecret string) (int, error) {
 	// Broadcast the key rotation
 	notifyCh := make(chan struct{})
 	if err := s.broadcast(messageRotateKeyType, nil, notifyCh); err != nil {
-		return 0, err
+		return responses, err
 	}
 
 	// Wait for the broadcast
