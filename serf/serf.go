@@ -646,8 +646,16 @@ func (s *Serf) RotateKey(newKey string) (int, error) {
 		return 0, fmt.Errorf("current encryption key is empty")
 	}
 
+	// Decode the new key into raw bytes before storing it away. This ensures
+	// that later on when we go to copy the new key into the memberlist config
+	// there will be no decoding errors, which would cause cluster segmentation.
+	secret, err := base64.StdEncoding.DecodeString(newKey)
+	if err != nil {
+		return 0, err
+	}
+
 	qName := internalQueryName(rotateKeyQuery)
-	payload := []byte(newKey)
+	payload := secret
 	resp, err := s.Query(qName, payload, nil)
 	if err != nil {
 		return 0, err
@@ -684,12 +692,7 @@ func (s *Serf) RotateKey(newKey string) (int, error) {
 }
 
 func (s *Serf) handleRotateKey() {
-	newKey, err := base64.StdEncoding.DecodeString(s.config.NewEncryptKey)
-	if err != nil {
-		s.logger.Printf("[ERR] serf: failed to decode new key: %s", err)
-		return
-	}
-	s.config.MemberlistConfig.SecretKey = newKey
+	s.config.MemberlistConfig.SecretKey = s.config.NewEncryptKey
 }
 
 // hasAliveMembers is called to check for any alive members other than

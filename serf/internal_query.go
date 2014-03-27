@@ -124,10 +124,7 @@ func (s *serfQueries) handleConflict(q *Query) {
 // encryption key is received. This method only populates the Serf configuration
 // in preparation for doing the actual key swap.
 func (s *serfQueries) handleRotateKey(q *Query) {
-	newKey := string(q.Payload)
-
-	s.serf.config.NewEncryptKey = newKey
-	//s.serf.config.MemberlistConfig.SecretKey = newKey
+	s.serf.config.NewEncryptKey = q.Payload
 
 	buf, err := encodeMessage(messageRotateKeyResponseType, nil)
 	if err != nil {

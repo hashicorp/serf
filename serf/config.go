@@ -188,7 +188,7 @@ type Config struct {
 	// the MemberlistConfig.EncryptKey value, effectively rotating the key.
 	// This method is used to make sure that all nodes will be able to speak
 	// to eachother once the encryption key has been changed.
-	NewEncryptKey string
+	NewEncryptKey []byte
 }
 
 // Init allocates the subdata structures
