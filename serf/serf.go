@@ -674,7 +674,7 @@ func (s *Serf) RotateKey(newSecret string) error {
 
 	// Bail if not all nodes ack'ed the new secret query
 	if responses < totalMembers {
-		return fmt.Errorf("%d/%d nodes replied to request", responses, totalMembers)
+		return fmt.Errorf("only %d/%d nodes replied", responses, totalMembers)
 	}
 
 	// Rotate our own key only after we have broadcasted everything out
@@ -706,15 +706,18 @@ func (s *Serf) handleRotateKey() {
 	// Pass along some metrics
 	metrics.IncrCounter([]string{"serf", "key_rotate"}, 1)
 
-	// Send an event
-	if s.config.EventCh != nil {
-		s.config.EventCh <- RotateKeyEvent{
-			NewSecretKey: s.config.NewSecretKey,
-		}
-	}
+	// base64 the bytes to send in the event
+	encoded := base64.StdEncoding.EncodeToString(s.config.NewSecretKey)
 
 	// Zero out NewSecretKey
 	s.config.NewSecretKey = nil
+
+	// Send an event
+	if s.config.EventCh != nil {
+		s.config.EventCh <- RotateKeyEvent{
+			NewSecretKey: []byte(encoded),
+		}
+	}
 }
 
 // hasAliveMembers is called to check for any alive members other than
