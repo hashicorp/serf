@@ -663,13 +663,27 @@ func (s *Serf) RotateKey(newKey string) (int, error) {
 	}
 
 	if responses == len(s.Members()) {
-		s.logger.Printf("[INFO] serf: EventRotateKey")
-		if s.config.EventCh != nil {
-			s.config.EventCh <- RotateKey{}
-		}
+		defer s.handleRotateKey()
+	}
+
+	// Broadcast the key rotation
+	notifyCh := make(chan struct{})
+	if err := s.broadcast(messageRotateKeyType, nil, notifyCh); err != nil {
+		return 0, err
+	}
+
+	// Wait for the broadcast
+	select {
+	case <-notifyCh:
+	case <-time.After(s.config.BroadcastTimeout):
+		return 0, fmt.Errorf("timed out broadcasting key rotation")
 	}
 
 	return responses, nil
+}
+
+func (s *Serf) handleRotateKey() {
+	s.config.MemberlistConfig.SecretKey = []byte(s.config.NewEncryptKey)
 }
 
 // hasAliveMembers is called to check for any alive members other than
