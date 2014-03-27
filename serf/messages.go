@@ -19,7 +19,7 @@ const (
 	messageQueryResponseType
 	messageConflictResponseType
 	messageRotateKeyType
-	messageRotateKeyResponseType
+	messageNewSecretResponseType
 )
 
 const (

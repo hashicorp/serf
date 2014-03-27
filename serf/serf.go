@@ -639,7 +639,7 @@ func (s *Serf) Leave() error {
 // query does not succeed on any member, then we consider the key rotation a
 // failure, and continue using the original key until a new key has been
 // successfully broadcasted to all members in the cluster.
-func (s *Serf) RotateKey(newKey string) (int, error) {
+func (s *Serf) RotateKey(newSecret string) (int, error) {
 	// Do not rotate key if there was never a key to begin with. This would be
 	// dangerous because the new key would be broadcasted unencrypted.
 	if s.config.MemberlistConfig.SecretKey == nil {
@@ -649,14 +649,13 @@ func (s *Serf) RotateKey(newKey string) (int, error) {
 	// Decode the new key into raw bytes before storing it away. This ensures
 	// that later on when we go to copy the new key into the memberlist config
 	// there will be no decoding errors, which would cause cluster segmentation.
-	secret, err := base64.StdEncoding.DecodeString(newKey)
+	secret, err := base64.StdEncoding.DecodeString(newSecret)
 	if err != nil {
 		return 0, err
 	}
 
-	qName := internalQueryName(rotateKeyQuery)
-	payload := secret
-	resp, err := s.Query(qName, payload, nil)
+	qName := internalQueryName(newSecretQuery)
+	resp, err := s.Query(qName, secret, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -664,16 +663,22 @@ func (s *Serf) RotateKey(newKey string) (int, error) {
 	responses := 0
 	respCh := resp.ResponseCh()
 	for r := range respCh {
-		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageRotateKeyResponseType {
+		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageNewSecretResponseType {
 			s.logger.Printf("[ERR] serf: Invalid key rotate query response type: %v", r.Payload)
 			continue
 		}
 		responses++
 	}
 
-	if responses == len(s.Members()) {
-		defer s.handleRotateKey()
+	totalMembers := len(s.Members())
+
+	// Bail if not all nodes ack'ed the new secret query
+	if responses < totalMembers {
+		return responses, fmt.Errorf("%d/%d nodes replied to request", responses, totalMembers)
 	}
+
+	// Rotate our own key only after we have broadcasted everything out
+	defer s.handleRotateKey()
 
 	// Broadcast the key rotation
 	notifyCh := make(chan struct{})
@@ -692,7 +697,7 @@ func (s *Serf) RotateKey(newKey string) (int, error) {
 }
 
 func (s *Serf) handleRotateKey() {
-	s.config.MemberlistConfig.SecretKey = s.config.NewEncryptKey
+	s.config.MemberlistConfig.SecretKey = s.config.NewSecretKey
 }
 
 // hasAliveMembers is called to check for any alive members other than
