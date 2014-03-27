@@ -662,6 +662,13 @@ func (s *Serf) RotateKey(newKey string) (int, error) {
 		responses++
 	}
 
+	if responses == len(s.Members()) {
+		s.logger.Printf("[INFO] serf: EventRotateKey")
+		if s.config.EventCh != nil {
+			s.config.EventCh <- RotateKey{}
+		}
+	}
+
 	return responses, nil
 }
 
