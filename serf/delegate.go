@@ -84,7 +84,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 
 	case messageRotateKeyType:
 		d.serf.logger.Printf("[DEBUG] serf: messageRotateKeyType")
-		d.serf.handleRotateKey()
+		rebroadcast = d.serf.handleRotateKey()
 
 	default:
 		d.serf.logger.Printf("[WARN] serf: Received message of unknown type: %d", t)

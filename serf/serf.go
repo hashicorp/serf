@@ -704,9 +704,12 @@ func (s *Serf) RotateKey(newSecret string) error {
 // Handle swapping the new secret key in. This takes effect immediately and has
 // potential to cause a few messages to be rejected, since all nodes may not
 // handle the key swap at the same moment.
-func (s *Serf) handleRotateKey() {
-	// Swap the new secret key in
-	s.config.MemberlistConfig.SecretKey = s.config.NewSecretKey
+func (s *Serf) handleRotateKey() bool {
+	// If the new secret is nil, then either we have already consumed it, or
+	// there is no new secret key, so bail and don't rebroadcast the event.
+	if s.config.NewSecretKey == nil {
+		return false
+	}
 
 	// Pass along some metrics
 	metrics.IncrCounter([]string{"serf", "key_rotate"}, 1)
@@ -714,15 +717,36 @@ func (s *Serf) handleRotateKey() {
 	// base64 the bytes to send in the event
 	encoded := base64.StdEncoding.EncodeToString(s.config.NewSecretKey)
 
-	// Zero out NewSecretKey
-	s.config.NewSecretKey = nil
-
 	// Send an event
 	if s.config.EventCh != nil {
 		s.config.EventCh <- RotateKeyEvent{
 			NewSecretKey: encoded,
 		}
 	}
+
+	// Run the delayed key swap in a separate go routine so we can begin
+	// broadcasting while serf waits to do the swap.
+	go s.delayedSecretSwap(s.config.NewSecretKey)
+
+	// Zero the new secret out immediately so that we don't repeat this event.
+	s.config.NewSecretKey = nil
+
+	return true
+}
+
+// Handle the actual key swap. This is a separate method so that it may be run
+// in its own go routine asynchronously, allowing the rotate-key message to be
+// broadcasted to all members of the cluster using the original key before the
+// swap really happens.
+func (s *Serf) delayedSecretSwap(newSecretKey []byte) {
+	// Sleep for at least the broadcast timeout. This makes sure that the
+	// rotate-key event was sent out before we change out the secret.
+	time.Sleep(s.config.BroadcastTimeout)
+
+	// Do the actual key swap. This might cause a message or two to fail but
+	// should recover quickly.
+	s.config.MemberlistConfig.SecretKey = newSecretKey
+	s.logger.Printf("[INFO] serf: Key successfully rotated")
 }
 
 // hasAliveMembers is called to check for any alive members other than
