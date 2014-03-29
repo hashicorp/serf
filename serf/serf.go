@@ -726,7 +726,7 @@ func (s *Serf) handleRotateKey() bool {
 
 	// Run the delayed key swap in a separate go routine so we can begin
 	// broadcasting while serf waits to do the swap.
-	go s.delayedSecretSwap(s.config.NewSecretKey)
+	go s.delayedKeySwap(s.config.NewSecretKey)
 
 	// Zero the new secret out immediately so that we don't repeat this event.
 	s.config.NewSecretKey = nil
@@ -738,7 +738,10 @@ func (s *Serf) handleRotateKey() bool {
 // in its own go routine asynchronously, allowing the rotate-key message to be
 // broadcasted to all members of the cluster using the original key before the
 // swap really happens.
-func (s *Serf) delayedSecretSwap(newSecretKey []byte) {
+func (s *Serf) delayedKeySwap(newSecretKey []byte) {
+	s.memberLock.RLock()
+	defer s.memberLock.RUnlock()
+
 	// Sleep for at least the broadcast timeout. This makes sure that the
 	// rotate-key event was sent out before we change out the secret.
 	time.Sleep(s.config.BroadcastTimeout)
