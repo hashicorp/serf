@@ -125,14 +125,4 @@ func (s *serfQueries) handleConflict(q *Query) {
 // in preparation for doing the actual key swap later on.
 func (s *serfQueries) handleNewSecret(q *Query) {
 	s.serf.config.NewSecretKey = q.Payload
-
-	buf, err := encodeMessage(messageNewSecretResponseType, nil)
-	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to encode key rotate query response: %v", err)
-		return
-	}
-
-	if err := q.Respond(buf); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to respond to key rotate query: %v", err)
-	}
 }

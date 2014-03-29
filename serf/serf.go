@@ -655,18 +655,16 @@ func (s *Serf) RotateKey(newSecret string) error {
 	}
 
 	qName := internalQueryName(newSecretQuery)
-	resp, err := s.Query(qName, secret, nil)
+	qParam := &QueryParam{
+		RequestAck: true,
+	}
+	resp, err := s.Query(qName, secret, qParam)
 	if err != nil {
 		return err
 	}
 
 	responses := 0
-	respCh := resp.ResponseCh()
-	for r := range respCh {
-		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageNewSecretResponseType {
-			s.logger.Printf("[ERR] serf: Invalid key rotate query response type: %v", r.Payload)
-			continue
-		}
+	for _ = range resp.ackCh {
 		responses++
 	}
 
@@ -701,9 +699,9 @@ func (s *Serf) RotateKey(newSecret string) error {
 	return nil
 }
 
-// Handle swapping the new secret key in. This takes effect immediately and has
-// potential to cause a few messages to be rejected, since all nodes may not
-// handle the key swap at the same moment.
+// Handle the process of swapping out an encryption key. This method does not do
+// any key-changing itself, but handles event broadcasting and initiates a
+// background task which can handle the actual key swapping later on.
 func (s *Serf) handleRotateKey() bool {
 	// If the new secret is nil, then either we have already consumed it, or
 	// there is no new secret key, so bail and don't rebroadcast the event.
@@ -712,12 +710,14 @@ func (s *Serf) handleRotateKey() bool {
 	}
 
 	// Pass along some metrics
-	metrics.IncrCounter([]string{"serf", "key_rotate"}, 1)
+	metrics.IncrCounter([]string{"serf", "events"}, 1)
+	metrics.IncrCounter([]string{"serf", "events", "rotate-key"}, 1)
+	metrics.IncrCounter([]string{"serf", "key_rotations"}, 1)
 
-	// base64 the bytes to send in the event
+	// base64 the bytes to send to the event handler
 	encoded := base64.StdEncoding.EncodeToString(s.config.NewSecretKey)
 
-	// Send an event
+	// Send the event
 	if s.config.EventCh != nil {
 		s.config.EventCh <- RotateKeyEvent{
 			NewSecretKey: encoded,
@@ -743,10 +743,12 @@ func (s *Serf) delayedSecretSwap(newSecretKey []byte) {
 	// rotate-key event was sent out before we change out the secret.
 	time.Sleep(s.config.BroadcastTimeout)
 
-	// Do the actual key swap. This might cause a message or two to fail but
-	// should recover quickly.
+	// Do the actual key swap. It is possible that this can cause a small number
+	// of messages to fail, since we can't know when we will be asked next for
+	// a pushpull, or what key will be in use by the requestor. In general, any
+	// errors here will be resolved quickly as the cluster converges.
 	s.config.MemberlistConfig.SecretKey = newSecretKey
-	s.logger.Printf("[INFO] serf: Key successfully rotated")
+	s.logger.Printf("[INFO] serf: Encryption key successfully rotated")
 }
 
 // hasAliveMembers is called to check for any alive members other than
