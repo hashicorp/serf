@@ -672,7 +672,7 @@ func (s *Serf) RotateKey(newSecret string) error {
 
 	// Bail if not all nodes ack'ed the new secret query
 	if responses < totalMembers {
-		return fmt.Errorf("only %d/%d nodes replied", responses, totalMembers)
+		return fmt.Errorf("%d/%d nodes replied", responses, totalMembers)
 	}
 
 	// Rotate our own key only after we have broadcasted everything out
