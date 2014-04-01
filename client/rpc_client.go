@@ -165,6 +165,10 @@ func ClientFromConfig(c *Config) (*RPCClient, error) {
 // StreamHandle is an opaque handle passed to stop to stop streaming
 type StreamHandle uint64
 
+func (c *RPCClient) IsClosed() bool {
+	return c.shutdown;
+}
+
 // Close is used to free any resources associated with the client
 func (c *RPCClient) Close() error {
 	c.shutdownLock.Lock()
