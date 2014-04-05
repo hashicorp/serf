@@ -78,6 +78,12 @@ func init() {
 			}, nil
 		},
 
+		"use-key": func() (cli.Command, error) {
+			return &command.UseKeyCommand{
+				Ui: ui,
+			}, nil
+		},
+
 		"tags": func() (cli.Command, error) {
 			return &command.TagsCommand{
 				Ui: ui,
