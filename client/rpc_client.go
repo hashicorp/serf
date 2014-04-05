@@ -166,7 +166,7 @@ func ClientFromConfig(c *Config) (*RPCClient, error) {
 type StreamHandle uint64
 
 func (c *RPCClient) IsClosed() bool {
-	return c.shutdown;
+	return c.shutdown
 }
 
 // Close is used to free any resources associated with the client
@@ -290,6 +290,20 @@ func (c *RPCClient) Respond(id uint64, buf []byte) error {
 		Payload: buf,
 	}
 	return c.genericRPC(&header, &req, nil)
+}
+
+// RotateKey is used to initiate encryption key rotation for a Serf cluster
+func (c *RPCClient) InstallKey(newKey string) error {
+	header := requestHeader{
+		Command: installKeyCommand,
+		Seq:     c.getSeq(),
+	}
+	req := installKeyRequest{
+		Key: newKey,
+	}
+	var resp installKeyResponse
+
+	return c.genericRPC(&header, &req, &resp)
 }
 
 type monitorHandler struct {

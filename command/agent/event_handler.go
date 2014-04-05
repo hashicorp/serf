@@ -111,6 +111,7 @@ func (s *EventFilter) Valid() bool {
 	case "member-reap":
 	case "user":
 	case "query":
+	case "rotate-key":
 	case "*":
 	default:
 		return false

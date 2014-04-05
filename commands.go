@@ -72,6 +72,12 @@ func init() {
 			}, nil
 		},
 
+		"install-key": func() (cli.Command, error) {
+			return &command.InstallKeyCommand{
+				Ui: ui,
+			}, nil
+		},
+
 		"tags": func() (cli.Command, error) {
 			return &command.TagsCommand{
 				Ui: ui,

@@ -2,6 +2,7 @@ package serf
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/armon/go-metrics"
@@ -629,6 +630,58 @@ func (s *Serf) Leave() error {
 		s.state = SerfLeft
 	}
 	s.stateLock.Unlock()
+	return nil
+}
+
+// RotateKey begins rotating the encryption key in a Serf cluster by first
+// broadcasting the new key to the cluster, and then initiating a user query
+// to ensure that the new key has taken effect on all members. If the user
+// query does not succeed on any member, then we consider the key rotation a
+// failure, and continue using the original key until a new key has been
+// successfully broadcasted to all members in the cluster.
+func (s *Serf) InstallKey(newKey string) error {
+	// Decode the new key into raw bytes before storing it away. This ensures
+	// that later on when we go to copy the new key into the memberlist config
+	// there will be no decoding errors, which would cause cluster segmentation.
+	key, err := base64.StdEncoding.DecodeString(newKey)
+	if err != nil {
+		return err
+	}
+
+	qName := internalQueryName(installKeyQuery)
+	qParam := &QueryParam{}
+	resp, err := s.Query(qName, key, qParam)
+	if err != nil {
+		return err
+	}
+
+	responses := 0
+	for r := range resp.respCh {
+		var result bool
+
+		// Decode the response
+		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageInstallKeyResponseType {
+			s.logger.Printf("[ERR] serf: Invalid install key query response type: %v", r.Payload)
+			continue
+		}
+		if err := decodeMessage(r.Payload[1:], &result); err != nil {
+			s.logger.Printf("[ERR] serf: Failed to decode conflict query response: %v", err)
+			continue
+		}
+
+		// Update the counters
+		if result {
+			responses++
+		}
+	}
+
+	totalMembers := s.memberlist.NumMembers()
+
+	// Bail if not all nodes ack'ed the new secret query
+	if responses < totalMembers {
+		return fmt.Errorf("%d/%d nodes succeeded", responses, totalMembers)
+	}
+
 	return nil
 }
 
@@ -1507,7 +1560,6 @@ func (s *Serf) decodeTags(buf []byte) map[string]string {
 	if len(buf) == 0 || buf[0] != tagMagicByte {
 		tags["role"] = string(buf)
 		return tags
-
 	}
 
 	// Decode the tags

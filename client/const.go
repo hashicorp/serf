@@ -21,6 +21,7 @@ const (
 	stopCommand            = "stop"
 	monitorCommand         = "monitor"
 	leaveCommand           = "leave"
+	installKeyCommand      = "install-key"
 	tagsCommand            = "tags"
 	queryCommand           = "query"
 	respondCommand         = "respond"
@@ -93,6 +94,14 @@ type membersFilteredRequest struct {
 
 type membersResponse struct {
 	Members []Member
+}
+
+type installKeyRequest struct {
+	Key string
+}
+
+type installKeyResponse struct {
+	Num int32
 }
 
 type monitorRequest struct {

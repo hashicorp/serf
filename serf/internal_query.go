@@ -15,6 +15,9 @@ const (
 
 	// conflictQuery is run to resolve a name conflict
 	conflictQuery = "conflict"
+
+	// installKeyQuery is used to install a new key
+	installKeyQuery = "install-key"
 )
 
 // internalQueryName is used to generate a query name for an internal query
@@ -76,6 +79,8 @@ func (s *serfQueries) handleQuery(q *Query) {
 		// Nothing to do, we will ack the query
 	case conflictQuery:
 		s.handleConflict(q)
+	case installKeyQuery:
+		s.handleNewKey(q)
 	default:
 		s.logger.Printf("[WARN] serf: Unhandled internal query '%s'", queryName)
 	}
@@ -112,5 +117,24 @@ func (s *serfQueries) handleConflict(q *Query) {
 	// Send our answer
 	if err := q.Respond(buf); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to respond to conflict query: %v", err)
+	}
+}
+
+// handleNewSecret is executed when an internal query to change out the
+// encryption key is received. This method only populates the Serf configuration
+// in preparation for doing the actual key swap later on.
+func (s *serfQueries) handleNewKey(q *Query) {
+	result := false
+	err := s.serf.config.MemberlistConfig.Keyring.AddKey(q.Payload)
+	if err == nil {
+		result = true
+		s.serf.config.MemberlistConfig.Keyring.UseKey(q.Payload)
+	} else {
+		s.logger.Printf("[ERR] serf: Failed to install new key: %s", err)
+	}
+
+	buf, err := encodeMessage(messageInstallKeyResponseType, result)
+	if err := q.Respond(buf); err != nil {
+		s.logger.Printf("[ERR] serf: Failed to respond to install key query: %v", err)
 	}
 }
