@@ -131,14 +131,15 @@ func (s *serfQueries) handleInstallKey(q *Query) {
 
 	if err := keyring.AddKey(q.Payload); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to install new key: %s", err)
-	} else {
-		if err := s.serf.WriteKeyringFile(keyring); err != nil {
-			s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
-		} else {
-			result = true
-		}
+		goto SEND
 	}
+	if err := s.serf.WriteKeyringFile(keyring); err != nil {
+		s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
+		goto SEND
+	}
+	result = true
 
+SEND:
 	buf, err := encodeMessage(messageInstallKeyResponseType, result)
 	if err != nil {
 		s.logger.Printf("[ERR] serf: Failed to encode install key response: %v", err)
@@ -156,14 +157,15 @@ func (s *serfQueries) handleUseKey(q *Query) {
 
 	if err := keyring.UseKey(q.Payload); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to change primary encryption key: %v", err)
-	} else {
-		if err := s.serf.WriteKeyringFile(keyring); err != nil {
-			s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
-		} else {
-			result = true
-		}
+		goto SEND
 	}
+	if err := s.serf.WriteKeyringFile(keyring); err != nil {
+		s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
+		goto SEND
+	}
+	result = true
 
+SEND:
 	buf, err := encodeMessage(messageUseKeyResponseType, result)
 	if err != nil {
 		s.logger.Printf("[ERR] serf: Failed to encode use key response: %v", err)

@@ -1599,6 +1599,10 @@ func (s *Serf) Stats() map[string]string {
 
 // WriteKeyringFile will serialize the current keyring and save it to a file.
 func (s *Serf) WriteKeyringFile(keyring *memberlist.Keyring) error {
+	if len(s.config.KeyringFile) == 0 {
+		return nil
+	}
+
 	keysRaw := keyring.GetKeys()
 	keysEncoded := make([]string, len(keysRaw))
 
