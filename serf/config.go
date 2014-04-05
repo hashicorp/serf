@@ -182,13 +182,9 @@ type Config struct {
 	// node stays while the other node will leave the cluster and exit.
 	EnableNameConflictResolution bool
 
-	// NewSecretKey is used to store the value of an encryption key until
-	// all nodes in a Serf cluster have received it. Once all nodes have
-	// received this key, an event will be triggered to copy this value into
-	// the MemberlistConfig.SecretKey value, effectively rotating the key.
-	// This method is used to make sure that all nodes will be able to speak
-	// to eachother once the encryption key has been changed.
-	NewSecretKey []byte
+	// KeyringFile provides the location of a writable file where Serf can
+	// persist changes to the encryption keyring.
+	KeyringFile string
 }
 
 // Init allocates the subdata structures

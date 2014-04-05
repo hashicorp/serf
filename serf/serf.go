@@ -3,11 +3,13 @@ package serf
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/armon/go-metrics"
 	"github.com/hashicorp/memberlist"
 	"github.com/ugorji/go/codec"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
@@ -1588,4 +1590,27 @@ func (s *Serf) Stats() map[string]string {
 		"query_queue":  toString(uint64(s.queryBroadcasts.NumQueued())),
 	}
 	return stats
+}
+
+// WriteKeyringFile will serialize the current keyring and save it to a file.
+func (s *Serf) WriteKeyringFile(keyring *memberlist.Keyring) error {
+	keysRaw := keyring.GetKeys()
+	keysEncoded := make([]string, len(keysRaw))
+
+	for i, key := range keysRaw {
+		keysEncoded[i] = base64.StdEncoding.EncodeToString(key)
+	}
+
+	encodedKeys, err := json.MarshalIndent(keysEncoded, "", "  ")
+	if err != nil {
+		return fmt.Errorf("Failed to encode keys: %s", err)
+	}
+
+	// Use 0600 for permissions because key data is sensitive
+	if err = ioutil.WriteFile(s.config.KeyringFile, encodedKeys, 0600); err != nil {
+		return fmt.Errorf("Failed to write keyring file: %s", err)
+	}
+
+	// Success!
+	return nil
 }

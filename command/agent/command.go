@@ -250,6 +250,9 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 		serfConfig.TombstoneTimeout = config.TombstoneTimeout
 	}
 	serfConfig.EnableNameConflictResolution = !config.DisableNameResolution
+	if config.KeyringFile != "" {
+		serfConfig.KeyringFile = config.KeyringFile
+	}
 
 	// Start Serf
 	c.Ui.Output("Starting Serf agent...")

@@ -80,7 +80,7 @@ func (s *serfQueries) handleQuery(q *Query) {
 	case conflictQuery:
 		s.handleConflict(q)
 	case installKeyQuery:
-		s.handleNewKey(q)
+		s.handleInstallKey(q)
 	default:
 		s.logger.Printf("[WARN] serf: Unhandled internal query '%s'", queryName)
 	}
@@ -120,20 +120,26 @@ func (s *serfQueries) handleConflict(q *Query) {
 	}
 }
 
-// handleNewSecret is executed when an internal query to change out the
-// encryption key is received. This method only populates the Serf configuration
-// in preparation for doing the actual key swap later on.
-func (s *serfQueries) handleNewKey(q *Query) {
-	result := false
-	err := s.serf.config.MemberlistConfig.Keyring.AddKey(q.Payload)
-	if err == nil {
-		result = true
-		s.serf.config.MemberlistConfig.Keyring.UseKey(q.Payload)
-	} else {
+func (s *serfQueries) handleInstallKey(q *Query) {
+	result := true
+	keyring := s.serf.config.MemberlistConfig.Keyring
+
+	if err := keyring.AddKey(q.Payload); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to install new key: %s", err)
+		result = false
+	} else {
+		if err := s.serf.WriteKeyringFile(keyring); err != nil {
+			s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
+			result = false
+		}
 	}
 
 	buf, err := encodeMessage(messageInstallKeyResponseType, result)
+	if err != nil {
+		s.logger.Printf("[ERR] serf: Failed to encode install key response: %v", err)
+		return
+	}
+
 	if err := q.Respond(buf); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to respond to install key query: %v", err)
 	}
