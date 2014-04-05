@@ -374,3 +374,30 @@ func (a *Agent) loadKeyringFile(keyringFile string) error {
 	// Success!
 	return nil
 }
+
+// writeKeyringFile will serialize the current keyring and save it to a file.
+func (a *Agent) writeKeyringFile(keyring *memberlist.Keyring) error {
+	keysRaw := keyring.GetKeys()
+	keysEncoded := make([]string, len(keysRaw))
+
+	for i, key := range keysRaw {
+		encoded, err := base64.StdEncoding.EncodeToString(key)
+		if err != nil {
+			return fmt.Errorf("Failed to encode key: %s", err)
+		}
+		keysEncoded[i] = encoded
+	}
+
+	encodedKeys, err := json.MarshalIndent(keysEncoded, "", "  ")
+	if err != nil {
+		return fmt.Errorf("Failed to encode keys: %s", err)
+	}
+
+	// Use 0600 for permissions because key data is sensitive
+	if err = ioutil.WriteFile(a.agentConf.KeyringFile, encodedKeys, 0600); err != nil {
+		return fmt.Errorf("Failed to write keyring file: %s", err)
+	}
+
+	// Success!
+	return nil
+}
