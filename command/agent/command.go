@@ -48,6 +48,7 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.Var((*AppendSliceValue)(&configFiles), "config-dir",
 		"directory of json files to read")
 	cmdFlags.StringVar(&cmdConfig.EncryptKey, "encrypt", "", "encryption key")
+	cmdFlags.StringVar(&cmdConfig.KeyringFile, "keyring-file", "", "path to the keyring file")
 	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.EventHandlers), "event-handler",
 		"command to execute when events occur")
 	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.StartJoin), "join",
@@ -551,6 +552,10 @@ Options:
                            peers join each other without an explicit join.
   -encrypt=foo             Key for encrypting network traffic within Serf.
                            Must be a base64-encoded 16-byte key.
+  -keyring-file            The keyring file is used to store encryption keys used
+                           by Serf. As encryption keys are changed, the content of
+                           this file is updated so that the same keys may be used
+                           during later agent starts.
   -event-handler=foo       Script to execute when events occur. This can
                            be specified multiple times. See the event scripts
                            section below for more info.
