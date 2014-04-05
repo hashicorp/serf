@@ -207,3 +207,17 @@ func TestAgent_UnarshalTags(t *testing.T) {
 		t.Fatalf("bad: %v", tags)
 	}
 }
+
+func TestAgent_UnmarshalTagsError(t *testing.T) {
+	tagSets := [][]string{
+		[]string{"="},
+		[]string{"=x"},
+		[]string{""},
+		[]string{"x"},
+	}
+	for _, tagPairs := range tagSets {
+		if _, err := UnmarshalTags(tagPairs); err == nil {
+			t.Fatalf("Expected tag error: %s", tagPairs[0])
+		}
+	}
+}

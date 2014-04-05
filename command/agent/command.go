@@ -72,15 +72,12 @@ func (c *Command) readConfig() *Config {
 	}
 
 	// Parse any command line tag values
-	cmdConfig.Tags = make(map[string]string)
-	for _, tag := range tags {
-		parts := strings.SplitN(tag, "=", 2)
-		if len(parts) != 2 {
-			c.Ui.Error(fmt.Sprintf("Invalid tag '%s' provided", tag))
-			return nil
-		}
-		cmdConfig.Tags[parts[0]] = parts[1]
+	tagValues, err := UnmarshalTags(tags)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error: %s", err))
+		return nil
 	}
+	cmdConfig.Tags = tagValues
 
 	config := DefaultConfig()
 	if len(configFiles) > 0 {
