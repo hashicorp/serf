@@ -320,6 +320,20 @@ func (c *RPCClient) UseKey(key string) error {
 	return c.genericRPC(&header, &req, &resp)
 }
 
+// RemoveKey changes the primary encryption key on the keyring
+func (c *RPCClient) RemoveKey(key string) error {
+	header := requestHeader{
+		Command: removeKeyCommand,
+		Seq:     c.getSeq(),
+	}
+	req := keyRequest{
+		Key: key,
+	}
+	var resp keyResponse
+
+	return c.genericRPC(&header, &req, &resp)
+}
+
 type monitorHandler struct {
 	client *RPCClient
 	closed bool

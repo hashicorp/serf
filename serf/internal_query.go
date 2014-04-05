@@ -21,6 +21,9 @@ const (
 
 	// useKeyQuery is used to change the primary encryption key
 	useKeyQuery = "use-key"
+
+	// removeKeyQuery is used to remove a key from the keyring
+	removeKeyQuery = "remove-key"
 )
 
 // internalQueryName is used to generate a query name for an internal query
@@ -82,10 +85,8 @@ func (s *serfQueries) handleQuery(q *Query) {
 		// Nothing to do, we will ack the query
 	case conflictQuery:
 		s.handleConflict(q)
-	case installKeyQuery:
-		s.handleInstallKey(q)
-	case useKeyQuery:
-		s.handleUseKey(q)
+	case installKeyQuery, useKeyQuery, removeKeyQuery:
+		s.handleModifyKeyring(queryName, q)
 	default:
 		s.logger.Printf("[WARN] serf: Unhandled internal query '%s'", queryName)
 	}
@@ -125,14 +126,28 @@ func (s *serfQueries) handleConflict(q *Query) {
 	}
 }
 
-func (s *serfQueries) handleInstallKey(q *Query) {
+func (s *serfQueries) handleModifyKeyring(queryName string, q *Query) {
 	result := false
 	keyring := s.serf.config.MemberlistConfig.Keyring
 
-	if err := keyring.AddKey(q.Payload); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to install new key: %s", err)
-		goto SEND
+	switch queryName {
+	case installKeyQuery:
+		if err := keyring.AddKey(q.Payload); err != nil {
+			s.logger.Printf("[ERR] serf: Failed to install new key: %s", err)
+			goto SEND
+		}
+	case useKeyQuery:
+		if err := keyring.UseKey(q.Payload); err != nil {
+			s.logger.Printf("[ERR] serf: Failed to change primary encryption key: %v", err)
+			goto SEND
+		}
+	case removeKeyQuery:
+		if err := keyring.RemoveKey(q.Payload); err != nil {
+			s.logger.Printf("[ERR] serf: Failed to remove encryption key: %v", err)
+			goto SEND
+		}
 	}
+
 	if err := s.serf.WriteKeyringFile(keyring); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
 		goto SEND
@@ -140,39 +155,13 @@ func (s *serfQueries) handleInstallKey(q *Query) {
 	result = true
 
 SEND:
-	buf, err := encodeMessage(messageInstallKeyResponseType, result)
+	buf, err := encodeMessage(messageKeyResponseType, result)
 	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to encode install key response: %v", err)
+		s.logger.Printf("[ERR] serf: Failed to encode %s response: %v", queryName, err)
 		return
 	}
 
 	if err := q.Respond(buf); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to respond to install key query: %v", err)
-	}
-}
-
-func (s *serfQueries) handleUseKey(q *Query) {
-	result := false
-	keyring := s.serf.config.MemberlistConfig.Keyring
-
-	if err := keyring.UseKey(q.Payload); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to change primary encryption key: %v", err)
-		goto SEND
-	}
-	if err := s.serf.WriteKeyringFile(keyring); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
-		goto SEND
-	}
-	result = true
-
-SEND:
-	buf, err := encodeMessage(messageUseKeyResponseType, result)
-	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to encode use key response: %v", err)
-		return
-	}
-
-	if err := q.Respond(buf); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to respond to use key query: %v", err)
+		s.logger.Printf("[ERR] serf: Failed to respond to %s query: %v", queryName, err)
 	}
 }

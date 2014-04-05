@@ -645,15 +645,14 @@ func (s *Serf) ModifyKeyring(command string, key string) error {
 	}
 
 	var qName string
-	var msgType messageType
 
 	switch command {
 	case "install-key":
 		qName = internalQueryName(installKeyQuery)
-		msgType = messageInstallKeyResponseType
 	case "use-key":
 		qName = internalQueryName(useKeyQuery)
-		msgType = messageUseKeyResponseType
+	case "remove-key":
+		qName = internalQueryName(removeKeyQuery)
 	}
 
 	qParam := &QueryParam{}
@@ -667,7 +666,7 @@ func (s *Serf) ModifyKeyring(command string, key string) error {
 		var result bool
 
 		// Decode the response
-		if len(r.Payload) < 1 || messageType(r.Payload[0]) != msgType {
+		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageKeyResponseType {
 			s.logger.Printf("[ERR] serf: Invalid key query response type: %v", r.Payload)
 			continue
 		}

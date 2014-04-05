@@ -23,6 +23,7 @@ const (
 	leaveCommand           = "leave"
 	installKeyCommand      = "install-key"
 	useKeyCommand          = "use-key"
+	removeKeyCommand       = "remove-key"
 	tagsCommand            = "tags"
 	queryCommand           = "query"
 	respondCommand         = "respond"

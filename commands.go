@@ -84,6 +84,12 @@ func init() {
 			}, nil
 		},
 
+		"remove-key": func() (cli.Command, error) {
+			return &command.RemoveKeyCommand{
+				Ui: ui,
+			}, nil
+		},
+
 		"tags": func() (cli.Command, error) {
 			return &command.TagsCommand{
 				Ui: ui,

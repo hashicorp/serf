@@ -220,6 +220,12 @@ func (a *Agent) UseKey(key string) error {
 	return a.serf.ModifyKeyring("use-key", key)
 }
 
+// RemoveKey initiates the process of installing a new encryption key
+func (a *Agent) RemoveKey(key string) error {
+	a.logger.Printf("[INFO] agent: Initiating key removal")
+	return a.serf.ModifyKeyring("remove-key", key)
+}
+
 // RegisterEventHandler adds an event handler to recieve event notifications
 func (a *Agent) RegisterEventHandler(eh EventHandler) {
 	a.eventHandlersLock.Lock()

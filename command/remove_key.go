@@ -7,22 +7,18 @@ import (
 	"strings"
 )
 
-type UseKeyCommand struct {
+type RemoveKeyCommand struct {
 	Ui cli.Ui
 }
 
-func (c *UseKeyCommand) Help() string {
+func (c *RemoveKeyCommand) Help() string {
 	helpText := `
-Usage: serf use-key [options] <key>
+Usage: serf remove-key [options] <key>
 
-  Change the primary key in the keyring. The primary key is used to perform
-  encryption and is the first key tried while decrypting messages.
-
-  CAUTION! If you change the primary encryption key without first distributing
-  the new key to all nodes, then nodes without the new encryption key will not
-  be able to understand messages encrypted using the new key. Typically this
-  means you should get an exit code of 0 from the "install-key" command before
-  running "use-key".
+  Remove an encryption key from Serf's internal keyring. In order for key
+  removal to succeed, the key you are requesting for deletion cannot be
+  the primary encryption key. You must first install a new key, use it,
+  and then remove the old key.
 
 Options:
 
@@ -32,8 +28,8 @@ Options:
 	return strings.TrimSpace(helpText)
 }
 
-func (c *UseKeyCommand) Run(args []string) int {
-	cmdFlags := flag.NewFlagSet("use-key", flag.ContinueOnError)
+func (c *RemoveKeyCommand) Run(args []string) int {
+	cmdFlags := flag.NewFlagSet("remove-key", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	rpcAuth := RPCAuthFlag(cmdFlags)
@@ -62,14 +58,14 @@ func (c *UseKeyCommand) Run(args []string) int {
 	defer client.Close()
 
 	if err := client.UseKey(args[0]); err != nil {
-		c.Ui.Error(fmt.Sprintf("Error changing primary key: %s", err))
+		c.Ui.Error(fmt.Sprintf("Error removing key: %s", err))
 		return 1
 	}
 
-	c.Ui.Output("Successfully changed primary encryption key")
+	c.Ui.Output("Successfully removed encryption key")
 	return 0
 }
 
-func (c *UseKeyCommand) Synopsis() string {
-	return "Change the keyring's primary encryption key"
+func (c *RemoveKeyCommand) Synopsis() string {
+	return "Remove an encryption key from Serf's internal keyring."
 }

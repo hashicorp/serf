@@ -19,9 +19,9 @@ const (
 	messageQueryResponseType
 	messageConflictResponseType
 	messageInstallKeyType
-	messageInstallKeyResponseType
 	messageUseKeyType
-	messageUseKeyResponseType
+	messageRemoveKeyType
+	messageKeyResponseType
 )
 
 const (

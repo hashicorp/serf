@@ -57,6 +57,7 @@ const (
 	leaveCommand           = "leave"
 	installKeyCommand      = "install-key"
 	useKeyCommand          = "use-key"
+	removeKeyCommand       = "remove-key"
 	tagsCommand            = "tags"
 	queryCommand           = "query"
 	respondCommand         = "respond"
@@ -708,6 +709,8 @@ func (i *AgentIPC) handleKey(client *IPCClient, seq uint64, command string) erro
 		err = i.agent.InstallKey(req.Key)
 	case useKeyCommand:
 		err = i.agent.UseKey(req.Key)
+	case removeKeyCommand:
+		err = i.agent.RemoveKey(req.Key)
 	}
 
 	header := responseHeader{
