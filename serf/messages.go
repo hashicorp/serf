@@ -20,6 +20,8 @@ const (
 	messageConflictResponseType
 	messageInstallKeyType
 	messageInstallKeyResponseType
+	messageUseKeyType
+	messageUseKeyResponseType
 )
 
 const (

@@ -292,16 +292,30 @@ func (c *RPCClient) Respond(id uint64, buf []byte) error {
 	return c.genericRPC(&header, &req, nil)
 }
 
-// RotateKey is used to initiate encryption key rotation for a Serf cluster
+// IntallKey installs a new encryption key onto the keyring
 func (c *RPCClient) InstallKey(newKey string) error {
 	header := requestHeader{
 		Command: installKeyCommand,
 		Seq:     c.getSeq(),
 	}
-	req := installKeyRequest{
+	req := keyRequest{
 		Key: newKey,
 	}
-	var resp installKeyResponse
+	var resp keyResponse
+
+	return c.genericRPC(&header, &req, &resp)
+}
+
+// UseKey changes the primary encryption key on the keyring
+func (c *RPCClient) UseKey(key string) error {
+	header := requestHeader{
+		Command: useKeyCommand,
+		Seq:     c.getSeq(),
+	}
+	req := keyRequest{
+		Key: key,
+	}
+	var resp keyResponse
 
 	return c.genericRPC(&header, &req, &resp)
 }

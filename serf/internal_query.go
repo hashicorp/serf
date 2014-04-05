@@ -18,6 +18,9 @@ const (
 
 	// installKeyQuery is used to install a new key
 	installKeyQuery = "install-key"
+
+	// useKeyQuery is used to change the primary encryption key
+	useKeyQuery = "use-key"
 )
 
 // internalQueryName is used to generate a query name for an internal query
@@ -81,6 +84,8 @@ func (s *serfQueries) handleQuery(q *Query) {
 		s.handleConflict(q)
 	case installKeyQuery:
 		s.handleInstallKey(q)
+	case useKeyQuery:
+		s.handleUseKey(q)
 	default:
 		s.logger.Printf("[WARN] serf: Unhandled internal query '%s'", queryName)
 	}
@@ -121,16 +126,16 @@ func (s *serfQueries) handleConflict(q *Query) {
 }
 
 func (s *serfQueries) handleInstallKey(q *Query) {
-	result := true
+	result := false
 	keyring := s.serf.config.MemberlistConfig.Keyring
 
 	if err := keyring.AddKey(q.Payload); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to install new key: %s", err)
-		result = false
 	} else {
 		if err := s.serf.WriteKeyringFile(keyring); err != nil {
 			s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
-			result = false
+		} else {
+			result = true
 		}
 	}
 
@@ -142,5 +147,30 @@ func (s *serfQueries) handleInstallKey(q *Query) {
 
 	if err := q.Respond(buf); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to respond to install key query: %v", err)
+	}
+}
+
+func (s *serfQueries) handleUseKey(q *Query) {
+	result := false
+	keyring := s.serf.config.MemberlistConfig.Keyring
+
+	if err := keyring.UseKey(q.Payload); err != nil {
+		s.logger.Printf("[ERR] serf: Failed to change primary encryption key: %v", err)
+	} else {
+		if err := s.serf.WriteKeyringFile(keyring); err != nil {
+			s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
+		} else {
+			result = true
+		}
+	}
+
+	buf, err := encodeMessage(messageUseKeyResponseType, result)
+	if err != nil {
+		s.logger.Printf("[ERR] serf: Failed to encode use key response: %v", err)
+		return
+	}
+
+	if err := q.Respond(buf); err != nil {
+		s.logger.Printf("[ERR] serf: Failed to respond to use key query: %v", err)
 	}
 }

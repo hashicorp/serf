@@ -61,12 +61,12 @@ func (c *UseKeyCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
-	if err := client.InstallKey(args[0]); err != nil {
+	if err := client.UseKey(args[0]); err != nil {
 		c.Ui.Error(fmt.Sprintf("Error installing key: %s", err))
 		return 1
 	}
 
-	c.Ui.Output("Successfully installed new key")
+	c.Ui.Output("Successfully changed primary encryption key")
 	return 0
 }
 

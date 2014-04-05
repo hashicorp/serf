@@ -635,24 +635,29 @@ func (s *Serf) Leave() error {
 	return nil
 }
 
-// RotateKey begins rotating the encryption key in a Serf cluster by first
-// broadcasting the new key to the cluster, and then initiating a user query
-// to ensure that the new key has taken effect on all members. If the user
-// query does not succeed on any member, then we consider the key rotation a
-// failure, and continue using the original key until a new key has been
-// successfully broadcasted to all members in the cluster.
-func (s *Serf) InstallKey(newKey string) error {
+func (s *Serf) ModifyKeyring(command string, key string) error {
 	// Decode the new key into raw bytes before storing it away. This ensures
 	// that later on when we go to copy the new key into the memberlist config
 	// there will be no decoding errors, which would cause cluster segmentation.
-	key, err := base64.StdEncoding.DecodeString(newKey)
+	rawKey, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
 		return err
 	}
 
-	qName := internalQueryName(installKeyQuery)
+	var qName string
+	var msgType messageType
+
+	switch command {
+	case "install-key":
+		qName = internalQueryName(installKeyQuery)
+		msgType = messageInstallKeyResponseType
+	case "use-key":
+		qName = internalQueryName(useKeyQuery)
+		msgType = messageUseKeyResponseType
+	}
+
 	qParam := &QueryParam{}
-	resp, err := s.Query(qName, key, qParam)
+	resp, err := s.Query(qName, rawKey, qParam)
 	if err != nil {
 		return err
 	}
@@ -662,12 +667,12 @@ func (s *Serf) InstallKey(newKey string) error {
 		var result bool
 
 		// Decode the response
-		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageInstallKeyResponseType {
-			s.logger.Printf("[ERR] serf: Invalid install key query response type: %v", r.Payload)
+		if len(r.Payload) < 1 || messageType(r.Payload[0]) != msgType {
+			s.logger.Printf("[ERR] serf: Invalid key query response type: %v", r.Payload)
 			continue
 		}
 		if err := decodeMessage(r.Payload[1:], &result); err != nil {
-			s.logger.Printf("[ERR] serf: Failed to decode conflict query response: %v", err)
+			s.logger.Printf("[ERR] serf: Failed to decode key query response: %v", err)
 			continue
 		}
 

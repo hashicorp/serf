@@ -56,6 +56,7 @@ const (
 	monitorCommand         = "monitor"
 	leaveCommand           = "leave"
 	installKeyCommand      = "install-key"
+	useKeyCommand          = "use-key"
 	tagsCommand            = "tags"
 	queryCommand           = "query"
 	respondCommand         = "respond"
@@ -130,11 +131,11 @@ type membersResponse struct {
 	Members []Member
 }
 
-type installKeyRequest struct {
+type keyRequest struct {
 	Key string
 }
 
-type installKeyResponse struct {
+type keyResponse struct {
 	Num int32
 }
 
@@ -484,8 +485,8 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 	case leaveCommand:
 		return i.handleLeave(client, seq)
 
-	case installKeyCommand:
-		return i.handleInstallKey(client, seq)
+	case installKeyCommand, useKeyCommand:
+		return i.handleKey(client, seq, command)
 
 	case tagsCommand:
 		return i.handleTags(client, seq)
@@ -694,19 +695,26 @@ OUTER:
 	return result, nil
 }
 
-func (i *AgentIPC) handleInstallKey(client *IPCClient, seq uint64) error {
-	var req installKeyRequest
+func (i *AgentIPC) handleKey(client *IPCClient, seq uint64, command string) error {
+	var req keyRequest
 	if err := client.dec.Decode(&req); err != nil {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	err := i.agent.InstallKey(req.Key)
+	var err error
+
+	switch command {
+	case installKeyCommand:
+		err = i.agent.InstallKey(req.Key)
+	case useKeyCommand:
+		err = i.agent.UseKey(req.Key)
+	}
 
 	header := responseHeader{
 		Seq:   seq,
 		Error: errToString(err),
 	}
-	resp := installKeyResponse{}
+	resp := keyResponse{}
 	return client.Send(&header, &resp)
 }
 

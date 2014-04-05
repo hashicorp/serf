@@ -22,6 +22,7 @@ const (
 	monitorCommand         = "monitor"
 	leaveCommand           = "leave"
 	installKeyCommand      = "install-key"
+	useKeyCommand          = "use-key"
 	tagsCommand            = "tags"
 	queryCommand           = "query"
 	respondCommand         = "respond"
@@ -96,11 +97,11 @@ type membersResponse struct {
 	Members []Member
 }
 
-type installKeyRequest struct {
+type keyRequest struct {
 	Key string
 }
 
-type installKeyResponse struct {
+type keyResponse struct {
 	Num int32
 }
 
