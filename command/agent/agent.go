@@ -381,11 +381,7 @@ func (a *Agent) writeKeyringFile(keyring *memberlist.Keyring) error {
 	keysEncoded := make([]string, len(keysRaw))
 
 	for i, key := range keysRaw {
-		encoded, err := base64.StdEncoding.EncodeToString(key)
-		if err != nil {
-			return fmt.Errorf("Failed to encode key: %s", err)
-		}
-		keysEncoded[i] = encoded
+		keysEncoded[i] = base64.StdEncoding.EncodeToString(key)
 	}
 
 	encodedKeys, err := json.MarshalIndent(keysEncoded, "", "  ")
