@@ -132,16 +132,19 @@ func (s *serfQueries) handleModifyKeyring(queryName string, q *Query) {
 
 	switch queryName {
 	case installKeyQuery:
+		s.logger.Printf("[INFO] serf: Received install-key query")
 		if err := keyring.AddKey(q.Payload); err != nil {
 			s.logger.Printf("[ERR] serf: Failed to install new key: %s", err)
 			goto SEND
 		}
 	case useKeyQuery:
+		s.logger.Printf("[INFO] serf: Received use-key query")
 		if err := keyring.UseKey(q.Payload); err != nil {
 			s.logger.Printf("[ERR] serf: Failed to change primary encryption key: %v", err)
 			goto SEND
 		}
 	case removeKeyQuery:
+		s.logger.Printf("[INFO] serf: Received remove-key query")
 		if err := keyring.RemoveKey(q.Payload); err != nil {
 			s.logger.Printf("[ERR] serf: Failed to remove encryption key: %v", err)
 			goto SEND

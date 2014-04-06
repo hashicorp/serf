@@ -77,6 +77,11 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 
 	// Load the keyring from the keyring file
 	if agentConf.KeyringFile != "" {
+		// Avoid passing an encryption key and a keyring file at the same time
+		if len(agentConf.EncryptKey) > 0 {
+			return nil, fmt.Errorf("Encryption key not allowed while using a keyring")
+		}
+
 		if err := agent.loadKeyringFile(agentConf.KeyringFile); err != nil {
 			return nil, err
 		}
@@ -345,11 +350,6 @@ func UnmarshalTags(tags []string) (map[string]string, error) {
 
 // loadKeyringFile will load a keyring out of a file
 func (a *Agent) loadKeyringFile(keyringFile string) error {
-	// Avoid passing an encryption key and using a keyring file at the same time
-	if len(a.agentConf.EncryptKey) > 0 {
-		return fmt.Errorf("Encryption key not allowed while using a keyring")
-	}
-
 	if _, err := os.Stat(keyringFile); err == nil {
 		// Read in the keyring file data
 		keyringData, err := ioutil.ReadFile(keyringFile)
@@ -381,29 +381,6 @@ func (a *Agent) loadKeyringFile(keyringFile string) error {
 		a.conf.MemberlistConfig.Keyring = keyring
 		a.logger.Printf("[INFO] agent: Restored keyring with %d keys from %s",
 			len(keys), keyringFile)
-	}
-
-	// Success!
-	return nil
-}
-
-// writeKeyringFile will serialize the current keyring and save it to a file.
-func (a *Agent) writeKeyringFile(keyring *memberlist.Keyring) error {
-	keysRaw := keyring.GetKeys()
-	keysEncoded := make([]string, len(keysRaw))
-
-	for i, key := range keysRaw {
-		keysEncoded[i] = base64.StdEncoding.EncodeToString(key)
-	}
-
-	encodedKeys, err := json.MarshalIndent(keysEncoded, "", "  ")
-	if err != nil {
-		return fmt.Errorf("Failed to encode keys: %s", err)
-	}
-
-	// Use 0600 for permissions because key data is sensitive
-	if err = ioutil.WriteFile(a.agentConf.KeyringFile, encodedKeys, 0600); err != nil {
-		return fmt.Errorf("Failed to write keyring file: %s", err)
 	}
 
 	// Success!

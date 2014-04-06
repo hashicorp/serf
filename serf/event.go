@@ -19,7 +19,6 @@ const (
 	EventMemberReap
 	EventUser
 	EventQuery
-	EventRotateKey
 )
 
 func (t EventType) String() string {
@@ -38,8 +37,6 @@ func (t EventType) String() string {
 		return "user"
 	case EventQuery:
 		return "query"
-	case EventRotateKey:
-		return "rotate-key"
 	default:
 		panic(fmt.Sprintf("unknown event type: %d", t))
 	}
@@ -96,20 +93,6 @@ func (u UserEvent) EventType() EventType {
 
 func (u UserEvent) String() string {
 	return fmt.Sprintf("user-event: %s", u.Name)
-}
-
-// RotateKeyEvent is used to signal to all nodes in a cluster that they should
-// swap out their key for the staged NewEncryptKey carried by Serf.
-type RotateKeyEvent struct {
-	NewSecretKey string
-}
-
-func (r RotateKeyEvent) EventType() EventType {
-	return EventRotateKey
-}
-
-func (r RotateKeyEvent) String() string {
-	return "rotate-key"
 }
 
 // Query is the struct used EventQuery type events
