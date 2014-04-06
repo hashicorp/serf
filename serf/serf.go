@@ -635,13 +635,13 @@ func (s *Serf) Leave() error {
 	return nil
 }
 
-func (s *Serf) ModifyKeyring(command string, key string) error {
+func (s *Serf) ModifyKeyring(command string, key string) ([]string, error) {
 	// Decode the new key into raw bytes before storing it away. This ensures
 	// that later on when we go to copy the new key into the memberlist config
 	// there will be no decoding errors, which would cause cluster segmentation.
 	rawKey, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var qName string
@@ -658,37 +658,43 @@ func (s *Serf) ModifyKeyring(command string, key string) error {
 	qParam := &QueryParam{}
 	resp, err := s.Query(qName, rawKey, qParam)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	responses := 0
+	replies := 0
+	failedNodes := make([]string, 0)
 	for r := range resp.respCh {
-		var result bool
+		var success bool
 
 		// Decode the response
 		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageKeyResponseType {
 			s.logger.Printf("[ERR] serf: Invalid key query response type: %v", r.Payload)
 			continue
 		}
-		if err := decodeMessage(r.Payload[1:], &result); err != nil {
+		if err := decodeMessage(r.Payload[1:], &success); err != nil {
 			s.logger.Printf("[ERR] serf: Failed to decode key query response: %v", err)
 			continue
 		}
 
 		// Update the counters
-		if result {
-			responses++
+		replies++
+		if !success {
+			failedNodes = append(failedNodes, r.From)
 		}
 	}
 
 	totalMembers := s.memberlist.NumMembers()
 
 	// Bail if not all nodes ack'ed the new secret query
-	if responses < totalMembers {
-		return fmt.Errorf("%d/%d nodes succeeded", responses, totalMembers)
+	if replies < totalMembers {
+		return nil, fmt.Errorf("%d/%d nodes did not reply", replies, totalMembers)
+	}
+	if len(failedNodes) != 0 {
+		return failedNodes, fmt.Errorf("%d/%d nodes reported failures",
+			len(failedNodes), totalMembers)
 	}
 
-	return nil
+	return nil, nil
 }
 
 // hasAliveMembers is called to check for any alive members other than

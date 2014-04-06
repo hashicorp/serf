@@ -57,7 +57,10 @@ func (c *InstallKeyCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
-	if err := client.InstallKey(args[0]); err != nil {
+	if failedNodes, err := client.InstallKey(args[0]); err != nil {
+		for _, node := range failedNodes {
+			c.Ui.Error(fmt.Sprintf("failed: %s", node))
+		}
 		c.Ui.Error(fmt.Sprintf("Error installing key: %s", err))
 		return 1
 	}

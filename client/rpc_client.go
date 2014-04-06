@@ -293,7 +293,7 @@ func (c *RPCClient) Respond(id uint64, buf []byte) error {
 }
 
 // IntallKey installs a new encryption key onto the keyring
-func (c *RPCClient) InstallKey(newKey string) error {
+func (c *RPCClient) InstallKey(newKey string) ([]string, error) {
 	header := requestHeader{
 		Command: installKeyCommand,
 		Seq:     c.getSeq(),
@@ -301,13 +301,14 @@ func (c *RPCClient) InstallKey(newKey string) error {
 	req := keyRequest{
 		Key: newKey,
 	}
-	var resp keyResponse
 
-	return c.genericRPC(&header, &req, &resp)
+	var resp keyResponse
+	err := c.genericRPC(&header, &req, &resp)
+	return resp.FailedNodes, err
 }
 
 // UseKey changes the primary encryption key on the keyring
-func (c *RPCClient) UseKey(key string) error {
+func (c *RPCClient) UseKey(key string) ([]string, error) {
 	header := requestHeader{
 		Command: useKeyCommand,
 		Seq:     c.getSeq(),
@@ -315,13 +316,14 @@ func (c *RPCClient) UseKey(key string) error {
 	req := keyRequest{
 		Key: key,
 	}
-	var resp keyResponse
 
-	return c.genericRPC(&header, &req, &resp)
+	var resp keyResponse
+	err := c.genericRPC(&header, &req, &resp)
+	return resp.FailedNodes, err
 }
 
 // RemoveKey changes the primary encryption key on the keyring
-func (c *RPCClient) RemoveKey(key string) error {
+func (c *RPCClient) RemoveKey(key string) ([]string, error) {
 	header := requestHeader{
 		Command: removeKeyCommand,
 		Seq:     c.getSeq(),
@@ -329,9 +331,10 @@ func (c *RPCClient) RemoveKey(key string) error {
 	req := keyRequest{
 		Key: key,
 	}
-	var resp keyResponse
 
-	return c.genericRPC(&header, &req, &resp)
+	var resp keyResponse
+	err := c.genericRPC(&header, &req, &resp)
+	return resp.FailedNodes, err
 }
 
 type monitorHandler struct {

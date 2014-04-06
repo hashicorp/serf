@@ -137,7 +137,8 @@ type keyRequest struct {
 }
 
 type keyResponse struct {
-	Num int32
+	FailedNodes []string
+	Num         int32
 }
 
 type monitorRequest struct {
@@ -486,7 +487,7 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 	case leaveCommand:
 		return i.handleLeave(client, seq)
 
-	case installKeyCommand, useKeyCommand:
+	case installKeyCommand, useKeyCommand, removeKeyCommand:
 		return i.handleKey(client, seq, command)
 
 	case tagsCommand:
@@ -703,21 +704,24 @@ func (i *AgentIPC) handleKey(client *IPCClient, seq uint64, command string) erro
 	}
 
 	var err error
+	var failedNodes []string
 
 	switch command {
 	case installKeyCommand:
-		err = i.agent.InstallKey(req.Key)
+		failedNodes, err = i.agent.InstallKey(req.Key)
 	case useKeyCommand:
-		err = i.agent.UseKey(req.Key)
+		failedNodes, err = i.agent.UseKey(req.Key)
 	case removeKeyCommand:
-		err = i.agent.RemoveKey(req.Key)
+		failedNodes, err = i.agent.RemoveKey(req.Key)
 	}
 
 	header := responseHeader{
 		Seq:   seq,
 		Error: errToString(err),
 	}
-	resp := keyResponse{}
+	resp := keyResponse{
+		FailedNodes: failedNodes,
+	}
 	return client.Send(&header, &resp)
 }
 
