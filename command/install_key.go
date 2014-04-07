@@ -13,7 +13,7 @@ type InstallKeyCommand struct {
 
 func (c *InstallKeyCommand) Help() string {
 	helpText := `
-Usage: serf keys [options] <newkey>
+Usage: serf keyring install-key [options] <newkey>
 
   Install a new encryption key onto Serf's internal keyring. This command will
   broadcast the new key to all nodes in the cluster. If all nodes reply that

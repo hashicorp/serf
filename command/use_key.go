@@ -13,7 +13,7 @@ type UseKeyCommand struct {
 
 func (c *UseKeyCommand) Help() string {
 	helpText := `
-Usage: serf use-key [options] <key>
+Usage: serf keyring use-key [options] <key>
 
   Change the primary key in the keyring. The primary key is used to perform
   encryption and is the first key tried while decrypting messages.

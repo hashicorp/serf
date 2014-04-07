@@ -59,6 +59,12 @@ func init() {
 			}, nil
 		},
 
+		"keyring": func() (cli.Command, error) {
+			return &command.KeyringCommand{
+				Ui: ui,
+			}, nil
+		},
+
 		"members": func() (cli.Command, error) {
 			return &command.MembersCommand{
 				Ui: ui,
@@ -69,24 +75,6 @@ func init() {
 			return &command.MonitorCommand{
 				ShutdownCh: makeShutdownCh(),
 				Ui:         ui,
-			}, nil
-		},
-
-		"install-key": func() (cli.Command, error) {
-			return &command.InstallKeyCommand{
-				Ui: ui,
-			}, nil
-		},
-
-		"use-key": func() (cli.Command, error) {
-			return &command.UseKeyCommand{
-				Ui: ui,
-			}, nil
-		},
-
-		"remove-key": func() (cli.Command, error) {
-			return &command.RemoveKeyCommand{
-				Ui: ui,
 			}, nil
 		},
 

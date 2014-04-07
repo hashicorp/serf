@@ -13,7 +13,7 @@ type RemoveKeyCommand struct {
 
 func (c *RemoveKeyCommand) Help() string {
 	helpText := `
-Usage: serf remove-key [options] <key>
+Usage: serf keyring remove-key [options] <key>
 
   Remove an encryption key from Serf's internal keyring. In order for key
   removal to succeed, the key you are requesting for deletion cannot be
