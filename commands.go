@@ -53,14 +53,14 @@ func init() {
 			}, nil
 		},
 
-		"leave": func() (cli.Command, error) {
-			return &command.LeaveCommand{
+		"key": func() (cli.Command, error) {
+			return &command.KeyCommand{
 				Ui: ui,
 			}, nil
 		},
 
-		"keyring": func() (cli.Command, error) {
-			return &command.KeyringCommand{
+		"leave": func() (cli.Command, error) {
+			return &command.LeaveCommand{
 				Ui: ui,
 			}, nil
 		},
