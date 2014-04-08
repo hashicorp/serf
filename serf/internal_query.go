@@ -1,6 +1,7 @@
 package serf
 
 import (
+	"fmt"
 	"log"
 	"strings"
 )
@@ -39,6 +40,13 @@ type serfQueries struct {
 	outCh      chan<- Event
 	serf       *Serf
 	shutdownCh <-chan struct{}
+}
+
+// keyResponse is used to store the result from an individual node while
+// replying to key modification queries
+type keyResponse struct {
+	Result  bool
+	Message string
 }
 
 // newSerfQueries is used to create a new serfQueries. We return an event
@@ -127,38 +135,43 @@ func (s *serfQueries) handleConflict(q *Query) {
 }
 
 func (s *serfQueries) handleModifyKeyring(queryName string, q *Query) {
-	result := false
+	response := keyResponse{Result: false}
 	keyring := s.serf.config.MemberlistConfig.Keyring
 
 	switch queryName {
 	case installKeyQuery:
 		s.logger.Printf("[INFO] serf: Received install-key query")
 		if err := keyring.AddKey(q.Payload); err != nil {
+			response.Message = fmt.Sprintf("%s", err)
 			s.logger.Printf("[ERR] serf: Failed to install new key: %s", err)
 			goto SEND
 		}
 	case useKeyQuery:
 		s.logger.Printf("[INFO] serf: Received use-key query")
 		if err := keyring.UseKey(q.Payload); err != nil {
+			response.Message = fmt.Sprintf("%s", err)
 			s.logger.Printf("[ERR] serf: Failed to change primary encryption key: %v", err)
 			goto SEND
 		}
 	case removeKeyQuery:
 		s.logger.Printf("[INFO] serf: Received remove-key query")
 		if err := keyring.RemoveKey(q.Payload); err != nil {
+			response.Message = fmt.Sprintf("%s", err)
 			s.logger.Printf("[ERR] serf: Failed to remove encryption key: %v", err)
 			goto SEND
 		}
 	}
 
 	if err := s.serf.WriteKeyringFile(keyring); err != nil {
+		response.Message = fmt.Sprintf("%s", err)
 		s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
 		goto SEND
 	}
-	result = true
+
+	response.Result = true
 
 SEND:
-	buf, err := encodeMessage(messageKeyResponseType, result)
+	buf, err := encodeMessage(messageKeyResponseType, response)
 	if err != nil {
 		s.logger.Printf("[ERR] serf: Failed to encode %s response: %v", queryName, err)
 		return

@@ -137,8 +137,7 @@ type keyRequest struct {
 }
 
 type keyResponse struct {
-	FailedNodes []string
-	Num         int32
+	FailedNodes map[string]string
 }
 
 type monitorRequest struct {
@@ -704,7 +703,7 @@ func (i *AgentIPC) handleKey(client *IPCClient, seq uint64, command string) erro
 	}
 
 	var err error
-	var failedNodes []string
+	var failedNodes map[string]string
 
 	switch command {
 	case installKeyCommand:

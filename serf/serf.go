@@ -635,7 +635,7 @@ func (s *Serf) Leave() error {
 	return nil
 }
 
-func (s *Serf) ModifyKeyring(command string, key string) ([]string, error) {
+func (s *Serf) ModifyKeyring(command string, key string) (map[string]string, error) {
 	// Decode the new key into raw bytes before storing it away. This ensures
 	// that later on when we go to copy the new key into the memberlist config
 	// there will be no decoding errors, which would cause cluster segmentation.
@@ -662,24 +662,24 @@ func (s *Serf) ModifyKeyring(command string, key string) ([]string, error) {
 	}
 
 	replies := 0
-	failedNodes := make([]string, 0)
+	failedNodes := make(map[string]string)
 	for r := range resp.respCh {
-		var success bool
+		var response keyResponse
 
 		// Decode the response
 		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageKeyResponseType {
 			s.logger.Printf("[ERR] serf: Invalid key query response type: %v", r.Payload)
 			continue
 		}
-		if err := decodeMessage(r.Payload[1:], &success); err != nil {
+		if err := decodeMessage(r.Payload[1:], &response); err != nil {
 			s.logger.Printf("[ERR] serf: Failed to decode key query response: %v", err)
 			continue
 		}
 
 		// Update the counters
 		replies++
-		if !success {
-			failedNodes = append(failedNodes, r.From)
+		if !response.Result {
+			failedNodes[r.From] = response.Message
 		}
 	}
 
@@ -687,7 +687,7 @@ func (s *Serf) ModifyKeyring(command string, key string) ([]string, error) {
 
 	// Bail if not all nodes ack'ed the new secret query
 	if replies < totalMembers {
-		return nil, fmt.Errorf("%d/%d nodes did not reply", replies, totalMembers)
+		return nil, fmt.Errorf("%d/%d nodes replied", replies, totalMembers)
 	}
 	if len(failedNodes) != 0 {
 		return failedNodes, fmt.Errorf("%d/%d nodes reported failures",

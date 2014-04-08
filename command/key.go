@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/mitchellh/cli"
+	"github.com/ryanuber/columnize"
 	"strings"
 )
 
@@ -37,6 +38,7 @@ Options:
 
 func (c *KeyCommand) Run(args []string) int {
 	var installKey, useKey, removeKey string
+	var lines []string
 
 	cmdFlags := flag.NewFlagSet("install-key", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
@@ -63,10 +65,11 @@ func (c *KeyCommand) Run(args []string) int {
 
 	if installKey != "" {
 		if failedNodes, err := client.InstallKey(installKey); err != nil {
-			for _, node := range failedNodes {
-				c.Ui.Error(fmt.Sprintf("failed: %s", node))
+			for node, message := range failedNodes {
+				lines = append(lines, fmt.Sprintf("%s | %s", node, message))
 			}
-			c.Ui.Error(fmt.Sprintf("Error installing key: %s", err))
+			out, _ := columnize.SimpleFormat(lines)
+			c.Ui.Error(fmt.Sprintf("%s\nError installing key: %s", out, err))
 			return 1
 		}
 		c.Ui.Output("Successfully installed key")
@@ -74,10 +77,11 @@ func (c *KeyCommand) Run(args []string) int {
 
 	if useKey != "" {
 		if failedNodes, err := client.UseKey(useKey); err != nil {
-			for _, node := range failedNodes {
-				c.Ui.Error(fmt.Sprintf("failed: %s", node))
+			for node, message := range failedNodes {
+				lines = append(lines, fmt.Sprintf("%s | %s", node, message))
 			}
-			c.Ui.Error(fmt.Sprintf("Error installing key: %s", err))
+			out, _ := columnize.SimpleFormat(lines)
+			c.Ui.Error(fmt.Sprintf("%s\nError installing key: %s", out, err))
 			return 1
 		}
 		c.Ui.Output("Successfully changed primary key")
@@ -85,10 +89,11 @@ func (c *KeyCommand) Run(args []string) int {
 
 	if removeKey != "" {
 		if failedNodes, err := client.RemoveKey(removeKey); err != nil {
-			for _, node := range failedNodes {
-				c.Ui.Error(fmt.Sprintf("failed: %s", node))
+			for node, message := range failedNodes {
+				lines = append(lines, fmt.Sprintf("%s | %s", node, message))
 			}
-			c.Ui.Error(fmt.Sprintf("Error installing key: %s", err))
+			out, _ := columnize.SimpleFormat(lines)
+			c.Ui.Error(fmt.Sprintf("%s\nError installing key: %s", out, err))
 			return 1
 		}
 		c.Ui.Output("Successfully removed key")

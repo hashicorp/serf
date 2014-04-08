@@ -103,8 +103,8 @@ type keyRequest struct {
 }
 
 type keyResponse struct {
-	FailedNodes []string
-	Num         int32
+	Result      bool
+	FailedNodes map[string]string
 }
 
 type monitorRequest struct {

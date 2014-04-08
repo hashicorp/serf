@@ -214,19 +214,19 @@ func (a *Agent) Query(name string, payload []byte, params *serf.QueryParam) (*se
 }
 
 // InstallKey initiates the process of installing a new encryption key
-func (a *Agent) InstallKey(newKey string) ([]string, error) {
+func (a *Agent) InstallKey(newKey string) (map[string]string, error) {
 	a.logger.Printf("[INFO] agent: Initiating key installation")
 	return a.serf.ModifyKeyring("install-key", newKey)
 }
 
 // UseKey initiates the process of installing a new encryption key
-func (a *Agent) UseKey(key string) ([]string, error) {
+func (a *Agent) UseKey(key string) (map[string]string, error) {
 	a.logger.Printf("[INFO] agent: Initiating primary encryption key change")
 	return a.serf.ModifyKeyring("use-key", key)
 }
 
 // RemoveKey initiates the process of installing a new encryption key
-func (a *Agent) RemoveKey(key string) ([]string, error) {
+func (a *Agent) RemoveKey(key string) (map[string]string, error) {
 	a.logger.Printf("[INFO] agent: Initiating key removal")
 	return a.serf.ModifyKeyring("remove-key", key)
 }
