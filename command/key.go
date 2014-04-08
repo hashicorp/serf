@@ -16,7 +16,9 @@ func (c *KeyCommand) Help() string {
 	helpText := `
 Usage: serf key [options]...
 
-  Manipulates the internal encryption keyring used by Serf.
+  Manage the internal encryption keyring used by Serf. Modifications made by
+  this command will be broadcasted to all members in the cluster and applied
+  locally on each member.
 
   To facilitate key rotation, Serf allows for multiple encryption keys to be in
   use simultaneously. Only one key, the "primary" key, will be used for
