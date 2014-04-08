@@ -15,17 +15,22 @@ func (c *KeyCommand) Help() string {
 	helpText := `
 Usage: serf keys [options]...
 
-  Manipulates the internal encryption keyring used by Serf. This command
-  supports chaining arguments to allow performing a complete key rotation
-  in a single command.
+  Manipulates the internal encryption keyring used by Serf.
+
+  To facilitate key rotation, Serf allows for multiple encryption keys to be in
+  use simultaneously. Only one key, the "primary" key, will be used for
+  encrypting messages. All other keys are used for decryption only.
+
+  WARNING: Running with multiple encryption keys enabled is recommended as a
+  transition state only. Performance may be impacted by using multiple keys.
 
 Options:
 
-  -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
-  -rpc-auth=""              RPC auth token of the Serf agent.
   -install=<key>            Install a new key onto Serf's internal keyring.
   -use=<key>                Change the primary key used for encrypting messages.
   -remove=<key>             Remove a key from Serf's internal keyring.
+  -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
+  -rpc-auth=""              RPC auth token of the Serf agent.
 `
 	return strings.TrimSpace(helpText)
 }
