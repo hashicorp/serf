@@ -14,7 +14,7 @@ type KeyCommand struct {
 
 func (c *KeyCommand) Help() string {
 	helpText := `
-Usage: serf keys [options]...
+Usage: serf key [options]...
 
   Manipulates the internal encryption keyring used by Serf.
 
@@ -40,7 +40,7 @@ func (c *KeyCommand) Run(args []string) int {
 	var installKey, useKey, removeKey string
 	var lines []string
 
-	cmdFlags := flag.NewFlagSet("install-key", flag.ContinueOnError)
+	cmdFlags := flag.NewFlagSet("key", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.StringVar(&installKey, "install", "", "install a new key")
 	cmdFlags.StringVar(&useKey, "use", "", "change primary encryption key")
