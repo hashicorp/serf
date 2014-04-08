@@ -51,17 +51,17 @@ func (c *KeyCommand) Run(args []string) int {
 		return 1
 	}
 
+	if fmt.Sprintf("%s%s%s", installKey, useKey, removeKey) == "" {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	client, err := RPCClient(*rpcAddr, *rpcAuth)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
 		return 1
 	}
 	defer client.Close()
-
-	if fmt.Sprintf("%s%s%s", installKey, useKey, removeKey) == "" {
-		c.Ui.Error("At least one of -install, -use, or -remove required")
-		return 1
-	}
 
 	if installKey != "" {
 		if failedNodes, err := client.InstallKey(installKey); err != nil {
