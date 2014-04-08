@@ -138,6 +138,12 @@ func (s *serfQueries) handleModifyKeyring(queryName string, q *Query) {
 	response := keyResponse{Result: false}
 	keyring := s.serf.config.MemberlistConfig.Keyring
 
+	if keyring == nil {
+		response.Message = "Encryption is disabled"
+		s.logger.Printf("[ERR] serf: Encryption is disabled, refusing request to modify keyring")
+		goto SEND
+	}
+
 	switch queryName {
 	case installKeyQuery:
 		s.logger.Printf("[INFO] serf: Received install-key query")

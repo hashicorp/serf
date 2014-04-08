@@ -66,10 +66,12 @@ func (c *KeyCommand) Run(args []string) int {
 	if installKey != "" {
 		if failedNodes, err := client.InstallKey(installKey); err != nil {
 			for node, message := range failedNodes {
-				lines = append(lines, fmt.Sprintf("%s | %s", node, message))
+				lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
 			}
 			out, _ := columnize.SimpleFormat(lines)
-			c.Ui.Error(fmt.Sprintf("%s\nError installing key: %s", out, err))
+			c.Ui.Error(out)
+			c.Ui.Error("")
+			c.Ui.Error(fmt.Sprintf("Error installing key: %s", err))
 			return 1
 		}
 		c.Ui.Output("Successfully installed key")
@@ -78,10 +80,12 @@ func (c *KeyCommand) Run(args []string) int {
 	if useKey != "" {
 		if failedNodes, err := client.UseKey(useKey); err != nil {
 			for node, message := range failedNodes {
-				lines = append(lines, fmt.Sprintf("%s | %s", node, message))
+				lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
 			}
 			out, _ := columnize.SimpleFormat(lines)
-			c.Ui.Error(fmt.Sprintf("%s\nError installing key: %s", out, err))
+			c.Ui.Error(out)
+			c.Ui.Error("")
+			c.Ui.Error(fmt.Sprintf("Error installing key: %s", err))
 			return 1
 		}
 		c.Ui.Output("Successfully changed primary key")
@@ -90,10 +94,12 @@ func (c *KeyCommand) Run(args []string) int {
 	if removeKey != "" {
 		if failedNodes, err := client.RemoveKey(removeKey); err != nil {
 			for node, message := range failedNodes {
-				lines = append(lines, fmt.Sprintf("%s | %s", node, message))
+				lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
 			}
 			out, _ := columnize.SimpleFormat(lines)
-			c.Ui.Error(fmt.Sprintf("%s\nError installing key: %s", out, err))
+			c.Ui.Error(out)
+			c.Ui.Error("")
+			c.Ui.Error(fmt.Sprintf("Error installing key: %s", err))
 			return 1
 		}
 		c.Ui.Output("Successfully removed key")
