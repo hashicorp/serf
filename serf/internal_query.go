@@ -42,9 +42,9 @@ type serfQueries struct {
 	shutdownCh <-chan struct{}
 }
 
-// keyResponse is used to store the result from an individual node while
+// nodeKeyResponse is used to store the result from an individual node while
 // replying to key modification queries
-type keyResponse struct {
+type nodeKeyResponse struct {
 	Result  bool
 	Message string
 }
@@ -135,12 +135,12 @@ func (s *serfQueries) handleConflict(q *Query) {
 }
 
 func (s *serfQueries) handleModifyKeyring(queryName string, q *Query) {
-	response := keyResponse{Result: false}
+	response := nodeKeyResponse{Result: false}
 	keyring := s.serf.config.MemberlistConfig.Keyring
 
 	if keyring == nil {
-		response.Message = "Encryption is disabled"
-		s.logger.Printf("[ERR] serf: Encryption is disabled, refusing request to modify keyring")
+		response.Message = "No keyring to modify (encryption not enabled)"
+		s.logger.Printf("[ERR] serf: No keyring to modify (encryption not enabled)")
 		goto SEND
 	}
 
@@ -149,21 +149,21 @@ func (s *serfQueries) handleModifyKeyring(queryName string, q *Query) {
 		s.logger.Printf("[INFO] serf: Received install-key query")
 		if err := keyring.AddKey(q.Payload); err != nil {
 			response.Message = fmt.Sprintf("%s", err)
-			s.logger.Printf("[ERR] serf: Failed to install new key: %s", err)
+			s.logger.Printf("[ERR] serf: Failed to install key: %s", err)
 			goto SEND
 		}
 	case useKeyQuery:
 		s.logger.Printf("[INFO] serf: Received use-key query")
 		if err := keyring.UseKey(q.Payload); err != nil {
 			response.Message = fmt.Sprintf("%s", err)
-			s.logger.Printf("[ERR] serf: Failed to change primary encryption key: %v", err)
+			s.logger.Printf("[ERR] serf: Failed to change primary key: %v", err)
 			goto SEND
 		}
 	case removeKeyQuery:
 		s.logger.Printf("[INFO] serf: Received remove-key query")
 		if err := keyring.RemoveKey(q.Payload); err != nil {
 			response.Message = fmt.Sprintf("%s", err)
-			s.logger.Printf("[ERR] serf: Failed to remove encryption key: %v", err)
+			s.logger.Printf("[ERR] serf: Failed to remove key: %v", err)
 			goto SEND
 		}
 	}

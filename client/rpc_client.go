@@ -304,7 +304,7 @@ func (c *RPCClient) InstallKey(newKey string) (map[string]string, error) {
 
 	resp := keyResponse{}
 	err := c.genericRPC(&header, &req, &resp)
-	return resp.FailedNodes, err
+	return resp.Messages, err
 }
 
 // UseKey changes the primary encryption key on the keyring
@@ -319,7 +319,7 @@ func (c *RPCClient) UseKey(key string) (map[string]string, error) {
 
 	resp := keyResponse{}
 	err := c.genericRPC(&header, &req, &resp)
-	return resp.FailedNodes, err
+	return resp.Messages, err
 }
 
 // RemoveKey changes the primary encryption key on the keyring
@@ -334,7 +334,7 @@ func (c *RPCClient) RemoveKey(key string) (map[string]string, error) {
 
 	resp := keyResponse{}
 	err := c.genericRPC(&header, &req, &resp)
-	return resp.FailedNodes, err
+	return resp.Messages, err
 }
 
 type monitorHandler struct {

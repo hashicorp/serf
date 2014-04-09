@@ -213,24 +213,6 @@ func (a *Agent) Query(name string, payload []byte, params *serf.QueryParam) (*se
 	return resp, err
 }
 
-// InstallKey initiates the process of installing a new encryption key
-func (a *Agent) InstallKey(newKey string) (map[string]string, error) {
-	a.logger.Printf("[INFO] agent: Initiating key installation")
-	return a.serf.ModifyKeyring("install-key", newKey)
-}
-
-// UseKey initiates the process of installing a new encryption key
-func (a *Agent) UseKey(key string) (map[string]string, error) {
-	a.logger.Printf("[INFO] agent: Initiating primary encryption key change")
-	return a.serf.ModifyKeyring("use-key", key)
-}
-
-// RemoveKey initiates the process of installing a new encryption key
-func (a *Agent) RemoveKey(key string) (map[string]string, error) {
-	a.logger.Printf("[INFO] agent: Initiating key removal")
-	return a.serf.ModifyKeyring("remove-key", key)
-}
-
 // RegisterEventHandler adds an event handler to recieve event notifications
 func (a *Agent) RegisterEventHandler(eh EventHandler) {
 	a.eventHandlersLock.Lock()
@@ -267,6 +249,24 @@ func (a *Agent) eventLoop() {
 			return
 		}
 	}
+}
+
+// InstallKey initiates a query to install a new key on all members
+func (a *Agent) InstallKey(key string) *serf.KeyResponse {
+	a.logger.Print("[INFO] agent: Initiating key installation")
+	return a.serf.InstallKey(key)
+}
+
+// UseKey sends a query instructing all members to switch primary keys
+func (a *Agent) UseKey(key string) *serf.KeyResponse {
+	a.logger.Print("[INFO] agent: Initiating primary key change")
+	return a.serf.UseKey(key)
+}
+
+// RemoveKey sends a query to all members to remove a key from the keyring
+func (a *Agent) RemoveKey(key string) *serf.KeyResponse {
+	a.logger.Print("[INFO] agent: Initiating key removal")
+	return a.serf.RemoveKey(key)
 }
 
 // SetTags is used to update the tags. The agent will make sure to
