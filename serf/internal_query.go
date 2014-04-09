@@ -138,7 +138,7 @@ func (s *serfQueries) handleModifyKeyring(queryName string, q *Query) {
 	response := nodeKeyResponse{Result: false}
 	keyring := s.serf.config.MemberlistConfig.Keyring
 
-	if keyring == nil {
+	if !s.serf.EncryptionEnabled() {
 		response.Message = "No keyring to modify (encryption not enabled)"
 		s.logger.Printf("[ERR] serf: No keyring to modify (encryption not enabled)")
 		goto SEND
@@ -185,5 +185,6 @@ SEND:
 
 	if err := q.Respond(buf); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to respond to %s query: %v", queryName, err)
+		return
 	}
 }

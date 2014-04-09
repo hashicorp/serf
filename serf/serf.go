@@ -372,6 +372,14 @@ func (s *Serf) ProtocolVersion() uint8 {
 	return s.config.ProtocolVersion
 }
 
+// EncryptionEnabled is a predicate that determines whether or not encryption
+// is enabled, which can be possible in one of 2 cases:
+//   - Single encryption key passed at agent start (no persistence)
+//   - Keyring file provided at agent start
+func (s *Serf) EncryptionEnabled() bool {
+	return s.config.MemberlistConfig.Keyring != nil
+}
+
 // UserEvent is used to broadcast a custom user event with a given
 // name and payload. The events must be fairly small, and if the
 // size limit is exceeded and error will be returned. If coalesce is enabled,

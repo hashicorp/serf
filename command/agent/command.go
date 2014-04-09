@@ -300,6 +300,13 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	}
 	agent.RegisterEventHandler(c.scriptHandler)
 
+	if agent.agentConf.KeyringFile != "" {
+		if err := agent.LoadKeyringFile(agent.agentConf.KeyringFile); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error loading keyring file: %s", err))
+			return nil
+		}
+	}
+
 	// Start the agent after the handler is registered
 	if err := agent.Start(); err != nil {
 		c.Ui.Error(fmt.Sprintf("Failed to start the Serf agent: %v", err))
@@ -349,7 +356,7 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	}
 
 	c.Ui.Info(fmt.Sprintf("      RPC addr: '%s'", config.RPCAddr))
-	c.Ui.Info(fmt.Sprintf("     Encrypted: %#v", config.EncryptKey != ""))
+	c.Ui.Info(fmt.Sprintf("     Encrypted: %#v", agent.serf.EncryptionEnabled()))
 	c.Ui.Info(fmt.Sprintf("      Snapshot: %v", config.SnapshotPath != ""))
 	c.Ui.Info(fmt.Sprintf("       Profile: %s", config.Profile))
 
