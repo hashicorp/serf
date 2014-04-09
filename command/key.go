@@ -75,11 +75,13 @@ func (c *KeyCommand) Run(args []string) int {
 	if installKey != "" {
 		c.Ui.Info("Installing key on all members...")
 		if failedNodes, err := client.InstallKey(installKey); err != nil {
-			for node, message := range failedNodes {
-				lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
+			if len(failedNodes) > 0 {
+				for node, message := range failedNodes {
+					lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
+				}
+				out, _ := columnize.SimpleFormat(lines)
+				c.Ui.Error(out)
 			}
-			out, _ := columnize.SimpleFormat(lines)
-			c.Ui.Error(out)
 			c.Ui.Error("")
 			c.Ui.Error(fmt.Sprintf("Error installing key: %s", err))
 			return 1
@@ -90,11 +92,13 @@ func (c *KeyCommand) Run(args []string) int {
 	if useKey != "" {
 		c.Ui.Info("Changing primary key on all members...")
 		if failedNodes, err := client.UseKey(useKey); err != nil {
-			for node, message := range failedNodes {
-				lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
+			if len(failedNodes) > 0 {
+				for node, message := range failedNodes {
+					lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
+				}
+				out, _ := columnize.SimpleFormat(lines)
+				c.Ui.Error(out)
 			}
-			out, _ := columnize.SimpleFormat(lines)
-			c.Ui.Error(out)
 			c.Ui.Error("")
 			c.Ui.Error(fmt.Sprintf("Error changing primary key: %s", err))
 			return 1
@@ -105,11 +109,13 @@ func (c *KeyCommand) Run(args []string) int {
 	if removeKey != "" {
 		c.Ui.Info("Removing key on all members...")
 		if failedNodes, err := client.RemoveKey(removeKey); err != nil {
-			for node, message := range failedNodes {
-				lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
+			if len(failedNodes) > 0 {
+				for node, message := range failedNodes {
+					lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
+				}
+				out, _ := columnize.SimpleFormat(lines)
+				c.Ui.Error(out)
 			}
-			out, _ := columnize.SimpleFormat(lines)
-			c.Ui.Error(out)
 			c.Ui.Error("")
 			c.Ui.Error(fmt.Sprintf("Error removing key: %s", err))
 			return 1
