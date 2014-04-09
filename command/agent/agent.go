@@ -52,9 +52,7 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 
 	// Avoid passing an encryption key and a keyring file at the same time
 	if agentConf.KeyringFile != "" && len(agentConf.EncryptKey) > 0 {
-		if len(agentConf.EncryptKey) > 0 {
-			return nil, fmt.Errorf("Encryption key not allowed while using a keyring")
-		}
+		return nil, fmt.Errorf("Encryption key not allowed while using a keyring")
 	}
 
 	// Setup the underlying loggers
