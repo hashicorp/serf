@@ -50,11 +50,6 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 		logOutput = os.Stderr
 	}
 
-	// Avoid passing an encryption key and a keyring file at the same time
-	if agentConf.KeyringFile != "" && len(agentConf.EncryptKey) > 0 {
-		return nil, fmt.Errorf("Encryption key not allowed while using a keyring")
-	}
-
 	// Setup the underlying loggers
 	conf.MemberlistConfig.LogOutput = logOutput
 	conf.LogOutput = logOutput
@@ -76,6 +71,13 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 	// Restore agent tags from a tags file
 	if agentConf.TagsFile != "" {
 		if err := agent.loadTagsFile(agentConf.TagsFile); err != nil {
+			return nil, err
+		}
+	}
+
+	// Load in a keyring file if provided
+	if agentConf.KeyringFile != "" {
+		if err := agent.loadKeyringFile(agentConf.KeyringFile); err != nil {
 			return nil, err
 		}
 	}
@@ -341,8 +343,13 @@ func UnmarshalTags(tags []string) (map[string]string, error) {
 	return result, nil
 }
 
-// LoadKeyringFile will load a keyring out of a file
-func (a *Agent) LoadKeyringFile(keyringFile string) error {
+// loadKeyringFile will load a keyring out of a file
+func (a *Agent) loadKeyringFile(keyringFile string) error {
+	// Avoid passing an encryption key and a keyring file at the same time
+	if len(a.agentConf.EncryptKey) > 0 {
+		return fmt.Errorf("Encryption key not allowed while using a keyring")
+	}
+
 	if _, err := os.Stat(keyringFile); err != nil {
 		return err
 	}

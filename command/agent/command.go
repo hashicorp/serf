@@ -300,13 +300,6 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	}
 	agent.RegisterEventHandler(c.scriptHandler)
 
-	if config.KeyringFile != "" {
-		if err := agent.LoadKeyringFile(config.KeyringFile); err != nil {
-			c.Ui.Error(fmt.Sprintf("Error loading keyring file: %s", err))
-			return nil
-		}
-	}
-
 	// Start the agent after the handler is registered
 	if err := agent.Start(); err != nil {
 		c.Ui.Error(fmt.Sprintf("Failed to start the Serf agent: %v", err))
