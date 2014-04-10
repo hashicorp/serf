@@ -141,15 +141,6 @@ func TestSerf_UseKey(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	// First make sure that the primary key is what we expect it to be
-	if !bytes.Equal(primaryKey, s1.config.MemberlistConfig.Keyring.GetPrimaryKey()) {
-		t.Fatal("Unexpected primary key on s1")
-	}
-
-	if !bytes.Equal(primaryKey, s2.config.MemberlistConfig.Keyring.GetPrimaryKey()) {
-		t.Fatal("Unexpected primary key on s2")
-	}
-
 	// Change the primary encryption key
 	resp := s1.UseKey(useKey)
 	if resp.Err != nil {
