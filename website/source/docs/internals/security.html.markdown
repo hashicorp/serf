@@ -59,7 +59,7 @@ change the algorithm they use. It is currently always set to 0.
 
 ### TCP Message Format
 
-TCP provides a stream abstraction and therefor we must provide our own framing.
+TCP provides a stream abstraction and therefore we must provide our own framing.
 This intoduces a potential attack vector since we cannot verify the tag
 until the entire message is received, and the message length must be in plaintext.
 Our current strategy is to limit the maximum size of a framed message to prevent
