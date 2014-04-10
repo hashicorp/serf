@@ -3,10 +3,8 @@ package serf
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/testutil"
-	"strings"
 	"testing"
 )
 
@@ -123,8 +121,6 @@ func TestSerf_UseKey(t *testing.T) {
 		t.Fatalf("%s", err)
 	}
 	defer s2.Shutdown()
-
-	primaryKey := s1.config.MemberlistConfig.Keyring.GetPrimaryKey()
 
 	// Join s1 and s2
 	_, err = s1.Join([]string{s2.config.MemberlistConfig.BindAddr}, false)

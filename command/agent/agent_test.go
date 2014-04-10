@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"encoding/json"
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
 	"io/ioutil"
@@ -219,5 +220,59 @@ func TestAgent_UnmarshalTagsError(t *testing.T) {
 		if _, err := UnmarshalTags(tagPairs); err == nil {
 			t.Fatalf("Expected tag error: %s", tagPairs[0])
 		}
+	}
+}
+
+func TestAgentKeyringFile(t *testing.T) {
+	keys := []string{
+		"enjTwAFRe4IE71bOFhirzQ==",
+		"csT9mxI7aTf9ap3HLBbdmA==",
+		"noha2tVc0OyD/2LtCBoAOQ==",
+	}
+
+	td, err := ioutil.TempDir("", "serf")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer os.RemoveAll(td)
+
+	keyringFile := filepath.Join(td, "keyring.json")
+
+	serfConfig := serf.DefaultConfig()
+	agentConfig := DefaultConfig()
+	agentConfig.KeyringFile = keyringFile
+
+	encodedKeys, err := json.Marshal(keys)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if err := ioutil.WriteFile(keyringFile, encodedKeys, 0600); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	a1 := testAgentWithConfig(agentConfig, serfConfig, nil)
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer a1.Shutdown()
+
+	testutil.Yield()
+
+	totalLoadedKeys := len(serfConfig.MemberlistConfig.Keyring.GetKeys())
+	if totalLoadedKeys != 3 {
+		t.Fatalf("Expected to load 3 keys but got %d", totalLoadedKeys)
+	}
+}
+
+func TestAgentKeyringFile_BadOptions(t *testing.T) {
+	agentConfig := DefaultConfig()
+	agentConfig.KeyringFile = "/some/path"
+	agentConfig.EncryptKey = "pL4owv4IE1x+ZXCyd5vLLg=="
+
+	_, err := Create(agentConfig, serf.DefaultConfig(), nil)
+	if err == nil || !strings.Contains(err.Error(), "not allowed") {
+		t.Fatalf("err: %s", err)
 	}
 }
