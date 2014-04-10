@@ -3,8 +3,10 @@ package serf
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/testutil"
+	"strings"
 	"testing"
 )
 
@@ -161,6 +163,12 @@ func TestSerf_UseKey(t *testing.T) {
 
 	if !bytes.Equal(useKeyBytes, s2.config.MemberlistConfig.Keyring.GetPrimaryKey()) {
 		t.Fatal("Unexpected primary key on s2")
+	}
+
+	// Make sure an error is thrown if the key doesn't exist
+	resp = s1.UseKey("aE6AfGEvay+UJbkfxBk4SQ==")
+	if resp.Err == nil {
+		t.Fatalf("Expected error changing to non-existent primary key")
 	}
 }
 
