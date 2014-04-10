@@ -300,8 +300,8 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	}
 	agent.RegisterEventHandler(c.scriptHandler)
 
-	if agent.agentConf.KeyringFile != "" {
-		if err := agent.LoadKeyringFile(agent.agentConf.KeyringFile); err != nil {
+	if config.KeyringFile != "" {
+		if err := agent.LoadKeyringFile(config.KeyringFile); err != nil {
 			c.Ui.Error(fmt.Sprintf("Error loading keyring file: %s", err))
 			return nil
 		}
