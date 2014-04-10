@@ -27,6 +27,23 @@ func testKeyring() (*memberlist.Keyring, error) {
 	return memberlist.NewKeyring(keysDecoded, keysDecoded[0])
 }
 
+func testKeyringSerf() (*Serf, error) {
+	config := testConfig()
+
+	keyring, err := testKeyring()
+	if err != nil {
+		return nil, err
+	}
+	config.MemberlistConfig.Keyring = keyring
+
+	s, err := Create(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
+}
+
 func keyExistsInRing(kr *memberlist.Keyring, key []byte) bool {
 	for _, installedKey := range kr.GetKeys() {
 		if bytes.Equal(key, installedKey) {
@@ -37,39 +54,22 @@ func keyExistsInRing(kr *memberlist.Keyring, key []byte) bool {
 }
 
 func TestSerf_InstallKey(t *testing.T) {
-	// Create s1
-	s1Config := testConfig()
-
-	keyring, err := testKeyring()
+	s1, err := testKeyringSerf()
 	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-	s1Config.MemberlistConfig.Keyring = keyring
-	primaryKey := keyring.GetPrimaryKey()
-
-	s1, err := Create(s1Config)
-	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("%s", err)
 	}
 	defer s1.Shutdown()
 
-	// Create s2
-	s2Config := testConfig()
-
-	keyring, err = testKeyring()
+	s2, err := testKeyringSerf()
 	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-	s2Config.MemberlistConfig.Keyring = keyring
-
-	s2, err := Create(s2Config)
-	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("%s", err)
 	}
 	defer s2.Shutdown()
 
+	primaryKey := s1.config.MemberlistConfig.Keyring.GetPrimaryKey()
+
 	// Join s1 and s2
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2.config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -106,5 +106,104 @@ func TestSerf_InstallKey(t *testing.T) {
 
 	if !keyExistsInRing(s2.config.MemberlistConfig.Keyring, newKeyBytes) {
 		t.Fatal("Newly-installed key not found in keyring on s2")
+	}
+}
+
+func TestSerf_UseKey(t *testing.T) {
+	s1, err := testKeyringSerf()
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := testKeyringSerf()
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	defer s2.Shutdown()
+
+	primaryKey := s1.config.MemberlistConfig.Keyring.GetPrimaryKey()
+
+	// Join s1 and s2
+	_, err = s1.Join([]string{s2.config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Begin tests
+	useKey := "csT9mxI7aTf9ap3HLBbdmA=="
+	useKeyBytes, err := base64.StdEncoding.DecodeString(useKey)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// First make sure that the primary key is what we expect it to be
+	if !bytes.Equal(primaryKey, s1.config.MemberlistConfig.Keyring.GetPrimaryKey()) {
+		t.Fatal("Unexpected primary key on s1")
+	}
+
+	if !bytes.Equal(primaryKey, s2.config.MemberlistConfig.Keyring.GetPrimaryKey()) {
+		t.Fatal("Unexpected primary key on s2")
+	}
+
+	// Change the primary encryption key
+	resp := s1.UseKey(useKey)
+	if resp.Err != nil {
+		t.Fatalf("err: %s", resp.Err)
+	}
+
+	// First make sure that the primary key is what we expect it to be
+	if !bytes.Equal(useKeyBytes, s1.config.MemberlistConfig.Keyring.GetPrimaryKey()) {
+		t.Fatal("Unexpected primary key on s1")
+	}
+
+	if !bytes.Equal(useKeyBytes, s2.config.MemberlistConfig.Keyring.GetPrimaryKey()) {
+		t.Fatal("Unexpected primary key on s2")
+	}
+}
+
+func TestSerf_RemoveKey(t *testing.T) {
+	s1, err := testKeyringSerf()
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := testKeyringSerf()
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	defer s2.Shutdown()
+
+	// Join s1 and s2
+	_, err = s1.Join([]string{s2.config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Begin tests
+	removeKey := "noha2tVc0OyD/2LtCBoAOQ=="
+	removeKeyBytes, err := base64.StdEncoding.DecodeString(removeKey)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Change the primary encryption key
+	resp := s1.RemoveKey(removeKey)
+	if resp.Err != nil {
+		t.Fatalf("err: %s", resp.Err)
+	}
+
+	// Key was successfully removed from all members
+	if keyExistsInRing(s1.config.MemberlistConfig.Keyring, removeKeyBytes) {
+		t.Fatal("Key not removed from keyring on s1")
+	}
+
+	if keyExistsInRing(s2.config.MemberlistConfig.Keyring, removeKeyBytes) {
+		t.Fatal("Key not removed from keyring on s2")
 	}
 }
