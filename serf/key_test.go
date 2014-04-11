@@ -187,7 +187,7 @@ func TestSerf_RemoveKey(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	// Change the primary encryption key
+	// Remove a key from the ring
 	resp := s1.RemoveKey(removeKey)
 	if resp.Err != nil {
 		t.Fatalf("err: %s", resp.Err)
@@ -200,5 +200,55 @@ func TestSerf_RemoveKey(t *testing.T) {
 
 	if keyExistsInRing(s2.config.MemberlistConfig.Keyring, removeKeyBytes) {
 		t.Fatal("Key not removed from keyring on s2")
+	}
+}
+
+func TestSerf_ListKeys(t *testing.T) {
+	s1, err := testKeyringSerf()
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := testKeyringSerf()
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	defer s2.Shutdown()
+
+	initialKeyringLen := len(s1.config.MemberlistConfig.Keyring.GetKeys())
+
+	// Extra key on s2 to make sure we see it in the list
+	extraKey := "JHAxGU13qDaXhUW6jIpyog=="
+	extraKeyBytes, err := base64.StdEncoding.DecodeString(extraKey)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	s2.config.MemberlistConfig.Keyring.AddKey(extraKeyBytes)
+
+	// Join s1 and s2
+	_, err = s1.Join([]string{s2.config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	resp := s1.ListKeys()
+
+	// Found all keys in the list
+	expected := initialKeyringLen + 1
+	if expected != len(resp.Keys) {
+		t.Fatalf("Expected %d keys in result, found %d", expected, len(resp.Keys))
+	}
+
+	found := false
+	for _, key := range resp.Keys {
+		if key == extraKey {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("Did not find expected key in list: %s", extraKey)
 	}
 }
