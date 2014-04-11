@@ -643,45 +643,6 @@ func (s *Serf) Leave() error {
 	return nil
 }
 
-// InstallKey installs the passed key to the keyring
-func (s *Serf) InstallKey(key string) *KeyResponse {
-	req := &keyRequest{
-		serf:  s,
-		query: installKeyQuery,
-		key:   key,
-	}
-	return req.Process()
-}
-
-// UseKey changes the primary key
-func (s *Serf) UseKey(key string) *KeyResponse {
-	req := &keyRequest{
-		serf:  s,
-		query: useKeyQuery,
-		key:   key,
-	}
-	return req.Process()
-}
-
-// RemoveKey removes a specified key from the keyring
-func (s *Serf) RemoveKey(key string) *KeyResponse {
-	req := &keyRequest{
-		serf:  s,
-		query: removeKeyQuery,
-		key:   key,
-	}
-	return req.Process()
-}
-
-// ListKeys returns the known keys in the cluster
-func (s *Serf) ListKeys() *KeyResponse {
-	req := &keyRequest{
-		serf:  s,
-		query: listKeysQuery,
-	}
-	return req.Process()
-}
-
 // hasAliveMembers is called to check for any alive members other than
 // ourself.
 func (s *Serf) hasAliveMembers() bool {

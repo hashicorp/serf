@@ -247,27 +247,31 @@ func (a *Agent) eventLoop() {
 }
 
 // InstallKey initiates a query to install a new key on all members
-func (a *Agent) InstallKey(key string) *serf.KeyResponse {
+func (a *Agent) InstallKey(key string) (*serf.InstallKeyResponse, error) {
 	a.logger.Print("[INFO] agent: Initiating key installation")
-	return a.serf.InstallKey(key)
+	manager := a.serf.KeyManager()
+	return manager.InstallKey(key)
 }
 
 // UseKey sends a query instructing all members to switch primary keys
-func (a *Agent) UseKey(key string) *serf.KeyResponse {
+func (a *Agent) UseKey(key string) (*serf.UseKeyResponse, error) {
 	a.logger.Print("[INFO] agent: Initiating primary key change")
-	return a.serf.UseKey(key)
+	manager := a.serf.KeyManager()
+	return manager.UseKey(key)
 }
 
 // RemoveKey sends a query to all members to remove a key from the keyring
-func (a *Agent) RemoveKey(key string) *serf.KeyResponse {
+func (a *Agent) RemoveKey(key string) (*serf.RemoveKeyResponse, error) {
 	a.logger.Print("[INFO] agent: Initiating key removal")
-	return a.serf.RemoveKey(key)
+	manager := a.serf.KeyManager()
+	return manager.RemoveKey(key)
 }
 
 // ListKeys sends a query to all members to return a list of their keys
-func (a *Agent) ListKeys() *serf.KeyResponse {
+func (a *Agent) ListKeys() (*serf.ListKeysResponse, error) {
 	a.logger.Print("[INFO] agent: Initiating key listing")
-	return a.serf.ListKeys()
+	manager := a.serf.KeyManager()
+	return manager.ListKeys()
 }
 
 // SetTags is used to update the tags. The agent will make sure to

@@ -713,11 +713,11 @@ func (i *AgentIPC) handleInstallKey(client *IPCClient, seq uint64) error {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	queryResp := i.agent.InstallKey(req.Key)
+	queryResp, err := i.agent.InstallKey(req.Key)
 
 	header := responseHeader{
 		Seq:   seq,
-		Error: errToString(queryResp.Err),
+		Error: errToString(err),
 	}
 	resp := keyResponse{
 		Messages: queryResp.Messages,
@@ -731,11 +731,11 @@ func (i *AgentIPC) handleUseKey(client *IPCClient, seq uint64) error {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	queryResp := i.agent.UseKey(req.Key)
+	queryResp, err := i.agent.UseKey(req.Key)
 
 	header := responseHeader{
 		Seq:   seq,
-		Error: errToString(queryResp.Err),
+		Error: errToString(err),
 	}
 	resp := keyResponse{
 		Messages: queryResp.Messages,
@@ -749,11 +749,11 @@ func (i *AgentIPC) handleRemoveKey(client *IPCClient, seq uint64) error {
 		return fmt.Errorf("decode failed: %v", err)
 	}
 
-	queryResp := i.agent.RemoveKey(req.Key)
+	queryResp, err := i.agent.RemoveKey(req.Key)
 
 	header := responseHeader{
 		Seq:   seq,
-		Error: errToString(queryResp.Err),
+		Error: errToString(err),
 	}
 	resp := keyResponse{
 		Messages: queryResp.Messages,
@@ -762,11 +762,11 @@ func (i *AgentIPC) handleRemoveKey(client *IPCClient, seq uint64) error {
 }
 
 func (i *AgentIPC) handleListKeys(client *IPCClient, seq uint64) error {
-	queryResp := i.agent.ListKeys()
+	queryResp, err := i.agent.ListKeys()
 
 	header := responseHeader{
 		Seq:   seq,
-		Error: errToString(queryResp.Err),
+		Error: errToString(err),
 	}
 	resp := keyResponse{
 		Messages: queryResp.Messages,

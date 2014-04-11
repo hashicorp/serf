@@ -83,11 +83,13 @@ func TestSerf_InstallKey(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
+	manager := s1.KeyManager()
+
 	// Install a new key onto the existing ring. This is a blocking call, so no
 	// need for a yield.
-	resp := s1.InstallKey(newKey)
-	if resp.Err != nil {
-		t.Fatalf("err: %s", resp.Err)
+	_, err = manager.InstallKey(newKey)
+	if err != nil {
+		t.Fatalf("err: %s", err)
 	}
 
 	// Key installation did not affect the current primary key
@@ -137,10 +139,12 @@ func TestSerf_UseKey(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
+	manager := s1.KeyManager()
+
 	// Change the primary encryption key
-	resp := s1.UseKey(useKey)
-	if resp.Err != nil {
-		t.Fatalf("err: %s", resp.Err)
+	_, err = manager.UseKey(useKey)
+	if err != nil {
+		t.Fatalf("err: %s", err)
 	}
 
 	// First make sure that the primary key is what we expect it to be
@@ -153,8 +157,8 @@ func TestSerf_UseKey(t *testing.T) {
 	}
 
 	// Make sure an error is thrown if the key doesn't exist
-	resp = s1.UseKey("aE6AfGEvay+UJbkfxBk4SQ==")
-	if resp.Err == nil {
+	_, err = manager.UseKey("aE6AfGEvay+UJbkfxBk4SQ==")
+	if err == nil {
 		t.Fatalf("Expected error changing to non-existent primary key")
 	}
 }
@@ -187,10 +191,12 @@ func TestSerf_RemoveKey(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
+	manager := s1.KeyManager()
+
 	// Remove a key from the ring
-	resp := s1.RemoveKey(removeKey)
-	if resp.Err != nil {
-		t.Fatalf("err: %s", resp.Err)
+	_, err = manager.RemoveKey(removeKey)
+	if err != nil {
+		t.Fatalf("err: %s", err)
 	}
 
 	// Key was successfully removed from all members
@@ -216,6 +222,8 @@ func TestSerf_ListKeys(t *testing.T) {
 	}
 	defer s2.Shutdown()
 
+	manager := s1.KeyManager()
+
 	initialKeyringLen := len(s1.config.MemberlistConfig.Keyring.GetKeys())
 
 	// Extra key on s2 to make sure we see it in the list
@@ -234,7 +242,10 @@ func TestSerf_ListKeys(t *testing.T) {
 
 	testutil.Yield()
 
-	resp := s1.ListKeys()
+	resp, err := manager.ListKeys()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
 
 	// Found all keys in the list
 	expected := initialKeyringLen + 1
