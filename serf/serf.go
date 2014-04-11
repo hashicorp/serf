@@ -2,6 +2,7 @@ package serf
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/armon/go-metrics"
@@ -630,6 +631,127 @@ func (s *Serf) Leave() error {
 	}
 	s.stateLock.Unlock()
 	return nil
+}
+
+// RotateKey begins rotating the encryption key in a Serf cluster by first
+// broadcasting the new key to the cluster, and then initiating a user query
+// to ensure that the new key has taken effect on all members. If the user
+// query does not succeed on any member, then we consider the key rotation a
+// failure, and continue using the original key until a new key has been
+// successfully broadcasted to all members in the cluster.
+func (s *Serf) RotateKey(newSecret string) error {
+	// Do not rotate key if there was never a key to begin with. This would be
+	// dangerous because the new key would be broadcasted unencrypted.
+	if s.config.MemberlistConfig.SecretKey == nil {
+		return fmt.Errorf("current encryption key is empty")
+	}
+
+	// Decode the new key into raw bytes before storing it away. This ensures
+	// that later on when we go to copy the new key into the memberlist config
+	// there will be no decoding errors, which would cause cluster segmentation.
+	secret, err := base64.StdEncoding.DecodeString(newSecret)
+	if err != nil {
+		return err
+	}
+
+	qName := internalQueryName(newSecretQuery)
+	qParam := &QueryParam{
+		RequestAck: true,
+	}
+	resp, err := s.Query(qName, secret, qParam)
+	if err != nil {
+		return err
+	}
+
+	responses := 0
+	for _ = range resp.ackCh {
+		responses++
+	}
+
+	totalMembers := s.memberlist.NumMembers()
+
+	// Bail if not all nodes ack'ed the new secret query
+	if responses < totalMembers {
+		return fmt.Errorf("%d/%d nodes replied", responses, totalMembers)
+	}
+
+	// Rotate our own key only after we have broadcasted everything out
+	defer s.handleRotateKey()
+
+	// Don't bother broadcasting if we are the only member
+	if totalMembers < 2 {
+		return nil
+	}
+
+	// Broadcast the key rotation
+	notifyCh := make(chan struct{})
+	if err := s.broadcast(messageRotateKeyType, nil, notifyCh); err != nil {
+		return err
+	}
+
+	// Wait for the broadcast
+	select {
+	case <-notifyCh:
+	case <-time.After(s.config.BroadcastTimeout):
+		return fmt.Errorf("timed out broadcasting key rotation")
+	}
+
+	return nil
+}
+
+// Handle the process of swapping out an encryption key. This method does not do
+// any key-changing itself, but handles event broadcasting and initiates a
+// background task which can handle the actual key swapping later on.
+func (s *Serf) handleRotateKey() bool {
+	// If the new secret is nil, then either we have already consumed it, or
+	// there is no new secret key, so bail and don't rebroadcast the event.
+	if s.config.NewSecretKey == nil {
+		return false
+	}
+
+	// Pass along some metrics
+	metrics.IncrCounter([]string{"serf", "events"}, 1)
+	metrics.IncrCounter([]string{"serf", "events", "rotate-key"}, 1)
+	metrics.IncrCounter([]string{"serf", "key_rotations"}, 1)
+
+	// base64 the bytes to send to the event handler
+	encoded := base64.StdEncoding.EncodeToString(s.config.NewSecretKey)
+
+	// Send the event
+	if s.config.EventCh != nil {
+		s.config.EventCh <- RotateKeyEvent{
+			NewSecretKey: encoded,
+		}
+	}
+
+	// Run the delayed key swap in a separate go routine so we can begin
+	// broadcasting while serf waits to do the swap.
+	go s.delayedKeySwap(s.config.NewSecretKey)
+
+	// Zero the new secret out immediately so that we don't repeat this event.
+	s.config.NewSecretKey = nil
+
+	return true
+}
+
+// Handle the actual key swap. This is a separate method so that it may be run
+// in its own go routine asynchronously, allowing the rotate-key message to be
+// broadcasted to all members of the cluster using the original key before the
+// swap really happens.
+func (s *Serf) delayedKeySwap(newSecretKey []byte) {
+	s.memberLock.RLock()
+	defer s.memberLock.RUnlock()
+
+	// Sleep for at least the broadcast timeout. This makes sure that the
+	// rotate-key event was sent out before we change out the secret.
+	time.Sleep(s.config.BroadcastTimeout)
+
+	// Do the actual key swap. It is possible that this can cause a small number
+	// of messages to fail, since we can't know when we will be asked next for
+	// a pushpull, or what key will be in use by the requestor. In general, any
+	// errors here will be resolved quickly as the cluster converges.
+	s.config.MemberlistConfig.SecretKey = newSecretKey
+	s.logger.Printf("[INFO] serf: Encryption key successfully rotated")
 }
 
 // hasAliveMembers is called to check for any alive members other than
@@ -1507,7 +1629,6 @@ func (s *Serf) decodeTags(buf []byte) map[string]string {
 	if len(buf) == 0 || buf[0] != tagMagicByte {
 		tags["role"] = string(buf)
 		return tags
-
 	}
 
 	// Decode the tags

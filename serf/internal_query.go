@@ -15,6 +15,9 @@ const (
 
 	// conflictQuery is run to resolve a name conflict
 	conflictQuery = "conflict"
+
+	// newSecretQuery is used to initiate key rotation
+	newSecretQuery = "new-secret"
 )
 
 // internalQueryName is used to generate a query name for an internal query
@@ -76,6 +79,8 @@ func (s *serfQueries) handleQuery(q *Query) {
 		// Nothing to do, we will ack the query
 	case conflictQuery:
 		s.handleConflict(q)
+	case newSecretQuery:
+		s.handleNewSecret(q)
 	default:
 		s.logger.Printf("[WARN] serf: Unhandled internal query '%s'", queryName)
 	}
@@ -113,4 +118,11 @@ func (s *serfQueries) handleConflict(q *Query) {
 	if err := q.Respond(buf); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to respond to conflict query: %v", err)
 	}
+}
+
+// handleNewSecret is executed when an internal query to change out the
+// encryption key is received. This method only populates the Serf configuration
+// in preparation for doing the actual key swap later on.
+func (s *serfQueries) handleNewSecret(q *Query) {
+	s.serf.config.NewSecretKey = q.Payload
 }

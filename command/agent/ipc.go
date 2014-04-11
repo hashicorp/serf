@@ -55,6 +55,7 @@ const (
 	stopCommand            = "stop"
 	monitorCommand         = "monitor"
 	leaveCommand           = "leave"
+	rotateKeyCommand       = "rotate-key"
 	tagsCommand            = "tags"
 	queryCommand           = "query"
 	respondCommand         = "respond"
@@ -127,6 +128,14 @@ type membersFilteredRequest struct {
 
 type membersResponse struct {
 	Members []Member
+}
+
+type rotateKeyRequest struct {
+	NewSecretKey string
+}
+
+type rotateKeyResponse struct {
+	Num int32
 }
 
 type monitorRequest struct {
@@ -475,6 +484,9 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 	case leaveCommand:
 		return i.handleLeave(client, seq)
 
+	case rotateKeyCommand:
+		return i.handleRotateKey(client, seq)
+
 	case tagsCommand:
 		return i.handleTags(client, seq)
 
@@ -680,6 +692,22 @@ OUTER:
 	}
 
 	return result, nil
+}
+
+func (i *AgentIPC) handleRotateKey(client *IPCClient, seq uint64) error {
+	var req rotateKeyRequest
+	if err := client.dec.Decode(&req); err != nil {
+		return fmt.Errorf("decode failed: %v", err)
+	}
+
+	err := i.agent.RotateKey(req.NewSecretKey)
+
+	header := responseHeader{
+		Seq:   seq,
+		Error: errToString(err),
+	}
+	resp := rotateKeyResponse{}
+	return client.Send(&header, &resp)
 }
 
 func (i *AgentIPC) handleStream(client *IPCClient, seq uint64) error {

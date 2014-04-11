@@ -72,6 +72,12 @@ func init() {
 			}, nil
 		},
 
+		"rotate-key": func() (cli.Command, error) {
+			return &command.RotateKeyCommand{
+				Ui: ui,
+			}, nil
+		},
+
 		"tags": func() (cli.Command, error) {
 			return &command.TagsCommand{
 				Ui: ui,
