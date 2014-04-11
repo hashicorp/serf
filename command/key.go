@@ -83,11 +83,6 @@ func (c *KeyCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
-	if !listKeys && fmt.Sprintf("%s%s%s", installKey, useKey, removeKey) == "" {
-		c.Ui.Error(c.Help())
-		return 1
-	}
-
 	if listKeys {
 		c.Ui.Info("Asking all members for installed keys...")
 		keys, err := client.ListKeys()
@@ -124,6 +119,7 @@ func (c *KeyCommand) Run(args []string) int {
 			return 1
 		}
 		c.Ui.Info("Successfully installed key!")
+		return 0
 	}
 
 	if useKey != "" {
@@ -141,6 +137,7 @@ func (c *KeyCommand) Run(args []string) int {
 			return 1
 		}
 		c.Ui.Info("Successfully changed primary key!")
+		return 0
 	}
 
 	if removeKey != "" {
@@ -158,9 +155,11 @@ func (c *KeyCommand) Run(args []string) int {
 			return 1
 		}
 		c.Ui.Info("Successfully removed key!")
+		return 0
 	}
 
-	return 0
+	c.Ui.Error(c.Help())
+	return 1
 }
 
 func (c *KeyCommand) Synopsis() string {
