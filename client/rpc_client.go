@@ -337,6 +337,18 @@ func (c *RPCClient) RemoveKey(key string) (map[string]string, error) {
 	return resp.Messages, err
 }
 
+// ListKeys returns all of the active keys on each member of the cluster
+func (c *RPCClient) ListKeys() ([]string, error) {
+	header := requestHeader{
+		Command: listKeysCommand,
+		Seq:     c.getSeq(),
+	}
+
+	resp := keyResponse{}
+	err := c.genericRPC(&header, nil, &resp)
+	return resp.Keys, err
+}
+
 type monitorHandler struct {
 	client *RPCClient
 	closed bool

@@ -22,6 +22,8 @@ type KeyResponse struct {
 	// message that the node needs to relay back to indicate its result.
 	Messages map[string]string
 
+	Keys []string
+
 	// Err contains any error thrown while constructing or executing the query.
 	// If this value is nil, and Errors is greater than zero at completion,
 	// then this will be automatically set to an error summary message.
@@ -36,11 +38,31 @@ func newKeyResponse() *KeyResponse {
 	}
 }
 
-// Process is used to perform an internal query accross all members in a cluster
-// and modify keyring data. This function manages distributing key commands to
-// our members and aggregating their responses into a KeyResponse.
+func condAppend(strList []string, newStr string) []string {
+	for _, str := range strList {
+		if str == newStr {
+			return strList
+		}
+	}
+	return append(strList, newStr)
+}
+
 func (kr *keyRequest) Process() *KeyResponse {
+	switch kr.query {
+	case listKeysQuery:
+		return kr.processList()
+	case installKeyQuery, useKeyQuery, removeKeyQuery:
+		return kr.processModification()
+	}
+	return nil
+}
+
+// processModification is used to perform an internal query accross all members
+// in a cluster and modify keyring data. This function manages distributing key
+// commands to our members and aggregating their responses into a KeyResponse.
+func (kr *keyRequest) processModification() *KeyResponse {
 	resp := newKeyResponse()
+	qName := internalQueryName(kr.query)
 
 	// Decode the new key into raw bytes before storing it away. This ensures
 	// that later on when we go to copy the new key into the memberlist config
@@ -52,7 +74,7 @@ func (kr *keyRequest) Process() *KeyResponse {
 	}
 
 	qParam := &QueryParam{}
-	queryResp, err := kr.serf.Query(kr.query, rawKey, qParam)
+	queryResp, err := kr.serf.Query(qName, rawKey, qParam)
 	if err != nil {
 		resp.Err = err
 		return resp
@@ -68,7 +90,7 @@ func (kr *keyRequest) Process() *KeyResponse {
 		// Decode the response
 		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageKeyResponseType {
 			resp.Messages[r.From] = fmt.Sprintf(
-				"Invalide response type: %v", r.Payload)
+				"Invalid response type: %v", r.Payload)
 			totalErrors++
 			continue
 		}
@@ -82,6 +104,64 @@ func (kr *keyRequest) Process() *KeyResponse {
 		if !nodeResponse.Result {
 			resp.Messages[r.From] = nodeResponse.Message
 			totalErrors++
+		}
+	}
+
+	totalMembers := kr.serf.memberlist.NumMembers()
+
+	if totalErrors != 0 {
+		resp.Err = fmt.Errorf("%d/%d nodes reported failure", totalErrors, totalMembers)
+		goto END
+	}
+	if totalReplies != totalMembers {
+		resp.Err = fmt.Errorf("%d/%d nodes reported success", totalReplies, totalMembers)
+		goto END
+	}
+
+END:
+	return resp
+}
+
+func (kr *keyRequest) processList() *KeyResponse {
+	resp := newKeyResponse()
+	qName := internalQueryName(kr.query)
+
+	qParam := &QueryParam{}
+	queryResp, err := kr.serf.Query(qName, nil, qParam)
+	if err != nil {
+		resp.Err = err
+		return resp
+	}
+
+	totalReplies := 0
+	totalErrors := 0
+	for r := range queryResp.respCh {
+		var nodeResponse nodeKeyResponse
+
+		totalReplies++
+
+		// Decode the response
+		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageKeyResponseType {
+			resp.Messages[r.From] = fmt.Sprintf(
+				"Invalid response type: %v", r.Payload)
+			totalErrors++
+			continue
+		}
+		if err := decodeMessage(r.Payload[1:], &nodeResponse); err != nil {
+			resp.Messages[r.From] = fmt.Sprintf(
+				"Failed to decode response: %v", r.Payload)
+			totalErrors++
+			continue
+		}
+
+		if !nodeResponse.Result {
+			resp.Messages[r.From] = nodeResponse.Message
+			totalErrors++
+			continue
+		}
+
+		for _, key := range nodeResponse.Keys {
+			resp.Keys = condAppend(resp.Keys, key)
 		}
 	}
 

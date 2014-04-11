@@ -58,6 +58,7 @@ const (
 	installKeyCommand      = "install-key"
 	useKeyCommand          = "use-key"
 	removeKeyCommand       = "remove-key"
+	listKeysCommand        = "list-keys"
 	tagsCommand            = "tags"
 	queryCommand           = "query"
 	respondCommand         = "respond"
@@ -138,6 +139,7 @@ type keyRequest struct {
 
 type keyResponse struct {
 	Messages map[string]string
+	Keys     []string
 }
 
 type monitorRequest struct {
@@ -487,13 +489,16 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 		return i.handleLeave(client, seq)
 
 	case installKeyCommand:
-		return i.handleInstallKey(client, seq, command)
+		return i.handleInstallKey(client, seq)
 
 	case useKeyCommand:
-		return i.handleUseKey(client, seq, command)
+		return i.handleUseKey(client, seq)
 
 	case removeKeyCommand:
-		return i.handleRemoveKey(client, seq, command)
+		return i.handleRemoveKey(client, seq)
+
+	case listKeysCommand:
+		return i.handleListKeys(client, seq)
 
 	case tagsCommand:
 		return i.handleTags(client, seq)
@@ -702,7 +707,7 @@ OUTER:
 	return result, nil
 }
 
-func (i *AgentIPC) handleInstallKey(client *IPCClient, seq uint64, command string) error {
+func (i *AgentIPC) handleInstallKey(client *IPCClient, seq uint64) error {
 	var req keyRequest
 	if err := client.dec.Decode(&req); err != nil {
 		return fmt.Errorf("decode failed: %v", err)
@@ -720,7 +725,7 @@ func (i *AgentIPC) handleInstallKey(client *IPCClient, seq uint64, command strin
 	return client.Send(&header, &resp)
 }
 
-func (i *AgentIPC) handleUseKey(client *IPCClient, seq uint64, command string) error {
+func (i *AgentIPC) handleUseKey(client *IPCClient, seq uint64) error {
 	var req keyRequest
 	if err := client.dec.Decode(&req); err != nil {
 		return fmt.Errorf("decode failed: %v", err)
@@ -738,7 +743,7 @@ func (i *AgentIPC) handleUseKey(client *IPCClient, seq uint64, command string) e
 	return client.Send(&header, &resp)
 }
 
-func (i *AgentIPC) handleRemoveKey(client *IPCClient, seq uint64, command string) error {
+func (i *AgentIPC) handleRemoveKey(client *IPCClient, seq uint64) error {
 	var req keyRequest
 	if err := client.dec.Decode(&req); err != nil {
 		return fmt.Errorf("decode failed: %v", err)
@@ -752,6 +757,20 @@ func (i *AgentIPC) handleRemoveKey(client *IPCClient, seq uint64, command string
 	}
 	resp := keyResponse{
 		Messages: queryResp.Messages,
+	}
+	return client.Send(&header, &resp)
+}
+
+func (i *AgentIPC) handleListKeys(client *IPCClient, seq uint64) error {
+	queryResp := i.agent.ListKeys()
+
+	header := responseHeader{
+		Seq:   seq,
+		Error: errToString(queryResp.Err),
+	}
+	resp := keyResponse{
+		Messages: queryResp.Messages,
+		Keys:     queryResp.Keys,
 	}
 	return client.Send(&header, &resp)
 }

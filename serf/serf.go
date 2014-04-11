@@ -643,35 +643,41 @@ func (s *Serf) Leave() error {
 	return nil
 }
 
-// InstallKeyRequest creates a new keyRequest to install the passed key
+// InstallKey installs the passed key to the keyring
 func (s *Serf) InstallKey(key string) *KeyResponse {
 	req := &keyRequest{
 		serf:  s,
-		query: internalQueryName(installKeyQuery),
+		query: installKeyQuery,
 		key:   key,
-		resp:  newKeyResponse(),
 	}
 	return req.Process()
 }
 
-// UseKeyRequest creates a new keyRequest to update the primary key pointer
+// UseKey changes the primary key
 func (s *Serf) UseKey(key string) *KeyResponse {
 	req := &keyRequest{
 		serf:  s,
-		query: internalQueryName(useKeyQuery),
+		query: useKeyQuery,
 		key:   key,
-		resp:  newKeyResponse(),
 	}
 	return req.Process()
 }
 
-// RemoveKeyRequest creates a keyRequest to delete a key from the ring
+// RemoveKey removes a specified key from the keyring
 func (s *Serf) RemoveKey(key string) *KeyResponse {
 	req := &keyRequest{
 		serf:  s,
-		query: internalQueryName(removeKeyQuery),
+		query: removeKeyQuery,
 		key:   key,
-		resp:  newKeyResponse(),
+	}
+	return req.Process()
+}
+
+// ListKeys returns the known keys in the cluster
+func (s *Serf) ListKeys() *KeyResponse {
+	req := &keyRequest{
+		serf:  s,
+		query: listKeysQuery,
 	}
 	return req.Process()
 }

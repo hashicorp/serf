@@ -24,6 +24,7 @@ const (
 	installKeyCommand      = "install-key"
 	useKeyCommand          = "use-key"
 	removeKeyCommand       = "remove-key"
+	listKeysCommand        = "list-keys"
 	tagsCommand            = "tags"
 	queryCommand           = "query"
 	respondCommand         = "respond"
@@ -104,6 +105,7 @@ type keyRequest struct {
 
 type keyResponse struct {
 	Messages map[string]string
+	Keys     []string
 }
 
 type monitorRequest struct {

@@ -1,6 +1,7 @@
 package serf
 
 import (
+	"encoding/base64"
 	"log"
 	"strings"
 )
@@ -24,6 +25,9 @@ const (
 
 	// removeKeyQuery is used to remove a key from the keyring
 	removeKeyQuery = "remove-key"
+
+	// listKeysQuery is used to list all known keys in the cluster
+	listKeysQuery = "list-keys"
 )
 
 // internalQueryName is used to generate a query name for an internal query
@@ -46,6 +50,7 @@ type serfQueries struct {
 type nodeKeyResponse struct {
 	Result  bool
 	Message string
+	Keys    []string
 }
 
 // newSerfQueries is used to create a new serfQueries. We return an event
@@ -98,6 +103,8 @@ func (s *serfQueries) handleQuery(q *Query) {
 		s.handleUseKey(q)
 	case removeKeyQuery:
 		s.handleRemoveKey(q)
+	case listKeysQuery:
+		s.handleListKeys(q)
 	default:
 		s.logger.Printf("[WARN] serf: Unhandled internal query '%s'", queryName)
 	}
@@ -260,6 +267,36 @@ SEND:
 
 	if err := q.Respond(buf); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to respond to remove-key query: %v", err)
+		return
+	}
+}
+
+func (s *serfQueries) handleListKeys(q *Query) {
+	response := nodeKeyResponse{Result: false}
+	keyring := s.serf.config.MemberlistConfig.Keyring
+
+	if !s.serf.EncryptionEnabled() {
+		response.Message = "Keyring is empty (encryption not enabled)"
+		s.logger.Printf("[ERR] serf: Keyring is empty (encryption not enabled)")
+		goto SEND
+	}
+
+	s.logger.Printf("[INFO] serf: Received list-keys query")
+	for _, keyBytes := range keyring.GetKeys() {
+		key := base64.StdEncoding.EncodeToString(keyBytes)
+		response.Keys = append(response.Keys, key)
+	}
+	response.Result = true
+
+SEND:
+	buf, err := encodeMessage(messageKeyResponseType, response)
+	if err != nil {
+		s.logger.Printf("[ERR] serf: Failed to encode list-keys response: %v", err)
+		return
+	}
+
+	if err := q.Respond(buf); err != nil {
+		s.logger.Printf("[ERR] serf: Failed to respond to list-keys query: %v", err)
 		return
 	}
 }

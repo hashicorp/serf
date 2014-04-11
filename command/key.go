@@ -32,6 +32,7 @@ Options:
   -install=<key>            Install a new key onto Serf's internal keyring.
   -use=<key>                Change the primary key used for encrypting messages.
   -remove=<key>             Remove a key from Serf's internal keyring.
+  -list                     List all currently known keys in the cluster
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
   -rpc-auth=""              RPC auth token of the Serf agent.
 `
@@ -41,12 +42,14 @@ Options:
 func (c *KeyCommand) Run(args []string) int {
 	var installKey, useKey, removeKey string
 	var lines []string
+	var listKeys bool
 
 	cmdFlags := flag.NewFlagSet("key", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.StringVar(&installKey, "install", "", "install a new key")
 	cmdFlags.StringVar(&useKey, "use", "", "change primary encryption key")
 	cmdFlags.StringVar(&removeKey, "remove", "", "remove a key")
+	cmdFlags.BoolVar(&listKeys, "list", false, "list cluster keys")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	rpcAuth := RPCAuthFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
@@ -54,15 +57,10 @@ func (c *KeyCommand) Run(args []string) int {
 	}
 
 	c.Ui = &cli.PrefixedUi{
-		OutputPrefix: "    ",
+		OutputPrefix: "",
 		InfoPrefix:   "==> ",
 		ErrorPrefix:  "",
 		Ui:           c.Ui,
-	}
-
-	if fmt.Sprintf("%s%s%s", installKey, useKey, removeKey) == "" {
-		c.Ui.Error(c.Help())
-		return 1
 	}
 
 	client, err := RPCClient(*rpcAddr, *rpcAuth)
@@ -71,6 +69,32 @@ func (c *KeyCommand) Run(args []string) int {
 		return 1
 	}
 	defer client.Close()
+
+	if listKeys {
+		c.Ui.Info("Asking all members for installed keys...")
+		keys, err := client.ListKeys()
+
+		if err != nil {
+			c.Ui.Error("")
+			c.Ui.Error(fmt.Sprintf("Failed to gather member keys: %s", err))
+			return 1
+		}
+
+		c.Ui.Info("Keys gathered, listing cluster keys...")
+		c.Ui.Output("")
+
+		for _, key := range keys {
+			c.Ui.Output(key)
+		}
+
+		c.Ui.Output("")
+		return 0
+	}
+
+	if fmt.Sprintf("%s%s%s", installKey, useKey, removeKey) == "" {
+		c.Ui.Error(c.Help())
+		return 1
+	}
 
 	if installKey != "" {
 		c.Ui.Info("Installing key on all members...")
@@ -86,7 +110,7 @@ func (c *KeyCommand) Run(args []string) int {
 			c.Ui.Error(fmt.Sprintf("Error installing key: %s", err))
 			return 1
 		}
-		c.Ui.Output("Successfully installed key!")
+		c.Ui.Info("Successfully installed key!")
 	}
 
 	if useKey != "" {
@@ -103,7 +127,7 @@ func (c *KeyCommand) Run(args []string) int {
 			c.Ui.Error(fmt.Sprintf("Error changing primary key: %s", err))
 			return 1
 		}
-		c.Ui.Output("Successfully changed primary key!")
+		c.Ui.Info("Successfully changed primary key!")
 	}
 
 	if removeKey != "" {
@@ -120,7 +144,7 @@ func (c *KeyCommand) Run(args []string) int {
 			c.Ui.Error(fmt.Sprintf("Error removing key: %s", err))
 			return 1
 		}
-		c.Ui.Output("Successfully removed key!")
+		c.Ui.Info("Successfully removed key!")
 	}
 
 	return 0

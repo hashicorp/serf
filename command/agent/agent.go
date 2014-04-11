@@ -264,6 +264,12 @@ func (a *Agent) RemoveKey(key string) *serf.KeyResponse {
 	return a.serf.RemoveKey(key)
 }
 
+// ListKeys sends a query to all members to return a list of their keys
+func (a *Agent) ListKeys() *serf.KeyResponse {
+	a.logger.Print("[INFO] agent: Initiating key listing")
+	return a.serf.ListKeys()
+}
+
 // SetTags is used to update the tags. The agent will make sure to
 // persist tags if necessary before gossiping to the cluster.
 func (a *Agent) SetTags(tags map[string]string) error {
