@@ -122,6 +122,11 @@ END:
 	return resp
 }
 
+// processList is used to collect installed keys from members in a Serf cluster
+// and return an aggregated list of all installed keys. This is useful to
+// operators to ensure that there are no lingering keys installed on any agents.
+// Since having multiple keys installed can cause performance penalties in some
+// cases, it's important to verify this information and remove unneeded keys.
 func (kr *keyRequest) processList() *KeyResponse {
 	resp := newKeyResponse()
 	qName := internalQueryName(kr.query)

@@ -48,9 +48,14 @@ type serfQueries struct {
 // nodeKeyResponse is used to store the result from an individual node while
 // replying to key modification queries
 type nodeKeyResponse struct {
-	Result  bool
+	// Result indicates true/false if there were errors or not
+	Result bool
+
+	// Message contains error messages or other information
 	Message string
-	Keys    []string
+
+	// Keys is used in listing queries to relay a list of installed keys
+	Keys []string
 }
 
 // newSerfQueries is used to create a new serfQueries. We return an event
@@ -159,7 +164,7 @@ func (s *serfQueries) handleInstallKey(q *Query) {
 		goto SEND
 	}
 
-	s.logger.Printf("[INFO] serf: Received install-key query")
+	s.logger.Printf("[DEBUG] serf: Received install-key query")
 	if err := keyring.AddKey(q.Payload); err != nil {
 		response.Message = err.Error()
 		s.logger.Printf("[ERR] serf: Failed to install key: %s", err)
@@ -201,7 +206,7 @@ func (s *serfQueries) handleUseKey(q *Query) {
 		goto SEND
 	}
 
-	s.logger.Printf("[INFO] serf: Received use-key query")
+	s.logger.Printf("[DEBUG] serf: Received use-key query")
 	if err := keyring.UseKey(q.Payload); err != nil {
 		response.Message = err.Error()
 		s.logger.Printf("[ERR] serf: Failed to change primary key: %s", err)
@@ -243,7 +248,7 @@ func (s *serfQueries) handleRemoveKey(q *Query) {
 		goto SEND
 	}
 
-	s.logger.Printf("[INFO] serf: Received use-key query")
+	s.logger.Printf("[DEBUG] serf: Received remove-key query")
 	if err := keyring.RemoveKey(q.Payload); err != nil {
 		response.Message = err.Error()
 		s.logger.Printf("[ERR] serf: Failed to remove key: %s", err)
@@ -271,6 +276,10 @@ SEND:
 	}
 }
 
+// handleListKeys is invoked when a query is received to return a list of all
+// installed keys the Serf instance knows of. For performance, the keys are
+// encoded to base64 on each of the members to remove this burden from the
+// node asking for the results.
 func (s *serfQueries) handleListKeys(q *Query) {
 	response := nodeKeyResponse{Result: false}
 	keyring := s.serf.config.MemberlistConfig.Keyring
@@ -281,8 +290,10 @@ func (s *serfQueries) handleListKeys(q *Query) {
 		goto SEND
 	}
 
-	s.logger.Printf("[INFO] serf: Received list-keys query")
+	s.logger.Printf("[DEBUG] serf: Received list-keys query")
 	for _, keyBytes := range keyring.GetKeys() {
+		// Encode the keys before sending the response. This should help take
+		// some the burden of doing this off of the asking member.
 		key := base64.StdEncoding.EncodeToString(keyBytes)
 		response.Keys = append(response.Keys, key)
 	}
