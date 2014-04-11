@@ -1,7 +1,6 @@
 package serf
 
 import (
-	"fmt"
 	"log"
 	"strings"
 )
@@ -93,8 +92,12 @@ func (s *serfQueries) handleQuery(q *Query) {
 		// Nothing to do, we will ack the query
 	case conflictQuery:
 		s.handleConflict(q)
-	case installKeyQuery, useKeyQuery, removeKeyQuery:
-		s.handleModifyKeyring(queryName, q)
+	case installKeyQuery:
+		s.handleInstallKey(q)
+	case useKeyQuery:
+		s.handleUseKey(q)
+	case removeKeyQuery:
+		s.handleRemoveKey(q)
 	default:
 		s.logger.Printf("[WARN] serf: Unhandled internal query '%s'", queryName)
 	}
@@ -134,7 +137,12 @@ func (s *serfQueries) handleConflict(q *Query) {
 	}
 }
 
-func (s *serfQueries) handleModifyKeyring(queryName string, q *Query) {
+// handleInstallKey is invoked whenever a new encryption key is received from
+// another member in the cluster, and handles the process of installing it onto
+// the memberlist keyring. This type of query may fail if the provided key does
+// not fit the constraints that memberlist enforces. If the query fails, the
+// response will contain the error message so that it may be relayed.
+func (s *serfQueries) handleInstallKey(q *Query) {
 	response := nodeKeyResponse{Result: false}
 	keyring := s.serf.config.MemberlistConfig.Keyring
 
@@ -144,32 +152,15 @@ func (s *serfQueries) handleModifyKeyring(queryName string, q *Query) {
 		goto SEND
 	}
 
-	switch queryName {
-	case installKeyQuery:
-		s.logger.Printf("[INFO] serf: Received install-key query")
-		if err := keyring.AddKey(q.Payload); err != nil {
-			response.Message = fmt.Sprintf("%s", err)
-			s.logger.Printf("[ERR] serf: Failed to install key: %s", err)
-			goto SEND
-		}
-	case useKeyQuery:
-		s.logger.Printf("[INFO] serf: Received use-key query")
-		if err := keyring.UseKey(q.Payload); err != nil {
-			response.Message = fmt.Sprintf("%s", err)
-			s.logger.Printf("[ERR] serf: Failed to change primary key: %v", err)
-			goto SEND
-		}
-	case removeKeyQuery:
-		s.logger.Printf("[INFO] serf: Received remove-key query")
-		if err := keyring.RemoveKey(q.Payload); err != nil {
-			response.Message = fmt.Sprintf("%s", err)
-			s.logger.Printf("[ERR] serf: Failed to remove key: %v", err)
-			goto SEND
-		}
+	s.logger.Printf("[INFO] serf: Received install-key query")
+	if err := keyring.AddKey(q.Payload); err != nil {
+		response.Message = err.Error()
+		s.logger.Printf("[ERR] serf: Failed to install key: %s", err)
+		goto SEND
 	}
 
 	if err := s.serf.WriteKeyringFile(keyring); err != nil {
-		response.Message = fmt.Sprintf("%s", err)
+		response.Message = err.Error()
 		s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
 		goto SEND
 	}
@@ -179,12 +170,96 @@ func (s *serfQueries) handleModifyKeyring(queryName string, q *Query) {
 SEND:
 	buf, err := encodeMessage(messageKeyResponseType, response)
 	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to encode %s response: %v", queryName, err)
+		s.logger.Printf("[ERR] serf: Failed to encode install-key response: %v", err)
 		return
 	}
 
 	if err := q.Respond(buf); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to respond to %s query: %v", queryName, err)
+		s.logger.Printf("[ERR] serf: Failed to respond to install-key query: %v", err)
+		return
+	}
+}
+
+// handleUseKey is invoked whenever a query is received to mark a different key
+// in the internal keyring as the primary key. This type of query may fail due
+// to operator error (requested key not in ring), and thus sends error messages
+// back in the response.
+func (s *serfQueries) handleUseKey(q *Query) {
+	response := nodeKeyResponse{Result: false}
+	keyring := s.serf.config.MemberlistConfig.Keyring
+
+	if !s.serf.EncryptionEnabled() {
+		response.Message = "No keyring to modify (encryption not enabled)"
+		s.logger.Printf("[ERR] serf: No keyring to modify (encryption not enabled)")
+		goto SEND
+	}
+
+	s.logger.Printf("[INFO] serf: Received use-key query")
+	if err := keyring.UseKey(q.Payload); err != nil {
+		response.Message = err.Error()
+		s.logger.Printf("[ERR] serf: Failed to change primary key: %s", err)
+		goto SEND
+	}
+
+	if err := s.serf.WriteKeyringFile(keyring); err != nil {
+		response.Message = err.Error()
+		s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
+		goto SEND
+	}
+
+	response.Result = true
+
+SEND:
+	buf, err := encodeMessage(messageKeyResponseType, response)
+	if err != nil {
+		s.logger.Printf("[ERR] serf: Failed to encode use-key response: %v", err)
+		return
+	}
+
+	if err := q.Respond(buf); err != nil {
+		s.logger.Printf("[ERR] serf: Failed to respond to use-key query: %v", err)
+		return
+	}
+}
+
+// handleRemoveKey is invoked when a query is received to remove a particular
+// key from the keyring. This type of query can fail if the key requested for
+// deletion is currently the primary key in the keyring, so therefore it will
+// reply to the query with any relevant errors from the operation.
+func (s *serfQueries) handleRemoveKey(q *Query) {
+	response := nodeKeyResponse{Result: false}
+	keyring := s.serf.config.MemberlistConfig.Keyring
+
+	if !s.serf.EncryptionEnabled() {
+		response.Message = "No keyring to modify (encryption not enabled)"
+		s.logger.Printf("[ERR] serf: No keyring to modify (encryption not enabled)")
+		goto SEND
+	}
+
+	s.logger.Printf("[INFO] serf: Received use-key query")
+	if err := keyring.RemoveKey(q.Payload); err != nil {
+		response.Message = err.Error()
+		s.logger.Printf("[ERR] serf: Failed to remove key: %s", err)
+		goto SEND
+	}
+
+	if err := s.serf.WriteKeyringFile(keyring); err != nil {
+		response.Message = err.Error()
+		s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
+		goto SEND
+	}
+
+	response.Result = true
+
+SEND:
+	buf, err := encodeMessage(messageKeyResponseType, response)
+	if err != nil {
+		s.logger.Printf("[ERR] serf: Failed to encode remove-key response: %v", err)
+		return
+	}
+
+	if err := q.Respond(buf); err != nil {
+		s.logger.Printf("[ERR] serf: Failed to respond to remove-key query: %v", err)
 		return
 	}
 }
