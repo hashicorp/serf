@@ -38,6 +38,8 @@ func newKeyResponse() *KeyResponse {
 	}
 }
 
+// condAppend will append a new string to a list of strings only if it does
+// not already exist in the list.
 func condAppend(strList []string, newStr string) []string {
 	for _, str := range strList {
 		if str == newStr {
@@ -47,6 +49,8 @@ func condAppend(strList []string, newStr string) []string {
 	return append(strList, newStr)
 }
 
+// Process will examine the query type and invoke the proper method to handle
+// running it and gathering responses.
 func (kr *keyRequest) Process() *KeyResponse {
 	switch kr.query {
 	case listKeysQuery:
