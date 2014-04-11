@@ -14,9 +14,6 @@ type keyRequest struct {
 
 	// key is the base64-encoded value of the key being operated on.
 	key string
-
-	// response is a pointer to a keyResponse to be populated with result data
-	resp *KeyResponse
 }
 
 // KeyResponse is used to deliver the results of a key query
