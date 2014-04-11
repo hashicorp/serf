@@ -24,15 +24,28 @@ Usage: serf key [options]...
   use simultaneously. Only one key, the "primary" key, will be used for
   encrypting messages. All other keys are used for decryption only.
 
+  All variations of this command will return 0 if all nodes reply and report
+  no errors. If any node fails to respond or reports failure, we return 1.
+
   WARNING: Running with multiple encryption keys enabled is recommended as a
   transition state only. Performance may be impacted by using multiple keys.
 
 Options:
 
-  -install=<key>            Install a new key onto Serf's internal keyring.
+  -install=<key>            Install a new key onto Serf's internal keyring. This
+                            will enable the key for decryption. The key will not
+                            be used to encrypt messages until the primary key is
+                            changed.
   -use=<key>                Change the primary key used for encrypting messages.
-  -remove=<key>             Remove a key from Serf's internal keyring.
-  -list                     List all currently known keys in the cluster
+                            All nodes in the cluster must already have this key
+                            installed if they are to continue communicating with
+                            eachother.
+  -remove=<key>             Remove a key from Serf's internal keyring. The key
+                            being removed may not be the current primary key.
+  -list                     List all currently known keys in the cluster. This
+                            will ask all nodes in the cluster for a list of keys.
+                            The keys will be reduced to a flat list before being
+                            dumped to the console.
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
   -rpc-auth=""              RPC auth token of the Serf agent.
 `

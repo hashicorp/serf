@@ -22,8 +22,11 @@ Serf allows multiple encryption keys to be in use simultaneously. This is
 intended to provide a transition state while the cluster converges. It is the
 responsibility of the operator to ensure that only the required encryption keys
 are installed on the cluster. You can ensure that a key is not installed using
-the `-remove` option. If it returns 0, the key has been removed from all
-members.
+the `-list` and `-remove` options.
+
+All variations of the `key` command will return 0 if all nodes reply and there
+are no errors. If any node fails to reply or reports failure, the exit code will
+be 1.
 
 ## Usage
 
@@ -41,6 +44,11 @@ are idempotent. The list of available flags are:
 * `-remove` - Remove a currently installed encryption key from the Serf keyring.
   Any messages transmitted using this key after this operation completes will
   fail verification and be rejected.
+
+* `-list` - Ask all members in the cluster for a list of the keys they have
+  installed. After gathering keys from all members, the results will be reduced
+  to a single list and dumped to the console. This is useful to operators to
+  ensure that there are no lingering keys on any members.
 
 * `-rpc-addr` - Address to the RPC server of the agent you want to contact
   to send this command. If this isn't specified, the command will contact
