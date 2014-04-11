@@ -18,7 +18,7 @@ Usage: serf key [options]...
 
   Manage the internal encryption keyring used by Serf. Modifications made by
   this command will be broadcasted to all members in the cluster and applied
-  locally on each member.
+  locally on each member. Operations of this command are idempotent.
 
   To facilitate key rotation, Serf allows for multiple encryption keys to be in
   use simultaneously. Only one key, the "primary" key, will be used for
@@ -83,6 +83,11 @@ func (c *KeyCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
+	if !listKeys && fmt.Sprintf("%s%s%s", installKey, useKey, removeKey) == "" {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	if listKeys {
 		c.Ui.Info("Asking all members for installed keys...")
 		keys, err := client.ListKeys()
@@ -102,11 +107,6 @@ func (c *KeyCommand) Run(args []string) int {
 
 		c.Ui.Output("")
 		return 0
-	}
-
-	if fmt.Sprintf("%s%s%s", installKey, useKey, removeKey) == "" {
-		c.Ui.Error(c.Help())
-		return 1
 	}
 
 	if installKey != "" {

@@ -32,8 +32,7 @@ be 1.
 
 Usage: `serf key [options]`
 
-At least one of `-install`, `-use`, or `-remove` must be passed. All operations
-are idempotent. The list of available flags are:
+All operations are idempotent. The list of available flags are:
 
 * `-install` - Install a new encryption key to the Serf keyring. This will
   broadcast the new key to the cluster.
