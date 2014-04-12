@@ -11,29 +11,7 @@ type keyManager struct {
 	*Serf
 }
 
-type InstallKeyRequest struct {
-	Key string // base64-encoded key
-}
-
-type UseKeyRequest struct {
-	Key string // base64-encoded key
-}
-
-type RemoveKeyRequest struct {
-	Key string // base64-encoded key
-}
-
-type InstallKeyResponse struct {
-	Messages   map[string]string // Map of node name to response message
-	TotalNodes int               // Total nodes in the cluster
-}
-
-type UseKeyResponse struct {
-	Messages   map[string]string // Map of node name to response message
-	TotalNodes int               // Total nodes in the cluster
-}
-
-type RemoveKeyResponse struct {
+type ModifyKeyResponse struct {
 	Messages   map[string]string // Map of node name to response message
 	TotalNodes int               // Total nodes in the cluster
 }
@@ -55,8 +33,8 @@ func (s *Serf) KeyManager() *keyManager {
 // InstallKey handles broadcasting a query to all members and gathering
 // responses from each of them, returning a list of messages from each node
 // and any applicable error conditions.
-func (k *keyManager) InstallKey(key string) (*InstallKeyResponse, error) {
-	resp := &InstallKeyResponse{Messages: make(map[string]string)}
+func (k *keyManager) InstallKey(key string) (*ModifyKeyResponse, error) {
+	resp := &ModifyKeyResponse{Messages: make(map[string]string)}
 	qName := internalQueryName(installKeyQuery)
 
 	// Decode the new key into raw bytes
@@ -111,9 +89,9 @@ func (k *keyManager) InstallKey(key string) (*InstallKeyResponse, error) {
 
 // UseKey handles broadcasting a primary key change to all members in the
 // cluster, and gathering any response messages. If successful, there should
-// be an empty UseKeyResponse returned.
-func (k *keyManager) UseKey(key string) (*UseKeyResponse, error) {
-	resp := &UseKeyResponse{Messages: make(map[string]string)}
+// be an empty ModifyKeyResponse returned.
+func (k *keyManager) UseKey(key string) (*ModifyKeyResponse, error) {
+	resp := &ModifyKeyResponse{Messages: make(map[string]string)}
 	qName := internalQueryName(useKeyQuery)
 
 	// Decode the new key into raw bytes
@@ -169,8 +147,8 @@ func (k *keyManager) UseKey(key string) (*UseKeyResponse, error) {
 // RemoveKey handles broadcasting a key to the cluster for removal. Each member
 // will receive this event, and if they have the key in their keyring, remove
 // it. If any errors are encountered, RemoveKey will collect and relay them.
-func (k *keyManager) RemoveKey(key string) (*RemoveKeyResponse, error) {
-	resp := &RemoveKeyResponse{Messages: make(map[string]string)}
+func (k *keyManager) RemoveKey(key string) (*ModifyKeyResponse, error) {
+	resp := &ModifyKeyResponse{Messages: make(map[string]string)}
 	qName := internalQueryName(removeKeyQuery)
 
 	// Decode the new key into raw bytes
