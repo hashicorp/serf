@@ -293,13 +293,13 @@ func (c *RPCClient) Respond(id uint64, buf []byte) error {
 }
 
 // IntallKey installs a new encryption key onto the keyring
-func (c *RPCClient) InstallKey(newKey string) (map[string]string, error) {
+func (c *RPCClient) InstallKey(key string) (map[string]string, error) {
 	header := requestHeader{
 		Command: installKeyCommand,
 		Seq:     c.getSeq(),
 	}
 	req := keyRequest{
-		Key: newKey,
+		Key: key,
 	}
 
 	resp := keyResponse{}
@@ -338,7 +338,7 @@ func (c *RPCClient) RemoveKey(key string) (map[string]string, error) {
 }
 
 // ListKeys returns all of the active keys on each member of the cluster
-func (c *RPCClient) ListKeys() ([]string, error) {
+func (c *RPCClient) ListKeys() (map[string]int, int, error) {
 	header := requestHeader{
 		Command: listKeysCommand,
 		Seq:     c.getSeq(),
@@ -346,7 +346,7 @@ func (c *RPCClient) ListKeys() ([]string, error) {
 
 	resp := keyResponse{}
 	err := c.genericRPC(&header, nil, &resp)
-	return resp.Keys, err
+	return resp.Keys, resp.Num, err
 }
 
 type monitorHandler struct {

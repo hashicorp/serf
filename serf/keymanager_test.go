@@ -254,12 +254,19 @@ func TestSerf_ListKeys(t *testing.T) {
 	}
 
 	found := false
-	for _, key := range resp.Keys {
+	for key, _ := range resp.Keys {
 		if key == extraKey {
 			found = true
 		}
 	}
 	if !found {
 		t.Fatalf("Did not find expected key in list: %s", extraKey)
+	}
+
+	// Number of members with extra key installed should be 1
+	for key, num := range resp.Keys {
+		if key == extraKey && num != 1 {
+			t.Fatalf("Expected 1 nodes with key %s but have %d", extraKey, num)
+		}
 	}
 }

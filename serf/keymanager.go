@@ -8,41 +8,48 @@ import (
 // keyManager encapsulates all functionality within Serf for handling
 // encryption keyring changes across a cluster.
 type keyManager struct {
-	serf *Serf
+	*Serf
 }
 
 type InstallKeyRequest struct {
-	Key string
+	Key string // base64-encoded key
 }
 
 type UseKeyRequest struct {
-	Key string
+	Key string // base64-encoded key
 }
 
 type RemoveKeyRequest struct {
-	Key string
+	Key string // base64-encoded key
 }
 
 type InstallKeyResponse struct {
-	Messages map[string]string
+	Messages   map[string]string // Map of node name to response message
+	TotalNodes int               // Total nodes in the cluster
 }
 
 type UseKeyResponse struct {
-	Messages map[string]string
+	Messages   map[string]string // Map of node name to response message
+	TotalNodes int               // Total nodes in the cluster
 }
 
 type RemoveKeyResponse struct {
-	Messages map[string]string
+	Messages   map[string]string // Map of node name to response message
+	TotalNodes int               // Total nodes in the cluster
 }
 
 type ListKeysResponse struct {
-	Keys     []string
-	Messages map[string]string
+	Messages   map[string]string // Map of node name to response message
+	TotalNodes int               // Total nodes in the cluster
+
+	// Keys is a mapping of the base64-encoded value of the key bytes to the
+	// number of nodes that have the key installed.
+	Keys map[string]int
 }
 
 // KeyManager returns a keyManager for the current Serf instance
 func (s *Serf) KeyManager() *keyManager {
-	return &keyManager{serf: s}
+	return &keyManager{s}
 }
 
 // InstallKey handles broadcasting a query to all members and gathering
@@ -59,17 +66,16 @@ func (k *keyManager) InstallKey(key string) (*InstallKeyResponse, error) {
 	}
 
 	qParam := &QueryParam{}
-	queryResp, err := k.serf.Query(qName, rawKey, qParam)
+	queryResp, err := k.Query(qName, rawKey, qParam)
 	if err != nil {
 		return nil, err
 	}
 
-	totalReplies := 0
 	totalErrors := 0
 	for r := range queryResp.respCh {
 		var nodeResponse nodeKeyResponse
 
-		totalReplies++
+		resp.TotalNodes++
 
 		// Decode the response
 		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageKeyResponseType {
@@ -91,13 +97,13 @@ func (k *keyManager) InstallKey(key string) (*InstallKeyResponse, error) {
 		}
 	}
 
-	totalMembers := k.serf.memberlist.NumMembers()
+	totalMembers := k.memberlist.NumMembers()
 
 	if totalErrors != 0 {
 		return resp, fmt.Errorf("%d/%d nodes reported failure", totalErrors, totalMembers)
 	}
-	if totalReplies != totalMembers {
-		return resp, fmt.Errorf("%d/%d nodes reported success", totalReplies, totalMembers)
+	if resp.TotalNodes != totalMembers {
+		return resp, fmt.Errorf("%d/%d nodes reported success", resp.TotalNodes, totalMembers)
 	}
 
 	return resp, nil
@@ -117,17 +123,16 @@ func (k *keyManager) UseKey(key string) (*UseKeyResponse, error) {
 	}
 
 	qParam := &QueryParam{}
-	queryResp, err := k.serf.Query(qName, rawKey, qParam)
+	queryResp, err := k.Query(qName, rawKey, qParam)
 	if err != nil {
 		return nil, err
 	}
 
-	totalReplies := 0
 	totalErrors := 0
 	for r := range queryResp.respCh {
 		var nodeResponse nodeKeyResponse
 
-		totalReplies++
+		resp.TotalNodes++
 
 		// Decode the response
 		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageKeyResponseType {
@@ -149,13 +154,13 @@ func (k *keyManager) UseKey(key string) (*UseKeyResponse, error) {
 		}
 	}
 
-	totalMembers := k.serf.memberlist.NumMembers()
+	totalMembers := k.memberlist.NumMembers()
 
 	if totalErrors != 0 {
 		return resp, fmt.Errorf("%d/%d nodes reported failure", totalErrors, totalMembers)
 	}
-	if totalReplies != totalMembers {
-		return resp, fmt.Errorf("%d/%d nodes reported success", totalReplies, totalMembers)
+	if resp.TotalNodes != totalMembers {
+		return resp, fmt.Errorf("%d/%d nodes reported success", resp.TotalNodes, totalMembers)
 	}
 
 	return resp, nil
@@ -175,17 +180,16 @@ func (k *keyManager) RemoveKey(key string) (*RemoveKeyResponse, error) {
 	}
 
 	qParam := &QueryParam{}
-	queryResp, err := k.serf.Query(qName, rawKey, qParam)
+	queryResp, err := k.Query(qName, rawKey, qParam)
 	if err != nil {
 		return nil, err
 	}
 
-	totalReplies := 0
 	totalErrors := 0
 	for r := range queryResp.respCh {
 		var nodeResponse nodeKeyResponse
 
-		totalReplies++
+		resp.TotalNodes++
 
 		// Decode the response
 		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageKeyResponseType {
@@ -207,13 +211,13 @@ func (k *keyManager) RemoveKey(key string) (*RemoveKeyResponse, error) {
 		}
 	}
 
-	totalMembers := k.serf.memberlist.NumMembers()
+	totalMembers := k.memberlist.NumMembers()
 
 	if totalErrors != 0 {
 		return resp, fmt.Errorf("%d/%d nodes reported failure", totalErrors, totalMembers)
 	}
-	if totalReplies != totalMembers {
-		return resp, fmt.Errorf("%d/%d nodes reported success", totalReplies, totalMembers)
+	if resp.TotalNodes != totalMembers {
+		return resp, fmt.Errorf("%d/%d nodes reported success", resp.TotalNodes, totalMembers)
 	}
 
 	return resp, nil
@@ -225,21 +229,23 @@ func (k *keyManager) RemoveKey(key string) (*RemoveKeyResponse, error) {
 // Since having multiple keys installed can cause performance penalties in some
 // cases, it's important to verify this information and remove unneeded keys.
 func (k *keyManager) ListKeys() (*ListKeysResponse, error) {
-	resp := &ListKeysResponse{Messages: make(map[string]string)}
+	resp := &ListKeysResponse{
+		Messages: make(map[string]string),
+		Keys:     make(map[string]int),
+	}
 	qName := internalQueryName(listKeysQuery)
 
 	qParam := &QueryParam{}
-	queryResp, err := k.serf.Query(qName, nil, qParam)
+	queryResp, err := k.Query(qName, nil, qParam)
 	if err != nil {
 		return nil, err
 	}
 
-	totalReplies := 0
 	totalErrors := 0
 	for r := range queryResp.respCh {
 		var nodeResponse nodeKeyResponse
 
-		totalReplies++
+		resp.TotalNodes++
 
 		// Decode the response
 		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageKeyResponseType {
@@ -262,29 +268,22 @@ func (k *keyManager) ListKeys() (*ListKeysResponse, error) {
 		}
 
 		for _, key := range nodeResponse.Keys {
-			resp.Keys = condAppend(resp.Keys, key)
+			if _, ok := resp.Keys[key]; !ok {
+				resp.Keys[key] = 1
+			} else {
+				resp.Keys[key]++
+			}
 		}
 	}
 
-	totalMembers := k.serf.memberlist.NumMembers()
+	totalMembers := k.memberlist.NumMembers()
 
 	if totalErrors != 0 {
 		return resp, fmt.Errorf("%d/%d nodes reported failure", totalErrors, totalMembers)
 	}
-	if totalReplies != totalMembers {
-		return resp, fmt.Errorf("%d/%d nodes reported success", totalReplies, totalMembers)
+	if resp.TotalNodes != totalMembers {
+		return resp, fmt.Errorf("%d/%d nodes reported success", resp.TotalNodes, totalMembers)
 	}
 
 	return resp, nil
-}
-
-// condAppend will append a new string to a list of strings only if it does
-// not already exist in the list.
-func condAppend(strList []string, newStr string) []string {
-	for _, str := range strList {
-		if str == newStr {
-			return strList
-		}
-	}
-	return append(strList, newStr)
 }

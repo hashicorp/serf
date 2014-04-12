@@ -105,7 +105,8 @@ type keyRequest struct {
 
 type keyResponse struct {
 	Messages map[string]string
-	Keys     []string
+	Keys     map[string]int
+	Num      int
 }
 
 type monitorRequest struct {

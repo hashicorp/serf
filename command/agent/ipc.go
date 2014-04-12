@@ -139,7 +139,8 @@ type keyRequest struct {
 
 type keyResponse struct {
 	Messages map[string]string
-	Keys     []string
+	Keys     map[string]int
+	Num      int
 }
 
 type monitorRequest struct {
@@ -771,6 +772,7 @@ func (i *AgentIPC) handleListKeys(client *IPCClient, seq uint64) error {
 	resp := keyResponse{
 		Messages: queryResp.Messages,
 		Keys:     queryResp.Keys,
+		Num:      queryResp.TotalNodes,
 	}
 	return client.Send(&header, &resp)
 }

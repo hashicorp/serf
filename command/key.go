@@ -85,7 +85,7 @@ func (c *KeyCommand) Run(args []string) int {
 
 	if listKeys {
 		c.Ui.Info("Asking all members for installed keys...")
-		keys, err := client.ListKeys()
+		keys, total, err := client.ListKeys()
 
 		if err != nil {
 			c.Ui.Error("")
@@ -96,9 +96,11 @@ func (c *KeyCommand) Run(args []string) int {
 		c.Ui.Info("Keys gathered, listing cluster keys...")
 		c.Ui.Output("")
 
-		for _, key := range keys {
-			c.Ui.Output(key)
+		for key, num := range keys {
+			lines = append(lines, fmt.Sprintf("%s | [%d/%d]", key, num, total))
 		}
+		out, _ := columnize.SimpleFormat(lines)
+		c.Ui.Output(out)
 
 		c.Ui.Output("")
 		return 0
