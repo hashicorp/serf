@@ -11,11 +11,14 @@ type keyManager struct {
 	*Serf
 }
 
+// ModifyKeyResponse is used to relay results of keyring modifications.
 type ModifyKeyResponse struct {
 	Messages   map[string]string // Map of node name to response message
 	TotalNodes int               // Total nodes in the cluster
 }
 
+// ListKeysResponse is used to relay a query for a list of all keys in use
+// on a Serf cluster.
 type ListKeysResponse struct {
 	Messages   map[string]string // Map of node name to response message
 	TotalNodes int               // Total nodes in the cluster
