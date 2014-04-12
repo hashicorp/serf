@@ -3,12 +3,16 @@ package serf
 import (
 	"encoding/base64"
 	"fmt"
+	"sync"
 )
 
 // keyManager encapsulates all functionality within Serf for handling
 // encryption keyring changes across a cluster.
 type keyManager struct {
-	*Serf
+	serf *Serf
+
+	// Embedded mutex to protect read and write operations
+	sync.RWMutex
 }
 
 // ModifyKeyResponse is used to relay results of keyring modifications.
@@ -30,13 +34,16 @@ type ListKeysResponse struct {
 
 // KeyManager returns a keyManager for the current Serf instance
 func (s *Serf) KeyManager() *keyManager {
-	return &keyManager{s}
+	return &keyManager{serf: s}
 }
 
 // InstallKey handles broadcasting a query to all members and gathering
 // responses from each of them, returning a list of messages from each node
 // and any applicable error conditions.
 func (k *keyManager) InstallKey(key string) (*ModifyKeyResponse, error) {
+	k.Lock()
+	defer k.Unlock()
+
 	resp := &ModifyKeyResponse{Messages: make(map[string]string)}
 	qName := internalQueryName(installKeyQuery)
 
@@ -47,7 +54,7 @@ func (k *keyManager) InstallKey(key string) (*ModifyKeyResponse, error) {
 	}
 
 	qParam := &QueryParam{}
-	queryResp, err := k.Query(qName, rawKey, qParam)
+	queryResp, err := k.serf.Query(qName, rawKey, qParam)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +85,7 @@ func (k *keyManager) InstallKey(key string) (*ModifyKeyResponse, error) {
 		}
 	}
 
-	totalMembers := k.memberlist.NumMembers()
+	totalMembers := k.serf.memberlist.NumMembers()
 
 	if totalErrors != 0 {
 		return resp, fmt.Errorf("%d/%d nodes reported failure", totalErrors, totalMembers)
@@ -94,6 +101,9 @@ func (k *keyManager) InstallKey(key string) (*ModifyKeyResponse, error) {
 // cluster, and gathering any response messages. If successful, there should
 // be an empty ModifyKeyResponse returned.
 func (k *keyManager) UseKey(key string) (*ModifyKeyResponse, error) {
+	k.Lock()
+	defer k.Unlock()
+
 	resp := &ModifyKeyResponse{Messages: make(map[string]string)}
 	qName := internalQueryName(useKeyQuery)
 
@@ -104,7 +114,7 @@ func (k *keyManager) UseKey(key string) (*ModifyKeyResponse, error) {
 	}
 
 	qParam := &QueryParam{}
-	queryResp, err := k.Query(qName, rawKey, qParam)
+	queryResp, err := k.serf.Query(qName, rawKey, qParam)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +145,7 @@ func (k *keyManager) UseKey(key string) (*ModifyKeyResponse, error) {
 		}
 	}
 
-	totalMembers := k.memberlist.NumMembers()
+	totalMembers := k.serf.memberlist.NumMembers()
 
 	if totalErrors != 0 {
 		return resp, fmt.Errorf("%d/%d nodes reported failure", totalErrors, totalMembers)
@@ -151,6 +161,9 @@ func (k *keyManager) UseKey(key string) (*ModifyKeyResponse, error) {
 // will receive this event, and if they have the key in their keyring, remove
 // it. If any errors are encountered, RemoveKey will collect and relay them.
 func (k *keyManager) RemoveKey(key string) (*ModifyKeyResponse, error) {
+	k.Lock()
+	defer k.Unlock()
+
 	resp := &ModifyKeyResponse{Messages: make(map[string]string)}
 	qName := internalQueryName(removeKeyQuery)
 
@@ -161,7 +174,7 @@ func (k *keyManager) RemoveKey(key string) (*ModifyKeyResponse, error) {
 	}
 
 	qParam := &QueryParam{}
-	queryResp, err := k.Query(qName, rawKey, qParam)
+	queryResp, err := k.serf.Query(qName, rawKey, qParam)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +205,7 @@ func (k *keyManager) RemoveKey(key string) (*ModifyKeyResponse, error) {
 		}
 	}
 
-	totalMembers := k.memberlist.NumMembers()
+	totalMembers := k.serf.memberlist.NumMembers()
 
 	if totalErrors != 0 {
 		return resp, fmt.Errorf("%d/%d nodes reported failure", totalErrors, totalMembers)
@@ -210,6 +223,9 @@ func (k *keyManager) RemoveKey(key string) (*ModifyKeyResponse, error) {
 // Since having multiple keys installed can cause performance penalties in some
 // cases, it's important to verify this information and remove unneeded keys.
 func (k *keyManager) ListKeys() (*ListKeysResponse, error) {
+	k.RLock()
+	defer k.RUnlock()
+
 	resp := &ListKeysResponse{
 		Messages: make(map[string]string),
 		Keys:     make(map[string]int),
@@ -217,7 +233,7 @@ func (k *keyManager) ListKeys() (*ListKeysResponse, error) {
 	qName := internalQueryName(listKeysQuery)
 
 	qParam := &QueryParam{}
-	queryResp, err := k.Query(qName, nil, qParam)
+	queryResp, err := k.serf.Query(qName, nil, qParam)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +273,7 @@ func (k *keyManager) ListKeys() (*ListKeysResponse, error) {
 		}
 	}
 
-	totalMembers := k.memberlist.NumMembers()
+	totalMembers := k.serf.memberlist.NumMembers()
 
 	if totalErrors != 0 {
 		return resp, fmt.Errorf("%d/%d nodes reported failure", totalErrors, totalMembers)

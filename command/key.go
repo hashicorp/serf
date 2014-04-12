@@ -102,7 +102,6 @@ func (c *KeyCommand) Run(args []string) int {
 		out, _ := columnize.SimpleFormat(lines)
 		c.Ui.Output(out)
 
-		c.Ui.Output("")
 		return 0
 	}
 
