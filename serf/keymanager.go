@@ -32,11 +32,6 @@ type ListKeysResponse struct {
 	Keys map[string]int
 }
 
-// KeyManager returns a keyManager for the current Serf instance
-func (s *Serf) KeyManager() *keyManager {
-	return &keyManager{serf: s}
-}
-
 // InstallKey handles broadcasting a query to all members and gathering
 // responses from each of them, returning a list of messages from each node
 // and any applicable error conditions.

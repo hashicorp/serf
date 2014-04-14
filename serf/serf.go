@@ -89,6 +89,7 @@ type Serf struct {
 	shutdownCh chan struct{}
 
 	snapshotter *Snapshotter
+	keyManager  *keyManager
 }
 
 // SerfState is the state of the Serf instance.
@@ -350,6 +351,9 @@ func Create(conf *Config) (*Serf, error) {
 
 	serf.memberlist = memberlist
 
+	// Create a key manager for handling all encryption key changes
+	serf.keyManager = &keyManager{serf: serf}
+
 	// Start the background tasks. See the documentation above each method
 	// for more information on their role.
 	go serf.handleReap()
@@ -378,6 +382,11 @@ func (s *Serf) ProtocolVersion() uint8 {
 //   - Keyring file provided at agent start
 func (s *Serf) EncryptionEnabled() bool {
 	return s.config.MemberlistConfig.Keyring != nil
+}
+
+// KeyManager returns the key manager for the current Serf instance.
+func (s *Serf) KeyManager() *keyManager {
+	return s.keyManager
 }
 
 // UserEvent is used to broadcast a custom user event with a given
