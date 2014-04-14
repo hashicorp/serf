@@ -46,18 +46,19 @@ order to send and receive cluster information.
 
 Serf supports changing keys used to encrypt network traffic and takes on the
 burden of distributing the new key to the rest of the members in the cluster. To
-support this, Serf includes a key management command with 3 actions:
+support this, Serf includes a key management command with 4 actions:
 
 ```
-serf key -install <key>
-serf key -use <key>
-serf key -remove <key>
+serf keys -install <key>
+serf keys -use <key>
+serf keys -remove <key>
+serf keys -list
 ```
 
-Using the above commands in the order in which they appear, it is possible to
-effectively change the encryption keys used to protect Serf without any
-interruption to the cluster. By executing these commands, you are performing
-cluster-wide operations to distribute and configure new encryption keys.
+Using the above commands, it is possible to effectively change the encryption
+keys used to protect Serf without any interruption to the cluster. By executing
+these commands, you are performing cluster-wide operations to distribute and
+configure new encryption keys.
 
 All of the above commands are idempotent - meaning, you may run them multiple
 times with no negative consequences. This can prove useful in case of partial

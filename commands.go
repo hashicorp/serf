@@ -53,8 +53,8 @@ func init() {
 			}, nil
 		},
 
-		"key": func() (cli.Command, error) {
-			return &command.KeyCommand{
+		"keys": func() (cli.Command, error) {
+			return &command.KeysCommand{
 				Ui: ui,
 			}, nil
 		},

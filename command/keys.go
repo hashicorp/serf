@@ -8,13 +8,13 @@ import (
 	"strings"
 )
 
-type KeyCommand struct {
+type KeysCommand struct {
 	Ui cli.Ui
 }
 
-func (c *KeyCommand) Help() string {
+func (c *KeysCommand) Help() string {
 	helpText := `
-Usage: serf key [options]...
+Usage: serf keys [options]...
 
   Manage the internal encryption keyring used by Serf. Modifications made by
   this command will be broadcasted to all members in the cluster and applied
@@ -52,7 +52,7 @@ Options:
 	return strings.TrimSpace(helpText)
 }
 
-func (c *KeyCommand) Run(args []string) int {
+func (c *KeysCommand) Run(args []string) int {
 	var installKey, useKey, removeKey string
 	var lines []string
 	var listKeys bool
@@ -163,6 +163,6 @@ func (c *KeyCommand) Run(args []string) int {
 	return 1
 }
 
-func (c *KeyCommand) Synopsis() string {
+func (c *KeysCommand) Synopsis() string {
 	return "Manipulate the internal encryption keyring used by Serf"
 }

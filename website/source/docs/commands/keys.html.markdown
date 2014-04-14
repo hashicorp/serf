@@ -4,14 +4,14 @@ page_title: "Commands: Key"
 sidebar_current: "docs-commands-key"
 ---
 
-# Serf Key
+# Serf Keys
 
-Command: `serf key`
+Command: `serf keys`
 
-The key command performs cluster-wide encryption key operations, such as
-installing new keys and removing old keys. When used properly, the `key` command
-allows you to achieve non-disruptive encryption key rotation across a Serf
-cluster.
+The keys command performs cluster-wide encryption key operations, such as
+installing new keys and removing old keys. When used properly, the `keys`
+command allows you to achieve non-disruptive encryption key rotation across a
+Serf cluster.
 
 By default, changes made to the encryption keys will not be written to disk, and
 will be lost upon agent restart. It is possible to enable persistence by using
@@ -24,13 +24,13 @@ responsibility of the operator to ensure that only the required encryption keys
 are installed on the cluster. You can ensure that a key is not installed using
 the `-list` and `-remove` options.
 
-All variations of the `key` command will return 0 if all nodes reply and there
+All variations of the `keys` command will return 0 if all nodes reply and there
 are no errors. If any node fails to reply or reports failure, the exit code will
 be 1.
 
 ## Usage
 
-Usage: `serf key [options]`
+Usage: `serf keys [options]`
 
 All operations are idempotent. The list of available flags are:
 
