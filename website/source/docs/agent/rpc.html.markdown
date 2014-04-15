@@ -61,6 +61,10 @@ Possible commands include:
 * leave - Serf agent performs a graceful leave and shutdown
 * query - Initiates a new query
 * respond - Responds to an incoming query
+* install-key - Installs a new encryption key
+* use-key - Changes the primary key used for encrypting messages
+* remove-key - Removes an existing encryption key
+* list-keys - Provides a list of encryption keys in use in the cluster
 
 Below each command is documented along with any request or
 response body that is applicable.
@@ -394,3 +398,107 @@ just opaque bytes.
 
 There is no special response body.
 
+### install-key
+
+The install-key command is used to install a new encryption key onto the
+cluster's keyring.
+The request looks like:
+
+```
+    {"Key": "lkuIAePQcb/XGvuLPqwNtw=="}
+```
+
+The `Key` must be 16 bytes of base64-encoded data. This value can be generated
+easily using the [keygen command](/docs/commands/keygen.html).
+
+Once invoked, this method will begin broadcasting the new key to all members in
+the cluster via the gossip protocol. Once the query has completed, a response
+like the following will be returned:
+
+```
+    {
+        "Messages": {
+            "node1": "message from node1",
+            "node2": "message from node2"
+        },
+        "NumErr": 0,
+        "NumNodes": 2,
+        "NumResp": 2
+    }
+```
+
+The `Messages` field contains a per-node mapping of messages. Messages may be
+informational or error messages, which can be determined by examining the other
+fields in the response. The `NumErr` field indicates the total number of
+errors encountered by members during the query. `NumNodes` indicates the total
+number of members in the cluster, and `NumResp` indicates the number of
+responses received during the query.
+
+### use-key
+
+The use-key command is used to change the primary key, which is used to encrypt
+messages.
+The request looks like:
+
+```
+    {"Key": "lkuIAePQcb/XGvuLPqwNtw=="}
+```
+
+The key requested must already exist in the keyring of all agents for this
+call to succeed. Once invoked, this method will broadcast the desired key to all
+members. The members will attempt to change their current primary key pointer
+and respond with the result.
+
+The response returned by this method is in the same format as the `install-key`
+call.
+
+### remove-key
+
+The remove-key command is used to remove a key from the cluster's keyring.
+The request looks like:
+
+```
+    {"Key": "lkuIAePQcb/XGvuLPqwNtw=="}
+```
+
+The key requested must already exist in the keyring of each agent for this
+command to succeed. Once invoked, this method will broadcast the key requested
+for deletion to all members in the cluster and ask them to remove it from their
+internal keyring. Each node will reply with their individual results.
+
+The response returned by this method is in the same format as the `install-key`
+call.
+
+**NOTE**: If the key requested for deletion is currently the primary key on any
+node, that node will report failure and refuse to remove the key.
+
+### list-keys
+
+The list-keys command is used to return a list of all encryption keys currently
+in use on the cluster.
+There is no request body, but the response looks like:
+
+```
+    {
+        "Messages": {
+            "node1": "message from node1",
+            "node2": "message from node2"
+        },
+        "Keys": {
+            "lkuIAePQcb/XGvuLPqwNtw==": 2,
+            "FhADzydYiGiVz3vW7wpunQ==": 1
+        },
+        "NumErr": 0,
+        "NumNodes": 2,
+        "NumResp": 2
+    }
+```
+
+This response body is almost the same as the other key operations, but notice
+that it contains a `Keys` field. The `Keys` field lists all keys known to the
+cluster, and how many members know about it. Typically if key broadcasting is
+successful, this number should be equivalent to the `NumNodes` field. If not all
+members are aware of a key, you should either rebroadcast that key using the
+`install-key` RPC command, or remove it using the `remove-key` RPC command. More
+on encryption keys can be found on the
+[agent encryption](/docs/agent/encryption.html) page.
