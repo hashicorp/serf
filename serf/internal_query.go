@@ -171,7 +171,7 @@ func (s *serfQueries) handleInstallKey(q *Query) {
 		goto SEND
 	}
 
-	if err := s.serf.WriteKeyringFile(keyring); err != nil {
+	if err := s.serf.writeKeyringFile(); err != nil {
 		response.Message = err.Error()
 		s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
 		goto SEND
@@ -213,7 +213,7 @@ func (s *serfQueries) handleUseKey(q *Query) {
 		goto SEND
 	}
 
-	if err := s.serf.WriteKeyringFile(keyring); err != nil {
+	if err := s.serf.writeKeyringFile(); err != nil {
 		response.Message = err.Error()
 		s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
 		goto SEND
@@ -255,7 +255,7 @@ func (s *serfQueries) handleRemoveKey(q *Query) {
 		goto SEND
 	}
 
-	if err := s.serf.WriteKeyringFile(keyring); err != nil {
+	if err := s.serf.writeKeyringFile(); err != nil {
 		response.Message = err.Error()
 		s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
 		goto SEND
