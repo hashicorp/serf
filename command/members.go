@@ -46,8 +46,7 @@ func (c MemberContainer) String() string {
 		}
 		result = append(result, line)
 	}
-	output, _ := columnize.SimpleFormat(result)
-	return output
+	return columnize.SimpleFormat(result)
 }
 
 func (c *MembersCommand) Help() string {
