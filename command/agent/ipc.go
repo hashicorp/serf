@@ -140,7 +140,9 @@ type keyRequest struct {
 type keyResponse struct {
 	Messages map[string]string
 	Keys     map[string]int
-	Num      int
+	NumNodes int
+	NumErr   int
+	NumResp  int
 }
 
 type monitorRequest struct {
@@ -722,7 +724,11 @@ func (i *AgentIPC) handleInstallKey(client *IPCClient, seq uint64) error {
 	}
 	resp := keyResponse{
 		Messages: queryResp.Messages,
+		NumNodes: queryResp.NumNodes,
+		NumErr:   queryResp.NumErr,
+		NumResp:  queryResp.NumResp,
 	}
+
 	return client.Send(&header, &resp)
 }
 
@@ -740,7 +746,11 @@ func (i *AgentIPC) handleUseKey(client *IPCClient, seq uint64) error {
 	}
 	resp := keyResponse{
 		Messages: queryResp.Messages,
+		NumNodes: queryResp.NumNodes,
+		NumErr:   queryResp.NumErr,
+		NumResp:  queryResp.NumResp,
 	}
+
 	return client.Send(&header, &resp)
 }
 
@@ -758,7 +768,11 @@ func (i *AgentIPC) handleRemoveKey(client *IPCClient, seq uint64) error {
 	}
 	resp := keyResponse{
 		Messages: queryResp.Messages,
+		NumNodes: queryResp.NumNodes,
+		NumErr:   queryResp.NumErr,
+		NumResp:  queryResp.NumResp,
 	}
+
 	return client.Send(&header, &resp)
 }
 
@@ -772,8 +786,11 @@ func (i *AgentIPC) handleListKeys(client *IPCClient, seq uint64) error {
 	resp := keyResponse{
 		Messages: queryResp.Messages,
 		Keys:     queryResp.Keys,
-		Num:      queryResp.TotalNodes,
+		NumNodes: queryResp.NumNodes,
+		NumErr:   queryResp.NumErr,
+		NumResp:  queryResp.NumResp,
 	}
+
 	return client.Send(&header, &resp)
 }
 

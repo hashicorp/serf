@@ -304,6 +304,7 @@ func (c *RPCClient) InstallKey(key string) (map[string]string, error) {
 
 	resp := keyResponse{}
 	err := c.genericRPC(&header, &req, &resp)
+
 	return resp.Messages, err
 }
 
@@ -319,6 +320,7 @@ func (c *RPCClient) UseKey(key string) (map[string]string, error) {
 
 	resp := keyResponse{}
 	err := c.genericRPC(&header, &req, &resp)
+
 	return resp.Messages, err
 }
 
@@ -334,6 +336,7 @@ func (c *RPCClient) RemoveKey(key string) (map[string]string, error) {
 
 	resp := keyResponse{}
 	err := c.genericRPC(&header, &req, &resp)
+
 	return resp.Messages, err
 }
 
@@ -346,7 +349,8 @@ func (c *RPCClient) ListKeys() (map[string]int, int, error) {
 
 	resp := keyResponse{}
 	err := c.genericRPC(&header, nil, &resp)
-	return resp.Keys, resp.Num, err
+
+	return resp.Keys, resp.NumNodes, err
 }
 
 type monitorHandler struct {
