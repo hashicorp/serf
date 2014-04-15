@@ -164,7 +164,7 @@ func (s *serfQueries) handleInstallKey(q *Query) {
 		goto SEND
 	}
 
-	s.logger.Printf("[DEBUG] serf: Received install-key query")
+	s.logger.Printf("[INFO] serf: Received install-key query")
 	if err := keyring.AddKey(q.Payload); err != nil {
 		response.Message = err.Error()
 		s.logger.Printf("[ERR] serf: Failed to install key: %s", err)
@@ -206,7 +206,7 @@ func (s *serfQueries) handleUseKey(q *Query) {
 		goto SEND
 	}
 
-	s.logger.Printf("[DEBUG] serf: Received use-key query")
+	s.logger.Printf("[INFO] serf: Received use-key query")
 	if err := keyring.UseKey(q.Payload); err != nil {
 		response.Message = err.Error()
 		s.logger.Printf("[ERR] serf: Failed to change primary key: %s", err)
@@ -248,7 +248,7 @@ func (s *serfQueries) handleRemoveKey(q *Query) {
 		goto SEND
 	}
 
-	s.logger.Printf("[DEBUG] serf: Received remove-key query")
+	s.logger.Printf("[INFO] serf: Received remove-key query")
 	if err := keyring.RemoveKey(q.Payload); err != nil {
 		response.Message = err.Error()
 		s.logger.Printf("[ERR] serf: Failed to remove key: %s", err)
@@ -290,7 +290,7 @@ func (s *serfQueries) handleListKeys(q *Query) {
 		goto SEND
 	}
 
-	s.logger.Printf("[DEBUG] serf: Received list-keys query")
+	s.logger.Printf("[INFO] serf: Received list-keys query")
 	for _, keyBytes := range keyring.GetKeys() {
 		// Encode the keys before sending the response. This should help take
 		// some the burden of doing this off of the asking member.
