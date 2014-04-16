@@ -99,7 +99,7 @@ func (c *KeysCommand) Run(args []string) int {
 		for key, num := range keys {
 			lines = append(lines, fmt.Sprintf("%s | [%d/%d]", key, num, total))
 		}
-		out, _ := columnize.SimpleFormat(lines)
+		out := columnize.SimpleFormat(lines)
 		c.Ui.Output(out)
 
 		return 0
@@ -112,7 +112,7 @@ func (c *KeysCommand) Run(args []string) int {
 				for node, message := range failedNodes {
 					lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
 				}
-				out, _ := columnize.SimpleFormat(lines)
+				out := columnize.SimpleFormat(lines)
 				c.Ui.Error(out)
 			}
 			c.Ui.Error("")
@@ -130,7 +130,7 @@ func (c *KeysCommand) Run(args []string) int {
 				for node, message := range failedNodes {
 					lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
 				}
-				out, _ := columnize.SimpleFormat(lines)
+				out := columnize.SimpleFormat(lines)
 				c.Ui.Error(out)
 			}
 			c.Ui.Error("")
@@ -148,7 +148,7 @@ func (c *KeysCommand) Run(args []string) int {
 				for node, message := range failedNodes {
 					lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
 				}
-				out, _ := columnize.SimpleFormat(lines)
+				out := columnize.SimpleFormat(lines)
 				c.Ui.Error(out)
 			}
 			c.Ui.Error("")
