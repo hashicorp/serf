@@ -47,13 +47,13 @@ func (k *keyManager) streamKeyResp(resp *KeyResponse, ch <-chan NodeResponse) {
 			resp.Messages[r.From] = fmt.Sprintf(
 				"Invalid key query response type: %v", r.Payload)
 			resp.NumErr++
-			continue
+			goto NEXT
 		}
 		if err := decodeMessage(r.Payload[1:], &nodeResponse); err != nil {
 			resp.Messages[r.From] = fmt.Sprintf(
 				"Failed to decode key query response: %v", r.Payload)
 			resp.NumErr++
-			continue
+			goto NEXT
 		}
 
 		if !nodeResponse.Result {
@@ -71,6 +71,7 @@ func (k *keyManager) streamKeyResp(resp *KeyResponse, ch <-chan NodeResponse) {
 			}
 		}
 
+	NEXT:
 		// Return early if all nodes have responded. This allows us to avoid
 		// waiting for the full timeout when there is nothing left to do.
 		if resp.NumResp == resp.NumNodes {
