@@ -18,9 +18,6 @@ const (
 	messageQueryType
 	messageQueryResponseType
 	messageConflictResponseType
-	messageInstallKeyType
-	messageUseKeyType
-	messageRemoveKeyType
 	messageKeyResponseType
 )
 
