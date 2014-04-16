@@ -43,9 +43,9 @@ Options:
   -remove=<key>             Remove a key from Serf's internal keyring. The key
                             being removed may not be the current primary key.
   -list                     List all currently known keys in the cluster. This
-                            will ask all nodes in the cluster for a list of keys.
-                            The keys will be reduced to a flat list before being
-                            dumped to the console.
+                            will ask all nodes in the cluster for a list of keys
+                            and dump a summary containing each key and the
+                            number of members it is installed on to the console.
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
   -rpc-auth=""              RPC auth token of the Serf agent.
 `

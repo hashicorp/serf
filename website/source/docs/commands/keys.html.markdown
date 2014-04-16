@@ -45,9 +45,10 @@ All operations are idempotent. The list of available flags are:
   fail verification and be rejected.
 
 * `-list` - Ask all members in the cluster for a list of the keys they have
-  installed. After gathering keys from all members, the results will be reduced
-  to a single list and dumped to the console. This is useful to operators to
-  ensure that there are no lingering keys on any members.
+  installed. After gathering keys from all members, the results will be returned
+  in a summary showing each key and the number of members which have that key
+  installed. This is useful to operators to ensure that a given key has been
+  installed on or removed from all members.
 
 * `-rpc-addr` - Address to the RPC server of the agent you want to contact
   to send this command. If this isn't specified, the command will contact
