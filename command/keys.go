@@ -76,6 +76,16 @@ func (c *KeysCommand) Run(args []string) int {
 		Ui:           c.Ui,
 	}
 
+	// Make sure that we only have one actionable argument to avoid ambiguity
+	found := listKeys
+	for _, arg := range []string{installKey, useKey, removeKey} {
+		if found && len(arg) > 0 {
+			c.Ui.Error("Only one of -install, -use, -remove, or -list allowed")
+			return 1
+		}
+		found = found || len(arg) > 0
+	}
+
 	client, err := RPCClient(*rpcAddr, *rpcAuth)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
