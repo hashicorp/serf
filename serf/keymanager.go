@@ -64,6 +64,12 @@ func (k *keyManager) streamKeyResp(resp *KeyResponse, ch <-chan NodeResponse) {
 				resp.Keys[key]++
 			}
 		}
+
+		// Return early if all nodes have responded. This allows us to avoid
+		// waiting for the full timeout when there is nothing left to do.
+		if resp.NumResp == resp.NumNodes {
+			return
+		}
 	}
 }
 
@@ -90,8 +96,8 @@ func (k *keyManager) handleKeyRequest(key, query string) (*KeyResponse, error) {
 	}
 
 	// Handle the response stream and populate the KeyResponse
-	k.streamKeyResp(resp, queryResp.respCh)
 	resp.NumNodes = k.serf.memberlist.NumMembers()
+	k.streamKeyResp(resp, queryResp.respCh)
 
 	// Check the response for any reported failure conditions
 	if resp.NumErr != 0 {
