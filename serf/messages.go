@@ -18,6 +18,7 @@ const (
 	messageQueryType
 	messageQueryResponseType
 	messageConflictResponseType
+	messageKeyRequestType
 	messageKeyResponseType
 )
 

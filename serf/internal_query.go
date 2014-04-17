@@ -157,6 +157,13 @@ func (s *serfQueries) handleConflict(q *Query) {
 func (s *serfQueries) handleInstallKey(q *Query) {
 	response := nodeKeyResponse{Result: false}
 	keyring := s.serf.config.MemberlistConfig.Keyring
+	req := keyRequest{}
+
+	err := decodeMessage(q.Payload[1:], &req)
+	if err != nil {
+		s.logger.Printf("[ERR] serf: Failed to decode key request: %v", err)
+		goto SEND
+	}
 
 	if !s.serf.EncryptionEnabled() {
 		response.Message = "No keyring to modify (encryption not enabled)"
@@ -165,7 +172,7 @@ func (s *serfQueries) handleInstallKey(q *Query) {
 	}
 
 	s.logger.Printf("[INFO] serf: Received install-key query")
-	if err := keyring.AddKey(q.Payload); err != nil {
+	if err := keyring.AddKey(req.Key); err != nil {
 		response.Message = err.Error()
 		s.logger.Printf("[ERR] serf: Failed to install key: %s", err)
 		goto SEND
@@ -199,6 +206,13 @@ SEND:
 func (s *serfQueries) handleUseKey(q *Query) {
 	response := nodeKeyResponse{Result: false}
 	keyring := s.serf.config.MemberlistConfig.Keyring
+	req := keyRequest{}
+
+	err := decodeMessage(q.Payload[1:], &req)
+	if err != nil {
+		s.logger.Printf("[ERR] serf: Failed to decode key request: %v", err)
+		goto SEND
+	}
 
 	if !s.serf.EncryptionEnabled() {
 		response.Message = "No keyring to modify (encryption not enabled)"
@@ -207,7 +221,7 @@ func (s *serfQueries) handleUseKey(q *Query) {
 	}
 
 	s.logger.Printf("[INFO] serf: Received use-key query")
-	if err := keyring.UseKey(q.Payload); err != nil {
+	if err := keyring.UseKey(req.Key); err != nil {
 		response.Message = err.Error()
 		s.logger.Printf("[ERR] serf: Failed to change primary key: %s", err)
 		goto SEND
@@ -241,6 +255,13 @@ SEND:
 func (s *serfQueries) handleRemoveKey(q *Query) {
 	response := nodeKeyResponse{Result: false}
 	keyring := s.serf.config.MemberlistConfig.Keyring
+	req := keyRequest{}
+
+	err := decodeMessage(q.Payload[1:], &req)
+	if err != nil {
+		s.logger.Printf("[ERR] serf: Failed to decode key request: %v", err)
+		goto SEND
+	}
 
 	if !s.serf.EncryptionEnabled() {
 		response.Message = "No keyring to modify (encryption not enabled)"
@@ -249,7 +270,7 @@ func (s *serfQueries) handleRemoveKey(q *Query) {
 	}
 
 	s.logger.Printf("[INFO] serf: Received remove-key query")
-	if err := keyring.RemoveKey(q.Payload); err != nil {
+	if err := keyring.RemoveKey(req.Key); err != nil {
 		response.Message = err.Error()
 		s.logger.Printf("[ERR] serf: Failed to remove key: %s", err)
 		goto SEND

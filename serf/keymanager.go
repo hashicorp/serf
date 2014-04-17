@@ -15,6 +15,12 @@ type keyManager struct {
 	sync.RWMutex
 }
 
+// keyRequest is used to contain input parameters which get broadcasted to all
+// nodes as part of a key query operation.
+type keyRequest struct {
+	Key []byte
+}
+
 // KeyResponse is used to relay a query for a list of all keys in use.
 type KeyResponse struct {
 	Messages map[string]string // Map of node name to response message
@@ -89,8 +95,14 @@ func (k *keyManager) handleKeyRequest(key, query string) (*KeyResponse, error) {
 		return nil, err
 	}
 
+	// Encode the query request
+	req, err := encodeMessage(messageKeyRequestType, keyRequest{Key: rawKey})
+	if err != nil {
+		return nil, err
+	}
+
 	qParam := k.serf.DefaultQueryParams()
-	queryResp, err := k.serf.Query(qName, rawKey, qParam)
+	queryResp, err := k.serf.Query(qName, req, qParam)
 	if err != nil {
 		return nil, err
 	}
