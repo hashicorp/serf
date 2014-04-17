@@ -11,8 +11,8 @@ import (
 type keyManager struct {
 	serf *Serf
 
-	// Embedded mutex to protect read and write operations
-	sync.RWMutex
+	// Lock to protect read and write operations
+	l sync.RWMutex
 }
 
 // keyRequest is used to contain input parameters which get broadcasted to all
@@ -127,8 +127,8 @@ func (k *keyManager) handleKeyRequest(key, query string) (*KeyResponse, error) {
 // responses from each of them, returning a list of messages from each node
 // and any applicable error conditions.
 func (k *keyManager) InstallKey(key string) (*KeyResponse, error) {
-	k.Lock()
-	defer k.Unlock()
+	k.l.Lock()
+	defer k.l.Unlock()
 
 	return k.handleKeyRequest(key, installKeyQuery)
 }
@@ -137,8 +137,8 @@ func (k *keyManager) InstallKey(key string) (*KeyResponse, error) {
 // cluster, and gathering any response messages. If successful, there should
 // be an empty KeyResponse returned.
 func (k *keyManager) UseKey(key string) (*KeyResponse, error) {
-	k.Lock()
-	defer k.Unlock()
+	k.l.Lock()
+	defer k.l.Unlock()
 
 	return k.handleKeyRequest(key, useKeyQuery)
 }
@@ -147,8 +147,8 @@ func (k *keyManager) UseKey(key string) (*KeyResponse, error) {
 // will receive this event, and if they have the key in their keyring, remove
 // it. If any errors are encountered, RemoveKey will collect and relay them.
 func (k *keyManager) RemoveKey(key string) (*KeyResponse, error) {
-	k.Lock()
-	defer k.Unlock()
+	k.l.Lock()
+	defer k.l.Unlock()
 
 	return k.handleKeyRequest(key, removeKeyQuery)
 }
@@ -159,8 +159,8 @@ func (k *keyManager) RemoveKey(key string) (*KeyResponse, error) {
 // Since having multiple keys installed can cause performance penalties in some
 // cases, it's important to verify this information and remove unneeded keys.
 func (k *keyManager) ListKeys() (*KeyResponse, error) {
-	k.RLock()
-	defer k.RUnlock()
+	k.l.RLock()
+	defer k.l.RUnlock()
 
 	return k.handleKeyRequest("", listKeysQuery)
 }
