@@ -149,6 +149,20 @@ func (s *serfQueries) handleConflict(q *Query) {
 	}
 }
 
+// sendKeyResponse handles responding to key-related queries.
+func (s *serfQueries) sendKeyResponse(q *Query, resp *nodeKeyResponse) {
+	buf, err := encodeMessage(messageKeyResponseType, resp)
+	if err != nil {
+		s.logger.Printf("[ERR] serf: Failed to encode key response: %v", err)
+		return
+	}
+
+	if err := q.Respond(buf); err != nil {
+		s.logger.Printf("[ERR] serf: Failed to respond to key query: %v", err)
+		return
+	}
+}
+
 // handleInstallKey is invoked whenever a new encryption key is received from
 // another member in the cluster, and handles the process of installing it onto
 // the memberlist keyring. This type of query may fail if the provided key does
@@ -187,16 +201,7 @@ func (s *serfQueries) handleInstallKey(q *Query) {
 	response.Result = true
 
 SEND:
-	buf, err := encodeMessage(messageKeyResponseType, response)
-	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to encode install-key response: %v", err)
-		return
-	}
-
-	if err := q.Respond(buf); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to respond to install-key query: %v", err)
-		return
-	}
+	s.sendKeyResponse(q, &response)
 }
 
 // handleUseKey is invoked whenever a query is received to mark a different key
@@ -236,16 +241,7 @@ func (s *serfQueries) handleUseKey(q *Query) {
 	response.Result = true
 
 SEND:
-	buf, err := encodeMessage(messageKeyResponseType, response)
-	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to encode use-key response: %v", err)
-		return
-	}
-
-	if err := q.Respond(buf); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to respond to use-key query: %v", err)
-		return
-	}
+	s.sendKeyResponse(q, &response)
 }
 
 // handleRemoveKey is invoked when a query is received to remove a particular
@@ -285,16 +281,7 @@ func (s *serfQueries) handleRemoveKey(q *Query) {
 	response.Result = true
 
 SEND:
-	buf, err := encodeMessage(messageKeyResponseType, response)
-	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to encode remove-key response: %v", err)
-		return
-	}
-
-	if err := q.Respond(buf); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to respond to remove-key query: %v", err)
-		return
-	}
+	s.sendKeyResponse(q, &response)
 }
 
 // handleListKeys is invoked when a query is received to return a list of all
@@ -321,14 +308,5 @@ func (s *serfQueries) handleListKeys(q *Query) {
 	response.Result = true
 
 SEND:
-	buf, err := encodeMessage(messageKeyResponseType, response)
-	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to encode list-keys response: %v", err)
-		return
-	}
-
-	if err := q.Respond(buf); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to respond to list-keys query: %v", err)
-		return
-	}
+	s.sendKeyResponse(q, &response)
 }
