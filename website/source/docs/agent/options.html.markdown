@@ -71,6 +71,17 @@ The options below are all specified on the command-line.
   easiest way to create an encryption key is to use `serf keygen`. All
   nodes within a cluster must share the same encryption key to communicate.
 
+* `-keyring-file` - Specifies a file to load keyring data from. Serf is able to
+  keep encryption keys in sync and perform key rotations. During a key rotation,
+  there may be some period of time in which Serf is required to maintain more
+  than one encryption key until all members have received the new key. The
+  keyring file helps persist changes to the encryption keyring, allowing the
+  agent to start and rejoin the cluster successfully later on, even if key
+  rotations had been initiated by other members in the cluster. More information
+  on the format of the keyring file can be found below in the examples section.
+
+  NOTE: this option is not compatible with the `-encrypt` option.
+
 * `-event-handler` - Adds an event handler that Serf will invoke for
   events. This flag can be specified multiple times to define multiple
   event handlers. By default no event handlers are registered. See the
@@ -245,3 +256,22 @@ at a single JSON object with configuration within it.
   the cluster will disagree about the mapping of NodeName -> IP:Port and cannot reconcile
   this.
 
+#### Example Keyring File
+
+The keyring file is a simple JSON-formatted text file. It is important to
+understand how Serf will use its contents. Following is an example of a keyring
+file:
+
+<pre class="prettyprint lang-json">
+[
+  "QHOYjmYlxSCBhdfiolhtDQ==",
+  "daZ2wnuw+Ql+2hCm7vQB6A==",
+  "keTZydopxtiTY7HVoqeWGw=="
+]
+</pre>
+
+The order in which the keys appear is important. The key appearing first in the
+list is the primary key, which is the key used to encrypt all outgoing messages.
+The remaining keys in the list are considered secondary and are used for
+decryption only. During message decryption, Serf uses the configured encryption
+keys in the order they appear in the keyring file until all keys are exhausted.

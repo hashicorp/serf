@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"encoding/base64"
 	"github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
@@ -13,9 +14,18 @@ import (
 	"time"
 )
 
+func testRPCClient(t *testing.T) (*client.RPCClient, *Agent, *AgentIPC) {
+	agentConf := DefaultConfig()
+	serfConf := serf.DefaultConfig()
+
+	return testRPCClientWithConfig(t, agentConf, serfConf)
+}
+
 // testRPCClient returns an RPCClient connected to an RPC server that
 // serves only this connection.
-func testRPCClient(t *testing.T) (*client.RPCClient, *Agent, *AgentIPC) {
+func testRPCClientWithConfig(t *testing.T, agentConf *Config,
+	serfConf *serf.Config) (*client.RPCClient, *Agent, *AgentIPC) {
+
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("err: %s", err)
@@ -24,7 +34,7 @@ func testRPCClient(t *testing.T) (*client.RPCClient, *Agent, *AgentIPC) {
 	lw := NewLogWriter(512)
 	mult := io.MultiWriter(os.Stderr, lw)
 
-	agent := testAgent(mult)
+	agent := testAgentWithConfig(agentConf, serfConf, mult)
 	ipc := NewAgentIPC(agent, "", l, mult, lw)
 
 	rpcClient, err := client.NewRPCClient(l.Addr().String())
@@ -804,6 +814,133 @@ func TestRPCClientAuth(t *testing.T) {
 	defer rpcClient.Close()
 
 	if err := rpcClient.UserEvent("deploy", nil, false); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+}
+
+func TestRPCClient_Keys_EncryptionDisabledError(t *testing.T) {
+	client, a1, ipc := testRPCClient(t)
+	defer ipc.Shutdown()
+	defer client.Close()
+	defer a1.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if _, err := client.InstallKey("El/H8lEqX2WiUa36SxcpZw=="); err == nil {
+		t.Fatalf("expected encryption disabled error")
+	}
+	if _, err := client.UseKey("El/H8lEqX2WiUa36SxcpZw=="); err == nil {
+		t.Fatalf("expected encryption disabled error")
+	}
+	if _, err := client.RemoveKey("El/H8lEqX2WiUa36SxcpZw=="); err == nil {
+		t.Fatalf("expected encryption disabled error")
+	}
+	if _, _, err := client.ListKeys(); err == nil {
+		t.Fatalf("expected encryption disabled error")
+	}
+}
+
+func TestRPCClient_Keys(t *testing.T) {
+	newKey := "El/H8lEqX2WiUa36SxcpZw=="
+	existing := "A2xzjs0eq9PxSV2+dPi3sg=="
+	existingBytes, err := base64.StdEncoding.DecodeString(existing)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	agentConf := DefaultConfig()
+	serfConf := serf.DefaultConfig()
+	serfConf.MemberlistConfig.SecretKey = existingBytes
+
+	client, a1, ipc := testRPCClientWithConfig(t, agentConf, serfConf)
+	defer ipc.Shutdown()
+	defer client.Close()
+	defer a1.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	keys, num, err := client.ListKeys()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	if _, ok := keys[newKey]; ok {
+		t.Fatalf("have new key: %s", newKey)
+	}
+
+	// Trying to use a key that doesn't exist errors
+	if _, err := client.UseKey(newKey); err == nil {
+		t.Fatalf("expected use-key error: %s", newKey)
+	}
+
+	// Keyring should not contain new key at this point
+	keys, _, err = client.ListKeys()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	if _, ok := keys[newKey]; ok {
+		t.Fatalf("have new key: %s", newKey)
+	}
+
+	// Invalid key installation throws an error
+	if _, err := client.InstallKey("badkey"); err == nil {
+		t.Fatalf("expected bad key error")
+	}
+
+	// InstallKey should succeed
+	if _, err := client.InstallKey(newKey); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// InstallKey is idempotent
+	if _, err := client.InstallKey(newKey); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// New key should now appear in the list of keys
+	keys, num, err = client.ListKeys()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	if num != 1 {
+		t.Fatalf("expected 1 member total, got %d", num)
+	}
+	if _, ok := keys[newKey]; !ok {
+		t.Fatalf("key not found: %s", newKey)
+	}
+
+	// Counter of installed copies of new key should be 1
+	if keys[newKey] != 1 {
+		t.Fatalf("expected 1 member with key %s, have %d", newKey, keys[newKey])
+	}
+
+	// Deleting primary key should return error
+	if _, err := client.RemoveKey(existing); err == nil {
+		t.Fatalf("expected error deleting primary key: %s", newKey)
+	}
+
+	// UseKey succeeds when given a key that exists
+	if _, err := client.UseKey(newKey); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// UseKey is idempotent
+	if _, err := client.UseKey(newKey); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Removing a non-primary key should succeed
+	if _, err := client.RemoveKey(newKey); err == nil {
+		t.Fatalf("expected error deleting primary key: %s", newKey)
+	}
+
+	// RemoveKey is idempotent
+	if _, err := client.RemoveKey(existing); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 }

@@ -1,8 +1,10 @@
 package agent
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/serf"
 	"io"
 	"io/ioutil"
@@ -69,6 +71,13 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 	// Restore agent tags from a tags file
 	if agentConf.TagsFile != "" {
 		if err := agent.loadTagsFile(agentConf.TagsFile); err != nil {
+			return nil, err
+		}
+	}
+
+	// Load in a keyring file if provided
+	if agentConf.KeyringFile != "" {
+		if err := agent.loadKeyringFile(agentConf.KeyringFile); err != nil {
 			return nil, err
 		}
 	}
@@ -237,6 +246,34 @@ func (a *Agent) eventLoop() {
 	}
 }
 
+// InstallKey initiates a query to install a new key on all members
+func (a *Agent) InstallKey(key string) (*serf.KeyResponse, error) {
+	a.logger.Print("[INFO] agent: Initiating key installation")
+	manager := a.serf.KeyManager()
+	return manager.InstallKey(key)
+}
+
+// UseKey sends a query instructing all members to switch primary keys
+func (a *Agent) UseKey(key string) (*serf.KeyResponse, error) {
+	a.logger.Print("[INFO] agent: Initiating primary key change")
+	manager := a.serf.KeyManager()
+	return manager.UseKey(key)
+}
+
+// RemoveKey sends a query to all members to remove a key from the keyring
+func (a *Agent) RemoveKey(key string) (*serf.KeyResponse, error) {
+	a.logger.Print("[INFO] agent: Initiating key removal")
+	manager := a.serf.KeyManager()
+	return manager.RemoveKey(key)
+}
+
+// ListKeys sends a query to all members to return a list of their keys
+func (a *Agent) ListKeys() (*serf.KeyResponse, error) {
+	a.logger.Print("[INFO] agent: Initiating key listing")
+	manager := a.serf.KeyManager()
+	return manager.ListKeys()
+}
+
 // SetTags is used to update the tags. The agent will make sure to
 // persist tags if necessary before gossiping to the cluster.
 func (a *Agent) SetTags(tags map[string]string) error {
@@ -314,4 +351,50 @@ func UnmarshalTags(tags []string) (map[string]string, error) {
 		result[parts[0]] = parts[1]
 	}
 	return result, nil
+}
+
+// loadKeyringFile will load a keyring out of a file
+func (a *Agent) loadKeyringFile(keyringFile string) error {
+	// Avoid passing an encryption key and a keyring file at the same time
+	if len(a.agentConf.EncryptKey) > 0 {
+		return fmt.Errorf("Encryption key not allowed while using a keyring")
+	}
+
+	if _, err := os.Stat(keyringFile); err != nil {
+		return err
+	}
+
+	// Read in the keyring file data
+	keyringData, err := ioutil.ReadFile(keyringFile)
+	if err != nil {
+		return fmt.Errorf("Failed to read keyring file: %s", err)
+	}
+
+	// Decode keyring JSON
+	keys := make([]string, 0)
+	if err := json.Unmarshal(keyringData, &keys); err != nil {
+		return fmt.Errorf("Failed to decode keyring file: %s", err)
+	}
+
+	// Decode base64 values
+	keysDecoded := make([][]byte, len(keys))
+	for i, key := range keys {
+		keyBytes, err := base64.StdEncoding.DecodeString(key)
+		if err != nil {
+			return fmt.Errorf("Failed to decode key from keyring: %s", err)
+		}
+		keysDecoded[i] = keyBytes
+	}
+
+	// Create the keyring
+	keyring, err := memberlist.NewKeyring(keysDecoded, keysDecoded[0])
+	if err != nil {
+		return fmt.Errorf("Failed to restore keyring: %s", err)
+	}
+	a.conf.MemberlistConfig.Keyring = keyring
+	a.logger.Printf("[INFO] agent: Restored keyring with %d keys from %s",
+		len(keys), keyringFile)
+
+	// Success!
+	return nil
 }

@@ -48,6 +48,7 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.Var((*AppendSliceValue)(&configFiles), "config-dir",
 		"directory of json files to read")
 	cmdFlags.StringVar(&cmdConfig.EncryptKey, "encrypt", "", "encryption key")
+	cmdFlags.StringVar(&cmdConfig.KeyringFile, "keyring-file", "", "path to the keyring file")
 	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.EventHandlers), "event-handler",
 		"command to execute when events occur")
 	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.StartJoin), "join",
@@ -249,6 +250,9 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 		serfConfig.TombstoneTimeout = config.TombstoneTimeout
 	}
 	serfConfig.EnableNameConflictResolution = !config.DisableNameResolution
+	if config.KeyringFile != "" {
+		serfConfig.KeyringFile = config.KeyringFile
+	}
 
 	// Start Serf
 	c.Ui.Output("Starting Serf agent...")
@@ -345,7 +349,7 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	}
 
 	c.Ui.Info(fmt.Sprintf("      RPC addr: '%s'", config.RPCAddr))
-	c.Ui.Info(fmt.Sprintf("     Encrypted: %#v", config.EncryptKey != ""))
+	c.Ui.Info(fmt.Sprintf("     Encrypted: %#v", agent.serf.EncryptionEnabled()))
 	c.Ui.Info(fmt.Sprintf("      Snapshot: %v", config.SnapshotPath != ""))
 	c.Ui.Info(fmt.Sprintf("       Profile: %s", config.Profile))
 
@@ -551,6 +555,10 @@ Options:
                            peers join each other without an explicit join.
   -encrypt=foo             Key for encrypting network traffic within Serf.
                            Must be a base64-encoded 16-byte key.
+  -keyring-file            The keyring file is used to store encryption keys used
+                           by Serf. As encryption keys are changed, the content of
+                           this file is updated so that the same keys may be used
+                           during later agent starts.
   -event-handler=foo       Script to execute when events occur. This can
                            be specified multiple times. See the event scripts
                            section below for more info.

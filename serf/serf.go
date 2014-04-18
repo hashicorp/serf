@@ -2,11 +2,14 @@ package serf
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/armon/go-metrics"
 	"github.com/hashicorp/memberlist"
 	"github.com/ugorji/go/codec"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
@@ -86,6 +89,7 @@ type Serf struct {
 	shutdownCh chan struct{}
 
 	snapshotter *Snapshotter
+	keyManager  *keyManager
 }
 
 // SerfState is the state of the Serf instance.
@@ -347,6 +351,9 @@ func Create(conf *Config) (*Serf, error) {
 
 	serf.memberlist = memberlist
 
+	// Create a key manager for handling all encryption key changes
+	serf.keyManager = &keyManager{serf: serf}
+
 	// Start the background tasks. See the documentation above each method
 	// for more information on their role.
 	go serf.handleReap()
@@ -367,6 +374,19 @@ func Create(conf *Config) (*Serf, error) {
 // This is the Serf protocol version, not the memberlist protocol version.
 func (s *Serf) ProtocolVersion() uint8 {
 	return s.config.ProtocolVersion
+}
+
+// EncryptionEnabled is a predicate that determines whether or not encryption
+// is enabled, which can be possible in one of 2 cases:
+//   - Single encryption key passed at agent start (no persistence)
+//   - Keyring file provided at agent start
+func (s *Serf) EncryptionEnabled() bool {
+	return s.config.MemberlistConfig.Keyring != nil
+}
+
+// KeyManager returns the key manager for the current Serf instance.
+func (s *Serf) KeyManager() *keyManager {
+	return s.keyManager
 }
 
 // UserEvent is used to broadcast a custom user event with a given
@@ -1507,7 +1527,6 @@ func (s *Serf) decodeTags(buf []byte) map[string]string {
 	if len(buf) == 0 || buf[0] != tagMagicByte {
 		tags["role"] = string(buf)
 		return tags
-
 	}
 
 	// Decode the tags
@@ -1536,4 +1555,32 @@ func (s *Serf) Stats() map[string]string {
 		"query_queue":  toString(uint64(s.queryBroadcasts.NumQueued())),
 	}
 	return stats
+}
+
+// WriteKeyringFile will serialize the current keyring and save it to a file.
+func (s *Serf) writeKeyringFile() error {
+	if len(s.config.KeyringFile) == 0 {
+		return nil
+	}
+
+	keyring := s.config.MemberlistConfig.Keyring
+	keysRaw := keyring.GetKeys()
+	keysEncoded := make([]string, len(keysRaw))
+
+	for i, key := range keysRaw {
+		keysEncoded[i] = base64.StdEncoding.EncodeToString(key)
+	}
+
+	encodedKeys, err := json.MarshalIndent(keysEncoded, "", "  ")
+	if err != nil {
+		return fmt.Errorf("Failed to encode keys: %s", err)
+	}
+
+	// Use 0600 for permissions because key data is sensitive
+	if err = ioutil.WriteFile(s.config.KeyringFile, encodedKeys, 0600); err != nil {
+		return fmt.Errorf("Failed to write keyring file: %s", err)
+	}
+
+	// Success!
+	return nil
 }

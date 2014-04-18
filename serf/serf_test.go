@@ -1,10 +1,13 @@
 package serf
 
 import (
+	"encoding/base64"
 	"fmt"
+	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/testutil"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -1389,5 +1392,112 @@ func TestSerf_LocalMember(t *testing.T) {
 	m = s1.LocalMember()
 	if !reflect.DeepEqual(m.Tags, newTags) {
 		t.Fatalf("bad: %v", m)
+	}
+}
+
+func TestSerf_WriteKeyringFile(t *testing.T) {
+	existing := "jbuQMI4gMUeh1PPmKOtiBg=="
+	newKey := "eodFZZjm7pPwIZ0Miy7boQ=="
+
+	td, err := ioutil.TempDir("", "serf")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer os.RemoveAll(td)
+
+	keyringFile := filepath.Join(td, "tags.json")
+
+	existingBytes, err := base64.StdEncoding.DecodeString(existing)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	keys := [][]byte{existingBytes}
+	keyring, err := memberlist.NewKeyring(keys, existingBytes)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	s1Config := testConfig()
+	s1Config.MemberlistConfig.Keyring = keyring
+	s1Config.KeyringFile = keyringFile
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	manager := s1.KeyManager()
+
+	if _, err := manager.InstallKey(newKey); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	content, err := ioutil.ReadFile(keyringFile)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	lines := strings.Split(string(content), "\n")
+	if len(lines) != 4 {
+		t.Fatalf("bad: %v", lines)
+	}
+
+	// Ensure both the original key and the new key are present in the file
+	if !strings.Contains(string(content), existing) {
+		t.Fatalf("key not found in keyring file: %s", existing)
+	}
+	if !strings.Contains(string(content), newKey) {
+		t.Fatalf("key not found in keyring file: %s", newKey)
+	}
+
+	// Ensure the existing key remains primary. This is in position 1 because
+	// the file writer will use json.MarshalIndent(), leaving the first line as
+	// the opening bracket.
+	if !strings.Contains(lines[1], existing) {
+		t.Fatalf("expected key to be primary: %s", existing)
+	}
+
+	// Swap primary keys
+	if _, err := manager.UseKey(newKey); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	content, err = ioutil.ReadFile(keyringFile)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	lines = strings.Split(string(content), "\n")
+	if len(lines) != 4 {
+		t.Fatalf("bad: %v", lines)
+	}
+
+	// Key order should have changed in keyring file
+	if !strings.Contains(lines[1], newKey) {
+		t.Fatalf("expected key to be primary: %s", newKey)
+	}
+
+	// Remove the old key
+	if _, err := manager.RemoveKey(existing); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	content, err = ioutil.ReadFile(keyringFile)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	lines = strings.Split(string(content), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("bad: %v", lines)
+	}
+
+	// Only the new key should now be present in the keyring file
+	if len(lines) != 3 {
+		t.Fatalf("bad: %v", lines)
+	}
+	if !strings.Contains(lines[1], newKey) {
+		t.Fatalf("expected key to be primary: %s", newKey)
 	}
 }

@@ -73,6 +73,10 @@ type Config struct {
 	// traffic will not be encrypted.
 	EncryptKey string `mapstructure:"encrypt_key"`
 
+	// KeyringFile is the path to a file containing a serialized keyring.
+	// The keyring is used to facilitate encryption.
+	KeyringFile string `mapstructure:"keyring_file"`
+
 	// LogLevel is the level of the logs to output.
 	// This can be updated during a reload.
 	LogLevel string `mapstructure:"log_level"`
@@ -216,8 +220,8 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 	var md mapstructure.Metadata
 	var result Config
 	msdec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Metadata: &md,
-		Result:   &result,
+		Metadata:    &md,
+		Result:      &result,
 		ErrorUnused: true,
 	})
 	if err != nil {
@@ -343,6 +347,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.TagsFile != "" {
 		result.TagsFile = b.TagsFile
+	}
+	if b.KeyringFile != "" {
+		result.KeyringFile = b.KeyringFile
 	}
 
 	// Copy the event handlers
