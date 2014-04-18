@@ -93,19 +93,19 @@ func (k *keyManager) handleKeyRequest(key, query string) (*KeyResponse, error) {
 	// Decode the new key into raw bytes
 	rawKey, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	// Encode the query request
 	req, err := encodeMessage(messageKeyRequestType, keyRequest{Key: rawKey})
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	qParam := k.serf.DefaultQueryParams()
 	queryResp, err := k.serf.Query(qName, req, qParam)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	// Handle the response stream and populate the KeyResponse
