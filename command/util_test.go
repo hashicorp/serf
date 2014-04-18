@@ -21,6 +21,12 @@ func init() {
 func testAgent(t *testing.T) *agent.Agent {
 	agentConfig := agent.DefaultConfig()
 	serfConfig := serf.DefaultConfig()
+	return testAgentWithConfig(t, agentConfig, serfConfig)
+}
+
+func testAgentWithConfig(t *testing.T, agentConfig *agent.Config,
+	serfConfig *serf.Config) *agent.Agent {
+
 	serfConfig.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
 	serfConfig.MemberlistConfig.ProbeInterval = 50 * time.Millisecond
 	serfConfig.MemberlistConfig.ProbeTimeout = 25 * time.Millisecond
