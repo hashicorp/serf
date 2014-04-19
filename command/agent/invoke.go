@@ -11,12 +11,15 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"regexp"
 	"time"
 )
 
 const (
 	windows = "windows"
 )
+
+var sanitizeTagRegexp = regexp.MustCompile(`[^A-Z0-9_]`)
 
 // invokeEventScript will execute the given event script with the given
 // event. Depending on the event, the semantics of how data are passed
@@ -52,7 +55,12 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 
 	// Add all the tags
 	for name, val := range self.Tags {
-		tag_env := fmt.Sprintf("SERF_TAG_%s=%s", strings.ToUpper(name), val)
+		//http://stackoverflow.com/questions/2821043/allowed-characters-in-linux-environment-variable-names
+		//(http://pubs.opengroup.org/onlinepubs/000095399/basedefs/xbd_chap08.html for the long version)
+		//says that env var names must be in [A-Z0-9_] and not start with [0-9].
+		//we only care about the first part, so convert all chars not in [A-Z0-9_] to _
+		sanitizedName := strings.ToUpper(sanitizeTagRegexp.ReplaceAllString(name, "_"))
+		tag_env := fmt.Sprintf("SERF_TAG_%s=%s", sanitizedName, val)
 		cmd.Env = append(cmd.Env, tag_env)
 	}
 
