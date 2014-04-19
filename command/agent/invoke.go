@@ -9,9 +9,9 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strings"
-	"regexp"
 	"time"
 )
 
@@ -59,7 +59,7 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 		//(http://pubs.opengroup.org/onlinepubs/000095399/basedefs/xbd_chap08.html for the long version)
 		//says that env var names must be in [A-Z0-9_] and not start with [0-9].
 		//we only care about the first part, so convert all chars not in [A-Z0-9_] to _
-		sanitizedName := strings.ToUpper(sanitizeTagRegexp.ReplaceAllString(name, "_"))
+		sanitizedName := sanitizeTagRegexp.ReplaceAllString(strings.ToUpper(name), "_")
 		tag_env := fmt.Sprintf("SERF_TAG_%s=%s", sanitizedName, val)
 		cmd.Env = append(cmd.Env, tag_env)
 	}

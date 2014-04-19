@@ -13,6 +13,7 @@ const eventScript = `#!/bin/sh
 RESULT_FILE="%s"
 echo $SERF_SELF_NAME $SERF_SELF_ROLE >>${RESULT_FILE}
 echo $SERF_TAG_DC >> ${RESULT_FILE}
+echo $SERF_TAG_BAD_TAG >> ${RESULT_FILE}
 echo $SERF_EVENT $SERF_USER_EVENT "$@" >>${RESULT_FILE}
 echo $os_env_var >> ${RESULT_FILE}
 while read line; do
@@ -80,7 +81,7 @@ func TestScriptEventHandler(t *testing.T) {
 		SelfFunc: func() serf.Member {
 			return serf.Member{
 				Name: "ourname",
-				Tags: map[string]string{"role": "ourrole", "dc": "east-aws"},
+				Tags: map[string]string{"role": "ourrole", "dc": "east-aws", "bad-tag": "bad"},
 			}
 		},
 		Scripts: []EventScript{
@@ -111,8 +112,8 @@ func TestScriptEventHandler(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	expected1 := "ourname ourrole\neast-aws\nmember-join\nos-env-foo\nfoo\t1.2.3.4\tbar\trole=bar,foo=bar\n"
-	expected2 := "ourname ourrole\neast-aws\nmember-join\nos-env-foo\nfoo\t1.2.3.4\tbar\tfoo=bar,role=bar\n"
+	expected1 := "ourname ourrole\neast-aws\nbad\nmember-join\nos-env-foo\nfoo\t1.2.3.4\tbar\trole=bar,foo=bar\n"
+	expected2 := "ourname ourrole\neast-aws\nbad\nmember-join\nos-env-foo\nfoo\t1.2.3.4\tbar\tfoo=bar,role=bar\n"
 	if string(result) != expected1 && string(result) != expected2 {
 		t.Fatalf("bad: %#v. Expected: %#v or %v", string(result), expected1, expected2)
 	}
