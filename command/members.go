@@ -64,11 +64,14 @@ Options:
                             format. Valid formats are 'json', and 'text' (default)
 
   -name=<regexp>            If provided, only members matching the regexp are
-                            returned.
+                            returned. The regexp is anchored at the start and end,
+                            and must be a full match.
 
   -role=<regexp>            If provided, output is filtered to only nodes matching
                             the regular expression for role
                             '-role' is deprecated in favor of '-tag role=foo'.
+                            The regexp is anchored at the start and end, and must be
+                            a full match.
 
   -status=<regexp>          If provided, output is filtered to only nodes matching
                             the regular expression for status
@@ -76,7 +79,8 @@ Options:
   -tag <key>=<regexp>       If provided, output is filtered to only nodes with the
                             tag <key> with value matching the regular expression.
                             tag can be specified multiple times to filter on
-                            multiple keys.
+                            multiple keys. The regexp is anchored at the start and end,
+                            and must be a full match.
 
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
 
