@@ -51,7 +51,7 @@ func TestKeysCommandRun_InstallKey(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	keys, _, err := rpcClient.ListKeys()
+	keys, _, _, err := rpcClient.ListKeys()
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -73,13 +73,38 @@ func TestKeysCommandRun_InstallKey(t *testing.T) {
 		t.Fatalf("bad: %#v", ui.OutputWriter.String())
 	}
 
-	keys, _, err = rpcClient.ListKeys()
+	keys, _, _, err = rpcClient.ListKeys()
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-
 	if _, ok := keys["jbuQMI4gMUeh1PPmKOtiBg=="]; !ok {
 		t.Fatalf("new key not found")
+	}
+}
+
+func TestKeysCommandRun_InstallKeyFailure(t *testing.T) {
+	a1 := testAgent(t)
+	defer a1.Shutdown()
+	rpcAddr, ipc := testIPC(t, a1)
+	defer ipc.Shutdown()
+
+	ui := new(cli.MockUi)
+	c := &KeysCommand{Ui: ui}
+
+	// Trying to install with encryption disabled returns 1
+	args := []string{
+		"-rpc-addr=" + rpcAddr,
+		"-install", "jbuQMI4gMUeh1PPmKOtiBg==",
+	}
+
+	code := c.Run(args)
+	if code != 1 {
+		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
+	}
+
+	// Node errors appear in stderr
+	if !strings.Contains(ui.ErrorWriter.String(), "not enabled") {
+		t.Fatalf("expected empty keyring error")
 	}
 }
 
@@ -115,6 +140,32 @@ func TestKeysCommandRun_UseKey(t *testing.T) {
 	}
 }
 
+func TestKeysCommandRun_UseKeyFailure(t *testing.T) {
+	a1 := testKeysCommandAgent(t)
+	defer a1.Shutdown()
+	rpcAddr, ipc := testIPC(t, a1)
+	defer ipc.Shutdown()
+
+	ui := new(cli.MockUi)
+	c := &KeysCommand{Ui: ui}
+
+	// Trying to use a key that doesn't exist returns 1
+	args := []string{
+		"-rpc-addr=" + rpcAddr,
+		"-use", "jbuQMI4gMUeh1PPmKOtiBg==",
+	}
+
+	code := c.Run(args)
+	if code != 1 {
+		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
+	}
+
+	// Node errors appear in stderr
+	if !strings.Contains(ui.ErrorWriter.String(), "not in the keyring") {
+		t.Fatalf("expected absent key error")
+	}
+}
+
 func TestKeysCommandRun_RemoveKey(t *testing.T) {
 	a1 := testKeysCommandAgent(t)
 	defer a1.Shutdown()
@@ -129,7 +180,7 @@ func TestKeysCommandRun_RemoveKey(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	keys, _, err := rpcClient.ListKeys()
+	keys, _, _, err := rpcClient.ListKeys()
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -149,7 +200,7 @@ func TestKeysCommandRun_RemoveKey(t *testing.T) {
 	}
 
 	// Number of keys unchanged after noop command
-	keys, _, err = rpcClient.ListKeys()
+	keys, _, _, err = rpcClient.ListKeys()
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -185,12 +236,38 @@ func TestKeysCommandRun_RemoveKey(t *testing.T) {
 	}
 
 	// Key removed after successful -remove command
-	keys, _, err = rpcClient.ListKeys()
+	keys, _, _, err = rpcClient.ListKeys()
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 	if len(keys) != 1 {
 		t.Fatalf("expected 2 keys: %v", keys)
+	}
+}
+
+func TestKeysCommandRun_RemoveKeyFailure(t *testing.T) {
+	a1 := testKeysCommandAgent(t)
+	defer a1.Shutdown()
+	rpcAddr, ipc := testIPC(t, a1)
+	defer ipc.Shutdown()
+
+	ui := new(cli.MockUi)
+	c := &KeysCommand{Ui: ui}
+
+	// Trying to remove the primary key returns 1
+	args := []string{
+		"-rpc-addr=" + rpcAddr,
+		"-remove", "SNCg1bQSoCdGVlEx+TgfBw==",
+	}
+
+	code := c.Run(args)
+	if code != 1 {
+		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
+	}
+
+	// Node errors appear in stderr
+	if !strings.Contains(ui.ErrorWriter.String(), "not allowed") {
+		t.Fatalf("expected primary key removal error")
 	}
 }
 
@@ -203,7 +280,6 @@ func TestKeysCommandRun_ListKeys(t *testing.T) {
 	ui := new(cli.MockUi)
 	c := &KeysCommand{Ui: ui}
 
-	// Trying to use a non-existent key returns 1
 	args := []string{
 		"-rpc-addr=" + rpcAddr,
 		"-list",
@@ -220,6 +296,31 @@ func TestKeysCommandRun_ListKeys(t *testing.T) {
 
 	if !strings.Contains(ui.OutputWriter.String(), "vbitCcJNwNP4aEWHgofjMg==") {
 		t.Fatalf("missing expected key")
+	}
+}
+
+func TestKeysCommandRun_ListKeysFailure(t *testing.T) {
+	a1 := testAgent(t)
+	defer a1.Shutdown()
+	rpcAddr, ipc := testIPC(t, a1)
+	defer ipc.Shutdown()
+
+	ui := new(cli.MockUi)
+	c := &KeysCommand{Ui: ui}
+
+	// Trying to list keys with encryption disabled returns 1
+	args := []string{
+		"-rpc-addr=" + rpcAddr,
+		"-list",
+	}
+
+	code := c.Run(args)
+	if code != 1 {
+		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
+	}
+
+	if !strings.Contains(ui.ErrorWriter.String(), "not enabled") {
+		t.Fatalf("expected empty keyring error")
 	}
 }
 
