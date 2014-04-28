@@ -828,17 +828,40 @@ func TestRPCClient_Keys_EncryptionDisabledError(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	if _, err := client.InstallKey("El/H8lEqX2WiUa36SxcpZw=="); err == nil {
+	// Failed installing key
+	failures, err := client.InstallKey("El/H8lEqX2WiUa36SxcpZw==")
+	if err == nil {
 		t.Fatalf("expected encryption disabled error")
 	}
-	if _, err := client.UseKey("El/H8lEqX2WiUa36SxcpZw=="); err == nil {
+	if _, ok := failures[a1.conf.NodeName]; !ok {
+		t.Fatalf("expected error from node %s", a1.conf.NodeName)
+	}
+
+	// Failed using key
+	failures, err = client.UseKey("El/H8lEqX2WiUa36SxcpZw==")
+	if err == nil {
 		t.Fatalf("expected encryption disabled error")
 	}
-	if _, err := client.RemoveKey("El/H8lEqX2WiUa36SxcpZw=="); err == nil {
+	if _, ok := failures[a1.conf.NodeName]; !ok {
+		t.Fatalf("expected error from node %s", a1.conf.NodeName)
+	}
+
+	// Failed removing key
+	failures, err = client.RemoveKey("El/H8lEqX2WiUa36SxcpZw==")
+	if err == nil {
 		t.Fatalf("expected encryption disabled error")
 	}
-	if _, _, err := client.ListKeys(); err == nil {
+	if _, ok := failures[a1.conf.NodeName]; !ok {
+		t.Fatalf("expected error from node %s", a1.conf.NodeName)
+	}
+
+	// Failed listing keys
+	_, _, failures, err = client.ListKeys()
+	if err == nil {
 		t.Fatalf("expected encryption disabled error")
+	}
+	if _, ok := failures[a1.conf.NodeName]; !ok {
+		t.Fatalf("expected error from node %s", a1.conf.NodeName)
 	}
 }
 
@@ -865,7 +888,7 @@ func TestRPCClient_Keys(t *testing.T) {
 
 	testutil.Yield()
 
-	keys, num, err := client.ListKeys()
+	keys, num, _, err := client.ListKeys()
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -879,7 +902,7 @@ func TestRPCClient_Keys(t *testing.T) {
 	}
 
 	// Keyring should not contain new key at this point
-	keys, _, err = client.ListKeys()
+	keys, _, _, err = client.ListKeys()
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -903,7 +926,7 @@ func TestRPCClient_Keys(t *testing.T) {
 	}
 
 	// New key should now appear in the list of keys
-	keys, num, err = client.ListKeys()
+	keys, num, _, err = client.ListKeys()
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}

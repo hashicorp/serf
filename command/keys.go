@@ -95,9 +95,17 @@ func (c *KeysCommand) Run(args []string) int {
 
 	if listKeys {
 		c.Ui.Info("Asking all members for installed keys...")
-		keys, total, err := client.ListKeys()
+		keys, total, failures, err := client.ListKeys()
 
 		if err != nil {
+			if len(failures) > 0 {
+				for node, message := range failures {
+					lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
+				}
+				out := columnize.SimpleFormat(lines)
+				c.Ui.Error(out)
+			}
+
 			c.Ui.Error("")
 			c.Ui.Error(fmt.Sprintf("Failed to gather member keys: %s", err))
 			return 1
@@ -117,9 +125,9 @@ func (c *KeysCommand) Run(args []string) int {
 
 	if installKey != "" {
 		c.Ui.Info("Installing key on all members...")
-		if failedNodes, err := client.InstallKey(installKey); err != nil {
-			if len(failedNodes) > 0 {
-				for node, message := range failedNodes {
+		if failures, err := client.InstallKey(installKey); err != nil {
+			if len(failures) > 0 {
+				for node, message := range failures {
 					lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
 				}
 				out := columnize.SimpleFormat(lines)
@@ -135,9 +143,9 @@ func (c *KeysCommand) Run(args []string) int {
 
 	if useKey != "" {
 		c.Ui.Info("Changing primary key on all members...")
-		if failedNodes, err := client.UseKey(useKey); err != nil {
-			if len(failedNodes) > 0 {
-				for node, message := range failedNodes {
+		if failures, err := client.UseKey(useKey); err != nil {
+			if len(failures) > 0 {
+				for node, message := range failures {
 					lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
 				}
 				out := columnize.SimpleFormat(lines)
@@ -153,9 +161,9 @@ func (c *KeysCommand) Run(args []string) int {
 
 	if removeKey != "" {
 		c.Ui.Info("Removing key on all members...")
-		if failedNodes, err := client.RemoveKey(removeKey); err != nil {
-			if len(failedNodes) > 0 {
-				for node, message := range failedNodes {
+		if failures, err := client.RemoveKey(removeKey); err != nil {
+			if len(failures) > 0 {
+				for node, message := range failures {
 					lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
 				}
 				out := columnize.SimpleFormat(lines)
