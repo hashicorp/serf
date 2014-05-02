@@ -63,6 +63,7 @@ const (
 	queryCommand           = "query"
 	respondCommand         = "respond"
 	authCommand            = "auth"
+	statsCommand           = "stats"
 )
 
 const (
@@ -511,6 +512,9 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 
 	case respondCommand:
 		return i.handleRespond(client, seq)
+
+	case statsCommand:
+		return i.handleStats(client, seq)
 
 	default:
 		respHeader := responseHeader{Seq: seq, Error: unsupportedCommand}
@@ -1003,6 +1007,16 @@ func (i *AgentIPC) handleRespond(client *IPCClient, seq uint64) error {
 		Error: errToString(err),
 	}
 	return client.Send(&resp, nil)
+}
+
+// handleStats is used to get various statistics
+func (i *AgentIPC) handleStats(client *IPCClient, seq uint64) error {
+	header := responseHeader{
+		Seq:   seq,
+		Error: "",
+	}
+	resp := i.agent.Stats()
+	return client.Send(&header, resp)
 }
 
 // Used to convert an error to a string representation

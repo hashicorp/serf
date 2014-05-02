@@ -967,3 +967,25 @@ func TestRPCClient_Keys(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 }
+
+func TestRPCClientStats(t *testing.T) {
+	client, a1, ipc := testRPCClient(t)
+	defer ipc.Shutdown()
+	defer client.Close()
+	defer a1.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	stats, err := client.Stats()
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	if stats["agent"]["name"] != a1.conf.NodeName {
+		t.Fatalf("bad: %v", stats)
+	}
+}

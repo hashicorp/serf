@@ -29,6 +29,7 @@ const (
 	queryCommand           = "query"
 	respondCommand         = "respond"
 	authCommand            = "auth"
+	statsCommand           = "stats"
 )
 
 const (
