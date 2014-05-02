@@ -91,6 +91,12 @@ func init() {
 			}, nil
 		},
 
+		"info": func() (cli.Command, error) {
+			return &command.InfoCommand{
+				Ui: ui,
+			}, nil
+		},
+
 		"version": func() (cli.Command, error) {
 			return &command.VersionCommand{
 				Revision:          GitCommit,
