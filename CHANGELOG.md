@@ -1,3 +1,10 @@
+## 0.6.0 (Unreleased)
+
+IMPROVEMENTS:
+
+ * Agent uses circular buffer to invoke handlers, guards against unbounded
+ output lengths.
+
 ## 0.5.0 (March 12, 2014)
 
 FEATURES:
