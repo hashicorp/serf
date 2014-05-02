@@ -398,3 +398,17 @@ func (a *Agent) loadKeyringFile(keyringFile string) error {
 	// Success!
 	return nil
 }
+
+// Stats is used to get various runtime information and stats
+func (a *Agent) Stats() map[string]map[string]string {
+	local := a.serf.LocalMember()
+	output := map[string]map[string]string{
+		"agent": map[string]string{
+			"name": local.Name,
+		},
+		"runtime": runtimeStats(),
+		"serf":    a.serf.Stats(),
+		"tags":    local.Tags,
+	}
+	return output
+}
