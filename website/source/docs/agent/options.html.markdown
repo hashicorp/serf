@@ -156,6 +156,10 @@ The options below are all specified on the command-line.
   agent starts. This option is incompatible with the `-tag` option and requires
   there be no tags in the agent configuration file, if given.
 
+* `-syslog` - When provided, the logs will also be sent to the syslog facility.
+  This flag can only be enabled on Linux or OSX systems, as Windows and Plan 9 do
+  not provide the syslog facility.
+
 ## Configuration Files
 
 In addition to the command-line options, configuration can be put into
@@ -255,6 +259,8 @@ at a single JSON object with configuration within it.
   this behavior, and instead Serf will merely log a warning. This is not recommanded since
   the cluster will disagree about the mapping of NodeName -> IP:Port and cannot reconcile
   this.
+
+* `enable_syslog` - Equivalent to the `-syslog` command-line flag.
 
 #### Example Keyring File
 
