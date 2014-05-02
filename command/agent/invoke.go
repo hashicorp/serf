@@ -1,8 +1,8 @@
 package agent
 
 import (
-	"bytes"
 	"fmt"
+	"github.com/armon/circbuf"
 	"github.com/armon/go-metrics"
 	"github.com/hashicorp/serf/serf"
 	"io"
@@ -17,6 +17,11 @@ import (
 
 const (
 	windows = "windows"
+
+	// maxBufSize limits how much data we collect from a handler.
+	// This is to prevent Serf's memory from growing to an enormous
+	// amount due to a faulty handler.
+	maxBufSize = 8 * 1024
 )
 
 var sanitizeTagRegexp = regexp.MustCompile(`[^A-Z0-9_]`)
@@ -32,7 +37,7 @@ var sanitizeTagRegexp = regexp.MustCompile(`[^A-Z0-9_]`)
 // the various stdin functions below for more information.
 func invokeEventScript(logger *log.Logger, script string, self serf.Member, event serf.Event) error {
 	defer metrics.MeasureSince([]string{"agent", "invoke", script}, time.Now())
-	var output bytes.Buffer
+	output, _ := circbuf.NewBuffer(maxBufSize)
 
 	// Determine the shell invocation based on OS
 	var shell, flag string
@@ -50,8 +55,8 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 		"SERF_SELF_NAME="+self.Name,
 		"SERF_SELF_ROLE="+self.Tags["role"],
 	)
-	cmd.Stderr = &output
-	cmd.Stdout = &output
+	cmd.Stderr = output
+	cmd.Stdout = output
 
 	// Add all the tags
 	for name, val := range self.Tags {
@@ -88,6 +93,12 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 		return err
 	}
 
+	// Warn if buffer is overritten
+	if output.TotalWritten() > output.Size() {
+		logger.Printf("[WARN] agent: Script '%s' generated %d bytes of output, truncated to %d",
+			script, output.TotalWritten(), output.Size())
+	}
+
 	err = cmd.Wait()
 	logger.Printf("[DEBUG] agent: Event '%s' script output: %s",
 		event.EventType().String(), output.String())
@@ -96,7 +107,7 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 	}
 
 	// If this is a query and we have output, respond
-	if query, ok := event.(*serf.Query); ok && len(output.Bytes()) > 0 {
+	if query, ok := event.(*serf.Query); ok && output.TotalWritten() > 0 {
 		if err := query.Respond(output.Bytes()); err != nil {
 			logger.Printf("[WARN] agent: Failed to respond to query '%s': %s",
 				event.String(), err)
