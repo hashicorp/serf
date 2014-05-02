@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-syslog"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/serf"
@@ -285,9 +286,25 @@ func (c *Command) setupLoggers(config *Config) (*GatedWriter, *logWriter, io.Wri
 		return nil, nil, nil
 	}
 
+	// Check if syslog is enabled
+	var syslog io.Writer
+	if config.EnableSyslog {
+		l, err := gsyslog.NewLogger(gsyslog.LOG_NOTICE, "serf")
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Syslog setup failed: %v", err))
+			return nil, nil, nil
+		}
+		syslog = &SyslogWrapper{l}
+	}
+
 	// Create a log writer, and wrap a logOutput around it
 	logWriter := NewLogWriter(512)
-	logOutput := io.MultiWriter(c.logFilter, logWriter)
+	var logOutput io.Writer
+	if syslog != nil {
+		logOutput = io.MultiWriter(c.logFilter, logWriter, syslog)
+	} else {
+		logOutput = io.MultiWriter(c.logFilter, logWriter)
+	}
 	return logGate, logWriter, logOutput
 }
 
