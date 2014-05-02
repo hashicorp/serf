@@ -25,6 +25,7 @@ func DefaultConfig() *Config {
 		BindAddr:      "0.0.0.0",
 		AdvertiseAddr: "",
 		LogLevel:      "INFO",
+		Syslog:        false,
 		RPCAddr:       "127.0.0.1:7373",
 		Protocol:      serf.ProtocolVersionMax,
 		ReplayOnJoin:  false,
@@ -80,6 +81,9 @@ type Config struct {
 	// LogLevel is the level of the logs to output.
 	// This can be updated during a reload.
 	LogLevel string `mapstructure:"log_level"`
+
+	// Syslog tells Serf to use syslog instead of standard error.
+	Syslog bool `mapstructure:"syslog"`
 
 	// RPCAddr is the address and port to listen on for the agent's RPC
 	// interface.
@@ -302,6 +306,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.LogLevel != "" {
 		result.LogLevel = b.LogLevel
+	}
+	if b.Syslog != false {
+		result.Syslog = b.Syslog
 	}
 	if b.Protocol > 0 {
 		result.Protocol = b.Protocol

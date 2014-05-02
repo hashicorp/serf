@@ -305,6 +305,7 @@ func TestMergeConfig(t *testing.T) {
 		RPCAuthKey:            "foobar",
 		DisableNameResolution: true,
 		TombstoneTimeout:      36 * time.Hour,
+		Syslog:                true,
 	}
 
 	c := MergeConfig(a, b)
@@ -343,6 +344,10 @@ func TestMergeConfig(t *testing.T) {
 
 	if c.Interface != "eth0" {
 		t.Fatalf("Bad: %v", c.Interface)
+	}
+
+	if !c.Syslog {
+		t.Fatalf("bad: %#v", c.Syslog)
 	}
 
 	if c.ReconnectInterval != 15*time.Second {
