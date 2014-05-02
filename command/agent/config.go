@@ -156,6 +156,10 @@ type Config struct {
 	// by having the minority node shutdown. If you want to disable this behavior,
 	// then this flag can be set to true.
 	DisableNameResolution bool `mapstructure:"disable_name_resolution"`
+
+	// EnableSyslog is used to also tee all the logs over to syslog. Only supported
+	// on linux and OSX. Other platforms will generate an error.
+	EnableSyslog bool `mapstructure:"enable_syslog"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -350,6 +354,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.KeyringFile != "" {
 		result.KeyringFile = b.KeyringFile
+	}
+	if b.EnableSyslog {
+		result.EnableSyslog = true
 	}
 
 	// Copy the event handlers

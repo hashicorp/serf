@@ -270,6 +270,17 @@ func TestDecodeConfig(t *testing.T) {
 	if config.TombstoneTimeout != 48*time.Hour {
 		t.Fatalf("bad: %#v", config)
 	}
+
+	// Syslog
+	input = `{"enable_syslog": true}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !config.EnableSyslog {
+		t.Fatalf("bad: %#v", config)
+	}
 }
 
 func TestDecodeConfig_unknownDirective(t *testing.T) {
@@ -305,6 +316,7 @@ func TestMergeConfig(t *testing.T) {
 		RPCAuthKey:            "foobar",
 		DisableNameResolution: true,
 		TombstoneTimeout:      36 * time.Hour,
+		EnableSyslog:          true,
 	}
 
 	c := MergeConfig(a, b)
@@ -362,6 +374,10 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	if !c.DisableNameResolution {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if !c.EnableSyslog {
 		t.Fatalf("bad: %#v", c)
 	}
 

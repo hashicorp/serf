@@ -68,6 +68,8 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.StringVar(&cmdConfig.Discover, "discover", "", "mDNS discovery name")
 	cmdFlags.StringVar(&cmdConfig.Interface, "iface", "", "interface to bind to")
 	cmdFlags.StringVar(&cmdConfig.TagsFile, "tags-file", "", "tag persistence file")
+	cmdFlags.BoolVar(&cmdConfig.EnableSyslog, "syslog", false,
+		"enable logging to syslog facility")
 	if err := cmdFlags.Parse(c.args); err != nil {
 		return nil
 	}
@@ -585,6 +587,7 @@ Options:
                            can be reloaded during later agent starts. This option
                            is incompatible with the '-tag' option and requires there
                            be no tags in the agent configuration file, if given.
+  -syslog                  When provided, logs will also be sent to syslog.
 
 Event handlers:
 
