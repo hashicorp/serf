@@ -3,11 +3,17 @@ package command
 import (
 	"flag"
 	"github.com/hashicorp/serf/client"
+	"os"
 )
 
 // RPCAddrFlag returns a pointer to a string that will be populated
 // when the given flagset is parsed with the RPC address of the Serf.
 func RPCAddrFlag(f *flag.FlagSet) *string {
+	rpcAddr := os.Getenv("SERF_RPC_ADDR")
+	if rpcAddr != "" {
+		return &rpcAddr
+	}
+
 	return f.String("rpc-addr", "127.0.0.1:7373",
 		"RPC address of the Serf agent")
 }
