@@ -9,12 +9,12 @@ import (
 // RPCAddrFlag returns a pointer to a string that will be populated
 // when the given flagset is parsed with the RPC address of the Serf.
 func RPCAddrFlag(f *flag.FlagSet) *string {
-	rpcAddr := os.Getenv("SERF_RPC_ADDR")
-	if rpcAddr != "" {
-		return &rpcAddr
+	defaultRpcAddr := os.Getenv("SERF_RPC_ADDR")
+	if defaultRpcAddr == "" {
+		defaultRpcAddr = "127.0.0.1:7373"
 	}
 
-	return f.String("rpc-addr", "127.0.0.1:7373",
+	return f.String("rpc-addr", defaultRpcAddr,
 		"RPC address of the Serf agent")
 }
 
