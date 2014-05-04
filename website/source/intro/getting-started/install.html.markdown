@@ -34,7 +34,7 @@ brew cask install serf
 
 if you are missing the [cask plugin](http://caskroom.io/) you can install it with:
 ```
-brew install phinze/cask/brew-cask
+brew install caskroom/cask/brew-cask
 ```
 
 ## Verifying the Installation
