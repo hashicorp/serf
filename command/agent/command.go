@@ -71,6 +71,10 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.StringVar(&cmdConfig.TagsFile, "tags-file", "", "tag persistence file")
 	cmdFlags.BoolVar(&cmdConfig.EnableSyslog, "syslog", false,
 		"enable logging to syslog facility")
+	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.RetryJoin), "retry-join",
+		"address of agent to join on startup with retry")
+	cmdFlags.IntVar(&cmdConfig.RetryMaxAttempts, "retry-max", 0, "maximum retry join attempts")
+	cmdFlags.StringVar(&cmdConfig.RetryIntervalRaw, "retry-interval", "", "retry join interval")
 	if err := cmdFlags.Parse(c.args); err != nil {
 		return nil
 	}
@@ -589,6 +593,11 @@ Options:
 						   The default if not provided is lan.
   -protocol=n              Serf protocol version to use. This defaults to
                            the latest version, but can be set back for upgrades.
+  -retry-join=addr         An agent to join with. This flag be specified multiple times.
+                           Does not exit on failure like -join, used to retry until success.
+  -retry-interval=30s      Sets the interval on which a node will attempt to retry joining
+                           nodes provided by -retry-join. Defaults to 30s.
+  -retry-max=0             Limits the number of retry events. Defaults to 0 for unlimited.
   -role=foo                The role of this node, if any. This can be used
                            by event scripts to differentiate different types
                            of nodes that may be part of the same cluster.
