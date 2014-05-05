@@ -1,6 +1,7 @@
 package command
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/hashicorp/serf/client"
@@ -15,6 +16,11 @@ import (
 type QueryCommand struct {
 	ShutdownCh <-chan struct{}
 	Ui         cli.Ui
+}
+
+type QueryResponse struct {
+	ACKs      []string          `json:"acks"`
+	Responses map[string]string `json:"responses"`
 }
 
 func (c *QueryCommand) Help() string {
@@ -36,6 +42,8 @@ Options:
   -no-ack                   Setting this prevents nodes from sending an acknowledgement
                             of the query
 
+  -json                     Output JSON instead of text.
+
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
 
   -rpc-auth=""              RPC auth token of the Serf agent.
@@ -45,6 +53,7 @@ Options:
 
 func (c *QueryCommand) Run(args []string) int {
 	var noAck bool
+	var jsonOutput bool
 	var nodes []string
 	var tags []string
 	var timeout time.Duration
@@ -54,6 +63,7 @@ func (c *QueryCommand) Run(args []string) int {
 	cmdFlags.Var((*agent.AppendSliceValue)(&tags), "tag", "tag filter")
 	cmdFlags.DurationVar(&timeout, "timeout", 0, "query timeout")
 	cmdFlags.BoolVar(&noAck, "no-ack", false, "no-ack")
+	cmdFlags.BoolVar(&jsonOutput, "json", false, "json")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	rpcAuth := RPCAuthFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
@@ -93,6 +103,12 @@ func (c *QueryCommand) Run(args []string) int {
 	}
 	defer cl.Close()
 
+	members, err := cl.Members()
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error getting member count: %s", err))
+		return 1
+	}
+
 	ackCh := make(chan string, 128)
 	respCh := make(chan client.NodeResponse, 128)
 
@@ -110,11 +126,16 @@ func (c *QueryCommand) Run(args []string) int {
 		c.Ui.Error(fmt.Sprintf("Error sending query: %s", err))
 		return 1
 	}
-	c.Ui.Output(fmt.Sprintf("Query '%s' dispatched", name))
+	if !jsonOutput {
+		c.Ui.Output(fmt.Sprintf("Query '%s' dispatched", name))
+	}
 
 	// Track responses and acknowledgements
 	numAcks := 0
 	numResp := 0
+	var response QueryResponse
+	response.ACKs = make([]string, len(members))
+	response.Responses = make(map[string]string)
 
 OUTER:
 	for {
@@ -123,8 +144,12 @@ OUTER:
 			if a == "" {
 				break OUTER
 			}
+			if jsonOutput {
+				response.ACKs[numAcks] = a
+			} else {
+				c.Ui.Info(fmt.Sprintf("Ack from '%s'", a))
+			}
 			numAcks++
-			c.Ui.Info(fmt.Sprintf("Ack from '%s'", a))
 
 		case r := <-respCh:
 			if r.From == "" {
@@ -138,17 +163,30 @@ OUTER:
 				payload = payload[:n-1]
 			}
 
-			c.Ui.Info(fmt.Sprintf("Response from '%s': %s", r.From, payload))
+			if jsonOutput {
+				response.Responses[r.From] = string(payload)
+			} else {
+				c.Ui.Info(fmt.Sprintf("Response from '%s': %s", r.From, payload))
+			}
 
 		case <-c.ShutdownCh:
 			return 1
 		}
 	}
 
-	if !noAck {
-		c.Ui.Output(fmt.Sprintf("Total Acks: %d", numAcks))
+	if jsonOutput {
+		// TODO: compact response.ACKs as it can be shorter than the capacity
+		encoded, err := json.MarshalIndent(response, "", "  ")
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error encoding JSON: %s", err))
+		}
+		c.Ui.Output(string(encoded))
+	} else {
+		if !noAck {
+			c.Ui.Output(fmt.Sprintf("Total Acks: %d", numAcks))
+		}
+		c.Ui.Output(fmt.Sprintf("Total Responses: %d", numResp))
 	}
-	c.Ui.Output(fmt.Sprintf("Total Responses: %d", numResp))
 	return 0
 }
 
