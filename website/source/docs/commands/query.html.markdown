@@ -41,6 +41,9 @@ Usage: `serf query [options] name [payload]`
 
 The command-line flags are all optional. The list of available flags are:
 
+* `-format` - Controls the output format. Supports `text` and `json`.
+  The default format is `text`.
+
 * `-no-ack` - If provided, the query will not request that nodes acknowledge
   receipt of the query. By default, any nodes that pass the `-node` and `-tag` filters
   will acknowledge receipt of a query and potentially respond if they have a configured
