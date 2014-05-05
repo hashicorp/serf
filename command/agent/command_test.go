@@ -300,3 +300,66 @@ func TestCommandRun_mDNS(t *testing.T) {
 		t.Fatalf("bad: %#v", members)
 	}
 }
+
+func TestCommandRun_retry_join(t *testing.T) {
+	a1 := testAgent(nil)
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer a1.Shutdown()
+
+	doneCh := make(chan struct{})
+	shutdownCh := make(chan struct{})
+	defer func() {
+		close(shutdownCh)
+		<-doneCh
+	}()
+
+	c := &Command{
+		ShutdownCh: shutdownCh,
+		Ui:         new(cli.MockUi),
+	}
+
+	args := []string{
+		"-bind", testutil.GetBindAddr().String(),
+		"-retry-join", a1.conf.MemberlistConfig.BindAddr,
+		"-replay",
+	}
+
+	go func() {
+		code := c.Run(args)
+		if code != 0 {
+			log.Printf("bad: %d", code)
+		}
+
+		close(doneCh)
+	}()
+
+	testutil.Yield()
+
+	if len(a1.Serf().Members()) != 2 {
+		t.Fatalf("bad: %#v", a1.Serf().Members())
+	}
+}
+
+func TestCommandRun_retry_joinFail(t *testing.T) {
+	shutdownCh := make(chan struct{})
+	defer close(shutdownCh)
+
+	c := &Command{
+		ShutdownCh: shutdownCh,
+		Ui:         new(cli.MockUi),
+	}
+
+	args := []string{
+		"-bind", testutil.GetBindAddr().String(),
+		"-retry-join", testutil.GetBindAddr().String(),
+		"-retry-interval", "1s",
+		"-retry-max", "1",
+	}
+
+	code := c.Run(args)
+	if code == 0 {
+		t.Fatal("should fail")
+	}
+}
