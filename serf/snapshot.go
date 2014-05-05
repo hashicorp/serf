@@ -31,23 +31,24 @@ const tmpExt = ".compact"
 // Snapshotter is responsible for ingesting events and persisting
 // them to disk, and providing a recovery mechanism at start time.
 type Snapshotter struct {
-	aliveNodes     map[string]string
-	clock          *LamportClock
-	fh             *os.File
-	inCh           <-chan Event
-	lastFsync      time.Time
-	lastClock      LamportTime
-	lastEventClock LamportTime
-	lastQueryClock LamportTime
-	leaveCh        chan struct{}
-	leaving        bool
-	logger         *log.Logger
-	maxSize        int64
-	path           string
-	offset         int64
-	outCh          chan<- Event
-	shutdownCh     <-chan struct{}
-	waitCh         chan struct{}
+	aliveNodes       map[string]string
+	clock            *LamportClock
+	fh               *os.File
+	inCh             <-chan Event
+	lastFsync        time.Time
+	lastClock        LamportTime
+	lastEventClock   LamportTime
+	lastQueryClock   LamportTime
+	leaveCh          chan struct{}
+	leaving          bool
+	logger           *log.Logger
+	maxSize          int64
+	path             string
+	offset           int64
+	outCh            chan<- Event
+	rejoinAfterLeave bool
+	shutdownCh       <-chan struct{}
+	waitCh           chan struct{}
 }
 
 // PreviousNode is used to represent the previously known alive nodes
@@ -64,8 +65,15 @@ func (p PreviousNode) String() string {
 // max byte size before rotating the file. It can also be used to
 // recover old state. Snapshotter works by reading an event channel it returns,
 // passing through to an output channel, and persisting relevant events to disk.
-func NewSnapshotter(path string, maxSize int, logger *log.Logger, clock *LamportClock,
-	outCh chan<- Event, shutdownCh <-chan struct{}) (chan<- Event, *Snapshotter, error) {
+// Setting rejoinAfterLeave makes leave not clear the state, and can be used
+// if you intend to rejoin the same cluster after a leave.
+func NewSnapshotter(path string,
+	maxSize int,
+	rejoinAfterLeave bool,
+	logger *log.Logger,
+	clock *LamportClock,
+	outCh chan<- Event,
+	shutdownCh <-chan struct{}) (chan<- Event, *Snapshotter, error) {
 	inCh := make(chan Event, 1024)
 
 	// Try to open the file
@@ -84,21 +92,22 @@ func NewSnapshotter(path string, maxSize int, logger *log.Logger, clock *Lamport
 
 	// Create the snapshotter
 	snap := &Snapshotter{
-		aliveNodes:     make(map[string]string),
-		clock:          clock,
-		fh:             fh,
-		inCh:           inCh,
-		lastClock:      0,
-		lastEventClock: 0,
-		lastQueryClock: 0,
-		leaveCh:        make(chan struct{}),
-		logger:         logger,
-		maxSize:        int64(maxSize),
-		path:           path,
-		offset:         offset,
-		outCh:          outCh,
-		shutdownCh:     shutdownCh,
-		waitCh:         make(chan struct{}),
+		aliveNodes:       make(map[string]string),
+		clock:            clock,
+		fh:               fh,
+		inCh:             inCh,
+		lastClock:        0,
+		lastEventClock:   0,
+		lastQueryClock:   0,
+		leaveCh:          make(chan struct{}),
+		logger:           logger,
+		maxSize:          int64(maxSize),
+		path:             path,
+		offset:           offset,
+		outCh:            outCh,
+		rejoinAfterLeave: rejoinAfterLeave,
+		shutdownCh:       shutdownCh,
+		waitCh:           make(chan struct{}),
 	}
 
 	// Recover the last known state
@@ -162,9 +171,12 @@ func (s *Snapshotter) stream() {
 	for {
 		select {
 		case <-s.leaveCh:
-			// Clear the known nodes
-			s.aliveNodes = make(map[string]string)
 			s.leaving = true
+
+			// If we plan to re-join, keep our state
+			if !s.rejoinAfterLeave {
+				s.aliveNodes = make(map[string]string)
+			}
 			s.tryAppend("leave\n")
 			if err := s.fh.Sync(); err != nil {
 				s.logger.Printf("[ERR] serf: failed to sync leave to snapshot: %v", err)
@@ -371,6 +383,7 @@ func (s *Snapshotter) replay() error {
 
 		// Skip the newline
 		line = line[:len(line)-1]
+		s.logger.Printf("[ALERT] %s", line)
 
 		// Switch on the prefix
 		if strings.HasPrefix(line, "alive: ") {
@@ -416,6 +429,11 @@ func (s *Snapshotter) replay() error {
 			s.lastQueryClock = LamportTime(timeInt)
 
 		} else if line == "leave" {
+			// Ignore a leave if we plan on re-joining
+			if s.rejoinAfterLeave {
+				s.logger.Printf("[INFO] serf: Ignoring previous leave in snapshot")
+				continue
+			}
 			s.aliveNodes = make(map[string]string)
 			s.lastClock = 0
 			s.lastEventClock = 0
