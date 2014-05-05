@@ -19,8 +19,13 @@ import (
 	"time"
 )
 
-// gracefulTimeout controls how long we wait before forcefully terminating
-var gracefulTimeout = 3 * time.Second
+const (
+	// gracefulTimeout controls how long we wait before forcefully terminating
+	gracefulTimeout = 3 * time.Second
+
+	// minRetryInterval applies a lower bound to the join retry interval
+	minRetryInterval = time.Second
+)
 
 // Command is a Command implementation that runs a Serf agent.
 // The command will not end unless a shutdown message is sent on the
@@ -32,6 +37,7 @@ type Command struct {
 	args          []string
 	scriptHandler *ScriptEventHandler
 	logFilter     *logutils.LevelFilter
+	logger        *log.Logger
 }
 
 // readConfig is responsible for setup of our configuration using
@@ -40,6 +46,7 @@ func (c *Command) readConfig() *Config {
 	var cmdConfig Config
 	var configFiles []string
 	var tags []string
+	var retryInterval string
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.StringVar(&cmdConfig.BindAddr, "bind", "", "address to bind listeners to")
@@ -74,7 +81,7 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.RetryJoin), "retry-join",
 		"address of agent to join on startup with retry")
 	cmdFlags.IntVar(&cmdConfig.RetryMaxAttempts, "retry-max", 0, "maximum retry join attempts")
-	cmdFlags.StringVar(&cmdConfig.RetryIntervalRaw, "retry-interval", "", "retry join interval")
+	cmdFlags.StringVar(&retryInterval, "retry-interval", "", "retry join interval")
 	if err := cmdFlags.Parse(c.args); err != nil {
 		return nil
 	}
@@ -86,6 +93,16 @@ func (c *Command) readConfig() *Config {
 		return nil
 	}
 	cmdConfig.Tags = tagValues
+
+	// Decode the interval if given
+	if retryInterval != "" {
+		dur, err := time.ParseDuration(retryInterval)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error: %s", err))
+			return nil
+		}
+		cmdConfig.RetryInterval = dur
+	}
 
 	config := DefaultConfig()
 	if len(configFiles) > 0 {
@@ -127,6 +144,12 @@ func (c *Command) readConfig() *Config {
 	if config.Role != "" {
 		c.Ui.Output("Deprecation warning: 'Role' has been replaced with 'Tags'")
 		config.Tags["role"] = config.Role
+	}
+
+	// Check for sane retry interval
+	if config.RetryInterval < minRetryInterval {
+		c.Ui.Output(fmt.Sprintf("Warning: 'RetryInterval' is too low. Setting to %v", config.RetryInterval))
+		config.RetryInterval = minRetryInterval
 	}
 
 	return config
@@ -309,6 +332,9 @@ func (c *Command) setupLoggers(config *Config) (*GatedWriter, *logWriter, io.Wri
 	} else {
 		logOutput = io.MultiWriter(c.logFilter, logWriter)
 	}
+
+	// Create a logger
+	c.logger = log.New(logOutput, "", log.LstdFlags)
 	return logGate, logWriter, logOutput
 }
 
@@ -398,6 +424,39 @@ func (c *Command) startupJoin(config *Config, agent *Agent) error {
 	return nil
 }
 
+// retryJoin is invoked to handle joins with retries. This runs until at least a
+// single successful join or RetryMaxAttempts is reached
+func (c *Command) retryJoin(config *Config, agent *Agent, errCh chan struct{}) {
+	// Quit fast if there is no nodes to join
+	if len(config.RetryJoin) == 0 {
+		return
+	}
+
+	// Track the number of join attempts
+	attempt := 0
+	for {
+		// Try to perform the join
+		c.logger.Printf("[INFO] agent: Joining cluster...(replay: %v)", config.ReplayOnJoin)
+		n, err := agent.Join(config.RetryJoin, config.ReplayOnJoin)
+		if err == nil {
+			c.logger.Printf("[INFO] agent: Join completed. Synced with %d initial agents", n)
+			return
+		}
+
+		// Check if the maximum attempts has been exceeded
+		attempt++
+		if config.RetryMaxAttempts > 0 && attempt > config.RetryMaxAttempts {
+			c.logger.Printf("[ERR] agent: maximum retry join attempts made, exiting")
+			close(errCh)
+			return
+		}
+
+		// Log the failure and sleep
+		c.logger.Printf("[WARN] agent: Join failed: %v, retrying in %v", err, config.RetryInterval)
+		time.Sleep(config.RetryInterval)
+	}
+}
+
 func (c *Command) Run(args []string) int {
 	c.Ui = &cli.PrefixedUi{
 		OutputPrefix: "==> ",
@@ -454,12 +513,16 @@ func (c *Command) Run(args []string) int {
 	c.Ui.Output("Log data will now stream in as it occurs:\n")
 	logGate.Flush()
 
+	// Start the retry joins
+	retryJoinCh := make(chan struct{})
+	go c.retryJoin(config, agent, retryJoinCh)
+
 	// Wait for exit
-	return c.handleSignals(config, agent)
+	return c.handleSignals(config, agent, retryJoinCh)
 }
 
 // handleSignals blocks until we get an exit-causing signal
-func (c *Command) handleSignals(config *Config, agent *Agent) int {
+func (c *Command) handleSignals(config *Config, agent *Agent, retryJoin chan struct{}) int {
 	signalCh := make(chan os.Signal, 4)
 	signal.Notify(signalCh, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
 
@@ -471,6 +534,9 @@ WAIT:
 		sig = s
 	case <-c.ShutdownCh:
 		sig = os.Interrupt
+	case <-retryJoin:
+		// Retry join failed!
+		return 1
 	case <-agent.ShutdownCh():
 		// Agent is already shutdown!
 		return 0
