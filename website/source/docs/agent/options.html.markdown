@@ -158,6 +158,12 @@ The options below are all specified on the command-line.
   must be read/writable by Serf, and the directory must allow Serf to create
   other files, so that it can periodically compact the snapshot file.
 
+* `-rejoin` - When provided with the `-snapshot`, Serf will ignore a previous
+  leave and attempt to rejoin the cluster when starting. By default, Serf treats
+  leave as a permanent intent, and does not attempt to join the cluster again
+  when starting. This flag allows the snapshot state to be used to rejoin
+  the cluster.
+
 * `-tag` - The tag flag is used to associate a new key/value pair with the
   agent. The tags are gossiped and can be used to provide additional information
   such as roles, ports, and configuration values to other nodes. Multiple tags
@@ -283,6 +289,8 @@ at a single JSON object with configuration within it.
 * `retry_max_attempts` - Equivalent to the `-retry-max` command-line flag.
 
 * `retry_interval` - Equivalent to the `-retry-interval` command-line flag.
+
+* `rejoin_after_leave` - Equivalent to the `-rejoin` command-line flag.
 
 #### Example Keyring File
 
