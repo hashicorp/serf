@@ -383,7 +383,6 @@ func (s *Snapshotter) replay() error {
 
 		// Skip the newline
 		line = line[:len(line)-1]
-		s.logger.Printf("[ALERT] %s", line)
 
 		// Switch on the prefix
 		if strings.HasPrefix(line, "alive: ") {
