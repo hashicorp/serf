@@ -122,6 +122,21 @@ The options below are all specified on the command-line.
   version. This should be set only when [upgrading](/docs/upgrading.html).
   You can view the protocol versions supported by Serf by running `serf -v`.
 
+* `-retry-join` - Address of another agent to join after starting up. This can
+  be specified multiple times to specify multiple agents to join. If Serf is
+  unable to join with any of the specified addresses, the agent will ertry
+  the join every `-retry-interval` up to `-retry-max` attempts. This can be used
+  instead of `-join` to continue attempting to join the cluster.
+
+* `-retry-interval` - Provides a duration string to control how after the
+  retry join is perfomed. By default, the join is attempted every 30 seconds
+  until success. This should use the "s" suffix for second, "m" for minute,
+  or "h" for hour.
+
+* `-retry-max` - Provides a limit on how many attempts to join the cluster
+  can be made by `-retry-join`. If 0, there is no limit, and the agent will
+  retry forever. Defaults to 0.
+
 * `-role` - **Deprecated** The role of this node, if any. By default this is blank or empty.
   The role can be used by events in order to differentiate members of a
   cluster that may have different functional roles. For example, if you're
@@ -261,6 +276,13 @@ at a single JSON object with configuration within it.
   this.
 
 * `enable_syslog` - Equivalent to the `-syslog` command-line flag.
+
+* `retry_join` - An array of strings specifying addresses of nodes to
+  join upon startup with retries if we fail to join.
+
+* `retry_max_attempts` - Equivalent to the `-retry-max` command-line flag.
+
+* `retry_interval` - Equivalent to the `-retry-interval` command-line flag.
 
 #### Example Keyring File
 
