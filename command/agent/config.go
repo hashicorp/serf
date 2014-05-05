@@ -177,6 +177,13 @@ type Config struct {
 	// to 30 seconds.
 	RetryIntervalRaw string        `mapstructure:"retry_interval"`
 	RetryInterval    time.Duration `mapstructure:"-"`
+
+	// RejoinAfterLeave controls our interaction with the snapshot file.
+	// When set to false (default), a leave causes a Serf to not rejoin
+	// the cluster until an explicit join is received. If this is set to
+	// true, we ignore the leave, and rejoin the cluster on start. This
+	// only has an affect if the snapshot file is enabled.
+	RejoinAfterLeave bool `mapstructure:"rejoin_after_leave"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -388,6 +395,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.RetryInterval != 0 {
 		result.RetryInterval = b.RetryInterval
+	}
+	if b.RejoinAfterLeave {
+		result.RejoinAfterLeave = true
 	}
 
 	// Copy the event handlers

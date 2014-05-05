@@ -82,6 +82,8 @@ func (c *Command) readConfig() *Config {
 		"address of agent to join on startup with retry")
 	cmdFlags.IntVar(&cmdConfig.RetryMaxAttempts, "retry-max", 0, "maximum retry join attempts")
 	cmdFlags.StringVar(&retryInterval, "retry-interval", "", "retry join interval")
+	cmdFlags.BoolVar(&cmdConfig.RejoinAfterLeave, "rejoin", false,
+		"enable re-joining after a previous leave")
 	if err := cmdFlags.Parse(c.args); err != nil {
 		return nil
 	}
@@ -150,6 +152,11 @@ func (c *Command) readConfig() *Config {
 	if config.RetryInterval < minRetryInterval {
 		c.Ui.Output(fmt.Sprintf("Warning: 'RetryInterval' is too low. Setting to %v", config.RetryInterval))
 		config.RetryInterval = minRetryInterval
+	}
+
+	// Check snapshot file is provided if we have RejoinAfterLeave
+	if config.RejoinAfterLeave && config.SnapshotPath == "" {
+		c.Ui.Output("Warning: 'RejoinAfterLeave' enabled without snapshot file")
 	}
 
 	return config
@@ -283,6 +290,7 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	if config.KeyringFile != "" {
 		serfConfig.KeyringFile = config.KeyringFile
 	}
+	serfConfig.RejoinAfterLeave = config.RejoinAfterLeave
 
 	// Start Serf
 	c.Ui.Output("Starting Serf agent...")
