@@ -93,6 +93,14 @@ func (c *QueryCommand) Run(args []string) int {
 	}
 	defer cl.Close()
 
+	// Setup the the response handler
+	var handler queryRespFormat
+	handler = &textQueryRespFormat{
+		ui:    c.Ui,
+		name:  name,
+		noAck: noAck,
+	}
+
 	ackCh := make(chan string, 128)
 	respCh := make(chan client.NodeResponse, 128)
 
@@ -110,11 +118,7 @@ func (c *QueryCommand) Run(args []string) int {
 		c.Ui.Error(fmt.Sprintf("Error sending query: %s", err))
 		return 1
 	}
-	c.Ui.Output(fmt.Sprintf("Query '%s' dispatched", name))
-
-	// Track responses and acknowledgements
-	numAcks := 0
-	numResp := 0
+	handler.Started()
 
 OUTER:
 	for {
@@ -123,35 +127,67 @@ OUTER:
 			if a == "" {
 				break OUTER
 			}
-			numAcks++
-			c.Ui.Info(fmt.Sprintf("Ack from '%s'", a))
+			handler.AckReceived(a)
 
 		case r := <-respCh:
 			if r.From == "" {
 				break OUTER
 			}
-			numResp++
-
-			// Remove the trailing newline if there is one
-			payload := r.Payload
-			if n := len(payload); n > 0 && payload[n-1] == '\n' {
-				payload = payload[:n-1]
-			}
-
-			c.Ui.Info(fmt.Sprintf("Response from '%s': %s", r.From, payload))
+			handler.ResponseReceived(r)
 
 		case <-c.ShutdownCh:
 			return 1
 		}
 	}
 
-	if !noAck {
-		c.Ui.Output(fmt.Sprintf("Total Acks: %d", numAcks))
-	}
-	c.Ui.Output(fmt.Sprintf("Total Responses: %d", numResp))
+	handler.Finished()
 	return 0
 }
 
 func (c *QueryCommand) Synopsis() string {
 	return "Send a query to the Serf cluster"
+}
+
+// queryRespFormat is used to switch our handler based on the format
+type queryRespFormat interface {
+	Started()
+	AckReceived(from string)
+	ResponseReceived(resp client.NodeResponse)
+	Finished()
+}
+
+type textQueryRespFormat struct {
+	ui      cli.Ui
+	name    string
+	noAck   bool
+	numAcks int
+	numResp int
+}
+
+func (t *textQueryRespFormat) Started() {
+	t.ui.Output(fmt.Sprintf("Query '%s' dispatched", t.name))
+}
+
+func (t *textQueryRespFormat) AckReceived(from string) {
+	t.numAcks++
+	t.ui.Info(fmt.Sprintf("Ack from '%s'", from))
+}
+
+func (t *textQueryRespFormat) ResponseReceived(r client.NodeResponse) {
+	t.numResp++
+
+	// Remove the trailing newline if there is one
+	payload := r.Payload
+	if n := len(payload); n > 0 && payload[n-1] == '\n' {
+		payload = payload[:n-1]
+	}
+
+	t.ui.Info(fmt.Sprintf("Response from '%s': %s", r.From, payload))
+}
+
+func (t *textQueryRespFormat) Finished() {
+	if !t.noAck {
+		t.ui.Output(fmt.Sprintf("Total Acks: %d", t.numAcks))
+	}
+	t.ui.Output(fmt.Sprintf("Total Responses: %d", t.numResp))
 }
