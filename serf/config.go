@@ -172,6 +172,12 @@ type Config struct {
 	// succeeds and will also avoid replaying old user events.
 	SnapshotPath string
 
+	// RejoinAfterLeave controls our interaction with the snapshot file.
+	// When set to false (default), a leave causes a Serf to not rejoin
+	// the cluster until an explicit join is received. If this is set to
+	// true, we ignore the leave, and rejoin the cluster on start.
+	RejoinAfterLeave bool
+
 	// EnableNameConflictResolution controls if Serf will actively attempt
 	// to resolve a name conflict. Since each Serf member must have a unique
 	// name, a cluster can run into issues if multiple nodes claim the same

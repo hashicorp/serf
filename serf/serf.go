@@ -277,8 +277,13 @@ func Create(conf *Config) (*Serf, error) {
 	var oldClock, oldEventClock, oldQueryClock LamportTime
 	var prev []*PreviousNode
 	if conf.SnapshotPath != "" {
-		eventCh, snap, err := NewSnapshotter(conf.SnapshotPath, snapshotSizeLimit, false,
-			serf.logger, &serf.clock, conf.EventCh, serf.shutdownCh)
+		eventCh, snap, err := NewSnapshotter(conf.SnapshotPath,
+			snapshotSizeLimit,
+			conf.RejoinAfterLeave,
+			serf.logger,
+			&serf.clock,
+			conf.EventCh,
+			serf.shutdownCh)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to setup snapshot: %v", err)
 		}
