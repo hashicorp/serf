@@ -1,9 +1,48 @@
 ## 0.6.0 (Unreleased)
 
+FEATURES:
+
+ * Support for key rotation when using encryption. This adds a new
+ `serf keys` command, and a `-keyring-file` configuration. Thanks
+ to @ryanuber.
+
+ * New `-tags-file` can be specified to persist changes to tags made
+ via the RPC interface. Thanks to @ryanuber.
+
+ * New `serf info` command to provide operator debugging information,
+ and to get info about the local node.
+
+ * Adding `-retry-join` flag to agent which enables retrying the join
+ until success or `-retry-max` attempts have been made.
+
 IMPROVEMENTS:
+
+ * New `-rejoin` flag can be used along with a snapshot file to
+ automatically rejoin a cluster.
 
  * Agent uses circular buffer to invoke handlers, guards against unbounded
  output lengths.
+
+ * Adding support for logging to syslog
+
+ * The SERF_RPC_ADDR environment variable can be used instead of the
+ `-rpc-addr` flags. Thanks to @lalyos [GH-209].
+
+ * `serf query` can now output the results in a JSON format.
+
+ * Unknown configuration directives generate an error [GH-186].
+ Thanks to @vincentbernat.
+
+BUG FIXES:
+
+ * Fixing environmental variables with invalid characters. [GH-200].
+ Thanks to @arschles.
+
+MISC:
+
+ * Improved logging of various error messages
+
+ * Improved debian packaging. Thanks to @vincentbernat.
 
 ## 0.5.0 (March 12, 2014)
 
