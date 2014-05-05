@@ -1,6 +1,7 @@
 package command
 
 import (
+	"encoding/json"
 	"github.com/mitchellh/cli"
 	"strings"
 	"testing"
@@ -153,5 +154,40 @@ func TestQueryCommandRun_nodeFilter_failed(t *testing.T) {
 
 	if strings.Contains(ui.OutputWriter.String(), a1.SerfConfig().NodeName) {
 		t.Fatalf("bad: %#v", ui.OutputWriter.String())
+	}
+}
+
+func TestQueryCommandRun_formatJSON(t *testing.T) {
+	type output struct {
+		Acks      []string
+		Responses map[string]string
+	}
+
+	a1 := testAgent(t)
+	defer a1.Shutdown()
+	rpcAddr, ipc := testIPC(t, a1)
+	defer ipc.Shutdown()
+
+	ui := new(cli.MockUi)
+	c := &QueryCommand{Ui: ui}
+	args := []string{"-rpc-addr=" + rpcAddr,
+		"-format=json",
+		"-timeout=500ms",
+		"deploy", "abcd1234"}
+
+	code := c.Run(args)
+	if code != 0 {
+		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
+	}
+
+	// Decode the output
+	dec := json.NewDecoder(ui.OutputWriter)
+	var out output
+	if err := dec.Decode(&out); err != nil {
+		t.Fatalf("Decode err: %v", err)
+	}
+
+	if out.Acks[0] != a1.SerfConfig().NodeName {
+		t.Fatalf("bad: %#v", out)
 	}
 }

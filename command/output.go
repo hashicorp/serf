@@ -15,7 +15,7 @@ func formatOutput(data interface{}, format string) ([]byte, error) {
 	switch format {
 
 	case "json":
-		jsonout, err := json.MarshalIndent(data.(fmt.Stringer), "", "  ")
+		jsonout, err := json.MarshalIndent(data, "", "  ")
 		if err != nil {
 			return nil, err
 		}

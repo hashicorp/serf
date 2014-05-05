@@ -25,6 +25,9 @@ Usage: serf query [options] name payload
 
 Options:
 
+  -format                   If provided, output is returned in the specified
+                            format. Valid formats are 'json', and 'text' (default)
+
   -node=NAME                This flag can be provided multiple times to filter
                             responses to only named nodes.
 
@@ -48,12 +51,14 @@ func (c *QueryCommand) Run(args []string) int {
 	var nodes []string
 	var tags []string
 	var timeout time.Duration
+	var format string
 	cmdFlags := flag.NewFlagSet("event", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.Var((*agent.AppendSliceValue)(&nodes), "node", "node filter")
 	cmdFlags.Var((*agent.AppendSliceValue)(&tags), "tag", "tag filter")
 	cmdFlags.DurationVar(&timeout, "timeout", 0, "query timeout")
 	cmdFlags.BoolVar(&noAck, "no-ack", false, "no-ack")
+	cmdFlags.StringVar(&format, "format", "text", "output format")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	rpcAuth := RPCAuthFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
@@ -95,10 +100,21 @@ func (c *QueryCommand) Run(args []string) int {
 
 	// Setup the the response handler
 	var handler queryRespFormat
-	handler = &textQueryRespFormat{
-		ui:    c.Ui,
-		name:  name,
-		noAck: noAck,
+	switch format {
+	case "text":
+		handler = &textQueryRespFormat{
+			ui:    c.Ui,
+			name:  name,
+			noAck: noAck,
+		}
+	case "json":
+		handler = &jsonQueryRespFormat{
+			ui:        c.Ui,
+			Responses: make(map[string]string),
+		}
+	default:
+		c.Ui.Error(fmt.Sprintf("Invalid format: %s", format))
+		return 1
 	}
 
 	ackCh := make(chan string, 128)
@@ -140,7 +156,9 @@ OUTER:
 		}
 	}
 
-	handler.Finished()
+	if err := handler.Finished(); err != nil {
+		return 1
+	}
 	return 0
 }
 
@@ -153,9 +171,11 @@ type queryRespFormat interface {
 	Started()
 	AckReceived(from string)
 	ResponseReceived(resp client.NodeResponse)
-	Finished()
+	Finished() error
 }
 
+// textQueryRespFormat is used to output the results in a human-readable
+// format that is streamed as results come in
 type textQueryRespFormat struct {
 	ui      cli.Ui
 	name    string
@@ -185,9 +205,37 @@ func (t *textQueryRespFormat) ResponseReceived(r client.NodeResponse) {
 	t.ui.Info(fmt.Sprintf("Response from '%s': %s", r.From, payload))
 }
 
-func (t *textQueryRespFormat) Finished() {
+func (t *textQueryRespFormat) Finished() error {
 	if !t.noAck {
 		t.ui.Output(fmt.Sprintf("Total Acks: %d", t.numAcks))
 	}
 	t.ui.Output(fmt.Sprintf("Total Responses: %d", t.numResp))
+	return nil
+}
+
+// jsonQueryRespFormat is used to output the results in a JSON format
+type jsonQueryRespFormat struct {
+	ui        cli.Ui
+	Acks      []string
+	Responses map[string]string
+}
+
+func (j *jsonQueryRespFormat) Started() {}
+
+func (j *jsonQueryRespFormat) AckReceived(from string) {
+	j.Acks = append(j.Acks, from)
+}
+
+func (j *jsonQueryRespFormat) ResponseReceived(r client.NodeResponse) {
+	j.Responses[r.From] = string(r.Payload)
+}
+
+func (j *jsonQueryRespFormat) Finished() error {
+	output, err := formatOutput(j, "json")
+	if err != nil {
+		j.ui.Error(fmt.Sprintf("Encoding error: %s", err))
+		return err
+	}
+	j.ui.Output(string(output))
+	return nil
 }
