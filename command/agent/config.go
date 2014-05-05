@@ -29,6 +29,7 @@ func DefaultConfig() *Config {
 		Protocol:      serf.ProtocolVersionMax,
 		ReplayOnJoin:  false,
 		Profile:       "lan",
+		RetryInterval: 30 * time.Second,
 	}
 }
 
@@ -160,6 +161,22 @@ type Config struct {
 	// EnableSyslog is used to also tee all the logs over to syslog. Only supported
 	// on linux and OSX. Other platforms will generate an error.
 	EnableSyslog bool `mapstructure:"enable_syslog"`
+
+	// RetryJoin is a list of addresses to attempt to join when the
+	// agent starts. Serf will continue to retry the join until it
+	// succeeds or RetryMaxAttempts is reached.
+	RetryJoin []string `mapstructure:"retry_join"`
+
+	// RetryMaxAttempts is used to limit the maximum attempts made
+	// by RetryJoin to reach other nodes. If this is 0, then no limit
+	// is imposed, and Serf will continue to try forever. Defaults to 0.
+	RetryMaxAttempts int `mapstructure:"retry_max_attempts"`
+
+	// RetryIntervalRaw is the string retry interval. This interval
+	// controls how often we retry the join for RetryJoin. This defaults
+	// to 30 seconds.
+	RetryIntervalRaw string        `mapstructure:"retry_interval"`
+	RetryInterval    time.Duration `mapstructure:"-"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -261,6 +278,14 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 		result.TombstoneTimeout = dur
 	}
 
+	if result.RetryIntervalRaw != "" {
+		dur, err := time.ParseDuration(result.RetryIntervalRaw)
+		if err != nil {
+			return nil, err
+		}
+		result.RetryInterval = dur
+	}
+
 	return &result, nil
 }
 
@@ -358,6 +383,12 @@ func MergeConfig(a, b *Config) *Config {
 	if b.EnableSyslog {
 		result.EnableSyslog = true
 	}
+	if b.RetryMaxAttempts != 0 {
+		result.RetryMaxAttempts = b.RetryMaxAttempts
+	}
+	if b.RetryInterval != 0 {
+		result.RetryInterval = b.RetryInterval
+	}
 
 	// Copy the event handlers
 	result.EventHandlers = make([]string, 0, len(a.EventHandlers)+len(b.EventHandlers))
@@ -368,6 +399,11 @@ func MergeConfig(a, b *Config) *Config {
 	result.StartJoin = make([]string, 0, len(a.StartJoin)+len(b.StartJoin))
 	result.StartJoin = append(result.StartJoin, a.StartJoin...)
 	result.StartJoin = append(result.StartJoin, b.StartJoin...)
+
+	// Copy the retry join addresses
+	result.RetryJoin = make([]string, 0, len(a.RetryJoin)+len(b.RetryJoin))
+	result.RetryJoin = append(result.RetryJoin, a.RetryJoin...)
+	result.RetryJoin = append(result.RetryJoin, b.RetryJoin...)
 
 	return &result
 }

@@ -281,6 +281,40 @@ func TestDecodeConfig(t *testing.T) {
 	if !config.EnableSyslog {
 		t.Fatalf("bad: %#v", config)
 	}
+
+	// Retry configs
+	input = `{"retry_max_attempts": 5, "retry_interval": "60s"}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.RetryMaxAttempts != 5 {
+		t.Fatalf("bad: %#v", config)
+	}
+
+	if config.RetryInterval != 60*time.Second {
+		t.Fatalf("bad: %#v", config)
+	}
+
+	// Retry configs
+	input = `{"retry_join": ["127.0.0.1", "127.0.0.2"]}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if len(config.RetryJoin) != 2 {
+		t.Fatalf("bad: %#v", config)
+	}
+
+	if config.RetryJoin[0] != "127.0.0.1" {
+		t.Fatalf("bad: %#v", config)
+	}
+
+	if config.RetryJoin[1] != "127.0.0.2" {
+		t.Fatalf("bad: %#v", config)
+	}
 }
 
 func TestDecodeConfig_unknownDirective(t *testing.T) {
@@ -299,6 +333,7 @@ func TestMergeConfig(t *testing.T) {
 		EventHandlers: []string{"foo"},
 		StartJoin:     []string{"foo"},
 		ReplayOnJoin:  true,
+		RetryJoin:     []string{"zab"},
 	}
 
 	b := &Config{
@@ -317,6 +352,9 @@ func TestMergeConfig(t *testing.T) {
 		DisableNameResolution: true,
 		TombstoneTimeout:      36 * time.Hour,
 		EnableSyslog:          true,
+		RetryJoin:             []string{"zip"},
+		RetryMaxAttempts:      10,
+		RetryInterval:         120 * time.Second,
 	}
 
 	c := MergeConfig(a, b)
@@ -381,12 +419,25 @@ func TestMergeConfig(t *testing.T) {
 		t.Fatalf("bad: %#v", c)
 	}
 
+	if c.RetryMaxAttempts != 10 {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if c.RetryInterval != 120*time.Second {
+		t.Fatalf("bad: %#v", c)
+	}
+
 	expected := []string{"foo", "bar"}
 	if !reflect.DeepEqual(c.EventHandlers, expected) {
 		t.Fatalf("bad: %#v", c)
 	}
 
 	if !reflect.DeepEqual(c.StartJoin, expected) {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	expected = []string{"zab", "zip"}
+	if !reflect.DeepEqual(c.RetryJoin, expected) {
 		t.Fatalf("bad: %#v", c)
 	}
 }
