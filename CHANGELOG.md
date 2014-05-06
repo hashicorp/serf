@@ -41,6 +41,8 @@ BUG FIXES:
  * Fixing issue with tag changes with hard restart before
    failure detection.
 
+ * Fixing issue with reconnect when using dynamic ports.
+
 MISC:
 
  * Improved logging of various error messages
