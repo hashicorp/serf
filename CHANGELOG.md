@@ -38,6 +38,9 @@ BUG FIXES:
  * Fixing environmental variables with invalid characters. [GH-200].
  Thanks to @arschles.
 
+ * Fixing issue with tag changes with hard restart before
+   failure detection.
+
 MISC:
 
  * Improved logging of various error messages
