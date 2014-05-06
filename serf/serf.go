@@ -1423,13 +1423,13 @@ func (s *Serf) reconnect() {
 	idx := int(rand.Uint32() % uint32(n))
 	mem := s.failedMembers[idx]
 	s.memberLock.RUnlock()
-	s.logger.Printf("[INFO] serf: attempting reconnect to %v %v", mem.Name, net.IP(mem.Addr))
 
 	// Format the addr
-	addr := mem.Addr.String()
+	addr := net.UDPAddr{IP: mem.Addr, Port: int(mem.Port)}
+	s.logger.Printf("[INFO] serf: attempting reconnect to %v %s", mem.Name, addr.String())
 
 	// Attempt to join at the memberlist level
-	s.memberlist.Join([]string{addr})
+	s.memberlist.Join([]string{addr.String()})
 }
 
 // checkQueueDepth periodically checks the size of a queue to see if

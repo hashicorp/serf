@@ -468,6 +468,65 @@ func TestSerf_reconnect(t *testing.T) {
 		[]EventType{EventMemberJoin, EventMemberFailed, EventMemberJoin})
 }
 
+func TestSerf_reconnect_sameIP(t *testing.T) {
+	eventCh := make(chan Event, 64)
+	s1Config := testConfig()
+	s1Config.EventCh = eventCh
+
+	s2Config := testConfig()
+	s2Config.MemberlistConfig.BindAddr = s1Config.MemberlistConfig.BindAddr
+	s2Config.MemberlistConfig.BindPort = s1Config.MemberlistConfig.BindPort + 1
+
+	s2Addr := fmt.Sprintf("%s:%d",
+		s2Config.MemberlistConfig.BindAddr,
+		s2Config.MemberlistConfig.BindPort)
+	s2Name := s2Config.NodeName
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	defer s1.Shutdown()
+	defer s2.Shutdown()
+
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s2Addr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Now force the shutdown of s2 so it appears to fail.
+	if err := s2.Shutdown(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 5)
+
+	// Bring back s2 by mimicking its name and address
+	s2Config = testConfig()
+	s2Config.MemberlistConfig.BindAddr = s1Config.MemberlistConfig.BindAddr
+	s2Config.MemberlistConfig.BindPort = s1Config.MemberlistConfig.BindPort + 1
+	s2Config.NodeName = s2Name
+	s2, err = Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	time.Sleep(s1Config.ReconnectInterval * 5)
+
+	testEvents(t, eventCh, s2Name,
+		[]EventType{EventMemberJoin, EventMemberFailed, EventMemberJoin})
+}
+
 func TestSerf_role(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()
