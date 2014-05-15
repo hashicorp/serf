@@ -1,3 +1,10 @@
+## 0.6.1 (unreleased)
+
+BUG FIXES:
+
+* On Windows, a "failed to decode request header" error will no
+  longer be shown on every RPC request.
+
 ## 0.6.0 (May 8, 2014)
 
 FEATURES:
