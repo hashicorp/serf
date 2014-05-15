@@ -124,7 +124,7 @@ The options below are all specified on the command-line.
 
 * `-retry-join` - Address of another agent to join after starting up. This can
   be specified multiple times to specify multiple agents to join. If Serf is
-  unable to join with any of the specified addresses, the agent will ertry
+  unable to join with any of the specified addresses, the agent will retry
   the join every `-retry-interval` up to `-retry-max` attempts. This can be used
   instead of `-join` to continue attempting to join the cluster.
 
