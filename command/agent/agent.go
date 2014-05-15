@@ -29,6 +29,7 @@ type Agent struct {
 
 	// eventHandlers is the registered handlers for events
 	eventHandlers     map[EventHandler]struct{}
+	eventHandlerList  []EventHandler
 	eventHandlersLock sync.Mutex
 
 	// logger instance wraps the logOutput
@@ -212,14 +213,24 @@ func (a *Agent) Query(name string, payload []byte, params *serf.QueryParam) (*se
 func (a *Agent) RegisterEventHandler(eh EventHandler) {
 	a.eventHandlersLock.Lock()
 	defer a.eventHandlersLock.Unlock()
+
 	a.eventHandlers[eh] = struct{}{}
+	a.eventHandlerList = nil
+	for eh := range a.eventHandlers {
+		a.eventHandlerList = append(a.eventHandlerList, eh)
+	}
 }
 
 // DeregisterEventHandler removes an EventHandler and prevents more invocations
 func (a *Agent) DeregisterEventHandler(eh EventHandler) {
 	a.eventHandlersLock.Lock()
 	defer a.eventHandlersLock.Unlock()
+
 	delete(a.eventHandlers, eh)
+	a.eventHandlerList = nil
+	for eh := range a.eventHandlers {
+		a.eventHandlerList = append(a.eventHandlerList, eh)
+	}
 }
 
 // eventLoop listens to events from Serf and fans out to event handlers
@@ -230,10 +241,11 @@ func (a *Agent) eventLoop() {
 		case e := <-a.eventCh:
 			a.logger.Printf("[INFO] agent: Received event: %s", e.String())
 			a.eventHandlersLock.Lock()
-			for eh, _ := range a.eventHandlers {
+			handlers := a.eventHandlerList
+			a.eventHandlersLock.Unlock()
+			for _, eh := range handlers {
 				eh.HandleEvent(e)
 			}
-			a.eventHandlersLock.Unlock()
 
 		case <-serfShutdownCh:
 			a.logger.Printf("[WARN] agent: Serf shutdown detected, quitting")
