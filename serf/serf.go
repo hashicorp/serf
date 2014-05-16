@@ -1291,7 +1291,6 @@ func (s *Serf) resolveNodeConflict() {
 	var responses, matching int
 
 	// Gather responses
-	member := new(Member)
 	respCh := resp.ResponseCh()
 	for r := range respCh {
 		// Decode the response
@@ -1299,7 +1298,8 @@ func (s *Serf) resolveNodeConflict() {
 			s.logger.Printf("[ERR] serf: Invalid conflict query response type: %v", r.Payload)
 			continue
 		}
-		if err := decodeMessage(r.Payload[1:], member); err != nil {
+		var member Member
+		if err := decodeMessage(r.Payload[1:], &member); err != nil {
 			s.logger.Printf("[ERR] serf: Failed to decode conflict query response: %v", err)
 			continue
 		}
