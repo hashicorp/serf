@@ -679,7 +679,7 @@ Options:
   -rpc-addr=127.0.0.1:7373 Address to bind the RPC listener.
   -snapshot=path/to/file   The snapshot file is used to store alive nodes and
                            event information so that Serf can rejoin a cluster
-						   and avoid event replay on restart.
+                           and avoid event replay on restart.
   -tag key=value           Tag can be specified multiple times to attach multiple
                            key/value tag pairs to the given node.
   -tags-file=/path/to/file The tags file is used to persist tag data. As an agent's
