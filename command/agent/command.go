@@ -640,6 +640,11 @@ Usage: serf agent [options]
 Options:
 
   -bind=0.0.0.0            Address to bind network listeners to
+  -iface                   Network interface to bind to. Can be used instead of
+                           -bind if the interface is known but not the address.
+                           If both are provided, then Serf verifies that the
+                           interface has the bind address that is provided. This
+                           flag also sets the multicast device used for -discover.
   -advertise=0.0.0.0       Address to advertise to the other cluster members
   -config-file=foo         Path to a JSON file to read configuration from.
                            This can be specified multiple times.
