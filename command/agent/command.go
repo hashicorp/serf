@@ -672,6 +672,8 @@ Options:
 						   The default if not provided is lan.
   -protocol=n              Serf protocol version to use. This defaults to
                            the latest version, but can be set back for upgrades.
+  -rejoin                  Ignores a previous leave and attempts to rejoin the cluster.
+                           Only works if provided along with a snapshot file.
   -retry-join=addr         An agent to join with. This flag be specified multiple times.
                            Does not exit on failure like -join, used to retry until success.
   -retry-interval=30s      Sets the interval on which a node will attempt to retry joining
