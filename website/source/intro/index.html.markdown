@@ -14,9 +14,9 @@ of a reference for all available features.
 
 ## What is Serf?
 
-Serf is a service discovery and orchestration tool that is decentralized,
-highly available, and fault tolerant.
-Serf runs on every major platform: Linux, Mac OS X, and Windows. It is
+Serf is a tool for cluster membership, failure detection,
+and orchestration that is decentralized, fault-tolerant and
+highly available. Serf runs on every major platform: Linux, Mac OS X, and Windows. It is
 extremely lightweight: it uses 5 to 10 MB of resident memory and primarily
 communicates using infrequent UDP messages.
 
