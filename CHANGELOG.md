@@ -1,9 +1,20 @@
-## 0.6.1 (unreleased)
+## 0.6.1 (May 29, 2014)
 
 BUG FIXES:
 
 * On Windows, a "failed to decode request header" error will no
   longer be shown on every RPC request.
+
+* Avoiding holding a lock which can cause monitor/stream commands to
+  fail when an event handler is blocking
+
+* Fixing conflict response decoding errors
+
+IMPROVEMENTS:
+
+* Improved agent CLI usage documentation
+
+* Warn if an event handler is slow, potentially blocking other events
 
 ## 0.6.0 (May 8, 2014)
 
