@@ -507,33 +507,32 @@ on encryption keys can be found on the
 ### stats
 
 The stats command is used to obtain operator debugging information about the
-running serf agent.
-There is no request body, but the response looks like:
+running serf agent. There is no request body, but the response looks like:
 
 ```
     {
-          "agent" => {
-            "name" => "node1"
+        "agent": {
+            "name": "node1"
         },
-        "runtime" => {
-                    "os" => "linux",
-                  "arch" => "amd64",
-              "version" => "go1.2",
-            "max_procs" => "1",
-            "goroutines" => "22",
-            "cpu_count" => "4"
+        "runtime": {
+            "os": "linux",
+            "arch": "amd64",
+            "version": "go1.2",
+            "max_procs": "1",
+            "goroutines": "22",
+            "cpu_count": "4"
         },
-          "serf" => {
-                  "failed" => "0",
-                    "left" => "0",
-              "event_time" => "1",
-              "query_time" => "1",
-            "event_queue" => "0",
-                "members" => "5",
-            "member_time" => "5",
-            "intent_queue" => "0",
-            "query_queue" => "0"
+        "serf": {
+            "failed": "0",
+            "left": "0",
+            "event_time": "1",
+            "query_time": "1",
+            "event_queue": "0",
+            "members": "5",
+            "member_time": "5",
+            "intent_queue": "0",
+            "query_queue": "0"
         },
-          "tags" => {}
+        "tags": {}
     }
 ```
