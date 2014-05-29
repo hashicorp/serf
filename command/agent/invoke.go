@@ -22,6 +22,9 @@ const (
 	// This is to prevent Serf's memory from growing to an enormous
 	// amount due to a faulty handler.
 	maxBufSize = 8 * 1024
+
+	// warnSlow is used to warn about a slow handler invocation
+	warnSlow = time.Second
 )
 
 var sanitizeTagRegexp = regexp.MustCompile(`[^A-Z0-9_]`)
@@ -89,6 +92,12 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 		return fmt.Errorf("Unknown event type: %s", event.EventType().String())
 	}
 
+	// Start a timer to warn about slow handlers
+	slowTimer := time.AfterFunc(warnSlow, func() {
+		logger.Printf("[WARN] agent: Script '%s' slow, execution exceeding %v",
+			script, warnSlow)
+	})
+
 	if err := cmd.Start(); err != nil {
 		return err
 	}
@@ -100,6 +109,7 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 	}
 
 	err = cmd.Wait()
+	slowTimer.Stop()
 	logger.Printf("[DEBUG] agent: Event '%s' script output: %s",
 		event.EventType().String(), output.String())
 	if err != nil {
