@@ -65,6 +65,7 @@ Possible commands include:
 * use-key - Changes the primary key used for encrypting messages
 * remove-key - Removes an existing encryption key
 * list-keys - Provides a list of encryption keys in use in the cluster
+* stats - Provides a debugging information about the running serf agent
 
 Below each command is documented along with any request or
 response body that is applicable.
@@ -502,3 +503,37 @@ members are aware of a key, you should either rebroadcast that key using the
 `install-key` RPC command, or remove it using the `remove-key` RPC command. More
 on encryption keys can be found on the
 [agent encryption](/docs/agent/encryption.html) page.
+
+### stats
+
+The stats command is used to obtain operator debugging information about the
+running serf agent.
+There is no request body, but the response looks like:
+
+```
+    {
+          "agent" => {
+            "name" => "node1"
+        },
+        "runtime" => {
+                    "os" => "linux",
+                  "arch" => "amd64",
+              "version" => "go1.2",
+            "max_procs" => "1",
+            "goroutines" => "22",
+            "cpu_count" => "4"
+        },
+          "serf" => {
+                  "failed" => "0",
+                    "left" => "0",
+              "event_time" => "1",
+              "query_time" => "1",
+            "event_queue" => "0",
+                "members" => "5",
+            "member_time" => "5",
+            "intent_queue" => "0",
+            "query_queue" => "0"
+        },
+          "tags" => {}
+    }
+```
