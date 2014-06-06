@@ -751,7 +751,7 @@ func (s *Serf) Shutdown() error {
 	}
 
 	if s.state != SerfLeft {
-		s.logger.Println("[WARN] Shutdown without a Leave")
+		s.logger.Printf("[WARN] serf: Shutdown without a Leave")
 	}
 
 	s.state = SerfShutdown
@@ -1538,7 +1538,7 @@ func (s *Serf) decodeTags(buf []byte) map[string]string {
 	r := bytes.NewReader(buf[1:])
 	dec := codec.NewDecoder(r, &codec.MsgpackHandle{})
 	if err := dec.Decode(&tags); err != nil {
-		s.logger.Printf("[ERR] Failed to decode tags: %v", err)
+		s.logger.Printf("[ERR] serf: Failed to decode tags: %v", err)
 	}
 	return tags
 }
