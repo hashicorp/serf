@@ -283,6 +283,9 @@ at a single JSON object with configuration within it.
 
 * `enable_syslog` - Equivalent to the `-syslog` command-line flag.
 
+* `syslog_facility` - When used with `enable_syslog`, specifies the syslog
+  facility messages are sent to. By default `LOCAL0` is used.
+
 * `retry_join` - An array of strings specifying addresses of nodes to
   join upon startup with retries if we fail to join.
 

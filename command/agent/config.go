@@ -21,15 +21,16 @@ const DefaultBindPort int = 7946
 // DefaultConfig contains the defaults for configurations.
 func DefaultConfig() *Config {
 	return &Config{
-		Tags:          make(map[string]string),
-		BindAddr:      "0.0.0.0",
-		AdvertiseAddr: "",
-		LogLevel:      "INFO",
-		RPCAddr:       "127.0.0.1:7373",
-		Protocol:      serf.ProtocolVersionMax,
-		ReplayOnJoin:  false,
-		Profile:       "lan",
-		RetryInterval: 30 * time.Second,
+		Tags:           make(map[string]string),
+		BindAddr:       "0.0.0.0",
+		AdvertiseAddr:  "",
+		LogLevel:       "INFO",
+		RPCAddr:        "127.0.0.1:7373",
+		Protocol:       serf.ProtocolVersionMax,
+		ReplayOnJoin:   false,
+		Profile:        "lan",
+		RetryInterval:  30 * time.Second,
+		SyslogFacility: "LOCAL0",
 	}
 }
 
@@ -161,6 +162,10 @@ type Config struct {
 	// EnableSyslog is used to also tee all the logs over to syslog. Only supported
 	// on linux and OSX. Other platforms will generate an error.
 	EnableSyslog bool `mapstructure:"enable_syslog"`
+
+	// SyslogFacility is used to control which syslog facility messages are
+	// sent to. Defaults to LOCAL0.
+	SyslogFacility string `mapstructure:"syslog_facility"`
 
 	// RetryJoin is a list of addresses to attempt to join when the
 	// agent starts. Serf will continue to retry the join until it
@@ -398,6 +403,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.RejoinAfterLeave {
 		result.RejoinAfterLeave = true
+	}
+	if b.SyslogFacility != "" {
+		result.SyslogFacility = b.SyslogFacility
 	}
 
 	// Copy the event handlers

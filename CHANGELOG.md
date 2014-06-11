@@ -1,3 +1,9 @@
+## 0.6.2 (Unreleased)
+
+IMPROVEMENTS:
+
+* Added `syslog_facility` configuration to set facility
+
 ## 0.6.1 (May 29, 2014)
 
 BUG FIXES:
