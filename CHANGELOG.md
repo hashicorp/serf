@@ -4,6 +4,16 @@ IMPROVEMENTS:
 
 * Added `syslog_facility` configuration to set facility
 
+BUG FIXES:
+
+* Fixed memory leak in in-memory stats system
+* Fixed issue that would cause syslog to deadlock
+
+MISC:
+
+* Fixed missing prefixes on some log messages
+* Docs fixes
+
 ## 0.6.1 (May 29, 2014)
 
 BUG FIXES:
