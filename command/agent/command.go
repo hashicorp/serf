@@ -615,7 +615,7 @@ func (c *Command) handleReload(config *Config, agent *Agent) *Config {
 	}
 
 	// Change the event handlers
-	c.scriptHandler.UpdateScripts(config.EventScripts())
+	c.scriptHandler.UpdateScripts(newConf.EventScripts())
 
 	// Update the tags in serf
 	if err := agent.SetTags(newConf.Tags); err != nil {
