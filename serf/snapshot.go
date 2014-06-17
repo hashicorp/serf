@@ -24,7 +24,7 @@ nodes to re-join, as well as restore our clock values to avoid replaying
 old events.
 */
 
-const fsyncInterval = 100 * time.Millisecond
+const flushInterval = 500 * time.Millisecond
 const clockUpdateInterval = 500 * time.Millisecond
 const tmpExt = ".compact"
 
@@ -34,8 +34,9 @@ type Snapshotter struct {
 	aliveNodes       map[string]string
 	clock            *LamportClock
 	fh               *os.File
+	buffered         *bufio.Writer
 	inCh             <-chan Event
-	lastFsync        time.Time
+	lastFlush        time.Time
 	lastClock        LamportTime
 	lastEventClock   LamportTime
 	lastQueryClock   LamportTime
@@ -95,6 +96,7 @@ func NewSnapshotter(path string,
 		aliveNodes:       make(map[string]string),
 		clock:            clock,
 		fh:               fh,
+		buffered:         bufio.NewWriter(fh),
 		inCh:             inCh,
 		lastClock:        0,
 		lastEventClock:   0,
@@ -178,6 +180,9 @@ func (s *Snapshotter) stream() {
 				s.aliveNodes = make(map[string]string)
 			}
 			s.tryAppend("leave\n")
+			if err := s.buffered.Flush(); err != nil {
+				s.logger.Printf("[ERR] serf: failed to flush leave to snapshot: %v", err)
+			}
 			if err := s.fh.Sync(); err != nil {
 				s.logger.Printf("[ERR] serf: failed to sync leave to snapshot: %v", err)
 			}
@@ -207,6 +212,9 @@ func (s *Snapshotter) stream() {
 			s.updateClock()
 
 		case <-s.shutdownCh:
+			if err := s.buffered.Flush(); err != nil {
+				s.logger.Printf("[ERR] serf: failed to flush snapshot: %v", err)
+			}
 			if err := s.fh.Sync(); err != nil {
 				s.logger.Printf("[ERR] serf: failed to sync snapshot: %v", err)
 			}
@@ -280,16 +288,16 @@ func (s *Snapshotter) tryAppend(l string) {
 func (s *Snapshotter) appendLine(l string) error {
 	defer metrics.MeasureSince([]string{"serf", "snapshot", "appendLine"}, time.Now())
 
-	n, err := s.fh.WriteString(l)
+	n, err := s.buffered.WriteString(l)
 	if err != nil {
 		return err
 	}
 
-	// Check if we should fsync
+	// Check if we should flush
 	now := time.Now()
-	if now.Sub(s.lastFsync) > fsyncInterval {
-		s.lastFsync = now
-		if err := s.fh.Sync(); err != nil {
+	if now.Sub(s.lastFlush) > flushInterval {
+		s.lastFlush = now
+		if err := s.buffered.Flush(); err != nil {
 			return err
 		}
 	}
@@ -313,11 +321,14 @@ func (s *Snapshotter) compact() error {
 		return fmt.Errorf("failed to open new snapshot: %v", err)
 	}
 
+	// Create a buffered writer
+	buf := bufio.NewWriter(fh)
+
 	// Write out the live nodes
 	var offset int64
 	for name, addr := range s.aliveNodes {
 		line := fmt.Sprintf("alive: %s %s\n", name, addr)
-		n, err := fh.WriteString(line)
+		n, err := buf.WriteString(line)
 		if err != nil {
 			fh.Close()
 			return err
@@ -327,7 +338,7 @@ func (s *Snapshotter) compact() error {
 
 	// Write out the clocks
 	line := fmt.Sprintf("clock: %d\n", s.lastClock)
-	n, err := fh.WriteString(line)
+	n, err := buf.WriteString(line)
 	if err != nil {
 		fh.Close()
 		return err
@@ -335,7 +346,7 @@ func (s *Snapshotter) compact() error {
 	offset += int64(n)
 
 	line = fmt.Sprintf("event-clock: %d\n", s.lastEventClock)
-	n, err = fh.WriteString(line)
+	n, err = buf.WriteString(line)
 	if err != nil {
 		fh.Close()
 		return err
@@ -343,12 +354,18 @@ func (s *Snapshotter) compact() error {
 	offset += int64(n)
 
 	line = fmt.Sprintf("query-clock: %d\n", s.lastQueryClock)
-	n, err = fh.WriteString(line)
+	n, err = buf.WriteString(line)
 	if err != nil {
 		fh.Close()
 		return err
 	}
 	offset += int64(n)
+
+	// Flush now
+	if err := buf.Flush(); err != nil {
+		fh.Close()
+		return fmt.Errorf("failed to flush new snapshot: %v", err)
+	}
 
 	// Switch the files
 	if err := os.Rename(newPath, s.path); err != nil {
@@ -359,8 +376,9 @@ func (s *Snapshotter) compact() error {
 	// Rotate our handles
 	s.fh.Close()
 	s.fh = fh
+	s.buffered = buf
 	s.offset = offset
-	s.lastFsync = time.Now()
+	s.lastFlush = time.Now()
 	return nil
 }
 
