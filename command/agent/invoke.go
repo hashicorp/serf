@@ -56,6 +56,8 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 	cmd.Env = append(os.Environ(),
 		"SERF_EVENT="+event.EventType().String(),
 		"SERF_SELF_NAME="+self.Name,
+		"SERF_SELF_IP="+self.Addr.String(),
+		"SERF_SELF_PORT="+fmt.Sprintf("%v",self.Port),
 		"SERF_SELF_ROLE="+self.Tags["role"],
 	)
 	cmd.Stderr = output
