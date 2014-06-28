@@ -54,8 +54,8 @@ size or the response will fail to send due to size restrictions.
 
 For membership related events (`member-join`, `member-leave`, `member-failed`, `member-update`, and `member-reap`),
 stdin is the list of members that participated in that event. Each member is
-separated by a newline and each field about the member is separated by
-whitespace. The fields of a membership event are name, address, role, then tags.
+separated by a newline and each field about the member is separated by a single
+tab (`\t`). The fields of a membership event are name, address, role, then tags.
 For example:
 
 ```
