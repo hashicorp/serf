@@ -30,6 +30,10 @@ variables:
 
 * `SERF_SELF_ROLE` is the role of the node that is executing the event handler.
 
+* `SERF_SELF_IP` is the ip of the node that is executing the event handler.
+
+* `SERF_SELF_PORT` is the port of the node that is executing the event handler.
+
 * `SERF_TAG_${TAG}` is set for each tag the agent has. The tag name is upper-cased.
 
 * `SERF_USER_EVENT` is the name of the user event if `SERF_EVENT` is "user".
