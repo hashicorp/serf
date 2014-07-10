@@ -1,8 +1,20 @@
-## 0.6.3 (Unreleased)
+## 0.6.3 (July 10, 2014)
 
 IMPROVEMENTS:
 
 * Added `statsite_addr` configuration to stream to statsite
+
+BUG FIXES:
+
+* Fixed issue with mDNS flooding when using IPv4 and IPv6
+* Fixed issue with reloading event handlers
+
+MISC:
+
+* Improved failure detection reliability under load
+* Reduced fsync() use in snapshot file
+* Improved snapshot file performance
+* Additional logging to help debug flapping
 
 ## 0.6.2 (June 16, 2014)
 
