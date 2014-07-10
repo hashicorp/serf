@@ -411,6 +411,9 @@ func MergeConfig(a, b *Config) *Config {
 	if b.SyslogFacility != "" {
 		result.SyslogFacility = b.SyslogFacility
 	}
+	if b.StatsiteAddr != "" {
+		result.StatsiteAddr = b.StatsiteAddr
+	}
 
 	// Copy the event handlers
 	result.EventHandlers = make([]string, 0, len(a.EventHandlers)+len(b.EventHandlers))

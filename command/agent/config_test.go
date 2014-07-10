@@ -329,6 +329,17 @@ func TestDecodeConfig(t *testing.T) {
 	if !config.RejoinAfterLeave {
 		t.Fatalf("bad: %#v", config)
 	}
+
+	// Rejoin configs
+	input = `{"statsite_addr": "127.0.0.1:8123"}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.StatsiteAddr != "127.0.0.1:8123" {
+		t.Fatalf("bad: %#v", config)
+	}
 }
 
 func TestDecodeConfig_unknownDirective(t *testing.T) {
@@ -370,6 +381,7 @@ func TestMergeConfig(t *testing.T) {
 		RetryMaxAttempts:      10,
 		RetryInterval:         120 * time.Second,
 		RejoinAfterLeave:      true,
+		StatsiteAddr:          "127.0.0.1:8125",
 	}
 
 	c := MergeConfig(a, b)
@@ -443,6 +455,10 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	if !c.RejoinAfterLeave {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if c.StatsiteAddr != "127.0.0.1:8125" {
 		t.Fatalf("bad: %#v", c)
 	}
 
