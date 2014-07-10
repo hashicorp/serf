@@ -295,6 +295,10 @@ at a single JSON object with configuration within it.
 
 * `rejoin_after_leave` - Equivalent to the `-rejoin` command-line flag.
 
+* `statsite_addr` - This provides the address of a statsite instance. If provided
+  Serf will stream various telemetry information to that instance for aggregation.
+  This can be used to capture various runtime information.
+
 #### Example Keyring File
 
 The keyring file is a simple JSON-formatted text file. It is important to

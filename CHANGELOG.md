@@ -1,3 +1,9 @@
+## 0.6.3 (Unreleased)
+
+IMPROVEMENTS:
+
+* Added `statsite_addr` configuration to stream to statsite
+
 ## 0.6.2 (June 16, 2014)
 
 IMPROVEMENTS:
