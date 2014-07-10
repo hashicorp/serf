@@ -189,6 +189,10 @@ type Config struct {
 	// true, we ignore the leave, and rejoin the cluster on start. This
 	// only has an affect if the snapshot file is enabled.
 	RejoinAfterLeave bool `mapstructure:"rejoin_after_leave"`
+
+	// StatsiteAddr is the address of a statsite instance. If provided,
+	// metrics will be streamed to that instance.
+	StatsiteAddr string `mapstructure:"statsite_addr"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be

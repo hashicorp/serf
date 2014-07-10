@@ -486,15 +486,27 @@ func (c *Command) Run(args []string) int {
 		return 1
 	}
 
-	/* Setup telemetry
+	/*
+	Setup telemetry
 	Aggregate on 10 second intervals for 1 minute. Expose the
 	metrics over stderr when there is a SIGUSR1 received.
 	*/
 	inm := metrics.NewInmemSink(10*time.Second, time.Minute)
 	metrics.DefaultInmemSignal(inm)
 	metricsConf := metrics.DefaultConfig("serf-agent")
-	metricsConf.EnableHostname = false
-	metrics.NewGlobal(metricsConf, inm)
+
+	if config.StatsiteAddr != "" {
+		sink, err := metrics.NewStatsiteSink(config.StatsiteAddr)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Failed to start statsite sink. Got: %s", err))
+			return 1
+		}
+		fanout := metrics.FanoutSink{inm, sink}
+		metrics.NewGlobal(metricsConf, fanout)
+	} else {
+		metricsConf.EnableHostname = false
+		metrics.NewGlobal(metricsConf, inm)
+	}
 
 	// Setup serf
 	agent := c.setupAgent(config, logOutput)
