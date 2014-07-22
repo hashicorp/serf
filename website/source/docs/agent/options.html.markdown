@@ -113,7 +113,7 @@ The options below are all specified on the command-line.
   Network. However, there are cases in which a user may want to use Serf over
   the Internet or (WAN), or even just locally. To support setting the correct
   configuration values for each environment, you can select a timing profile.
-  The current choices are "lan", "wan", and "local". This defaults to "local".
+  The current choices are "lan", "wan", and "local". This defaults to "lan".
   If a "lan" or "local" profile is used over the Internet, or a "local" profile
   over the LAN, a high rate of false failures is risked, as the timing constrains
   are too tight.
