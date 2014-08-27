@@ -28,7 +28,7 @@ All RPC requests have a request header, and some requests have
 a request body. The request header looks like:
 
 ```
-    {"Command": "Handshake", "Seq": 0}
+    {"Command": "handshake", "Seq": 0}
 ```
 
 All responses have a response header, and some may contain
