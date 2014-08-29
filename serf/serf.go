@@ -208,7 +208,7 @@ type queries struct {
 }
 
 const (
-	UserEventSizeLimit     = 256        // Maximum byte size for event name and payload
+	UserEventSizeLimit     = 512        // Maximum byte size for event name and payload
 	QuerySizeLimit         = 1024       // Maximum byte size for query
 	QueryResponseSizeLimit = 1024       // Maximum bytes size for response
 	snapshotSizeLimit      = 128 * 1024 // Maximum 128 KB snapshot
