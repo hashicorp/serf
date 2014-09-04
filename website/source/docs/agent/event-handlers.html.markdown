@@ -101,3 +101,38 @@ used to filter an event handler:
 * `query:load=uptime` - The uptime command will be invoked only for "load"
   queries.
 
+## Forking event handlers
+
+There are some cases where it may be desirable to fork a background process when
+an event handler fires. This is mainly useful for invoking scripts which take a
+minute or two to execute, and where the process output is not important. By
+default, Serf's execution subsystem will block, waiting for output and a return
+code. It is possible, however, to "detach" a process by forking and replacing
+the file descriptors for both stdout and stderr.
+
+In shell, this would look something like:
+
+```
+sleep 5 &>/dev/null &
+```
+
+In the above example, `sleep 5` is the lengthy process. Notice the first
+amerpsand, which copies the file descriptor instead of just redirecting output.
+
+Similarly, in Python this might look like:
+
+```
+out_log = file('/dev/null', 'a+')
+os.dup2(out_log.fileno(), sys.stdout.fileno())
+os.dup2(out_log.fileno(), sys.stderr.fileno())
+```
+
+Or in ruby:
+
+```
+$stdout.reopen('/dev/null', 'w')
+$stderr.reopen('/dev/null', 'w')
+```
+
+**Note:** This method is really only useful for event handlers, and is mostly
+useless for [queries](/docs/commands/query.html).
