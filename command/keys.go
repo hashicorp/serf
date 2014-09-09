@@ -86,6 +86,12 @@ func (c *KeysCommand) Run(args []string) int {
 		found = found || len(arg) > 0
 	}
 
+	// Fail fast if no actionable args were passed
+	if !found {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	client, err := RPCClient(*rpcAddr, *rpcAuth)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
@@ -177,8 +183,8 @@ func (c *KeysCommand) Run(args []string) int {
 		return 0
 	}
 
-	c.Ui.Error(c.Help())
-	return 1
+	// Should never reach this point
+	return 0
 }
 
 func (c *KeysCommand) Synopsis() string {
