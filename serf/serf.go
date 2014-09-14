@@ -89,7 +89,7 @@ type Serf struct {
 	shutdownCh chan struct{}
 
 	snapshotter *Snapshotter
-	keyManager  *keyManager
+	keyManager  *KeyManager
 }
 
 // SerfState is the state of the Serf instance.
@@ -357,7 +357,7 @@ func Create(conf *Config) (*Serf, error) {
 	serf.memberlist = memberlist
 
 	// Create a key manager for handling all encryption key changes
-	serf.keyManager = &keyManager{serf: serf}
+	serf.keyManager = &KeyManager{serf: serf}
 
 	// Start the background tasks. See the documentation above each method
 	// for more information on their role.
@@ -390,7 +390,7 @@ func (s *Serf) EncryptionEnabled() bool {
 }
 
 // KeyManager returns the key manager for the current Serf instance.
-func (s *Serf) KeyManager() *keyManager {
+func (s *Serf) KeyManager() *KeyManager {
 	return s.keyManager
 }
 

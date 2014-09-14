@@ -6,9 +6,9 @@ import (
 	"sync"
 )
 
-// keyManager encapsulates all functionality within Serf for handling
+// KeyManager encapsulates all functionality within Serf for handling
 // encryption keyring changes across a cluster.
-type keyManager struct {
+type KeyManager struct {
 	serf *Serf
 
 	// Lock to protect read and write operations
@@ -36,7 +36,7 @@ type KeyResponse struct {
 // streamKeyResp takes care of reading responses from a channel and composing
 // them into a KeyResponse. It will update a KeyResponse *in place* and
 // therefore has nothing to return.
-func (k *keyManager) streamKeyResp(resp *KeyResponse, ch <-chan NodeResponse) {
+func (k *KeyManager) streamKeyResp(resp *KeyResponse, ch <-chan NodeResponse) {
 	for r := range ch {
 		var nodeResponse nodeKeyResponse
 
@@ -83,7 +83,7 @@ func (k *keyManager) streamKeyResp(resp *KeyResponse, ch <-chan NodeResponse) {
 // handleKeyRequest performs query broadcasting to all members for any type of
 // key operation and manages gathering responses and packing them up into a
 // KeyResponse for uniform response handling.
-func (k *keyManager) handleKeyRequest(key, query string) (*KeyResponse, error) {
+func (k *KeyManager) handleKeyRequest(key, query string) (*KeyResponse, error) {
 	resp := &KeyResponse{
 		Messages: make(map[string]string),
 		Keys:     make(map[string]int),
@@ -126,7 +126,7 @@ func (k *keyManager) handleKeyRequest(key, query string) (*KeyResponse, error) {
 // InstallKey handles broadcasting a query to all members and gathering
 // responses from each of them, returning a list of messages from each node
 // and any applicable error conditions.
-func (k *keyManager) InstallKey(key string) (*KeyResponse, error) {
+func (k *KeyManager) InstallKey(key string) (*KeyResponse, error) {
 	k.l.Lock()
 	defer k.l.Unlock()
 
@@ -136,7 +136,7 @@ func (k *keyManager) InstallKey(key string) (*KeyResponse, error) {
 // UseKey handles broadcasting a primary key change to all members in the
 // cluster, and gathering any response messages. If successful, there should
 // be an empty KeyResponse returned.
-func (k *keyManager) UseKey(key string) (*KeyResponse, error) {
+func (k *KeyManager) UseKey(key string) (*KeyResponse, error) {
 	k.l.Lock()
 	defer k.l.Unlock()
 
@@ -146,7 +146,7 @@ func (k *keyManager) UseKey(key string) (*KeyResponse, error) {
 // RemoveKey handles broadcasting a key to the cluster for removal. Each member
 // will receive this event, and if they have the key in their keyring, remove
 // it. If any errors are encountered, RemoveKey will collect and relay them.
-func (k *keyManager) RemoveKey(key string) (*KeyResponse, error) {
+func (k *KeyManager) RemoveKey(key string) (*KeyResponse, error) {
 	k.l.Lock()
 	defer k.l.Unlock()
 
@@ -158,7 +158,7 @@ func (k *keyManager) RemoveKey(key string) (*KeyResponse, error) {
 // operators to ensure that there are no lingering keys installed on any agents.
 // Since having multiple keys installed can cause performance penalties in some
 // cases, it's important to verify this information and remove unneeded keys.
-func (k *keyManager) ListKeys() (*KeyResponse, error) {
+func (k *KeyManager) ListKeys() (*KeyResponse, error) {
 	k.l.RLock()
 	defer k.l.RUnlock()
 
