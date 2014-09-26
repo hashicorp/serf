@@ -13,9 +13,9 @@ changes (when a node comes online or goes offline) as well as
 [custom events](/docs/commands/event.html) or [queries](/docs/commands/query.html).
 
 Event handlers can be any executable, including piped executables (such
-as `awk '{print $2}' | grep foo`, since event handlers are invoked within
+as `awk '{print $2}' | grep foo`), since event handlers are invoked within
 the context of a shell. The event handler is executed anytime an event
-occurs and are expected to exit within a reasonable amount of time.
+occurs and is expected to exit within a reasonable amount of time.
 
 ## Inputs and Parameters
 
