@@ -27,8 +27,10 @@ Available commands are:
     agent           Runs a Serf agent
     event           Send a custom event through the Serf cluster
     force-leave     Forces a member of the cluster to enter the "left" state
+    info            Provides debugging information for operators
     join            Tell Serf agent to join cluster
     keygen          Generates a new encryption key
+    keys            Manipulate the internal encryption keyring used by Serf
     leave           Gracefully leaves the Serf cluster and shuts down
     members         Lists the members of a Serf cluster
     monitor         Stream logs from a Serf agent
