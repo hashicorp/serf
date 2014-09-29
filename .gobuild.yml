@@ -5,13 +5,11 @@ filesets:
       - README.md
       - LICENSE
       - CHANGELOG.md
-      - bin/serf
-      - bin/serf.exe
   excludes:
       - \.git
       - .*\.go
 settings:
   targetdir: ""
-  outfiles: []
+  outfiles: ["bin/serf"]
   build: |
       make all
