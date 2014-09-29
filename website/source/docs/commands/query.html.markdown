@@ -29,7 +29,7 @@ and cannot reply or acknowledge receipt. Serf also tries harder to deliver
 events, by performing anti-entropy over TCP as well as message replay.
 
 Queries are intended to be a real-time request and response mechanism.
-Since they are indended to be time sensitive, Serf will not do message
+Since they are intended to be time sensitive, Serf will not do message
 replay or anti-entropy, as a response to a very old query is not useful.
 Queries have more advanced filtering mechanisms and can be used to build
 more complex control flow. For example, a code deploy could check that at

@@ -22,7 +22,7 @@ occurs and is expected to exit within a reasonable amount of time.
 Every time an event handler is invoked, Serf sets some environmental
 variables:
 
-* `SERF_EVENT` is the event type that is occuring. This will be one of
+* `SERF_EVENT` is the event type that is occurring. This will be one of
   `member-join`, `member-leave`, `member-failed`, `member-update`,
   `member-reap`, `user`, or `query`.
 
