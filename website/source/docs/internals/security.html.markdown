@@ -39,7 +39,7 @@ as the ciphertext is suffixed with a 'tag' that is used to verify integrity.
 ## Message Format
 
 In the previous section we described the crypto primitives that are used. In this
-section we cover how messages are framed on the wire and interpretted.
+section we cover how messages are framed on the wire and interpreted.
 
 ### UDP Message Format
 
@@ -60,10 +60,10 @@ change the algorithm they use. It is currently always set to 0.
 ### TCP Message Format
 
 TCP provides a stream abstraction and therefore we must provide our own framing.
-This intoduces a potential attack vector since we cannot verify the tag
+This introduces a potential attack vector since we cannot verify the tag
 until the entire message is received, and the message length must be in plaintext.
 Our current strategy is to limit the maximum size of a framed message to prevent
-an malicious attacker from being able to send enough data to cause a Denial of Service.
+a malicious attacker from being able to send enough data to cause a Denial of Service.
 
 The TCP format is similar to the UDP format, but prepends the message with
 a message type byte (similar to other Serf messages). It also adds a 4 byte length
@@ -114,7 +114,7 @@ The basic flow of changing the encryption key on a given Serf cluster is:
 * Remove old key
 
 Due to the nature of distributed systems, it is difficult to reason about when
-to change they key used for message encryption on any given member in a
+to change the key used for message encryption on any given member in a
 cluster. Therefore, Serf allows multiple keys to be used to decrypt messages
 while the cluster converges. Decrypting messages becomes more expensive while
 there is more than one key active, as multiple attempts to decrypt any given
