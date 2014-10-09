@@ -398,6 +398,11 @@ func (a *Agent) loadKeyringFile(keyringFile string) error {
 		keysDecoded[i] = keyBytes
 	}
 
+	// Guard against empty keyring file
+	if len(keysDecoded) == 0 {
+		return fmt.Errorf("Keyring file contains no keys")
+	}
+
 	// Create the keyring
 	keyring, err := memberlist.NewKeyring(keysDecoded, keysDecoded[0])
 	if err != nil {

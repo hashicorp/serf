@@ -276,3 +276,27 @@ func TestAgentKeyringFile_BadOptions(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 }
+
+func TestAgentKeyringFile_NoKeys(t *testing.T) {
+	dir, err := ioutil.TempDir("", "serf")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer os.RemoveAll(dir)
+
+	keysFile := filepath.Join(dir, "keyring")
+	if err := ioutil.WriteFile(keysFile, []byte("[]"), 0600); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	agentConfig := DefaultConfig()
+	agentConfig.KeyringFile = keysFile
+
+	_, err = Create(agentConfig, serf.DefaultConfig(), nil)
+	if err == nil {
+		t.Fatalf("should have errored")
+	}
+	if !strings.Contains(err.Error(), "contains no keys") {
+		t.Fatalf("bad: %s", err)
+	}
+}
