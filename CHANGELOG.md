@@ -1,5 +1,9 @@
 ## 0.6.4 (Unreleased)
 
+BUG FIXES:
+
+ * Fixed snapshot file compaction on Windows
+
 MISC:
 
 * Increased user event size limit to 512 bytes (previously 256)
