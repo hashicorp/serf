@@ -3,7 +3,6 @@ package serf
 import (
 	"bufio"
 	"fmt"
-	"github.com/armon/go-metrics"
 	"log"
 	"math/rand"
 	"net"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/armon/go-metrics"
 )
 
 /*
@@ -361,20 +362,47 @@ func (s *Snapshotter) compact() error {
 	}
 	offset += int64(n)
 
-	// Flush now
-	if err := buf.Flush(); err != nil {
-		fh.Close()
+	// Flush the new snapshot
+	err = buf.Flush()
+	fh.Close()
+	if err != nil {
 		return fmt.Errorf("failed to flush new snapshot: %v", err)
 	}
 
-	// Switch the files
+	// We now need to swap the old snapshot file with the new snapshot.
+	// Turns out, Windows won't let us rename the files if we have
+	// open handles to them or if the destination already exists. This
+	// means we are forced to close the existing handles, delete the
+	// old file, move the new one in place, and then re-open the file
+	// handles.
+
+	// Flush the existing snapshot, ignoring errors since we will
+	// delete it momentarily.
+	s.buffered.Flush()
+	s.buffered = nil
+
+	// Close the file handle to the old snapshot
+	s.fh.Close()
+	s.fh = nil
+
+	// Delete the old file
+	if err := os.Remove(s.path); err != nil {
+		return fmt.Errorf("failed to remove old snapshot: %v", err)
+	}
+
+	// Move the new file into place
 	if err := os.Rename(newPath, s.path); err != nil {
-		fh.Close()
 		return fmt.Errorf("failed to install new snapshot: %v", err)
 	}
 
+	// Open the new snapshot
+	fh, err = os.OpenFile(s.path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to open snapshot: %v", err)
+	}
+	buf = bufio.NewWriter(fh)
+
 	// Rotate our handles
-	s.fh.Close()
 	s.fh = fh
 	s.buffered = buf
 	s.offset = offset
