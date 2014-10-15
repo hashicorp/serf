@@ -1,3 +1,9 @@
+## 0.6.4 (Unreleased)
+
+MISC:
+
+* Increased user event size limit to 512 bytes (previously 256)
+
 ## 0.6.3 (July 10, 2014)
 
 IMPROVEMENTS:
