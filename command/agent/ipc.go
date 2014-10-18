@@ -27,7 +27,7 @@ import (
 	"github.com/armon/go-metrics"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/serf"
-	"github.com/ugorji/go/codec"
+	"github.com/hashicorp/go-msgpack/codec"
 	"io"
 	"log"
 	"net"

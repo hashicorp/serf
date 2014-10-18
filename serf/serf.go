@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/armon/go-metrics"
 	"github.com/hashicorp/memberlist"
-	"github.com/ugorji/go/codec"
+	"github.com/hashicorp/go-msgpack/codec"
 	"io/ioutil"
 	"log"
 	"math/rand"

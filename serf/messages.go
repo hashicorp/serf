@@ -2,7 +2,7 @@ package serf
 
 import (
 	"bytes"
-	"github.com/ugorji/go/codec"
+	"github.com/hashicorp/go-msgpack/codec"
 	"time"
 )
 
