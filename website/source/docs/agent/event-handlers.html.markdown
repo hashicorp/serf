@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Event Handlers"
 sidebar_current: "docs-agent-events"
+description: |-
+  Serf's true power and flexibility comes in the form of event handlers: scripts that are executed in response to various events that can occur related to the Serf cluster. Serf invokes events related to membership changes (when a node comes online or goes offline) as well as custom events or queries.
 ---
 
 # Event Handlers

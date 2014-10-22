@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Commands"
 sidebar_current: "docs-commands"
+description: |-
+  Serf is controlled via a very easy to use command-line interface (CLI). Serf is only a single command-line application: `serf`. This application then takes a subcommand such as agent or members. The complete list of subcommands is in the navigation to the left.
 ---
 
 # Serf Commands (CLI)

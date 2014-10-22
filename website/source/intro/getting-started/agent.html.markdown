@@ -2,6 +2,8 @@
 layout: "intro"
 page_title: "Run the Agent"
 sidebar_current: "gettingstarted-agent"
+description: |-
+  After Serf is installed, the agent must be run. The agent is a lightweight process that runs until told to quit and maintains cluster membership and communication. The agent must be run for every node that will be part of the cluster.
 ---
 
 # Run the Serf Agent

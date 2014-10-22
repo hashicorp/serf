@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Upgrading Serf"
 sidebar_current: "docs-upgrading-upgrading"
+description: |-
+  Serf is meant to be a long-running agent on any nodes participating in a Serf cluster. These nodes consistently communicate with each other. As such, protocol level compatibility and ease of upgrades is an important thing to keep in mind when using Serf.
 ---
 
 # Upgrading Serf
@@ -59,9 +61,7 @@ only specifies the protocol version to _speak_. Every Serf agent can
 always understand the entire range of protocol versions it claims to
 on `serf -v`.
 
-<div class="alert alert-block alert-warning">
-<strong>By running a previous protocol version</strong>, some features
+~> **By running a previous protocol version**, some features
 of Serf, especially newer features, may not be available. If this is the
 case, Serf will typically warn you. In general, you should always upgrade
 your cluster so that you can run the latest protocol version.
-</div>

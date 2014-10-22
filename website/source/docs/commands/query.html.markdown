@@ -2,13 +2,15 @@
 layout: "docs"
 page_title: "Commands: Query"
 sidebar_current: "docs-commands-query"
+description: |-
+  The `serf query` command dispatches a custom user query into a Serf cluster, efficiently broadcasting the query to all nodes, and gathering responses.
 ---
 
 # Serf Query
 
 Command: `serf query`
 
-The query command dispatches a custom user query into a Serf cluster,
+The `serf query` command dispatches a custom user query into a Serf cluster,
 efficiently broadcasting the query to all nodes, and gathering responses.
 
 Nodes in the cluster can listen for queries and respond to them.

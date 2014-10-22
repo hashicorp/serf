@@ -2,13 +2,15 @@
 layout: "docs"
 page_title: "Commands: Members"
 sidebar_current: "docs-commands-members"
+description: |-
+  The `serf members` command outputs the current list of members that a Serf agent knows about, along with their state. The state of a node can only be alive, left or failed.
 ---
 
 # Serf Members
 
 Command: `serf members`
 
-The members command outputs the current list of members that a Serf
+The `serf members` command outputs the current list of members that a Serf
 agent knows about, along with their state. The state of a node can only
 be "alive", "left" or "failed".
 

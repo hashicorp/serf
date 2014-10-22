@@ -3,10 +3,10 @@
 // --------------------------------------------------
 
 
-// 
+//
 // -------------------------
 
-.anti-alias() {
+@mixin anti-alias() {
 	text-rendering: optimizeLegibility;
  	 -webkit-font-smoothing: antialiased;
 }

@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Security Model"
 sidebar_current: "docs-internals-security"
+description: |-
+  Serf uses a symmetric key, or shared secret, cryptosystem to provide confidentiality, integrity and authentication.
 ---
 
 # Security Model
@@ -13,12 +15,10 @@ This means Serf communication is protected against eavesdropping, tampering,
 or attempts to generate fake events. This makes it possible to run Serf over
 untrusted networks such as EC2 and other shared hosting providers.
 
-<div class="alert alert-block alert-warning">
-<strong>Advanced Topic!</strong> This page covers the technical details of
+~> **Advanced Topic!** This page covers the technical details of
 the security model of Serf. You don't need to know these details to
 operate and use Serf. These details are documented here for those who wish
 to learn about them without having to go spelunking through the source code.
-</div>
 
 ## Security Primitives
 

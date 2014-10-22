@@ -2,6 +2,8 @@
 layout: "intro"
 page_title: "Introduction"
 sidebar_current: "what"
+description: |-
+  Welcome to the intro guide to Serf! This guide will show you what Serf is, explain the problems Serf solves, compare Serf versus other similar software, and show how easy it is to actually use Serf.
 ---
 
 # Introduction to Serf

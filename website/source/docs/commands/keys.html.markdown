@@ -2,13 +2,15 @@
 layout: "docs"
 page_title: "Commands: Key"
 sidebar_current: "docs-commands-key"
+description: |-
+  The `serf keys` command performs cluster-wide encryption key operations, such as installing new keys and removing old keys. When used properly, the `keys` command allows you to achieve non-disruptive encryption key rotation across a Serf cluster.
 ---
 
 # Serf Keys
 
 Command: `serf keys`
 
-The keys command performs cluster-wide encryption key operations, such as
+The `serf keys` command performs cluster-wide encryption key operations, such as
 installing new keys and removing old keys. When used properly, the `keys`
 command allows you to achieve non-disruptive encryption key rotation across a
 Serf cluster.

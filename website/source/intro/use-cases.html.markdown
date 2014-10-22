@@ -2,6 +2,8 @@
 layout: "intro"
 page_title: "Use Cases"
 sidebar_current: "use-cases"
+description: |-
+  At this point you should know what Serf is and the high-level features Serf provides. This page lists a handful of concrete use cases of Serf. Note that this list is not exhaustive by any means. Serf is a general purpose tool and has infinitely many more use cases. But this list should give you a good idea of how Serf might be useful to you.
 ---
 
 # Use Cases

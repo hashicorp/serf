@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Gossip Protocol"
 sidebar_current: "docs-internals-gossip"
+description: |-
+Serf uses a gossip protocol to broadcast messages to the cluster. This page documents the details of this internal protocol. The gossip protocol is based on SWIM: Scalable Weakly-consistent Infection-style Process Group Membership Protocol, with a few minor adaptations, mostly to increase propagation speed and convergence rate.
 ---
 
 # Gossip Protocol
@@ -13,12 +15,10 @@ this internal protocol. The gossip protocol is based on
 with a few minor adaptations, mostly to increase propagation speed
 and convergence rate.
 
-<div class="alert alert-block alert-warning">
-<strong>Advanced Topic!</strong> This page covers the technical details of
+~> **Advanced Topic!** This page covers the technical details of
 the internals of Serf. You don't need to know these details to effectively
 operate and use Serf. These details are documented here for those who wish
 to learn about them without having to go spelunking through the source code.
-</div>
 
 ## SWIM Protocol Overview
 

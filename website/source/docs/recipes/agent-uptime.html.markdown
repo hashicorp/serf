@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Agent Uptime Recipe"
 sidebar_current: "docs-recipes"
+description: |-
+  On occasion users have asked for the ability to identify the uptime of a Serf agent. While Serf does not expose this directly in the RPC layer, it is quite easy to utilize tags to accomplish this.
 ---
 
 # Recipe: Agent Uptime

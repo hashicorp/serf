@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Telemetry"
 sidebar_current: "docs-agent-telemetry"
+description: |-
+  The Serf agent collects various metrics data at runtime about the performance of different libraries and sub-systems. These metrics are aggregated on a ten second interval and are retained for one minute.
 ---
 
 # Telemetry

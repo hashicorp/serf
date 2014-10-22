@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Serf Protocol Compatibility Promise"
 sidebar_current: "docs-upgrading-compatibility"
+description: |-
+  We expect Serf to run in large clusters as long-running agents. Because upgrading agents in this sort of environment relies heavily on protocol compatibility, this page makes it clear on our promise to keeping different Serf versions compatible with each other.
 ---
 
 # Protocol Compatibility Promise
@@ -58,30 +60,18 @@ upgrading, see the [upgrading page](/docs/upgrading.html).
 </tr>
 </table>
 
-<div class="alert alert-info">
-<p>
-<strong>Warning: </strong> Version 0.3 introduces support for dynamic ports, allowing each
+~> **Warning!** Version 0.3 introduces support for dynamic ports, allowing each
 agent to bind to a different port. However, this feature is only supported
 if all agents are running protocol version 2. Due to the nature of this
 feature, it is hard to detect using the versioning scheme. If ports are kept
 consistent across the cluster, then protocol version 2 is fully backwards
 compatible.
-</p>
-</div>
 
-<div class="alert alert-info">
-<p>
-<strong>Warning: </strong> Version 0.4 introduces support for dynamic tags, allowing each
+~> **Warning!** Version 0.4 introduces support for dynamic tags, allowing each
 agent to provide key/value tags and update them without restarting. This feature is only supported
 if all agents are running protocol version 3. If an agent is running an older protocol,
 then only the "role" tag is supported for backwards compatibility.
-</p>
-</div>
 
-<div class="alert alert-info">
-<p>
-<strong>Warning: </strong> Version 0.6 introduces support for key rotation. This feature
+~> **Warning!** Version 0.6 introduces support for key rotation. This feature
 uses the same protocol version, but requires that all agents be on 0.6. Attempting to use
 key rotation will result in errors.
-</p>
-</div>

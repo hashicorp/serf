@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Commands: Join"
 sidebar_current: "docs-commands-join"
+description: |-
+  The `serf join` command tells a Serf agent to join an existing cluster. A new Serf agent must join with at least one existing member of a cluster in order to join an existing cluster. After joining that one member, the gossip layer takes over, propagating the updated membership state across the cluster.
 ---
 
 # Serf Join
