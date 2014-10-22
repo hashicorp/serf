@@ -10,11 +10,7 @@
     <meta name="MobileOptimized" content="320" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Bootstrap core CSS -->
-    <%= stylesheet_link_tag "bootstrap.min" %>
-    <%= stylesheet_link_tag "main" %>
-
-    <%= yield_content :head %>
+    <%= stylesheet_link_tag "application" %>
   </head>
 
   <body class="page-<%= current_page.data.page_title ? "#{current_page.data.page_title}" : "home" %>">
@@ -77,15 +73,12 @@
 
       ga('create', 'UA-45101516-1', 'serfdom.io');
       ga('send', 'pageview');
-
     </script>
 
-    <script src="javascripts/lib/d3.v3.min.js"></script>
-    <script src="javascripts/app/deploy/site.js"></script>
+    <%= javascript_include_tag "application" %>
 
     <script>
       Serf.initialize();
     </script>
-
   </body>
 </html>

@@ -3,7 +3,7 @@
 // --------------------------------------------------
 
 #features{
-	.anti-alias();
+	@include anti-alias();
 	padding: 90px 0 0 0;
 
 	.row{
@@ -13,18 +13,18 @@
 	h2{
 		font-size: 32px;
 		letter-spacing: 2px;
-		color: @gray;
+		color: $gray;
 		text-transform: uppercase;
-		font-family: @font-family-rales;
-		font-weight: @font-weight-rales-sb;
+		font-family: $font-family-rales;
+		font-weight: $font-weight-rales-sb;
 	}
 	p{
 		font-size: 18px;
 		letter-spacing: 1px;
         line-height: 1.5em;
-		color: @gray-darker;
-		font-family: @font-family-open-sans;
-		font-weight: @font-weight-open;
+		color: $gray-darker;
+		font-family: $font-family-open-sans;
+		font-weight: $font-weight-open;
 	}
 
 	.icn{
@@ -38,23 +38,23 @@
 	}
 
 	.icn1{
-		background-image: url( ../images/gossip-proto-icon@2x.png);
+		background-image: image-url("gossip-proto-icon@2x.png");
 	}
 	.icn2{
-		background-image: url( ../images/failure-detect-icon@2x.png);
+		background-image: image-url("failure-detect-icon@2x.png");
 	}
 	.icn3{
-		background-image: url( ../images/custom-event-icon@2x.png);
+		background-image: image-url("custom-event-icon@2x.png");
 	}
 }
 
 #trusted{
-	background-color: @black;
+	background-color: $black;
 	padding: 140px 0;
 
 	h3{
 		margin-bottom: 60px;
-		color: @white;
+		color: $white;
 		text-transform: uppercase;
 		font-size: 18px;
 		text-align: center;
@@ -72,7 +72,7 @@
 				width: 25%;
 				height: 80px;
 				margin: 12px 0;
-				background: url( ../images/trusted-sprite.png ) 0 0 no-repeat;
+				background: image-url("trusted-sprite.png") 0 0 no-repeat;
 
 				&#i0{
 					background-position: 0 0;
@@ -119,7 +119,7 @@
 
 #footer{
 	padding: 50px 0;
-	background: @black url(../images/footer-pattern.jpg);
+	background: $black image-url("footer-pattern.jpg");
 
 	.footer-links{
 		margin-bottom: 20px;
@@ -132,9 +132,9 @@
         height: 206px;
         margin-bottom: 30px;
         border-radius: 103px;
-        background: @black url(../images/logo-type-medium.png) center center no-repeat;
-        .img-retina("../images/logo-type-medium.png", "../images/logo-type-medium@2x.png", 72px, 94px);
-        .box-shadow( 0px 0px 5px rgba(0, 0, 0, 0.04) );
+        background: $black image-url("logo-type-medium.png") center center no-repeat;
+        @include img-retina("logo-type-medium.png", "logo-type-medium@2x.png", 72px, 94px);
+        @include box-shadow( 0px 0px 5px rgba(0, 0, 0, 0.04) );
 		}
 	}
 
@@ -151,5 +151,3 @@
 		}
 	}
 }
-
-

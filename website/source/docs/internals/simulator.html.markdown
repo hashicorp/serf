@@ -1,5 +1,5 @@
 ---
-layout: "simulator"
+layout: "docs"
 page_title: "Convergence Simulator"
 sidebar_current: "docs-internals-simulator"
 ---
