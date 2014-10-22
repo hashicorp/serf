@@ -8,5 +8,9 @@ DIR="$( cd -P "$( dirname "$SOURCE" )/.." && pwd )"
 # Change into that directory
 cd $DIR
 
+# Ensure the buildpack is setup
+heroku config:set BINTRAY_API_KEY=$BINTRAY_API_KEY
+heroku config:add BUILDPACK_URL=https://github.com/ddollar/heroku-buildpack-multi.git
+
 # Push the subtree (force)
-git push heroku `git subtree split --prefix website master`:master --force
+git subtree push --prefix website heroku master
