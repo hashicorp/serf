@@ -70,12 +70,9 @@ agent-one     172.20.20.10:7946    alive
 agent-two     172.20.20.11:7946    alive
 ```
 
-<div class="alert alert-block alert-info">
-<p><strong>Remember:</strong> To join a cluster, a Serf agent needs to only
+-> **Note:** To join a cluster, a Serf agent needs to only
 learn about <em>one existing member</em>. After joining the cluster, the
 agents gossip with each other to propagate full membership information.
-</p>
-</div>
 
 In addition to using `serf join` you can use the `-join` flag on
 `serf agent` to join a cluster as part of starting up the agent.

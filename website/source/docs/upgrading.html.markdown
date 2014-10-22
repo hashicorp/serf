@@ -59,9 +59,7 @@ only specifies the protocol version to _speak_. Every Serf agent can
 always understand the entire range of protocol versions it claims to
 on `serf -v`.
 
-<div class="alert alert-block alert-warning">
-<strong>By running a previous protocol version</strong>, some features
+~> **By running a previous protocol version**, some features
 of Serf, especially newer features, may not be available. If this is the
 case, Serf will typically warn you. In general, you should always upgrade
 your cluster so that you can run the latest protocol version.
-</div>

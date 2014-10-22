@@ -9,11 +9,9 @@ sidebar_current: "docs-recipes"
 The examples on the following pages have proven useful to users in the Serf
 community.
 
-<div class="alert alert-block alert-info">
-If you have any tricks or tips that help you better leverage Serf, consider
+-> If you have any tricks or tips that help you better leverage Serf, consider
 sharing your recipe with the community by opening a new issue or creating a pull
 request.
-</div>
 
 ---
 
