@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Convergence Simulator"
 sidebar_current: "docs-internals-simulator"
+description: |-
+  The graph below shows the expected time to reach various states of convergence depending on the settings which are tunable below the graph. Below the graph, the estimated maximum bandwidth usage is shown per node in kilobits per second.
 ---
 
 <h1>Serf Convergence Simulator</h1>

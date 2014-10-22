@@ -2,6 +2,8 @@
 layout: "intro"
 page_title: "Serf vs. Custom Solutions"
 sidebar_current: "vs-other-custom"
+description: |-
+  Many organizations find themselves building home grown solutions for service discovery and administration. It is an undisputed fact that distributed systems are hard; building one is error prone and time consuming. Most systems cut corners by introducing single points of failure such as a single Redis or RDBMS to maintain cluster state. These solutions may work in the short term, but they are rarely fault tolerant or scalable. Besides these limitations, they require time and resources to build and maintain.
 ---
 
 # Serf vs. Custom Solutions

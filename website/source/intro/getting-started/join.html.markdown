@@ -2,6 +2,8 @@
 layout: "intro"
 page_title: "Join a Cluster"
 sidebar_current: "gettingstarted-join"
+description: |-
+  In the previous page, we started our first agent. While it showed how easy it is to run Serf, it wasn't very exciting since we simply made a cluster of one member. In this page, we'll create a real cluster with multiple members.
 ---
 
 # Join a Cluster

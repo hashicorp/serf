@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Event Handler Router Recipe"
 sidebar_current: "docs-recipes"
+description: |-
+  Typically you must configure a handler for each type of event you expect to encounter. To change handler configuration, one must update the Serf configuration and reload the agent with a SIGHUP or a restart.
 ---
 
 # Recipe: Event handler router

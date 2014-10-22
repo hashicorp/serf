@@ -2,6 +2,8 @@
 layout: "intro"
 page_title: "Custom Queries"
 sidebar_current: "gettingstarted-queries"
+description: |-
+  While custom events provide an efficient "fire-and-forget" mechansim, queries send a request and nodes can provide responds. Custom queries provide even more flexibility than events, since the target nodes can be filtered, delivery can be acknowledged and custom responses can be sent back. This makes queries useful for gathering information about a running cluster in real-time.
 ---
 
 # Custom Queries

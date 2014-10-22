@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Commands: Force Leave"
 sidebar_current: "docs-commands-forceleave"
+description: |-
+  The `force-leave` command forces a member of a Serf cluster to enter the left state. Note that if the member is still actually alive, it will eventually rejoin the cluster. The true purpose of this method is to force remove "failed" nodes.
 ---
 
 # Serf Force Leave

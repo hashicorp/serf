@@ -2,6 +2,8 @@
 layout: "intro"
 page_title: "Serf vs. Chef, Puppet, etc."
 sidebar_current: "vs-other-chef"
+description: |-
+  It may seem strange to compare Serf to configuration management tools, but most of them provide mechanisms to incorporate global state into the configuration of a node. For example, Puppet provides exported resources and Chef has node searching. As an example, if you generate a config file for a load balancer to include the web servers, the config management tool is being used to manage membership.
 ---
 
 # Serf vs. Chef, Puppet, etc.

@@ -2,6 +2,8 @@
 layout: "intro"
 page_title: "Serf vs. Consul"
 sidebar_current: "vs-other-consul"
+description: |-
+  Consul is a tool for service discovery and configuration. It provides high level features such as service discovery, health checking and key/value storage. It makes use of a group of strongly consistent servers to manage the datacenter.
 ---
 
 # Serf vs. Consul

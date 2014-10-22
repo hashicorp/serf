@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Product Roadmap"
 sidebar_current: "docs-roadmap"
+description: |-
+  Serf is a young project with big ambitions. What we've built and shipped already is a solid, powerful piece of software that solves many real world problems. But we have many plans to improve and iterate on Serf to make it even better. This page outlines some of the plans we have for future versions of Serf.
 ---
 
 # Serf Project Roadmap

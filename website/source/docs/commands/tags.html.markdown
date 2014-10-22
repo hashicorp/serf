@@ -2,13 +2,15 @@
 layout: "docs"
 page_title: "Commands: Tags"
 sidebar_current: "docs-commands-tags"
+description: |-
+  The `serf tags` command modifies a member's tags while the Serf agent is running. The changed tags will be immediately propagated to other members in the cluster.
 ---
 
 # Serf Tags
 
 Command: `serf tags`
 
-The tags command modifies a member's tags while the Serf agent is running.
+The `serf tags` command modifies a member's tags while the Serf agent is running.
 The changed tags will be immediately propagated to other members in the
 cluster.
 

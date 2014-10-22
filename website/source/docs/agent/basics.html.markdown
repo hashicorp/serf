@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Agent"
 sidebar_current: "docs-agent-running"
+description: |-
+  The Serf agent is the core process of Serf. The agent maintains membership information, propagates events, invokes event handlers, detects failures, and more. The agent must run on every node that is part of a Serf cluster.
 ---
 
 # Serf Agent

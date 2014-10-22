@@ -2,6 +2,8 @@
 layout: "intro"
 page_title: "Serf vs. ZooKeeper, doozerd, etcd"
 sidebar_current: "vs-other-zk"
+description: |-
+  ZooKeeper, doozerd and etcd are all similar in their client/server architecture. All three have server nodes that require a quorum of nodes to operate (usually a simple majority). They are strongly consistent, and expose various primitives that can be used through client libraries within applications to build complex distributed systems.
 ---
 
 # Serf vs. ZooKeeper, doozerd, etcd

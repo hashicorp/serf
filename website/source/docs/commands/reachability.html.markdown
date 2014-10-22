@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Commands: Reachability"
 sidebar_current: "docs-commands-reachability"
+description: |-
+  The `reachability` command performs a basic network reachability test. The local node will gossip out a ping message and request that all other nodes acknowledge delivery of the message.
 ---
 
 # Serf Reachability

@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Commands: Event"
 sidebar_current: "docs-commands-event"
+description: |-
+  The `serf event` command dispatches a custom user event into a Serf cluster, leveraging Serf's gossip layer for scalable broadcasting of the event to clusters of any size.
 ---
 
 # Serf Event

@@ -2,13 +2,15 @@
 layout: "docs"
 page_title: "Commands: Info"
 sidebar_current: "docs-commands-info"
+description: |-
+  The `serf info` command outputs the various debugging information that can be used by operators. It also provides the agent's local name, and currently set tags. It can be used as a way to gain more insight into the state of the local agent.
 ---
 
 # Serf Info
 
 Command: `serf info`
 
-The info command outputs the various debugging information that can
+The `serf info` command outputs the various debugging information that can
 be used by operators. It also provides the agent's local name, and
 currently set tags. It can be used as a way to gain more insight
 into the state of the local agent.

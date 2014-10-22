@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Upgrading Serf"
 sidebar_current: "docs-upgrading-upgrading"
+description: |-
+  Serf is meant to be a long-running agent on any nodes participating in a Serf cluster. These nodes consistently communicate with each other. As such, protocol level compatibility and ease of upgrades is an important thing to keep in mind when using Serf.
 ---
 
 # Upgrading Serf

@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Recipes"
 sidebar_current: "docs-recipes"
+description: |-
+  The examples on the following pages have proven useful to users in the Serf community.
 ---
 
 # Serf Recipes

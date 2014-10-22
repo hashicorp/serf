@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Serf Protocol Compatibility Promise"
 sidebar_current: "docs-upgrading-compatibility"
+description: |-
+  We expect Serf to run in large clusters as long-running agents. Because upgrading agents in this sort of environment relies heavily on protocol compatibility, this page makes it clear on our promise to keeping different Serf versions compatible with each other.
 ---
 
 # Protocol Compatibility Promise

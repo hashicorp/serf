@@ -2,6 +2,8 @@
 layout: "intro"
 page_title: "Serf vs. Fabric"
 sidebar_current: "vs-other-fabric"
+description: |-
+  Fabric is a widely used tool for system administration over SSH. Broadly, it is used to SSH into a group of nodes and execute commands. Both Fabric and Serf can be used for service management in different ways.
 ---
 
 # Serf vs. Fabric

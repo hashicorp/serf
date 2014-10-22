@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "RPC"
 sidebar_current: "docs-agent-rpc"
+description: |-
+  The Serf agent provides a complete RPC mechanism that can be used to control the agent programmatically. This RPC mechanism is the same one used by the CLI, but can be used by other applications to easily leverage the power of Serf without directly embedding. Additionally, it can be used as a fast IPC mechanism to allow applications to receive events immediately instead of using the fork/exec model of event handlers.
 ---
 
 # RPC Protocol

@@ -2,6 +2,8 @@
 layout: "docs"
 page_title: "Security Model"
 sidebar_current: "docs-internals-security"
+description: |-
+  Serf uses a symmetric key, or shared secret, cryptosystem to provide confidentiality, integrity and authentication.
 ---
 
 # Security Model

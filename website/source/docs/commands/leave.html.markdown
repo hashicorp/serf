@@ -2,17 +2,18 @@
 layout: "docs"
 page_title: "Commands: Leave"
 sidebar_current: "docs-commands-leave"
+description: |-
+  The `serf leave` command triggers a graceful leave and shutdown of the agent. This is used to ensure other nodes see the agent as left instead of failed. Nodes that leave will not attempt to re-join the cluster on restarting with a snapshot.
 ---
 
 # Serf Leave
 
 Command: `serf leave`
 
-The leave command triggers a graceful leave and shutdown of the agent.
-
-This is used to ensure other nodes see the agent as "left" instead of
-"failed". Nodes that leave will not attempt to re-join the cluster
-on restarting with a snapshot.
+The `serf leave` command triggers a graceful leave and shutdown of the agent.
+This is used to ensure other nodes see the agent as "left" instead of "failed".
+Nodes that leave will not attempt to re-join the cluster on restarting with a
+snapshot.
 
 ## Usage
 
