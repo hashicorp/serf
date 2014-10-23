@@ -15,4 +15,4 @@ if [ "${BOOTSTRAP}" != "" ]; then
 fi
 
 # Push the subtree (force)
-git subtree push --prefix website heroku master
+git push heroku `git subtree split --prefix website master`:master --force
