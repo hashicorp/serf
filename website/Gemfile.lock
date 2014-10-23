@@ -1,6 +1,6 @@
 GIT
   remote: git://github.com/hashicorp/middleman-hashicorp.git
-  revision: 66e68bbb66eef195542bfb334bf0942df6da2c6e
+  revision: e5ea74bf1269c053cd62578f80967af4ad63798f
   specs:
     middleman-hashicorp (0.1.0)
       bootstrap-sass (~> 3.2)
@@ -11,6 +11,7 @@ GIT
       middleman-minify-html (~> 3.4)
       middleman-syntax (~> 2.0)
       rack-contrib (~> 1.1)
+      rack-ssl-enforcer (~> 0.2)
       redcarpet (~> 3.1)
       therubyracer (~> 0.12)
       thin (~> 1.6)
@@ -124,6 +125,7 @@ GEM
       rack (>= 0.9.1)
     rack-livereload (0.3.15)
       rack
+    rack-ssl-enforcer (0.2.8)
     rack-test (0.6.2)
       rack (>= 1.0)
     rb-fsevent (0.9.4)
@@ -157,7 +159,7 @@ GEM
       hitimes
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
-    uber (0.0.9)
+    uber (0.0.10)
     uglifier (2.5.3)
       execjs (>= 0.3.0)
       json (>= 1.8.0)
