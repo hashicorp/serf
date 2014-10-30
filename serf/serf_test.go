@@ -1560,3 +1560,37 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 		t.Fatalf("expected key to be primary: %s", newKey)
 	}
 }
+
+func TestSerfStats(t *testing.T) {
+	config := testConfig()
+	s1, err := Create(config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	stats := s1.Stats()
+
+	expected := map[string]string{
+		"event_queue":  "0",
+		"event_time":   "1",
+		"failed":       "0",
+		"intent_queue": "0",
+		"left":         "0",
+		"member_time":  "1",
+		"members":      "1",
+		"query_queue":  "0",
+		"query_time":   "1",
+		"encrypted":    "false",
+	}
+
+	for key, val := range expected {
+		v, ok := stats[key]
+		if !ok {
+			t.Fatalf("key not found in stats: %s", key)
+		}
+		if v != val {
+			t.Fatalf("bad: %s = %s", key, val)
+		}
+	}
+}

@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/armon/go-metrics"
-	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/hashicorp/memberlist"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -1558,6 +1558,7 @@ func (s *Serf) Stats() map[string]string {
 		"intent_queue": toString(uint64(s.broadcasts.NumQueued())),
 		"event_queue":  toString(uint64(s.eventBroadcasts.NumQueued())),
 		"query_queue":  toString(uint64(s.queryBroadcasts.NumQueued())),
+		"encrypted":    fmt.Sprintf("%v", s.EncryptionEnabled()),
 	}
 	return stats
 }
