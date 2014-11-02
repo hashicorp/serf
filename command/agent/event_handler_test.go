@@ -66,7 +66,7 @@ func testEventScript(t *testing.T, script string) (string, string) {
 	_, err = scriptFile.Write([]byte(
 		fmt.Sprintf(script, resultFile.Name())))
 	if err != nil {
-		t.Fatalf("err: %s")
+		t.Fatalf("err: %s", err)
 	}
 
 	return scriptFile.Name(), resultFile.Name()
