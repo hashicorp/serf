@@ -2,11 +2,12 @@ package agent
 
 import (
 	"fmt"
-	"github.com/armon/mdns"
 	"io"
 	"log"
 	"net"
 	"time"
+
+	"github.com/hashicorp/mdns"
 )
 
 const (
