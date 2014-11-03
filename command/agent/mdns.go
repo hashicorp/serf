@@ -31,14 +31,15 @@ type AgentMDNS struct {
 func NewAgentMDNS(agent *Agent, logOutput io.Writer, replay bool,
 	node, discover string, iface *net.Interface, bind net.IP, port int) (*AgentMDNS, error) {
 	// Create the service
-	service := &mdns.MDNSService{
-		Instance: node,
-		Service:  mdnsName(discover),
-		Addr:     bind,
-		Port:     port,
-		Info:     fmt.Sprintf("Serf '%s' cluster", discover),
-	}
-	if err := service.Init(); err != nil {
+	service, err := mdns.NewMDNSService(
+		node,
+		mdnsName(discover),
+		"",
+		"",
+		port,
+		[]net.IP{bind},
+		[]string{fmt.Sprintf("Serf '%s' cluster", discover)})
+	if err != nil {
 		return nil, err
 	}
 
