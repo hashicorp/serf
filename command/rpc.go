@@ -21,7 +21,8 @@ func RPCAddrFlag(f *flag.FlagSet) *string {
 // RPCAuthFlag returns a pointer to a string that will be populated
 // when the given flagset is parsed with the RPC auth token of the Serf.
 func RPCAuthFlag(f *flag.FlagSet) *string {
-	return f.String("rpc-auth", "",
+	rpcAuth := os.Getenv("SERF_RPC_AUTH")
+	return f.String("rpc-auth", rpcAuth,
 		"RPC auth token of the Serf agent")
 }
 
