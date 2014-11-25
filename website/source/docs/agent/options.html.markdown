@@ -195,19 +195,18 @@ at a single JSON object with configuration within it.
 
 #### Example Configuration File
 
-<pre class="prettyprint lang-json">
+```javascript
 {
   "tags": {
-        "role": "load-balancer",
-        "datacenter": "east"
+    "role": "load-balancer",
+    "datacenter": "east"
   },
-
   "event_handlers": [
     "handle.sh",
     "user:deploy=deploy.sh"
   ]
 }
-</pre>
+```
 
 #### Configuration Key Reference
 
@@ -307,13 +306,13 @@ The keyring file is a simple JSON-formatted text file. It is important to
 understand how Serf will use its contents. Following is an example of a keyring
 file:
 
-<pre class="prettyprint lang-json">
+```javascript
 [
   "QHOYjmYlxSCBhdfiolhtDQ==",
   "daZ2wnuw+Ql+2hCm7vQB6A==",
   "keTZydopxtiTY7HVoqeWGw=="
 ]
-</pre>
+```
 
 The order in which the keys appear is important. The key appearing first in the
 list is the primary key, which is the key used to encrypt all outgoing messages.
