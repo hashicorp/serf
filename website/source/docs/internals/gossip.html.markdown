@@ -57,7 +57,7 @@ in its entirety, along with the Serf source code.
 ## SWIM Modifications
 
 As mentioned earlier, the gossip protocol is based on SWIM but includes
-minor changes, mostly to increase propogation speed and convergence rates.
+minor changes, mostly to increase propagation speed and convergence rates.
 
 The changes from SWIM are noted here:
 

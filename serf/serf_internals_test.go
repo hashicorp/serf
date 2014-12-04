@@ -315,7 +315,7 @@ func TestSerf_userEvent_oldMessage(t *testing.T) {
 	}
 	defer s.Shutdown()
 
-	// increase the ltime artifically
+	// increase the ltime artificially
 	s.eventClock.Witness(LamportTime(c.EventBuffer + 1000))
 
 	msg := messageUserEvent{
@@ -376,7 +376,7 @@ func TestSerf_query_oldMessage(t *testing.T) {
 	}
 	defer s.Shutdown()
 
-	// increase the ltime artifically
+	// increase the ltime artificially
 	s.queryClock.Witness(LamportTime(c.QueryBuffer + 1000))
 
 	msg := messageQuery{

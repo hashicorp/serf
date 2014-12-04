@@ -24,4 +24,4 @@ parallelism and scalability.
 Fabric is much more capable than Serf at system administration, but it is
 limited by its execution speed and lack of node discovery. Combined together,
 Fabric can query Serf for nodes and make use of message broadcasts where
-appropriate, using direct SSH exection when and where output is needed.
+appropriate, using direct SSH execution when and where output is needed.
