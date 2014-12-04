@@ -278,7 +278,7 @@ at a single JSON object with configuration within it.
   the agents that are conflicting will query the cluster to determine which node is
   believed to be "correct" by the majority of other nodes. The node(s) that are in the
   minority will shutdown at the end of the conflict resolution. Setting this flag prevents
-  this behavior, and instead Serf will merely log a warning. This is not recommanded since
+  this behavior, and instead Serf will merely log a warning. This is not recommended since
   the cluster will disagree about the mapping of NodeName -> IP:Port and cannot reconcile
   this.
 

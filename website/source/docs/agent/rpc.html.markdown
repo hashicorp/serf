@@ -384,7 +384,7 @@ We will start to get the following:
 
 Each query record has a `Type` to indicate what is being represented. This is
 one of `ack`, `response` or `done`. Once `done` is received the client should
-not expect any futher messages corresponding to that query.
+not expect any further messages corresponding to that query.
 
 ### respond
 

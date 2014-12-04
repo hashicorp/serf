@@ -19,7 +19,7 @@ maintain web server membership info for a load balancer from another Serf
 cluster that manages membership of Memcached nodes, but perhaps the web
 servers need to be part of the Memcached cluster too so they can be notified
 when Memcached nodes come online or go offline. Other examples include a Serf
-cluster within a datacenter, and a seperate cluster used for cross WAN gossip
+cluster within a datacenter, and a separate cluster used for cross WAN gossip
 which has more relaxed timing.
 
 ## Starting the Agent

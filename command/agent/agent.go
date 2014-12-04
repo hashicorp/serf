@@ -86,7 +86,7 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 	return agent, nil
 }
 
-// Start is used to initiate the event listeners. It is seperate from
+// Start is used to initiate the event listeners. It is separate from
 // create so that there isn't a race condition between creating the
 // agent and registering handlers
 func (a *Agent) Start() error {
@@ -114,7 +114,7 @@ func (a *Agent) Leave() error {
 	return a.serf.Leave()
 }
 
-// Shutdown closes this agent and all of its processes. Should be preceeded
+// Shutdown closes this agent and all of its processes. Should be preceded
 // by a Leave for a graceful shutdown.
 func (a *Agent) Shutdown() error {
 	a.shutdownLock.Lock()
@@ -209,7 +209,7 @@ func (a *Agent) Query(name string, payload []byte, params *serf.QueryParam) (*se
 	return resp, err
 }
 
-// RegisterEventHandler adds an event handler to recieve event notifications
+// RegisterEventHandler adds an event handler to receive event notifications
 func (a *Agent) RegisterEventHandler(eh EventHandler) {
 	a.eventHandlersLock.Lock()
 	defer a.eventHandlersLock.Unlock()

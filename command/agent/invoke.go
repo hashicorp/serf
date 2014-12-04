@@ -36,7 +36,7 @@ var sanitizeTagRegexp = regexp.MustCompile(`[^A-Z0-9_]`)
 // environmental variable is also set, containing the name of the user
 // event that was fired.
 //
-// In all events, data is passed in via stdin to faciliate piping. See
+// In all events, data is passed in via stdin to facilitate piping. See
 // the various stdin functions below for more information.
 func invokeEventScript(logger *log.Logger, script string, self serf.Member, event serf.Event) error {
 	defer metrics.MeasureSince([]string{"agent", "invoke", script}, time.Now())

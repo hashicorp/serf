@@ -161,7 +161,7 @@ MISC:
   * Support for protocol version 1 (Serf 0.2) has been removed. Serf 0.5 cannot
   join a cluster that has members running version 0.2.
 
-## 0.4.5 (Febuary 25, 2014)
+## 0.4.5 (February 25, 2014)
 
 FEATURES:
 
@@ -191,7 +191,7 @@ BUG FIXES:
 
  * User event handler appends new line, this was being omitted
 
-## 0.4.1 (Febuary 3, 2014)
+## 0.4.1 (February 3, 2014)
 
 IMPROVEMENTS:
 

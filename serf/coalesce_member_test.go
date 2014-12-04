@@ -145,7 +145,7 @@ func TestMemberEventCoalesce_TagUpdate(t *testing.T) {
 		t.Fatalf("expected update")
 	}
 
-	// Second update should not be supressed even though
+	// Second update should not be suppressed even though
 	// last event was an update
 	inCh <- MemberEvent{
 		Type:    EventMemberUpdate,

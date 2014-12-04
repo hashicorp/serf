@@ -1383,7 +1383,7 @@ func TestSerf_NameResolution(t *testing.T) {
 	}
 	defer s2.Shutdown()
 
-	// Create an artifical node name conflict!
+	// Create an artificial node name conflict!
 	s3Config.NodeName = s1Config.NodeName
 	s3, err := Create(s3Config)
 	if err != nil {

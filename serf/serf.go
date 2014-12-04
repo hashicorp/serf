@@ -64,7 +64,7 @@ type Serf struct {
 	members       map[string]*memberState
 
 	// Circular buffers for recent intents, used
-	// in case we get the intent before the relevent event
+	// in case we get the intent before the relevant event
 	recentLeave      []nodeIntent
 	recentLeaveIndex int
 	recentJoin       []nodeIntent
@@ -518,7 +518,7 @@ func (s *Serf) registerQueryResponse(timeout time.Duration, resp *QueryResponse)
 }
 
 // SetTags is used to dynamically update the tags associated with
-// the local node. This will propogate the change to the rest of
+// the local node. This will propagate the change to the rest of
 // the cluster. Blocks until a the message is broadcast out.
 func (s *Serf) SetTags(tags map[string]string) error {
 	// Check that the meta data length is okay
@@ -737,7 +737,7 @@ func (s *Serf) RemoveFailedNode(node string) error {
 // Shutdown forcefully shuts down the Serf instance, stopping all network
 // activity and background maintenance associated with the instance.
 //
-// This is not a graceful shutdown, and should be preceeded by a call
+// This is not a graceful shutdown, and should be preceded by a call
 // to Leave. Otherwise, other nodes in the cluster will detect this node's
 // exit as a node failure.
 //
