@@ -1,10 +1,11 @@
 package serf
 
 import (
-	"github.com/hashicorp/memberlist"
 	"io"
 	"os"
 	"time"
+
+	"github.com/hashicorp/memberlist"
 )
 
 // ProtocolVersionMap is the mapping of Serf delegate protocol versions
@@ -191,6 +192,10 @@ type Config struct {
 	// KeyringFile provides the location of a writable file where Serf can
 	// persist changes to the encryption keyring.
 	KeyringFile string
+
+	// Merge can be optionally provided to intercept a cluster merge
+	// and conditionally abort the merge.
+	Merge MergeDelegate
 }
 
 // Init allocates the subdata structures

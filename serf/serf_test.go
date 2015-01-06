@@ -3,15 +3,17 @@ package serf
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/hashicorp/memberlist"
-	"github.com/hashicorp/serf/testutil"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/memberlist"
+	"github.com/hashicorp/serf/testutil"
 )
 
 func testConfig() *Config {
@@ -1592,5 +1594,54 @@ func TestSerfStats(t *testing.T) {
 		if v != val {
 			t.Fatalf("bad: %s = %s", key, val)
 		}
+	}
+}
+
+type CancelMergeDelegate struct {
+	invoked bool
+}
+
+func (c *CancelMergeDelegate) NotifyMerge(members []*Member) (cancel bool) {
+	log.Printf("Merge canceled")
+	c.invoked = true
+	return true
+}
+
+func TestSerf_Join_Cancel(t *testing.T) {
+	s1Config := testConfig()
+	merge1 := &CancelMergeDelegate{}
+	s1Config.Merge = merge1
+
+	s2Config := testConfig()
+	merge2 := &CancelMergeDelegate{}
+	s2Config.Merge = merge2
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	defer s1.Shutdown()
+	defer s2.Shutdown()
+
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err.Error() != "Merge canceled" {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	if !merge1.invoked {
+		t.Fatalf("should invoke")
+	}
+	if !merge2.invoked {
+		t.Fatalf("should invoke")
 	}
 }
