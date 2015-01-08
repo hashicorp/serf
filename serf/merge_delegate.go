@@ -15,6 +15,9 @@ type mergeDelegate struct {
 }
 
 func (m *mergeDelegate) NotifyMerge(nodes []*memberlist.Node) (cancel bool) {
+	if m.serf.config.Merge == nil {
+		return false
+	}
 	members := make([]*Member, len(nodes))
 	for idx, n := range nodes {
 		members[idx] = &Member{
