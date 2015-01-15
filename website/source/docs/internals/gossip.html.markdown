@@ -83,9 +83,9 @@ The changes from SWIM are noted here:
 
 On top of the SWIM-based gossip layer, Serf sends some custom message types.
 
-Serf makes heavy use of [lamport clocks](http://en.wikipedia.org/wiki/Lamport_timestamps)
+Serf makes heavy use of [Lamport clocks](http://en.wikipedia.org/wiki/Lamport_timestamps)
 to maintain some notion of message ordering despite being eventually
-consistent. Every message sent by Serf contains a lamport clock time.
+consistent. Every message sent by Serf contains a Lamport clock time.
 
 When a node gracefully leaves the cluster, Serf sends a _leave intent_ through
 the gossip layer. Because the underlying gossip layer makes no differentiation
@@ -94,10 +94,10 @@ allows the higher level Serf layer to detect a failure versus a graceful
 leave.
 
 When a node joins the cluster, Serf sends a _join intent_. The purpose
-of this intent is solely to attach a lamport clock time to a join so that
+of this intent is solely to attach a Lamport clock time to a join so that
 it can be ordered properly in case a leave comes out of order.
 
 For custom events and queries, Serf sends either a _user event_,
-or _user query_ message. This message contains a lamport time, event name, and event payload.
+or _user query_ message. This message contains a Lamport time, event name, and event payload.
 Because user events are sent along the gossip layer, which uses UDP, the payload and entire message framing
 must fit within a single UDP packet.

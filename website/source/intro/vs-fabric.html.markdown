@@ -14,7 +14,7 @@ and Serf can be used for service management in different ways.
 
 While Fabric sends commands from a single box, Serf instead rapidly broadcasts a message
 to the entire cluster in a distributed fashion. Fabric has a number of advantages
-in that it can collect ulimited output of commands and stop execution if an
+in that it can collect unlimited output of commands and stop execution if an
 error is encountered. Serf queries can collect a limited amount of output, but lacks
 the more complex control flow of Fabric. However, Fabric must be provided with a list
 of nodes to contact, whereas membership is built directly into Serf. Additionally, Serf
