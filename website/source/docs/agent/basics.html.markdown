@@ -78,7 +78,7 @@ There are six important components that `serf agent` outputs:
 
 ## Stopping an Agent
 
-An agent can be stoped in two ways: gracefully or forcefully. To gracefully
+An agent can be stopped in two ways: gracefully or forcefully. To gracefully
 halt an agent, send the process an interrupt signal, which is usually
 `Ctrl-C` from a terminal. When gracefully exiting, the agent first notifies
 the cluster it intends to leave the cluster. This way, other cluster members

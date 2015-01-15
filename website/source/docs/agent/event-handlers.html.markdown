@@ -119,7 +119,7 @@ sleep 5 &>/dev/null &
 ```
 
 In the above example, `sleep 5` is the lengthy process. Notice the first
-amerpsand, which copies the file descriptor instead of just redirecting output.
+ampersand, which copies the file descriptor instead of just redirecting output.
 
 Similarly, in Python this might look like:
 

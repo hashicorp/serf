@@ -268,7 +268,7 @@ we may start getting messages like:
     }
 ```
 
-It is important to realize that these messages are sent asyncronously,
+It is important to realize that these messages are sent asynchronously,
 and not in response to any command. That means if a client is streaming
 commands, there may be events streamed while a client is waiting for a
 response to a command. This is why the `Seq` must be used to pair requests
@@ -305,7 +305,7 @@ we may start getting messages like:
     {"Log": "2013/12/03 13:06:53 [INFO] agent: Received event: member-join"}
 ```
 
-It is important to realize that these messages are sent asyncronously,
+It is important to realize that these messages are sent asynchronously,
 and not in response to any command. That means if a client is streaming
 commands, there may be logs streamed while a client is waiting for a
 response to a command. This is why the `Seq` must be used to pair requests
@@ -355,7 +355,7 @@ tag. `RequestAck` is used to ask that nodes send an "ack" once the message is re
 otherwise only responses are delivered. `Timeout` can be provided (in nanoseconds) to
 optionally override the default.
 
-The server will respond with a standard response hedaer indicating if the query
+The server will respond with a standard response header indicating if the query
 was successful. However, the channel is now subscribed to receive any acks or
 responses. This is similar to `stream`, except scoped only to this query. The same
 `Seq` is used as the query command that matches.
