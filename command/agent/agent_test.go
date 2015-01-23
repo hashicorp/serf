@@ -175,27 +175,20 @@ func TestAgent_MarshalTags(t *testing.T) {
 		"tag2": "val2",
 	}
 
-	expected := []string{
-		"tag1=val1",
-		"tag2=val2",
-	}
-
 	tagPairs := MarshalTags(tags)
 
-	if !reflect.DeepEqual(tagPairs, expected) {
+	if !containsKey(tagPairs, "tag1=val1") {
+		t.Fatalf("bad: %v", tagPairs)
+	}
+	if !containsKey(tagPairs, "tag2=val2") {
 		t.Fatalf("bad: %v", tagPairs)
 	}
 }
 
-func TestAgent_UnarshalTags(t *testing.T) {
+func TestAgent_UnmarshalTags(t *testing.T) {
 	tagPairs := []string{
 		"tag1=val1",
 		"tag2=val2",
-	}
-
-	expected := map[string]string{
-		"tag1": "val1",
-		"tag2": "val2",
 	}
 
 	tags, err := UnmarshalTags(tagPairs)
@@ -204,7 +197,10 @@ func TestAgent_UnarshalTags(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	if !reflect.DeepEqual(tags, expected) {
+	if v, ok := tags["tag1"]; !ok || v != "val1" {
+		t.Fatalf("bad: %v", tags)
+	}
+	if v, ok := tags["tag2"]; !ok || v != "val2" {
 		t.Fatalf("bad: %v", tags)
 	}
 }
