@@ -14,6 +14,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -186,18 +187,30 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 		if bindIP == "0.0.0.0" {
 			found := false
 			for _, a := range addrs {
-				addr, ok := a.(*net.IPNet)
-				if !ok {
-					continue
+				var addrIP net.IP
+				if runtime.GOOS == "windows" {
+					// Waiting for https://github.com/golang/go/issues/5395 to use IPNet only
+					addr, ok := a.(*net.IPAddr)
+					if !ok {
+						continue
+					}
+					addrIP = addr.IP
+				} else {
+					addr, ok := a.(*net.IPNet)
+					if !ok {
+						continue
+					}
+					addrIP = addr.IP
 				}
+
 				// Skip self-assigned IPs
-				if addr.IP.IsLinkLocalUnicast() {
+				if addrIP.IsLinkLocalUnicast() {
 					continue
 				}
 
 				// Found an IP
 				found = true
-				bindIP = addr.IP.String()
+				bindIP = addrIP.String()
 				c.Ui.Output(fmt.Sprintf("Using interface '%s' address '%s'",
 					config.Interface, bindIP))
 
@@ -487,9 +500,9 @@ func (c *Command) Run(args []string) int {
 	}
 
 	/*
-	Setup telemetry
-	Aggregate on 10 second intervals for 1 minute. Expose the
-	metrics over stderr when there is a SIGUSR1 received.
+		Setup telemetry
+		Aggregate on 10 second intervals for 1 minute. Expose the
+		metrics over stderr when there is a SIGUSR1 received.
 	*/
 	inm := metrics.NewInmemSink(10*time.Second, time.Minute)
 	metrics.DefaultInmemSignal(inm)
