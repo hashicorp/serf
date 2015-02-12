@@ -1,8 +1,20 @@
-## 0.6.4 (Unreleased)
+## 0.6.4 (Febuary 12, 2015)
+
+IMPROVEMENTS:
+
+ * Added merge delegate to Serf library to support application
+   specific logic in cluster merging.
+ * `SERF_RPC_AUTH` environment variable can be used in place of CLI flags.
+ * Display if encryption is enabled in Serf stats
+ * Improved `join` behavior when using DNS resolution
 
 BUG FIXES:
 
  * Fixed snapshot file compaction on Windows
+ * Fixed device binding on Windows
+ * Fixed bug with empty keyring
+ * Fixed parsing of ports in some cases
+ * Fixing stability issues under high churn
 
 MISC:
 
