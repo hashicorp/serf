@@ -55,7 +55,8 @@ Every option is optional:
 
 * `-rpc-auth` - Optional RPC auth token. If the agent is configured to use
   an auth token, then this must be provided or the agent will refuse the
-  command.
+  command. This option can also be controlled using the `SERF_RPC_AUTH`
+  environment variable.
 
 ## Sending an Event
 
