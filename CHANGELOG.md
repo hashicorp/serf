@@ -1,3 +1,9 @@
+## 0.6.5 (unreleased)
+
+IMPROVEMENTS:
+
+ * Syslog messages are now filtered by the configured log-level
+
 ## 0.6.4 (Febuary 12, 2015)
 
 IMPROVEMENTS:
