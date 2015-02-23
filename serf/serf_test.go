@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -1601,10 +1600,9 @@ type CancelMergeDelegate struct {
 	invoked bool
 }
 
-func (c *CancelMergeDelegate) NotifyMerge(members []*Member) (cancel bool) {
-	log.Printf("Merge canceled")
+func (c *CancelMergeDelegate) NotifyMerge(members []*Member) error {
 	c.invoked = true
-	return true
+	return fmt.Errorf("Merge canceled")
 }
 
 func TestSerf_Join_Cancel(t *testing.T) {
