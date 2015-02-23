@@ -7,14 +7,14 @@ import (
 )
 
 type MergeDelegate interface {
-	NotifyMerge([]*Member) (cancel bool)
+	NotifyMerge([]*Member) error
 }
 
 type mergeDelegate struct {
 	serf *Serf
 }
 
-func (m *mergeDelegate) NotifyMerge(nodes []*memberlist.Node) (cancel bool) {
+func (m *mergeDelegate) NotifyMerge(nodes []*memberlist.Node) error {
 	members := make([]*Member, len(nodes))
 	for idx, n := range nodes {
 		members[idx] = &Member{
