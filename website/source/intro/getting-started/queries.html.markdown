@@ -42,6 +42,11 @@ a "request", while the event handler can generate the response.
 For example, if we had a "load" custom event, we might create return
 the current load average of the machine.
 
+Serf agents must be configured to handle queries before they will
+respond to them. See the "Specifying Event Handlers" section in the
+[Event Handlers documentation](/docs/agent/event-handlers.html) for
+examples of the configuration format.
+
 ## Query Payloads
 
 Queries are not limited to just a query name. The query can also contain
