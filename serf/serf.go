@@ -17,6 +17,7 @@ import (
 	"github.com/armon/go-metrics"
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/memberlist"
+	"github.com/hashicorp/serf/coordinate"
 )
 
 // These are the protocol versions that Serf can _understand_. These are
@@ -91,6 +92,8 @@ type Serf struct {
 
 	snapshotter *Snapshotter
 	keyManager  *KeyManager
+
+	coord *coordinate.Client
 }
 
 // SerfState is the state of the Serf instance.
@@ -341,6 +344,7 @@ func Create(conf *Config) (*Serf, error) {
 	// Modify the memberlist configuration with keys that we set
 	conf.MemberlistConfig.Events = &eventDelegate{serf: serf}
 	conf.MemberlistConfig.Conflict = &conflictDelegate{serf: serf}
+	conf.MemberlistConfig.Ping = &pingDelegate{serf: serf}
 	conf.MemberlistConfig.Delegate = &delegate{serf: serf}
 	conf.MemberlistConfig.DelegateProtocolVersion = conf.ProtocolVersion
 	conf.MemberlistConfig.DelegateProtocolMin = ProtocolVersionMin
@@ -366,6 +370,9 @@ func Create(conf *Config) (*Serf, error) {
 
 	// Create a key manager for handling all encryption key changes
 	serf.keyManager = &KeyManager{serf: serf}
+
+	// Create a network coordinate
+	serf.coord = coordinate.NewClient()
 
 	// Start the background tasks. See the documentation above each method
 	// for more information on their role.

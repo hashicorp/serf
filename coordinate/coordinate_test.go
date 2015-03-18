@@ -4,6 +4,7 @@ import (
 	"math"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestCoordinate(t *testing.T) {
@@ -45,16 +46,16 @@ func TestCoordinate(t *testing.T) {
 }
 
 func TestAlgorithm(t *testing.T) {
-	rtt := 100.0
+	rtt := 100.0 * time.Millisecond
 	a := NewClient()
 	b := NewClient()
 	for i := 0; i < 100000; i++ {
-		a.Update(&b, rtt)
-		b.Update(&a, rtt)
+		a.Update(b, rtt)
+		b.Update(a, rtt)
 	}
 
-	if !(math.Abs(rtt-a.DistanceTo(&b)) < 0.01*rtt) {
+	if !(math.Abs(float64((rtt - a.DistanceTo(b)).Nanoseconds())) < 0.01*float64(rtt.Nanoseconds())) {
 		t.Fatalf("The computed distance should be %f but is actually %f.\n%+v\n%+v",
-			rtt, a.DistanceTo(&b), a, b)
+			rtt, a.DistanceTo(b), a, b)
 	}
 }
