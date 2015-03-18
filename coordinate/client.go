@@ -2,6 +2,7 @@ package coordinate
 
 import (
 	"math"
+	"time"
 )
 
 const (
@@ -17,15 +18,16 @@ const (
 )
 
 type Client struct {
-	coord             Coordinate
-	err               float64
+	coord Coordinate
+	err   float64
+	// The unit of time used for the following fields is millisecond
 	adjustment        float64
 	adjustment_index  uint      // index into adjustment window
 	adjustment_window []float64 // a rolling window that stores the differences between expected distances and real distances
 }
 
-func NewClient() Client {
-	return Client{
+func NewClient() *Client {
+	return &Client{
 		coord:             NewCoordinate(DIMENTION),
 		err:               VIVALDI_ERROR,
 		adjustment:        0,
@@ -34,7 +36,8 @@ func NewClient() Client {
 	}
 }
 
-func (self *Client) Update(other *Client, rtt float64) {
+func (self *Client) Update(other *Client, _rtt time.Duration) {
+	rtt := float64(_rtt.Nanoseconds()) / (1000 * 1000) // 1 millisecond = 1000 * 1000 nanoseconds
 	dist := self.coord.DistanceTo(other.coord)
 	weight := self.err / (self.err + other.err)
 	err_calc := math.Abs(dist-rtt) / rtt
@@ -57,6 +60,6 @@ func (self *Client) updateAdjustment(other *Client, rtt float64) {
 	self.adjustment = tmp / (2.0 * ADJUSTMENT_WINDOW_SIZE)
 }
 
-func (self *Client) DistanceTo(other *Client) float64 {
-	return self.coord.DistanceTo(other.coord) + self.adjustment + other.adjustment
+func (self *Client) DistanceTo(other *Client) time.Duration {
+	return time.Duration(self.coord.DistanceTo(other.coord)+self.adjustment+other.adjustment) * time.Millisecond
 }

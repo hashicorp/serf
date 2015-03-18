@@ -1,7 +1,7 @@
 package coordinate
 
 import (
-	"log"
+	"fmt"
 	"math"
 	"math/rand"
 )
@@ -24,8 +24,7 @@ func NewCoordinate(dimension uint) Coordinate {
 
 func (self Coordinate) Add(other Coordinate) Coordinate {
 	if len(self.vec) != len(other.vec) {
-		log.Fatalf("adding two coordinates that have different dimensions:\n%+v\n%+v", self, other)
-		return Coordinate{}
+		panic(fmt.Sprintf("adding two coordinates that have different dimensions:\n%+v\n%+v", self, other))
 	} else {
 		ret := NewCoordinate(uint(len(self.vec)))
 
@@ -43,8 +42,7 @@ func (self Coordinate) Add(other Coordinate) Coordinate {
 
 func (self Coordinate) Sub(other Coordinate) Coordinate {
 	if len(self.vec) != len(other.vec) {
-		log.Fatalf("subtracting two coordinates that have different dimensions:\n%+v\n%+v", self, other)
-		return Coordinate{}
+		panic(fmt.Sprintf("subtracting two coordinates that have different dimensions:\n%+v\n%+v", self, other))
 	} else {
 		ret := NewCoordinate(uint(len(self.vec)))
 
