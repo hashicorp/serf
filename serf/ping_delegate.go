@@ -16,12 +16,10 @@ type pingDelegate struct {
 
 func (self *pingDelegate) AckPayload() []byte {
 	var buf bytes.Buffer
-	fmt.Printf("coord: %v\n", self.serf.coord)
 	enc := codec.NewEncoder(&buf, &codec.MsgpackHandle{})
 	if err := enc.Encode(self.serf.coord); err != nil {
 		panic(fmt.Sprintf("[ERR] serf: Failed to encode coordinate: %v\n", err))
 	}
-	fmt.Printf("encoded bytes: %v\n", buf.Bytes())
 	return buf.Bytes()
 }
 
