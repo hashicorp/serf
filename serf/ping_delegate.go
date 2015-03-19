@@ -2,7 +2,7 @@ package serf
 
 import (
 	"bytes"
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/hashicorp/go-msgpack/codec"
@@ -18,7 +18,7 @@ func (self *pingDelegate) AckPayload() []byte {
 	var buf bytes.Buffer
 	enc := codec.NewEncoder(&buf, &codec.MsgpackHandle{})
 	if err := enc.Encode(self.serf.coord); err != nil {
-		panic(fmt.Sprintf("[ERR] serf: Failed to encode coordinate: %v\n", err))
+		log.Printf("[ERR] serf: Failed to encode coordinate: %v\n", err)
 	}
 	return buf.Bytes()
 }
@@ -28,7 +28,9 @@ func (self *pingDelegate) NotifyPingComplete(other *memberlist.Node, rtt time.Du
 	r := bytes.NewReader(payload)
 	dec := codec.NewDecoder(r, &codec.MsgpackHandle{})
 	if err := dec.Decode(&coord); err != nil {
-		panic(fmt.Sprintf("[ERR] serf: Failed to decode coordinate: %v", err))
+		log.Printf("[ERR] serf: Failed to decode coordinate: %v", err)
 	}
-	self.serf.coord.Update(&coord, rtt)
+	if err := self.serf.coord.Update(&coord, rtt); err != nil {
+		log.Print(err)
+	}
 }

@@ -26,9 +26,9 @@ func NewCoordinate(dimension uint) *Coordinate {
 }
 
 // Add is used to add a given coordinate to the receiver, returning the new coordinate
-func (self *Coordinate) Add(other *Coordinate) *Coordinate {
+func (self *Coordinate) Add(other *Coordinate) (*Coordinate, error) {
 	if len(self.Vec) != len(other.Vec) {
-		panic(fmt.Sprintf("adding two coordinates that have different dimensions:\n%+v\n%+v", self, other))
+		return nil, fmt.Errorf("adding two coordinates that have different dimensions:\n%+v\n%+v", self, other)
 	} else {
 		ret := NewCoordinate(uint(len(self.Vec)))
 
@@ -40,14 +40,14 @@ func (self *Coordinate) Add(other *Coordinate) *Coordinate {
 			ret.Vec[i] = self.Vec[i] + other.Vec[i]
 		}
 
-		return ret
+		return ret, nil
 	}
 }
 
 // Sub is used to subtract a given coordinate from the receiver, returning the new coordinate
-func (self *Coordinate) Sub(other *Coordinate) *Coordinate {
+func (self *Coordinate) Sub(other *Coordinate) (*Coordinate, error) {
 	if len(self.Vec) != len(other.Vec) {
-		panic(fmt.Sprintf("subtracting two coordinates that have different dimensions:\n%+v\n%+v", self, other))
+		return nil, fmt.Errorf("subtracting two coordinates that have different dimensions:\n%+v\n%+v", self, other)
 	} else {
 		ret := NewCoordinate(uint(len(self.Vec)))
 
@@ -57,7 +57,7 @@ func (self *Coordinate) Sub(other *Coordinate) *Coordinate {
 			ret.Vec[i] = self.Vec[i] - other.Vec[i]
 		}
 
-		return ret
+		return ret, nil
 	}
 }
 
@@ -78,30 +78,47 @@ func (self *Coordinate) Mul(factor float64) *Coordinate {
 }
 
 // DistanceTo returns the distance between the given coordinate and the receiver
-func (self *Coordinate) DistanceTo(other *Coordinate) float64 {
-	tmp := self.Sub(other)
+func (self *Coordinate) DistanceTo(other *Coordinate) (float64, error) {
+	tmp, err := self.Sub(other)
+	if err != nil {
+		return 0, err
+	}
+
 	sum := 0.0
 	for i, _ := range self.Vec {
 		sum += math.Pow(tmp.Vec[i], 2)
 	}
-	return math.Sqrt(sum) + tmp.Height
+
+	return math.Sqrt(sum) + tmp.Height, nil
 }
 
 // DirectionTo returns a coordinate that represents a unit-length vector, which represents
 // the direction from the receiver to the given coordinate.  In case the two coordinates are
 // located together, a random direction is returned.
-func (self *Coordinate) DirectionTo(other *Coordinate) *Coordinate {
-	tmp := self.Sub(other)
-	dist := self.DistanceTo(other)
+func (self *Coordinate) DirectionTo(other *Coordinate) (*Coordinate, error) {
+	tmp, err := self.Sub(other)
+	if err != nil {
+		return nil, err
+	}
+
+	dist, err := self.DistanceTo(other)
+	if err != nil {
+		return nil, err
+	}
+
 	if dist != self.Height+other.Height {
 		tmp = tmp.Mul(1.0 / dist)
-		return tmp
+		return tmp, nil
 	} else {
 		for i, _ := range self.Vec {
 			tmp.Vec[i] = (10-0.1)*rand.Float64() + 0.1
 		}
-		dist = tmp.DistanceTo(NewCoordinate(uint(len(self.Vec))))
+		dist, err = tmp.DistanceTo(NewCoordinate(uint(len(self.Vec))))
+		if err != nil {
+			return nil, err
+		}
+
 		tmp = tmp.Mul(1.0 / dist)
-		return tmp
+		return tmp, nil
 	}
 }
