@@ -344,11 +344,13 @@ func Create(conf *Config) (*Serf, error) {
 	// Modify the memberlist configuration with keys that we set
 	conf.MemberlistConfig.Events = &eventDelegate{serf: serf}
 	conf.MemberlistConfig.Conflict = &conflictDelegate{serf: serf}
-	conf.MemberlistConfig.Ping = &pingDelegate{serf: serf}
 	conf.MemberlistConfig.Delegate = &delegate{serf: serf}
 	conf.MemberlistConfig.DelegateProtocolVersion = conf.ProtocolVersion
 	conf.MemberlistConfig.DelegateProtocolMin = ProtocolVersionMin
 	conf.MemberlistConfig.DelegateProtocolMax = ProtocolVersionMax
+	if conf.EnableCoordinates {
+		conf.MemberlistConfig.Ping = &pingDelegate{serf: serf}
+	}
 	conf.MemberlistConfig.Name = conf.NodeName
 	conf.MemberlistConfig.ProtocolVersion = ProtocolVersionMap[conf.ProtocolVersion]
 

@@ -189,6 +189,11 @@ type Config struct {
 	// node stays while the other node will leave the cluster and exit.
 	EnableNameConflictResolution bool
 
+	// EnableCoordinates controls if Serf will maintain a network coordinate
+	// internally.  A network coordinate is useful for estimating the
+	// network distance (i.e. round trip time) between two nodes.
+	EnableCoordinates bool
+
 	// KeyringFile provides the location of a writable file where Serf can
 	// persist changes to the encryption keyring.
 	KeyringFile string

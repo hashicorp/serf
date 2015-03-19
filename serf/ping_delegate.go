@@ -24,6 +24,10 @@ func (self *pingDelegate) AckPayload() []byte {
 }
 
 func (self *pingDelegate) NotifyPingComplete(other *memberlist.Node, rtt time.Duration, payload []byte) {
+	if payload == nil || len(payload) == 0 {
+		return
+	}
+
 	var coord coordinate.Client
 	r := bytes.NewReader(payload)
 	dec := codec.NewDecoder(r, &codec.MsgpackHandle{})
