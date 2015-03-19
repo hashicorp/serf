@@ -10,19 +10,23 @@ const (
 	HEIGHT_THRESHOLD = 0.01
 )
 
+// Coordinate is a Vivaldi network coordinate.  Refer to the Vivaldi paper for a detailed
+// description.
 type Coordinate struct {
 	Vec    []float64
 	Height float64
 }
 
-func NewCoordinate(dimension uint) Coordinate {
-	return Coordinate{
+// NewCoordinate creates a new network coordinate located at the origin
+func NewCoordinate(dimension uint) *Coordinate {
+	return &Coordinate{
 		Vec:    make([]float64, dimension),
 		Height: HEIGHT_THRESHOLD,
 	}
 }
 
-func (self Coordinate) Add(other Coordinate) Coordinate {
+// Add is used to add a given coordinate to the receiver, returning the new coordinate
+func (self *Coordinate) Add(other *Coordinate) *Coordinate {
 	if len(self.Vec) != len(other.Vec) {
 		panic(fmt.Sprintf("adding two coordinates that have different dimensions:\n%+v\n%+v", self, other))
 	} else {
@@ -40,7 +44,8 @@ func (self Coordinate) Add(other Coordinate) Coordinate {
 	}
 }
 
-func (self Coordinate) Sub(other Coordinate) Coordinate {
+// Sub is used to subtract a given coordinate from the receiver, returning the new coordinate
+func (self *Coordinate) Sub(other *Coordinate) *Coordinate {
 	if len(self.Vec) != len(other.Vec) {
 		panic(fmt.Sprintf("subtracting two coordinates that have different dimensions:\n%+v\n%+v", self, other))
 	} else {
@@ -56,7 +61,8 @@ func (self Coordinate) Sub(other Coordinate) Coordinate {
 	}
 }
 
-func (self Coordinate) Mul(factor float64) Coordinate {
+// Mul is used to multiple a given factor with the receiver, returning the new coordinate
+func (self *Coordinate) Mul(factor float64) *Coordinate {
 	ret := NewCoordinate(uint(len(self.Vec)))
 
 	ret.Height = self.Height * float64(factor)
@@ -71,7 +77,8 @@ func (self Coordinate) Mul(factor float64) Coordinate {
 	return ret
 }
 
-func (self Coordinate) DistanceTo(other Coordinate) float64 {
+// DistanceTo returns the distance between the given coordinate and the receiver
+func (self *Coordinate) DistanceTo(other *Coordinate) float64 {
 	tmp := self.Sub(other)
 	sum := 0.0
 	for i, _ := range self.Vec {
@@ -80,7 +87,10 @@ func (self Coordinate) DistanceTo(other Coordinate) float64 {
 	return math.Sqrt(sum) + tmp.Height
 }
 
-func (self Coordinate) DirectionTo(other Coordinate) Coordinate {
+// DirectionTo returns a coordinate that represents a unit-length vector, which represents
+// the direction from the receiver to the given coordinate.  In case the two coordinates are
+// located together, a random direction is returned.
+func (self *Coordinate) DirectionTo(other *Coordinate) *Coordinate {
 	tmp := self.Sub(other)
 	dist := self.DistanceTo(other)
 	if dist != self.Height+other.Height {
