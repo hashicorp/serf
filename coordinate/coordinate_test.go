@@ -25,8 +25,15 @@ func TestCoordinate(t *testing.T) {
 	b.Vec[1] = 3
 	b.Vec[2] = 4
 
-	sum := a.Add(b)
-	if !reflect.DeepEqual(sum, b.Add(a)) {
+	sum, err := a.Add(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum2, err := b.Add(a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(sum, sum2) {
 		t.Fatalf("addition should be symmetrical")
 	}
 
@@ -34,13 +41,23 @@ func TestCoordinate(t *testing.T) {
 		t.Fatalf("incorrect sum: %+v", sum)
 	}
 
-	diff := b.Sub(a)
+	diff, err := b.Sub(a)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !(diff.Vec[0] == 1 && diff.Vec[1] == 2 && diff.Vec[2] == 3) {
 		t.Fatalf("incorrect difference: %+v", diff)
 	}
 
-	dist := a.DistanceTo(b)
-	if !(dist == b.DistanceTo(a) && math.Abs(dist-math.Sqrt(14)) < 0.01*dist) {
+	dist, err := a.DistanceTo(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dist2, err := b.DistanceTo(a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !(dist == dist2 && math.Abs(dist-math.Sqrt(14)) < 0.01*dist) {
 		t.Fatalf("incorrect distance: %f", dist)
 	}
 }
@@ -54,8 +71,12 @@ func TestAlgorithm(t *testing.T) {
 		b.Update(a, rtt)
 	}
 
-	if !(math.Abs(float64((rtt - a.DistanceTo(b)).Nanoseconds())) < 0.01*float64(rtt.Nanoseconds())) {
+	dist, err := a.DistanceTo(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !(math.Abs(float64((rtt - dist).Nanoseconds())) < 0.01*float64(rtt.Nanoseconds())) {
 		t.Fatalf("The computed distance should be %f but is actually %f.\n%+v\n%+v",
-			rtt, a.DistanceTo(b), a, b)
+			rtt, dist, a, b)
 	}
 }
