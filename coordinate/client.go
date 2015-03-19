@@ -6,19 +6,29 @@ import (
 )
 
 const (
-	DIMENTION                 = 8
+	// The dimension of the coordinate system.  The paper "Network Coordinates in the Wild" has shown
+	// that the accuracy of a coordinate system increases with the number of dimensions, but only up
+	// to a certain point.  Specifically, there is no noticeable improvement beyond 7 dimensions.  Here
+	// we use 8.
+	DIMENTION = 8
+
+	// The following are the constants used in the computation of Vivaldi coordinates.  For a detailed
+	// description of what each of them means, please refer to the Vivaldi paper.
 	VIVALDI_ERROR             = 1.5
 	VIVALDI_ERROR_UNCONNECTED = 2
 	VIVALDI_CE                = 0.25
 	VIVALDI_CC                = 0.25
+
 	// The number of measurements we use to update the adjustment term.
 	// Instead of using a constant, we should probably dynamically adjust this
 	// using the cluster size and the gossip rate.
 	ADJUSTMENT_WINDOW_SIZE = 10
 )
 
+// Client consists of a network coordinate, an error estimation, and an adjustment term.  All three
+// elements are needed to compute network distance.
 type Client struct {
-	Coord Coordinate
+	Coord *Coordinate
 	Err   float64
 	// The unit of time used for the following fields is millisecond
 	Adjustment        float64
@@ -26,6 +36,7 @@ type Client struct {
 	adjustment_window []float64 // a rolling window that stores the differences between expected distances and real distances
 }
 
+// NewClient creates a new Client.
 func NewClient() *Client {
 	return &Client{
 		Coord:             NewCoordinate(DIMENTION),
@@ -36,8 +47,10 @@ func NewClient() *Client {
 	}
 }
 
-func (self *Client) Update(other *Client, _rtt time.Duration) {
-	rtt := float64(_rtt.Nanoseconds()) / (1000 * 1000) // 1 millisecond = 1000 * 1000 nanoseconds
+// Update takes a Client, which contains the position of another node, and the rtt between the receiver
+// and the other node, and updates the position of the receiver.
+func (self *Client) Update(other *Client, rtt_dur time.Duration) {
+	rtt := float64(rtt_dur.Nanoseconds()) / (1000 * 1000) // 1 millisecond = 1000 * 1000 nanoseconds
 	dist := self.Coord.DistanceTo(other.Coord)
 	weight := self.Err / (self.Err + other.Err)
 	err_calc := math.Abs(dist-rtt) / rtt
@@ -60,6 +73,8 @@ func (self *Client) updateAdjustment(other *Client, rtt float64) {
 	self.Adjustment = tmp / (2.0 * ADJUSTMENT_WINDOW_SIZE)
 }
 
+// DistanceTo takes a Client, which contains the position of another node, and computes the distance
+// between the receiver and the other node.
 func (self *Client) DistanceTo(other *Client) time.Duration {
 	return time.Duration(self.Coord.DistanceTo(other.Coord)+self.Adjustment+other.Adjustment) * time.Millisecond
 }
