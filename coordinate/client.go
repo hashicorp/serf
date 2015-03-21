@@ -14,10 +14,9 @@ const (
 
 	// The following are the constants used in the computation of Vivaldi coordinates.  For a detailed
 	// description of what each of them means, please refer to the Vivaldi paper.
-	VIVALDI_ERROR             = 1.5
-	VIVALDI_ERROR_UNCONNECTED = 2
-	VIVALDI_CE                = 0.25
-	VIVALDI_CC                = 0.25
+	VIVALDI_ERROR = 1.5
+	VIVALDI_CE    = 0.25
+	VIVALDI_CC    = 0.25
 
 	// The number of measurements we use to update the adjustment term.
 	// Instead of using a constant, we should probably dynamically adjust this
