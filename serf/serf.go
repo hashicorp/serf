@@ -374,7 +374,7 @@ func Create(conf *Config) (*Serf, error) {
 	serf.keyManager = &KeyManager{serf: serf}
 
 	// Create a network coordinate
-	serf.coord = coordinate.NewClient()
+	serf.coord = coordinate.NewClient(coordinate.DefaultConfig())
 
 	// Start the background tasks. See the documentation above each method
 	// for more information on their role.

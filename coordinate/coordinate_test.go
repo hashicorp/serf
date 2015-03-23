@@ -64,8 +64,8 @@ func TestCoordinate(t *testing.T) {
 
 func TestAlgorithm(t *testing.T) {
 	rtt := 100.0 * time.Millisecond
-	a := NewClient()
-	b := NewClient()
+	a := NewClient(DefaultConfig())
+	b := NewClient(DefaultConfig())
 	for i := 0; i < 100000; i++ {
 		a.Update(b, rtt)
 		b.Update(a, rtt)

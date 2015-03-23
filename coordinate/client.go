@@ -5,24 +5,35 @@ import (
 	"time"
 )
 
-const (
+// ClientConfig is used to provide specific parameters to the Vivaldi algorithm
+type ClientConfig struct {
 	// The dimension of the coordinate system.  The paper "Network Coordinates in the Wild" has shown
 	// that the accuracy of a coordinate system increases with the number of dimensions, but only up
-	// to a certain point.  Specifically, there is no noticeable improvement beyond 7 dimensions.  Here
-	// we use 8.
-	DIMENTION = 8
+	// to a certain point.  Specifically, there is no noticeable improvement beyond 7 dimensions.
+	Dimension uint
 
 	// The following are the constants used in the computation of Vivaldi coordinates.  For a detailed
 	// description of what each of them means, please refer to the Vivaldi paper.
-	VIVALDI_ERROR = 1.5
-	VIVALDI_CE    = 0.25
-	VIVALDI_CC    = 0.25
+	VivaldiError float64
+	VivaldiCE    float64
+	VivaldiCC    float64
 
 	// The number of measurements we use to update the adjustment term.
 	// Instead of using a constant, we should probably dynamically adjust this
 	// using the cluster size and the gossip rate.
-	ADJUSTMENT_WINDOW_SIZE = 10
-)
+	AdjustmentWindowSize uint
+}
+
+// DefaultConfig returns a ClientConfig that has the default values
+func DefaultConfig() *ClientConfig {
+	return &ClientConfig{
+		Dimension:            8,
+		VivaldiError:         1.5,
+		VivaldiCE:            0.25,
+		VivaldiCC:            0.25,
+		AdjustmentWindowSize: 10,
+	}
+}
 
 // Client consists of a network coordinate, an error estimation, and an adjustment term.  All three
 // elements are needed to compute network distance.
@@ -33,16 +44,18 @@ type Client struct {
 	Adjustment        float64
 	adjustment_index  uint      // index into adjustment window
 	adjustment_window []float64 // a rolling window that stores the differences between expected distances and real distances
+	config            *ClientConfig
 }
 
 // NewClient creates a new Client.
-func NewClient() *Client {
+func NewClient(config *ClientConfig) *Client {
 	return &Client{
-		Coord:             NewCoordinate(DIMENTION),
-		Err:               VIVALDI_ERROR,
+		Coord:             NewCoordinate(config.Dimension),
+		Err:               config.VivaldiError,
 		Adjustment:        0,
 		adjustment_index:  0,
-		adjustment_window: make([]float64, ADJUSTMENT_WINDOW_SIZE),
+		adjustment_window: make([]float64, config.AdjustmentWindowSize),
+		config:            config,
 	}
 }
 
@@ -57,11 +70,11 @@ func (self *Client) Update(other *Client, rtt_dur time.Duration) error {
 
 	weight := self.Err / (self.Err + other.Err)
 	err_calc := math.Abs(dist-rtt) / rtt
-	self.Err = err_calc*VIVALDI_CE*weight + self.Err*(1-VIVALDI_CE*weight)
-	if self.Err > VIVALDI_ERROR {
-		self.Err = VIVALDI_ERROR
+	self.Err = err_calc*self.config.VivaldiCE*weight + self.Err*(1-self.config.VivaldiCE*weight)
+	if self.Err > self.config.VivaldiError {
+		self.Err = self.config.VivaldiError
 	}
-	delta := VIVALDI_CC * weight
+	delta := self.config.VivaldiCC * weight
 
 	direction, err := self.Coord.DirectionTo(other.Coord)
 	if err != nil {
@@ -83,12 +96,12 @@ func (self *Client) updateAdjustment(other *Client, rtt float64) error {
 		return err
 	}
 	self.adjustment_window[self.adjustment_index] = rtt - dist
-	self.adjustment_index = (self.adjustment_index + 1) % ADJUSTMENT_WINDOW_SIZE
+	self.adjustment_index = (self.adjustment_index + 1) % self.config.AdjustmentWindowSize
 	tmp := 0.0
 	for _, n := range self.adjustment_window {
 		tmp += n
 	}
-	self.Adjustment = tmp / (2.0 * ADJUSTMENT_WINDOW_SIZE)
+	self.Adjustment = tmp / (2.0 * float64(self.config.AdjustmentWindowSize))
 	return nil
 }
 
