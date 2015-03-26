@@ -13,23 +13,26 @@ func TestCoordinate(t *testing.T) {
 	//	A + B = (3, 4, 5)
 	//	B - A = (1, 2, 3)
 	//  dist(A, B) = sqrt(14)
-	dim := uint(3)
+	config := DefaultConfig()
+	config.Dimension = 3
 
-	a := NewCoordinate(dim)
+	a := NewCoordinate(config)
 	a.Vec[0] = 1
 	a.Vec[1] = 1
 	a.Vec[2] = 1
 
-	b := NewCoordinate(dim)
+	b := NewCoordinate(config)
 	b.Vec[0] = 2
 	b.Vec[1] = 3
 	b.Vec[2] = 4
 
-	sum, err := a.Add(b)
+	client := NewClient(config)
+
+	sum, err := client.Add(a, b)
 	if err != nil {
 		t.Fatal(err)
 	}
-	sum2, err := b.Add(a)
+	sum2, err := client.Add(b, a)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +44,7 @@ func TestCoordinate(t *testing.T) {
 		t.Fatalf("incorrect sum: %+v", sum)
 	}
 
-	diff, err := b.Sub(a)
+	diff, err := client.Sub(b, a)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,11 +52,11 @@ func TestCoordinate(t *testing.T) {
 		t.Fatalf("incorrect difference: %+v", diff)
 	}
 
-	dist, err := a.DistanceTo(b)
+	dist, err := client.DistanceBetween(a, b)
 	if err != nil {
 		t.Fatal(err)
 	}
-	dist2, err := b.DistanceTo(a)
+	dist2, err := client.DistanceBetween(b, a)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,11 +70,11 @@ func TestAlgorithm(t *testing.T) {
 	a := NewClient(DefaultConfig())
 	b := NewClient(DefaultConfig())
 	for i := 0; i < 100000; i++ {
-		a.Update(b, rtt)
-		b.Update(a, rtt)
+		a.Update(b.Coord, rtt)
+		b.Update(a.Coord, rtt)
 	}
 
-	dist, err := a.DistanceTo(b)
+	dist, err := a.DistanceTo(b.Coord)
 	if err != nil {
 		t.Fatal(err)
 	}
