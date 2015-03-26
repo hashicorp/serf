@@ -6,38 +6,39 @@ import (
 	"math/rand"
 )
 
-const (
-	HEIGHT_THRESHOLD = 0.01
-)
-
 // Coordinate is a Vivaldi network coordinate.  Refer to the Vivaldi paper for a detailed
 // description.
 type Coordinate struct {
-	Vec    []float64
-	Height float64
+	// The unit of time used for the following fields is millisecond
+	Vec        []float64
+	Height     float64
+	Err        float64
+	Adjustment float64
 }
 
 // NewCoordinate creates a new network coordinate located at the origin
-func NewCoordinate(dimension uint) *Coordinate {
+func NewCoordinate(config *ClientConfig) *Coordinate {
 	return &Coordinate{
-		Vec:    make([]float64, dimension),
-		Height: HEIGHT_THRESHOLD,
+		Vec:        make([]float64, config.Dimension),
+		Height:     config.HeightThreshold,
+		Err:        config.VivaldiError,
+		Adjustment: 0,
 	}
 }
 
-// Add is used to add a given coordinate to the receiver, returning the new coordinate
-func (self *Coordinate) Add(other *Coordinate) (*Coordinate, error) {
-	if len(self.Vec) != len(other.Vec) {
-		return nil, fmt.Errorf("adding two coordinates that have different dimensions:\n%+v\n%+v", self, other)
+// Add is used to add up two coordinates, returning the sum
+func (self *Client) Add(this, that *Coordinate) (*Coordinate, error) {
+	if len(this.Vec) != len(that.Vec) {
+		return nil, fmt.Errorf("adding two coordinates that have different dimensions:\n%+v\n%+v", this, that)
 	} else {
-		ret := NewCoordinate(uint(len(self.Vec)))
+		ret := NewCoordinate(self.config)
 
-		if ret.Height < HEIGHT_THRESHOLD {
-			ret.Height = HEIGHT_THRESHOLD
+		if ret.Height < self.config.HeightThreshold {
+			ret.Height = self.config.HeightThreshold
 		}
 
-		for i, _ := range self.Vec {
-			ret.Vec[i] = self.Vec[i] + other.Vec[i]
+		for i, _ := range this.Vec {
+			ret.Vec[i] = this.Vec[i] + that.Vec[i]
 		}
 
 		return ret, nil
@@ -45,16 +46,16 @@ func (self *Coordinate) Add(other *Coordinate) (*Coordinate, error) {
 }
 
 // Sub is used to subtract a given coordinate from the receiver, returning the new coordinate
-func (self *Coordinate) Sub(other *Coordinate) (*Coordinate, error) {
-	if len(self.Vec) != len(other.Vec) {
-		return nil, fmt.Errorf("subtracting two coordinates that have different dimensions:\n%+v\n%+v", self, other)
+func (self *Client) Sub(this, that *Coordinate) (*Coordinate, error) {
+	if len(this.Vec) != len(that.Vec) {
+		return nil, fmt.Errorf("subtracting two coordinates that have different dimensions:\n%+v\n%+v", this, that)
 	} else {
-		ret := NewCoordinate(uint(len(self.Vec)))
+		ret := NewCoordinate(self.config)
 
-		ret.Height = self.Height + other.Height
+		ret.Height = this.Height + that.Height
 
-		for i, _ := range self.Vec {
-			ret.Vec[i] = self.Vec[i] - other.Vec[i]
+		for i, _ := range this.Vec {
+			ret.Vec[i] = this.Vec[i] - that.Vec[i]
 		}
 
 		return ret, nil
@@ -62,30 +63,30 @@ func (self *Coordinate) Sub(other *Coordinate) (*Coordinate, error) {
 }
 
 // Mul is used to multiple a given factor with the receiver, returning the new coordinate
-func (self *Coordinate) Mul(factor float64) *Coordinate {
-	ret := NewCoordinate(uint(len(self.Vec)))
+func (self *Client) Mul(coord *Coordinate, factor float64) *Coordinate {
+	ret := NewCoordinate(self.config)
 
-	ret.Height = self.Height * float64(factor)
-	if ret.Height < HEIGHT_THRESHOLD {
-		ret.Height = HEIGHT_THRESHOLD
+	ret.Height = coord.Height * float64(factor)
+	if ret.Height < self.config.HeightThreshold {
+		ret.Height = self.config.HeightThreshold
 	}
 
-	for i, _ := range self.Vec {
-		ret.Vec[i] = self.Vec[i] * float64(factor)
+	for i, _ := range coord.Vec {
+		ret.Vec[i] = coord.Vec[i] * float64(factor)
 	}
 
 	return ret
 }
 
 // DistanceTo returns the distance between the given coordinate and the receiver
-func (self *Coordinate) DistanceTo(other *Coordinate) (float64, error) {
-	tmp, err := self.Sub(other)
+func (self *Client) DistanceBetween(this, that *Coordinate) (float64, error) {
+	tmp, err := self.Sub(this, that)
 	if err != nil {
 		return 0, err
 	}
 
 	sum := 0.0
-	for i, _ := range self.Vec {
+	for i, _ := range tmp.Vec {
 		sum += math.Pow(tmp.Vec[i], 2)
 	}
 
@@ -95,30 +96,30 @@ func (self *Coordinate) DistanceTo(other *Coordinate) (float64, error) {
 // DirectionTo returns a coordinate that represents a unit-length vector, which represents
 // the direction from the receiver to the given coordinate.  In case the two coordinates are
 // located together, a random direction is returned.
-func (self *Coordinate) DirectionTo(other *Coordinate) (*Coordinate, error) {
-	tmp, err := self.Sub(other)
+func (self *Client) DirectionBetween(this, that *Coordinate) (*Coordinate, error) {
+	tmp, err := self.Sub(this, that)
 	if err != nil {
 		return nil, err
 	}
 
-	dist, err := self.DistanceTo(other)
+	dist, err := self.DistanceBetween(this, that)
 	if err != nil {
 		return nil, err
 	}
 
-	if dist != self.Height+other.Height {
-		tmp = tmp.Mul(1.0 / dist)
+	if dist != this.Height+that.Height {
+		tmp = self.Mul(tmp, 1.0/dist)
 		return tmp, nil
 	} else {
-		for i, _ := range self.Vec {
+		for i, _ := range this.Vec {
 			tmp.Vec[i] = (10-0.1)*rand.Float64() + 0.1
 		}
-		dist, err = tmp.DistanceTo(NewCoordinate(uint(len(self.Vec))))
+		dist, err = self.DistanceBetween(tmp, NewCoordinate(self.config))
 		if err != nil {
 			return nil, err
 		}
 
-		tmp = tmp.Mul(1.0 / dist)
+		tmp = self.Mul(tmp, 1.0/dist)
 		return tmp, nil
 	}
 }
