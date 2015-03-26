@@ -45,7 +45,7 @@ func (self *Client) Add(this, that *Coordinate) (*Coordinate, error) {
 	}
 }
 
-// Sub is used to subtract a given coordinate from the receiver, returning the new coordinate
+// Sub is used to subtract the second coordinate from the first, returning the diff
 func (self *Client) Sub(this, that *Coordinate) (*Coordinate, error) {
 	if len(this.Vec) != len(that.Vec) {
 		return nil, fmt.Errorf("subtracting two coordinates that have different dimensions:\n%+v\n%+v", this, that)
@@ -62,7 +62,7 @@ func (self *Client) Sub(this, that *Coordinate) (*Coordinate, error) {
 	}
 }
 
-// Mul is used to multiple a given factor with the receiver, returning the new coordinate
+// Mul is used to multiply a given factor with the given coordinate, returning a new coordinate
 func (self *Client) Mul(coord *Coordinate, factor float64) *Coordinate {
 	ret := NewCoordinate(self.config)
 
@@ -78,7 +78,7 @@ func (self *Client) Mul(coord *Coordinate, factor float64) *Coordinate {
 	return ret
 }
 
-// DistanceTo returns the distance between the given coordinate and the receiver
+// DistanceBetween returns the distance between the two given coordinates
 func (self *Client) DistanceBetween(this, that *Coordinate) (float64, error) {
 	tmp, err := self.Sub(this, that)
 	if err != nil {
@@ -93,8 +93,8 @@ func (self *Client) DistanceBetween(this, that *Coordinate) (float64, error) {
 	return math.Sqrt(sum) + tmp.Height, nil
 }
 
-// DirectionTo returns a coordinate that represents a unit-length vector, which represents
-// the direction from the receiver to the given coordinate.  In case the two coordinates are
+// DirectionBetween returns a coordinate that represents a unit-length vector, which represents
+// the direction from the first coordinate to the second.  In case the two coordinates are
 // located together, a random direction is returned.
 func (self *Client) DirectionBetween(this, that *Coordinate) (*Coordinate, error) {
 	tmp, err := self.Sub(this, that)
