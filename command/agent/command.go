@@ -272,6 +272,8 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 		serfConfig.MemberlistConfig = memberlist.DefaultWANConfig()
 	case "local":
 		serfConfig.MemberlistConfig = memberlist.DefaultLocalConfig()
+        case "elemental_lan":
+                serfConfig.MemberlistConfig = memberlist.DefaultElementalLanConfig()
 	default:
 		c.Ui.Error(fmt.Sprintf("Unknown profile: %s", config.Profile))
 		return nil
