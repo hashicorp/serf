@@ -1618,3 +1618,8 @@ func (s *Serf) writeKeyringFile() error {
 	// Success!
 	return nil
 }
+
+// GetCoordinate returns the network coordinate of the serf instance
+func (s *Serf) GetCoordinate() *coordinate.Coordinate {
+	return s.coord.Coord
+}
