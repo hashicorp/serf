@@ -17,22 +17,20 @@ func TestCoordinate(t *testing.T) {
 	config.Dimension = 3
 
 	a := NewCoordinate(config)
-	a.Vec[0] = 1
-	a.Vec[1] = 1
-	a.Vec[2] = 1
+	a.vec[0] = 1
+	a.vec[1] = 1
+	a.vec[2] = 1
 
 	b := NewCoordinate(config)
-	b.Vec[0] = 2
-	b.Vec[1] = 3
-	b.Vec[2] = 4
+	b.vec[0] = 2
+	b.vec[1] = 3
+	b.vec[2] = 4
 
-	client := NewClient(config)
-
-	sum, err := client.Add(a, b)
+	sum, err := a.Add(b, config)
 	if err != nil {
 		t.Fatal(err)
 	}
-	sum2, err := client.Add(b, a)
+	sum2, err := b.Add(a, config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,23 +38,23 @@ func TestCoordinate(t *testing.T) {
 		t.Fatalf("addition should be symmetrical")
 	}
 
-	if !(sum.Vec[0] == 3 && sum.Vec[1] == 4 && sum.Vec[2] == 5) {
+	if !(sum.vec[0] == 3 && sum.vec[1] == 4 && sum.vec[2] == 5) {
 		t.Fatalf("incorrect sum: %+v", sum)
 	}
 
-	diff, err := client.Sub(b, a)
+	diff, err := b.Sub(a, config)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !(diff.Vec[0] == 1 && diff.Vec[1] == 2 && diff.Vec[2] == 3) {
+	if !(diff.vec[0] == 1 && diff.vec[1] == 2 && diff.vec[2] == 3) {
 		t.Fatalf("incorrect difference: %+v", diff)
 	}
 
-	dist, err := client.DistanceBetween(a, b)
+	dist, err := a.DistanceTo(b, config)
 	if err != nil {
 		t.Fatal(err)
 	}
-	dist2, err := client.DistanceBetween(b, a)
+	dist2, err := b.DistanceTo(a, config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,11 +68,11 @@ func TestAlgorithm(t *testing.T) {
 	a := NewClient(DefaultConfig())
 	b := NewClient(DefaultConfig())
 	for i := 0; i < 100000; i++ {
-		a.Update(b.Coord, rtt)
-		b.Update(a.Coord, rtt)
+		a.Update(b.coord, rtt)
+		b.Update(a.coord, rtt)
 	}
 
-	dist, err := a.DistanceTo(b.Coord)
+	dist, err := a.DistanceTo(b.coord)
 	if err != nil {
 		t.Fatal(err)
 	}
