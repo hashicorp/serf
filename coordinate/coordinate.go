@@ -10,35 +10,35 @@ import (
 // description.
 type Coordinate struct {
 	// The unit of time used for the following fields is millisecond
-	Vec        []float64
-	Height     float64
-	Err        float64
-	Adjustment float64
+	vec        []float64
+	height     float64
+	err        float64
+	adjustment float64
 }
 
 // NewCoordinate creates a new network coordinate located at the origin
-func NewCoordinate(config *ClientConfig) *Coordinate {
+func NewCoordinate(config *Config) *Coordinate {
 	return &Coordinate{
-		Vec:        make([]float64, config.Dimension),
-		Height:     config.HeightThreshold,
-		Err:        config.VivaldiError,
-		Adjustment: 0,
+		vec:        make([]float64, config.Dimension),
+		height:     config.HeightThreshold,
+		err:        config.VivaldiError,
+		adjustment: 0,
 	}
 }
 
 // Add is used to add up two coordinates, returning the sum
-func (self *Client) Add(this, that *Coordinate) (*Coordinate, error) {
-	if len(this.Vec) != len(that.Vec) {
-		return nil, fmt.Errorf("adding two coordinates that have different dimensions:\n%+v\n%+v", this, that)
+func (c *Coordinate) Add(other *Coordinate, conf *Config) (*Coordinate, error) {
+	if len(c.vec) != len(other.vec) {
+		return nil, fmt.Errorf("adding two coordinates other have different dimensions:\n%+v\n%+v", c, other)
 	} else {
-		ret := NewCoordinate(self.config)
+		ret := NewCoordinate(conf)
 
-		if ret.Height < self.config.HeightThreshold {
-			ret.Height = self.config.HeightThreshold
+		if ret.height < conf.HeightThreshold {
+			ret.height = conf.HeightThreshold
 		}
 
-		for i, _ := range this.Vec {
-			ret.Vec[i] = this.Vec[i] + that.Vec[i]
+		for i, _ := range c.vec {
+			ret.vec[i] = c.vec[i] + other.vec[i]
 		}
 
 		return ret, nil
@@ -46,16 +46,16 @@ func (self *Client) Add(this, that *Coordinate) (*Coordinate, error) {
 }
 
 // Sub is used to subtract the second coordinate from the first, returning the diff
-func (self *Client) Sub(this, that *Coordinate) (*Coordinate, error) {
-	if len(this.Vec) != len(that.Vec) {
-		return nil, fmt.Errorf("subtracting two coordinates that have different dimensions:\n%+v\n%+v", this, that)
+func (c *Coordinate) Sub(other *Coordinate, conf *Config) (*Coordinate, error) {
+	if len(c.vec) != len(other.vec) {
+		return nil, fmt.Errorf("subtracting two coordinates other have different dimensions:\n%+v\n%+v", c, other)
 	} else {
-		ret := NewCoordinate(self.config)
+		ret := NewCoordinate(conf)
 
-		ret.Height = this.Height + that.Height
+		ret.height = c.height + other.height
 
-		for i, _ := range this.Vec {
-			ret.Vec[i] = this.Vec[i] - that.Vec[i]
+		for i, _ := range c.vec {
+			ret.vec[i] = c.vec[i] - other.vec[i]
 		}
 
 		return ret, nil
@@ -63,63 +63,63 @@ func (self *Client) Sub(this, that *Coordinate) (*Coordinate, error) {
 }
 
 // Mul is used to multiply a given factor with the given coordinate, returning a new coordinate
-func (self *Client) Mul(coord *Coordinate, factor float64) *Coordinate {
-	ret := NewCoordinate(self.config)
+func (c *Coordinate) Mul(factor float64, conf *Config) *Coordinate {
+	ret := NewCoordinate(conf)
 
-	ret.Height = coord.Height * float64(factor)
-	if ret.Height < self.config.HeightThreshold {
-		ret.Height = self.config.HeightThreshold
+	ret.height = c.height * float64(factor)
+	if ret.height < conf.HeightThreshold {
+		ret.height = conf.HeightThreshold
 	}
 
-	for i, _ := range coord.Vec {
-		ret.Vec[i] = coord.Vec[i] * float64(factor)
+	for i, _ := range c.vec {
+		ret.vec[i] = c.vec[i] * float64(factor)
 	}
 
 	return ret
 }
 
-// DistanceBetween returns the distance between the two given coordinates
-func (self *Client) DistanceBetween(this, that *Coordinate) (float64, error) {
-	tmp, err := self.Sub(this, that)
+// DistanceTo returns the distance between the receiver and the given coordinate
+func (c *Coordinate) DistanceTo(coord *Coordinate, conf *Config) (float64, error) {
+	tmp, err := c.Sub(coord, conf)
 	if err != nil {
 		return 0, err
 	}
 
 	sum := 0.0
-	for i, _ := range tmp.Vec {
-		sum += math.Pow(tmp.Vec[i], 2)
+	for i, _ := range tmp.vec {
+		sum += math.Pow(tmp.vec[i], 2)
 	}
 
-	return math.Sqrt(sum) + tmp.Height, nil
+	return math.Sqrt(sum) + tmp.height, nil
 }
 
-// DirectionBetween returns a coordinate that represents a unit-length vector, which represents
-// the direction from the first coordinate to the second.  In case the two coordinates are
+// DirectionTo returns a coordinate other represents a unit-length vector, which represents
+// the direction from the receiver to the given coordinate.  In case the two coordinates are
 // located together, a random direction is returned.
-func (self *Client) DirectionBetween(this, that *Coordinate) (*Coordinate, error) {
-	tmp, err := self.Sub(this, that)
+func (c *Coordinate) DirectionTo(coord *Coordinate, conf *Config) (*Coordinate, error) {
+	tmp, err := c.Sub(coord, conf)
 	if err != nil {
 		return nil, err
 	}
 
-	dist, err := self.DistanceBetween(this, that)
+	dist, err := c.DistanceTo(coord, conf)
 	if err != nil {
 		return nil, err
 	}
 
-	if dist != this.Height+that.Height {
-		tmp = self.Mul(tmp, 1.0/dist)
+	if dist != c.height+coord.height {
+		tmp = tmp.Mul(1.0/dist, conf)
 		return tmp, nil
 	} else {
-		for i, _ := range this.Vec {
-			tmp.Vec[i] = (10-0.1)*rand.Float64() + 0.1
+		for i, _ := range c.vec {
+			tmp.vec[i] = (10-0.1)*rand.Float64() + 0.1
 		}
-		dist, err = self.DistanceBetween(tmp, NewCoordinate(self.config))
+		dist, err = tmp.DistanceTo(NewCoordinate(conf), conf)
 		if err != nil {
 			return nil, err
 		}
 
-		tmp = self.Mul(tmp, 1.0/dist)
+		tmp = tmp.Mul(1.0/dist, conf)
 		return tmp, nil
 	}
 }

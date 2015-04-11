@@ -350,6 +350,7 @@ func Create(conf *Config) (*Serf, error) {
 	conf.MemberlistConfig.DelegateProtocolMax = ProtocolVersionMax
 	if conf.EnableCoordinates {
 		conf.MemberlistConfig.Ping = &pingDelegate{serf: serf}
+		serf.coord = coordinate.NewClient(coordinate.DefaultConfig())
 	}
 	conf.MemberlistConfig.Name = conf.NodeName
 	conf.MemberlistConfig.ProtocolVersion = ProtocolVersionMap[conf.ProtocolVersion]
@@ -372,9 +373,6 @@ func Create(conf *Config) (*Serf, error) {
 
 	// Create a key manager for handling all encryption key changes
 	serf.keyManager = &KeyManager{serf: serf}
-
-	// Create a network coordinate
-	serf.coord = coordinate.NewClient(coordinate.DefaultConfig())
 
 	// Start the background tasks. See the documentation above each method
 	// for more information on their role.
@@ -1621,5 +1619,5 @@ func (s *Serf) writeKeyringFile() error {
 
 // GetCoordinate returns the network coordinate of the serf instance
 func (s *Serf) GetCoordinate() *coordinate.Coordinate {
-	return s.coord.Coord
+	return s.coord.GetCoordinate()
 }
