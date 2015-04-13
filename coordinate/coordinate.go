@@ -29,7 +29,7 @@ func NewCoordinate(config *Config) *Coordinate {
 // Add is used to add up two coordinates, returning the sum
 func (c *Coordinate) Add(other *Coordinate, conf *Config) (*Coordinate, error) {
 	if len(c.vec) != len(other.vec) {
-		return nil, fmt.Errorf("adding two coordinates other have different dimensions:\n%+v\n%+v", c, other)
+		return nil, fmt.Errorf("adding two coordinates that have different dimensions:\n%+v\n%+v", c, other)
 	} else {
 		ret := NewCoordinate(conf)
 
@@ -48,7 +48,7 @@ func (c *Coordinate) Add(other *Coordinate, conf *Config) (*Coordinate, error) {
 // Sub is used to subtract the second coordinate from the first, returning the diff
 func (c *Coordinate) Sub(other *Coordinate, conf *Config) (*Coordinate, error) {
 	if len(c.vec) != len(other.vec) {
-		return nil, fmt.Errorf("subtracting two coordinates other have different dimensions:\n%+v\n%+v", c, other)
+		return nil, fmt.Errorf("subtracting two coordinates that have different dimensions:\n%+v\n%+v", c, other)
 	} else {
 		ret := NewCoordinate(conf)
 
