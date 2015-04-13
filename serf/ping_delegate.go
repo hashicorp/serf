@@ -17,7 +17,7 @@ type pingDelegate struct {
 func (self *pingDelegate) AckPayload() []byte {
 	var buf bytes.Buffer
 	enc := codec.NewEncoder(&buf, &codec.MsgpackHandle{})
-	if err := enc.Encode(self.serf.coord.Coord); err != nil {
+	if err := enc.Encode(self.serf.coord.GetCoordinate()); err != nil {
 		log.Printf("[ERR] serf: Failed to encode coordinate: %v\n", err)
 	}
 	return buf.Bytes()
