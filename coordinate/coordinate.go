@@ -10,35 +10,36 @@ import (
 // description.
 type Coordinate struct {
 	// The unit of time used for the following fields is millisecond
-	vec        []float64
-	height     float64
-	err        float64
-	adjustment float64
+	// The fields need to be public for them to be serializable
+	Vec        []float64
+	Height     float64
+	Err        float64
+	Adjustment float64
 }
 
 // NewCoordinate creates a new network coordinate located at the origin
 func NewCoordinate(config *Config) *Coordinate {
 	return &Coordinate{
-		vec:        make([]float64, config.Dimension),
-		height:     config.HeightThreshold,
-		err:        config.VivaldiError,
-		adjustment: 0,
+		Vec:        make([]float64, config.Dimension),
+		Height:     config.HeightThreshold,
+		Err:        config.VivaldiError,
+		Adjustment: 0,
 	}
 }
 
 // Add is used to add up two coordinates, returning the sum
 func (c *Coordinate) Add(other *Coordinate, conf *Config) (*Coordinate, error) {
-	if len(c.vec) != len(other.vec) {
+	if len(c.Vec) != len(other.Vec) {
 		return nil, fmt.Errorf("adding two coordinates that have different dimensions:\n%+v\n%+v", c, other)
 	} else {
 		ret := NewCoordinate(conf)
 
-		if ret.height < conf.HeightThreshold {
-			ret.height = conf.HeightThreshold
+		if ret.Height < conf.HeightThreshold {
+			ret.Height = conf.HeightThreshold
 		}
 
-		for i, _ := range c.vec {
-			ret.vec[i] = c.vec[i] + other.vec[i]
+		for i, _ := range c.Vec {
+			ret.Vec[i] = c.Vec[i] + other.Vec[i]
 		}
 
 		return ret, nil
@@ -47,15 +48,15 @@ func (c *Coordinate) Add(other *Coordinate, conf *Config) (*Coordinate, error) {
 
 // Sub is used to subtract the second coordinate from the first, returning the diff
 func (c *Coordinate) Sub(other *Coordinate, conf *Config) (*Coordinate, error) {
-	if len(c.vec) != len(other.vec) {
+	if len(c.Vec) != len(other.Vec) {
 		return nil, fmt.Errorf("subtracting two coordinates that have different dimensions:\n%+v\n%+v", c, other)
 	} else {
 		ret := NewCoordinate(conf)
 
-		ret.height = c.height + other.height
+		ret.Height = c.Height + other.Height
 
-		for i, _ := range c.vec {
-			ret.vec[i] = c.vec[i] - other.vec[i]
+		for i, _ := range c.Vec {
+			ret.Vec[i] = c.Vec[i] - other.Vec[i]
 		}
 
 		return ret, nil
@@ -66,13 +67,13 @@ func (c *Coordinate) Sub(other *Coordinate, conf *Config) (*Coordinate, error) {
 func (c *Coordinate) Mul(factor float64, conf *Config) *Coordinate {
 	ret := NewCoordinate(conf)
 
-	ret.height = c.height * float64(factor)
-	if ret.height < conf.HeightThreshold {
-		ret.height = conf.HeightThreshold
+	ret.Height = c.Height * float64(factor)
+	if ret.Height < conf.HeightThreshold {
+		ret.Height = conf.HeightThreshold
 	}
 
-	for i, _ := range c.vec {
-		ret.vec[i] = c.vec[i] * float64(factor)
+	for i, _ := range c.Vec {
+		ret.Vec[i] = c.Vec[i] * float64(factor)
 	}
 
 	return ret
@@ -86,14 +87,14 @@ func (c *Coordinate) DistanceTo(coord *Coordinate, conf *Config) (float64, error
 	}
 
 	sum := 0.0
-	for i, _ := range tmp.vec {
-		sum += math.Pow(tmp.vec[i], 2)
+	for i, _ := range tmp.Vec {
+		sum += math.Pow(tmp.Vec[i], 2)
 	}
 
-	return math.Sqrt(sum) + tmp.height, nil
+	return math.Sqrt(sum) + tmp.Height, nil
 }
 
-// DirectionTo returns a coordinate other represents a unit-length vector, which represents
+// DirectionTo returns a coordinate other represents a unit-length Vector, which represents
 // the direction from the receiver to the given coordinate.  In case the two coordinates are
 // located together, a random direction is returned.
 func (c *Coordinate) DirectionTo(coord *Coordinate, conf *Config) (*Coordinate, error) {
@@ -107,12 +108,12 @@ func (c *Coordinate) DirectionTo(coord *Coordinate, conf *Config) (*Coordinate, 
 		return nil, err
 	}
 
-	if dist != c.height+coord.height {
+	if dist != c.Height+coord.Height {
 		tmp = tmp.Mul(1.0/dist, conf)
 		return tmp, nil
 	} else {
-		for i, _ := range c.vec {
-			tmp.vec[i] = (10-0.1)*rand.Float64() + 0.1
+		for i, _ := range c.Vec {
+			tmp.Vec[i] = (10-0.1)*rand.Float64() + 0.1
 		}
 		dist, err = tmp.DistanceTo(NewCoordinate(conf), conf)
 		if err != nil {

@@ -17,14 +17,14 @@ func TestCoordinate(t *testing.T) {
 	config.Dimension = 3
 
 	a := NewCoordinate(config)
-	a.vec[0] = 1
-	a.vec[1] = 1
-	a.vec[2] = 1
+	a.Vec[0] = 1
+	a.Vec[1] = 1
+	a.Vec[2] = 1
 
 	b := NewCoordinate(config)
-	b.vec[0] = 2
-	b.vec[1] = 3
-	b.vec[2] = 4
+	b.Vec[0] = 2
+	b.Vec[1] = 3
+	b.Vec[2] = 4
 
 	sum, err := a.Add(b, config)
 	if err != nil {
@@ -38,7 +38,7 @@ func TestCoordinate(t *testing.T) {
 		t.Fatalf("addition should be symmetrical")
 	}
 
-	if !(sum.vec[0] == 3 && sum.vec[1] == 4 && sum.vec[2] == 5) {
+	if !(sum.Vec[0] == 3 && sum.Vec[1] == 4 && sum.Vec[2] == 5) {
 		t.Fatalf("incorrect sum: %+v", sum)
 	}
 
@@ -46,7 +46,7 @@ func TestCoordinate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !(diff.vec[0] == 1 && diff.vec[1] == 2 && diff.vec[2] == 3) {
+	if !(diff.Vec[0] == 1 && diff.Vec[1] == 2 && diff.Vec[2] == 3) {
 		t.Fatalf("incorrect difference: %+v", diff)
 	}
 

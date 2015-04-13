@@ -70,11 +70,11 @@ func (c *Client) Update(coord *Coordinate, rttDur time.Duration) error {
 		return err
 	}
 
-	weight := c.coord.err / (c.coord.err + coord.err)
+	weight := c.coord.Err / (c.coord.Err + coord.Err)
 	err_calc := math.Abs(dist-rtt) / rtt
-	c.coord.err = err_calc*c.config.VivaldiCE*weight + c.coord.err*(1-c.config.VivaldiCE*weight)
-	if c.coord.err > c.config.VivaldiError {
-		c.coord.err = c.config.VivaldiError
+	c.coord.Err = err_calc*c.config.VivaldiCE*weight + c.coord.Err*(1-c.config.VivaldiCE*weight)
+	if c.coord.Err > c.config.VivaldiError {
+		c.coord.Err = c.config.VivaldiError
 	}
 	delta := c.config.VivaldiCC * weight
 
@@ -103,7 +103,7 @@ func (c *Client) updateAdjustment(coord *Coordinate, rtt float64) error {
 	for _, n := range c.adjustment_window {
 		tmp += n
 	}
-	c.coord.adjustment = tmp / (2.0 * float64(c.config.AdjustmentWindowSize))
+	c.coord.Adjustment = tmp / (2.0 * float64(c.config.AdjustmentWindowSize))
 	return nil
 }
 
@@ -114,5 +114,5 @@ func (c *Client) DistanceTo(coord *Coordinate) (time.Duration, error) {
 	if err != nil {
 		return time.Duration(0), err
 	}
-	return time.Duration(dist+c.coord.adjustment+coord.adjustment) * time.Millisecond, nil
+	return time.Duration(dist+c.coord.Adjustment+coord.Adjustment) * time.Millisecond, nil
 }
