@@ -2,6 +2,7 @@ package coordinate
 
 import (
 	"math"
+	"sync"
 	"time"
 )
 
@@ -39,11 +40,14 @@ func DefaultConfig() *Config {
 
 // Client consists of a network coordinate, an error estimation, and an adjustment term.  All three
 // elements are needed to compute network distance.
+//
+// The APIs are all thread-safe.
 type Client struct {
 	coord             *Coordinate
 	adjustment_index  uint      // index into adjustment window
 	adjustment_window []float64 // a rolling window that stores the differences between expected distances and real distances
 	config            *Config
+	mutex             *sync.RWMutex // enable safe conccurent access
 }
 
 // NewClient creates a new Client.
@@ -53,17 +57,24 @@ func NewClient(config *Config) *Client {
 		config:            config,
 		adjustment_index:  0,
 		adjustment_window: make([]float64, config.AdjustmentWindowSize),
+		mutex:             &sync.RWMutex{},
 	}
 }
 
 // GetCoordinate returns the coordinate of this client
 func (c *Client) GetCoordinate() *Coordinate {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
 	return c.coord
 }
 
 // Update takes a Client, which contains the position of another node, and the rtt between the receiver
 // and the other node, and updates the position of the receiver.
 func (c *Client) Update(coord *Coordinate, rttDur time.Duration) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	rtt := float64(rttDur.Nanoseconds()) / (1000 * 1000) // 1 millisecond = 1000 * 1000 nanoseconds
 	dist, err := c.coord.DistanceTo(coord, c.config)
 	if err != nil {
@@ -110,6 +121,9 @@ func (c *Client) updateAdjustment(coord *Coordinate, rtt float64) error {
 // DistanceTo takes a Client, which contains the position of another node, and computes the distance
 // between the receiver and the other node.
 func (c *Client) DistanceTo(coord *Coordinate) (time.Duration, error) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
 	dist, err := c.coord.DistanceTo(coord, c.config)
 	if err != nil {
 		return time.Duration(0), err
