@@ -235,5 +235,6 @@ func DefaultConfig() *Config {
 		MemberlistConfig:             memberlist.DefaultLANConfig(),
 		QueryTimeoutMult:             16,
 		EnableNameConflictResolution: true,
+		EnableCoordinates:            true,
 	}
 }
