@@ -14,7 +14,11 @@ func TestNewClient(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !reflect.DeepEqual(NewCoordinate(config), client.GetCoordinate()) {
+	origin, err := NewCoordinate(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(origin, client.GetCoordinate()) {
 		t.Fatalf("A new client should come with a new coordinate")
 	}
 }
@@ -59,7 +63,10 @@ func TestUpdateError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	coord := NewCoordinate(config2)
+	coord, err := NewCoordinate(config2)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	err = client.Update(coord, time.Second)
 	if err == nil {

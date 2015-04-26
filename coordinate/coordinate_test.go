@@ -20,12 +20,12 @@ func getTwoConstantCoordinates() (a, b *Coordinate, config *Config) {
 	config = DefaultConfig()
 	config.Dimension = 3
 
-	a = NewCoordinate(config)
+	a, _ = NewCoordinate(config)
 	a.Vec[0] = 1
 	a.Vec[1] = 1
 	a.Vec[2] = 1
 
-	b = NewCoordinate(config)
+	b, _ = NewCoordinate(config)
 	b.Vec[0] = 2
 	b.Vec[1] = 3
 	b.Vec[2] = 4
@@ -83,7 +83,10 @@ func TestCoordinateDistanceTo(t *testing.T) {
 
 func TestCoordinateDirectionTo(t *testing.T) {
 	a, b, config := getTwoConstantCoordinates()
-	origin := NewCoordinate(config)
+	origin, err := NewCoordinate(config)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	atob, err := a.DirectionTo(b, config)
 	if err != nil {
