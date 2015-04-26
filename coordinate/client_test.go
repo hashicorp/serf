@@ -9,7 +9,10 @@ import (
 
 func TestNewClient(t *testing.T) {
 	config := DefaultConfig()
-	client := NewClient(config)
+	client, err := NewClient(config)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !reflect.DeepEqual(NewCoordinate(config), client.GetCoordinate()) {
 		t.Fatalf("A new client should come with a new coordinate")
@@ -18,8 +21,14 @@ func TestNewClient(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	rtt := 100.0 * time.Millisecond
-	a := NewClient(DefaultConfig())
-	b := NewClient(DefaultConfig())
+	a, err := NewClient(DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := NewClient(DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
 	for i := 0; i < 100000; i++ {
 		err := a.Update(b.coord, rtt)
 		if err != nil {
@@ -46,10 +55,13 @@ func TestUpdateError(t *testing.T) {
 	config2 := DefaultConfig()
 	config2.Dimension += 1
 
-	client := NewClient(config1)
+	client, err := NewClient(config1)
+	if err != nil {
+		t.Fatal(err)
+	}
 	coord := NewCoordinate(config2)
 
-	err := client.Update(coord, time.Second)
+	err = client.Update(coord, time.Second)
 	if err == nil {
 		t.Fatalf("Updating using a coord with the wrong dimensionality should result in an error")
 	}
