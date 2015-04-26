@@ -72,6 +72,6 @@ func TestAlgorithm(t *testing.T) {
 
 	averageErr := totalErr / counter
 	if averageErr > ERR_STD {
-		t.Fatalf("average error: %f", averageErr)
+		t.Fatalf("average error is too large: %f", averageErr)
 	}
 }

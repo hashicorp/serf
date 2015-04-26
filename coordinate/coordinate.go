@@ -21,7 +21,7 @@ type Coordinate struct {
 func NewCoordinate(config *Config) *Coordinate {
 	return &Coordinate{
 		Vec:        make([]float64, config.Dimension),
-		Height:     config.HeightThreshold,
+		Height:     config.MinHeightThreshold,
 		Err:        config.VivaldiError,
 		Adjustment: 0,
 	}
@@ -34,8 +34,8 @@ func (c *Coordinate) Add(other *Coordinate, conf *Config) (*Coordinate, error) {
 	} else {
 		ret := NewCoordinate(conf)
 
-		if ret.Height < conf.HeightThreshold {
-			ret.Height = conf.HeightThreshold
+		if ret.Height < conf.MinHeightThreshold {
+			ret.Height = conf.MinHeightThreshold
 		}
 
 		for i, _ := range c.Vec {
@@ -68,8 +68,8 @@ func (c *Coordinate) Mul(factor float64, conf *Config) *Coordinate {
 	ret := NewCoordinate(conf)
 
 	ret.Height = c.Height * float64(factor)
-	if ret.Height < conf.HeightThreshold {
-		ret.Height = conf.HeightThreshold
+	if ret.Height < conf.MinHeightThreshold {
+		ret.Height = conf.MinHeightThreshold
 	}
 
 	for i, _ := range c.Vec {
