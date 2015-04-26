@@ -1,6 +1,7 @@
 package coordinate
 
 import (
+	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -38,6 +39,15 @@ func DefaultConfig() *Config {
 	}
 }
 
+// Verify verifies that the receiver is a valid config
+func (c *Config) Verify() error {
+	if c.Dimension <= 0 {
+		return fmt.Errorf("Dimension should be greater than zero but is %d", c.Dimension)
+	}
+
+	return nil
+}
+
 // Client consists of a network coordinate, an error estimation, and an adjustment term.  All three
 // elements are needed to compute network distance.
 //
@@ -51,14 +61,18 @@ type Client struct {
 }
 
 // NewClient creates a new Client.
-func NewClient(config *Config) *Client {
+func NewClient(config *Config) (*Client, error) {
+	if err := config.Verify(); err != nil {
+		return nil, err
+	}
+
 	return &Client{
 		coord:             NewCoordinate(config),
 		config:            config,
 		adjustment_index:  0,
 		adjustment_window: make([]float64, config.AdjustmentWindowSize),
 		mutex:             &sync.RWMutex{},
-	}
+	}, nil
 }
 
 // GetCoordinate returns the coordinate of this client
@@ -104,17 +118,19 @@ func (c *Client) Update(coord *Coordinate, rttDur time.Duration) error {
 }
 
 func (c *Client) updateAdjustment(coord *Coordinate, rtt float64) error {
-	dist, err := c.coord.DistanceTo(coord, c.config)
-	if err != nil {
-		return err
+	if c.config.AdjustmentWindowSize > 0 {
+		dist, err := c.coord.DistanceTo(coord, c.config)
+		if err != nil {
+			return err
+		}
+		c.adjustment_window[c.adjustment_index] = rtt - dist
+		c.adjustment_index = (c.adjustment_index + 1) % c.config.AdjustmentWindowSize
+		tmp := 0.0
+		for _, n := range c.adjustment_window {
+			tmp += n
+		}
+		c.coord.Adjustment = tmp / (2.0 * float64(c.config.AdjustmentWindowSize))
 	}
-	c.adjustment_window[c.adjustment_index] = rtt - dist
-	c.adjustment_index = (c.adjustment_index + 1) % c.config.AdjustmentWindowSize
-	tmp := 0.0
-	for _, n := range c.adjustment_window {
-		tmp += n
-	}
-	c.coord.Adjustment = tmp / (2.0 * float64(c.config.AdjustmentWindowSize))
 	return nil
 }
 

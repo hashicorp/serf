@@ -43,7 +43,11 @@ func TestAlgorithm(t *testing.T) {
 
 	nodes := make([]*Client, numNodes)
 	for i := 0; i < numNodes; i++ {
-		nodes[i] = NewClient(DefaultConfig())
+		var err error
+		nodes[i], err = NewClient(DefaultConfig())
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	for i := 0; i < 10000; i++ {
