@@ -62,12 +62,13 @@ type Client struct {
 
 // NewClient creates a new Client.
 func NewClient(config *Config) (*Client, error) {
-	if err := config.Verify(); err != nil {
+	coord, err := NewCoordinate(config)
+	if err != nil {
 		return nil, err
 	}
 
 	return &Client{
-		coord:             NewCoordinate(config),
+		coord:             coord,
 		config:            config,
 		adjustment_index:  0,
 		adjustment_window: make([]float64, config.AdjustmentWindowSize),
@@ -108,7 +109,11 @@ func (c *Client) Update(coord *Coordinate, rttDur time.Duration) error {
 		return err
 	}
 
-	c.coord, err = c.coord.Add(direction.Mul(delta*(rtt-dist), c.config), c.config)
+	prod, err := direction.Mul(delta*(rtt-dist), c.config)
+	if err != nil {
+		return err
+	}
+	c.coord, err = c.coord.Add(prod, c.config)
 	if err != nil {
 		return err
 	}

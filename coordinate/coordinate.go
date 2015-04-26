@@ -18,13 +18,17 @@ type Coordinate struct {
 }
 
 // NewCoordinate creates a new network coordinate located at the origin
-func NewCoordinate(config *Config) *Coordinate {
+func NewCoordinate(config *Config) (*Coordinate, error) {
+	if err := config.Verify(); err != nil {
+		return nil, err
+	}
+
 	return &Coordinate{
 		Vec:        make([]float64, config.Dimension),
 		Height:     config.MinHeightThreshold,
 		Err:        config.VivaldiError,
 		Adjustment: 0,
-	}
+	}, nil
 }
 
 // Clone returns a copy of the receiver
@@ -44,7 +48,10 @@ func (c *Coordinate) Add(other *Coordinate, conf *Config) (*Coordinate, error) {
 	if len(c.Vec) != len(other.Vec) {
 		return nil, fmt.Errorf("adding two coordinates that have different dimensions:\n%+v\n%+v", c, other)
 	} else {
-		ret := NewCoordinate(conf)
+		ret, err := NewCoordinate(conf)
+		if err != nil {
+			return nil, err
+		}
 
 		if ret.Height < conf.MinHeightThreshold {
 			ret.Height = conf.MinHeightThreshold
@@ -63,7 +70,10 @@ func (c *Coordinate) Sub(other *Coordinate, conf *Config) (*Coordinate, error) {
 	if len(c.Vec) != len(other.Vec) {
 		return nil, fmt.Errorf("subtracting two coordinates that have different dimensions:\n%+v\n%+v", c, other)
 	} else {
-		ret := NewCoordinate(conf)
+		ret, err := NewCoordinate(conf)
+		if err != nil {
+			return nil, err
+		}
 
 		ret.Height = c.Height + other.Height
 
@@ -76,8 +86,11 @@ func (c *Coordinate) Sub(other *Coordinate, conf *Config) (*Coordinate, error) {
 }
 
 // Mul is used to multiply a given factor with the given coordinate, returning a new coordinate
-func (c *Coordinate) Mul(factor float64, conf *Config) *Coordinate {
-	ret := NewCoordinate(conf)
+func (c *Coordinate) Mul(factor float64, conf *Config) (*Coordinate, error) {
+	ret, err := NewCoordinate(conf)
+	if err != nil {
+		return nil, err
+	}
 
 	ret.Height = c.Height * float64(factor)
 	if ret.Height < conf.MinHeightThreshold {
@@ -88,7 +101,7 @@ func (c *Coordinate) Mul(factor float64, conf *Config) *Coordinate {
 		ret.Vec[i] = c.Vec[i] * float64(factor)
 	}
 
-	return ret
+	return ret, nil
 }
 
 // DistanceTo returns the distance between the receiver and the given coordinate
@@ -121,18 +134,31 @@ func (c *Coordinate) DirectionTo(coord *Coordinate, conf *Config) (*Coordinate, 
 	}
 
 	if dist != c.Height+coord.Height {
-		tmp = tmp.Mul(1.0/dist, conf)
+		tmp, err = tmp.Mul(1.0/dist, conf)
+		if err != nil {
+			return nil, err
+		}
 		return tmp, nil
 	} else {
 		for i, _ := range c.Vec {
 			tmp.Vec[i] = (10-0.1)*rand.Float64() + 0.1
 		}
-		dist, err = tmp.DistanceTo(NewCoordinate(conf), conf)
+
+		origin, err := NewCoordinate(conf)
 		if err != nil {
 			return nil, err
 		}
 
-		tmp = tmp.Mul(1.0/dist, conf)
+		dist, err = tmp.DistanceTo(origin, conf)
+		if err != nil {
+			return nil, err
+		}
+
+		tmp, err = tmp.Mul(1.0/dist, conf)
+		if err != nil {
+			return nil, err
+		}
+
 		return tmp, nil
 	}
 }
