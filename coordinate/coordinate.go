@@ -27,6 +27,18 @@ func NewCoordinate(config *Config) *Coordinate {
 	}
 }
 
+// Clone returns a copy of the receiver
+func (c *Coordinate) Clone() *Coordinate {
+	vec := make([]float64, len(c.Vec))
+	copy(vec, c.Vec)
+	return &Coordinate{
+		Vec:        vec,
+		Height:     c.Height,
+		Err:        c.Err,
+		Adjustment: c.Adjustment,
+	}
+}
+
 // Add is used to add up two coordinates, returning the sum
 func (c *Coordinate) Add(other *Coordinate, conf *Config) (*Coordinate, error) {
 	if len(c.Vec) != len(other.Vec) {
