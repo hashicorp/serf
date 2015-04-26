@@ -75,12 +75,12 @@ func NewClient(config *Config) (*Client, error) {
 	}, nil
 }
 
-// GetCoordinate returns the coordinate of this client
+// GetCoordinate returns a copy of the coordinate of this client
 func (c *Client) GetCoordinate() *Coordinate {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
-	return c.coord
+	return c.coord.Clone()
 }
 
 // Update takes a Client, which contains the position of another node, and the rtt between the receiver
@@ -137,12 +137,11 @@ func (c *Client) updateAdjustment(coord *Coordinate, rtt float64) error {
 // DistanceTo takes a Client, which contains the position of another node, and computes the distance
 // between the receiver and the other node.
 func (c *Client) DistanceTo(coord *Coordinate) (time.Duration, error) {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
+	my_coord := c.GetCoordinate()
 
-	dist, err := c.coord.DistanceTo(coord, c.config)
+	dist, err := my_coord.DistanceTo(coord, c.config)
 	if err != nil {
 		return time.Duration(0), err
 	}
-	return time.Duration(dist+c.coord.Adjustment+coord.Adjustment) * time.Millisecond, nil
+	return time.Duration(dist+my_coord.Adjustment+coord.Adjustment) * time.Millisecond, nil
 }
