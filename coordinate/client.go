@@ -15,10 +15,10 @@ type Config struct {
 
 	// The following are the constants used in the computation of Vivaldi coordinates.  For a detailed
 	// description of what each of them means, please refer to the Vivaldi paper.
-	VivaldiError    float64
-	VivaldiCE       float64
-	VivaldiCC       float64
-	HeightThreshold float64
+	VivaldiError       float64
+	VivaldiCE          float64
+	VivaldiCC          float64
+	MinHeightThreshold float64 // MinHeightThreshold adds a lower bound to the height of a coordinate
 
 	// The number of measurements we use to update the adjustment term.
 	// Instead of using a constant, we should probably dynamically adjust this
@@ -33,7 +33,7 @@ func DefaultConfig() *Config {
 		VivaldiError:         1.5,
 		VivaldiCE:            0.25,
 		VivaldiCC:            0.25,
-		HeightThreshold:      0.01,
+		MinHeightThreshold:   0.01,
 		AdjustmentWindowSize: 10,
 	}
 }
