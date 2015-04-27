@@ -941,6 +941,8 @@ func (i *AgentIPC) handleTags(client *IPCClient, seq uint64) error {
 		}
 		if !delTag {
 			tags[key] = val
+		} else {
+			delete(tags, key)
 		}
 	}
 
