@@ -1,9 +1,13 @@
 package coordinate
 
 import (
-	"fmt"
+	"errors"
 	"math"
 	"math/rand"
+)
+
+var (
+	ErrDimensionalityConflict = errors.New("coordinate dimensionality does not match")
 )
 
 // Coordinate is a Vivaldi network coordinate.  Refer to the Vivaldi paper for a detailed
@@ -46,43 +50,41 @@ func (c *Coordinate) Clone() *Coordinate {
 // Add is used to add up two coordinates, returning the sum
 func (c *Coordinate) Add(other *Coordinate, conf *Config) (*Coordinate, error) {
 	if len(c.Vec) != len(other.Vec) {
-		return nil, fmt.Errorf("adding two coordinates that have different dimensions:\n%+v\n%+v", c, other)
-	} else {
-		ret, err := NewCoordinate(conf)
-		if err != nil {
-			return nil, err
-		}
-
-		if ret.Height < conf.MinHeightThreshold {
-			ret.Height = conf.MinHeightThreshold
-		}
-
-		for i, _ := range c.Vec {
-			ret.Vec[i] = c.Vec[i] + other.Vec[i]
-		}
-
-		return ret, nil
+		return nil, ErrDimensionalityConflict
 	}
+	ret, err := NewCoordinate(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	if ret.Height < conf.MinHeightThreshold {
+		ret.Height = conf.MinHeightThreshold
+	}
+
+	for i, _ := range c.Vec {
+		ret.Vec[i] = c.Vec[i] + other.Vec[i]
+	}
+
+	return ret, nil
 }
 
 // Sub is used to subtract the second coordinate from the first, returning the diff
 func (c *Coordinate) Sub(other *Coordinate, conf *Config) (*Coordinate, error) {
 	if len(c.Vec) != len(other.Vec) {
-		return nil, fmt.Errorf("subtracting two coordinates that have different dimensions:\n%+v\n%+v", c, other)
-	} else {
-		ret, err := NewCoordinate(conf)
-		if err != nil {
-			return nil, err
-		}
-
-		ret.Height = c.Height + other.Height
-
-		for i, _ := range c.Vec {
-			ret.Vec[i] = c.Vec[i] - other.Vec[i]
-		}
-
-		return ret, nil
+		return nil, ErrDimensionalityConflict
 	}
+	ret, err := NewCoordinate(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	ret.Height = c.Height + other.Height
+
+	for i, _ := range c.Vec {
+		ret.Vec[i] = c.Vec[i] - other.Vec[i]
+	}
+
+	return ret, nil
 }
 
 // Mul is used to multiply a given factor with the given coordinate, returning a new coordinate
