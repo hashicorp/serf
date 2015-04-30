@@ -41,7 +41,7 @@ Start each Serf agent in a separate terminal session so that we can see
 the output of each. Start the first agent:
 
 ```
-$ serf agent -node=foo -bind=127.0.0.1:5000 -rpc-addr=127.0.0.1:7373
+$ ./serf agent -node=foo -bind=127.0.0.1:5000 -rpc-addr=127.0.0.1:7373
 ...
 ```
 
@@ -49,7 +49,7 @@ Start the second agent in another terminal session (while the first is still
 running):
 
 ```
-$ serf agent -node=bar -bind=127.0.0.1:5001 -rpc-addr=127.0.0.1:7374
+$ ./serf agent -node=bar -bind=127.0.0.1:5001 -rpc-addr=127.0.0.1:7374
 ...
 ```
 
@@ -61,7 +61,7 @@ Serf gossips and the remainder of the cluster becomes aware of the join.
 Run the following commands in a third terminal session.
 
 ```
-$ serf join 127.0.0.1:5001
+$ ./serf join 127.0.0.1:5001
 ...
 ```
 
@@ -70,7 +70,7 @@ become aware of the join. You can prove it by running `serf members`
 to see the members of the Serf cluster:
 
 ```
-$ serf members
+$ ./serf members
 foo    127.0.0.1:5000    alive
 bar    127.0.0.1:5001    alive
 ...
