@@ -350,7 +350,9 @@ func Create(conf *Config) (*Serf, error) {
 
 	// Setup a merge delegate if necessary
 	if conf.Merge != nil {
-		conf.MemberlistConfig.Merge = &mergeDelegate{serf: serf}
+		md := &mergeDelegate{serf: serf}
+		conf.MemberlistConfig.Merge = md
+		conf.MemberlistConfig.Alive = md
 	}
 
 	// Create the underlying memberlist that will manage membership
