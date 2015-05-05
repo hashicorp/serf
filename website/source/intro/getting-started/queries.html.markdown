@@ -69,7 +69,7 @@ need to connect to each and every node to send the message, it only needs to con
 to a handful, regardless of cluster size. It does require that all responses are
 sent directly to the originator, which can be an issue if many nodes are responding.
 
-Custom events come with some trade-offs, however:
+Custom queries come with some trade-offs, however:
 
 * Queries may not be delivered to all nodes: Because events are delivered over
   gossip, the message arrives at every node unless there is a network partition.
