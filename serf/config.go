@@ -194,6 +194,15 @@ type Config struct {
 	// network distance (i.e. round trip time) between two nodes.
 	EnableCoordinates bool
 
+	// CacheCoordinates controls if Serf will cache the coordinates of other
+	// members in the gossip pool.
+	//
+	// This option is only in effect if EnableCoordinates is set to true.
+	// If both this option and EnableCoordinates are set to true, then the
+	// cached coordinates can be accessied via the GetCachedCoordinate()
+	// method defined on Serf.
+	CacheCoordinates bool
+
 	// KeyringFile provides the location of a writable file where Serf can
 	// persist changes to the encryption keyring.
 	KeyringFile string
@@ -236,5 +245,6 @@ func DefaultConfig() *Config {
 		QueryTimeoutMult:             16,
 		EnableNameConflictResolution: true,
 		EnableCoordinates:            true,
+		CacheCoordinates:             false,
 	}
 }
