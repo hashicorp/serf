@@ -52,4 +52,9 @@ func (p *pingDelegate) NotifyPingComplete(other *memberlist.Node, rtt time.Durat
 	if err := p.serf.coord.Update(&coord, rtt); err != nil {
 		log.Print(err)
 	}
+
+	// Cache the coordinate if the relevant option is set to true
+	if p.serf.config.CacheCoordinates {
+		p.serf.coordCache[other.Name] = &coord
+	}
 }

@@ -93,7 +93,8 @@ type Serf struct {
 	snapshotter *Snapshotter
 	keyManager  *KeyManager
 
-	coord *coordinate.Client
+	coord      *coordinate.Client
+	coordCache map[string]*coordinate.Coordinate
 }
 
 // SerfState is the state of the Serf instance.
@@ -354,6 +355,7 @@ func Create(conf *Config) (*Serf, error) {
 		if err != nil {
 			return nil, err
 		}
+		serf.coordCache = make(map[string]*coordinate.Coordinate)
 	}
 	conf.MemberlistConfig.Name = conf.NodeName
 	conf.MemberlistConfig.ProtocolVersion = ProtocolVersionMap[conf.ProtocolVersion]
@@ -1623,4 +1625,9 @@ func (s *Serf) writeKeyringFile() error {
 // GetCoordinate returns the network coordinate of the serf instance
 func (s *Serf) GetCoordinate() *coordinate.Coordinate {
 	return s.coord.GetCoordinate()
+}
+
+// GetCachedCoordinate returns the cached coordinate of the given node
+func (s *Serf) GetCachedCoordinate(name string) *coordinate.Coordinate {
+	return s.coordCache[name]
 }
