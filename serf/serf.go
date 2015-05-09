@@ -93,8 +93,9 @@ type Serf struct {
 	snapshotter *Snapshotter
 	keyManager  *KeyManager
 
-	coord      *coordinate.Client
-	coordCache map[string]*coordinate.Coordinate
+	coord          *coordinate.Client
+	coordCache     map[string]*coordinate.Coordinate
+	coordCacheLock sync.RWMutex
 }
 
 // SerfState is the state of the Serf instance.
@@ -1409,6 +1410,13 @@ func (s *Serf) reap(old []*memberState, timeout time.Duration) []*memberState {
 		// Delete from members
 		delete(s.members, m.Name)
 
+		// Delete its cached coordinate
+		if s.config.CacheCoordinates {
+			s.coordCacheLock.Lock()
+			delete(s.coordCache, m.Name)
+			s.coordCacheLock.Unlock()
+		}
+
 		// Send an event along
 		s.logger.Printf("[INFO] serf: EventMemberReap: %s", m.Name)
 		if s.config.EventCh != nil {
@@ -1629,5 +1637,7 @@ func (s *Serf) GetCoordinate() *coordinate.Coordinate {
 
 // GetCachedCoordinate returns the cached coordinate of the given node
 func (s *Serf) GetCachedCoordinate(name string) *coordinate.Coordinate {
+	s.coordCacheLock.RLock()
+	defer s.coordCacheLock.RUnlock()
 	return s.coordCache[name]
 }
