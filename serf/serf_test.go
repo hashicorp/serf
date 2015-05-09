@@ -1691,3 +1691,50 @@ func TestSerf_Join_Cancel(t *testing.T) {
 		t.Fatalf("should invoke")
 	}
 }
+
+func TestSerf_ClearCachedCoordinates(t *testing.T) {
+	s1Config := testConfig()
+	s1Config.EnableCoordinates = true
+	s1Config.CacheCoordinates = true
+	s1Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
+	s2Config := testConfig()
+	s2Config.EnableCoordinates = true
+	s2Config.CacheCoordinates = true
+	s2Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	defer s1.Shutdown()
+	defer s2.Shutdown()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	if s1.GetCachedCoordinate(s2.config.NodeName) == nil {
+		t.Fatalf("s1 should have s2's coordinate cached")
+	}
+
+	err = s2.Leave()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Give the reaper time to reap nodes
+	time.Sleep(s1Config.ReapInterval * 2)
+
+	if s1.GetCachedCoordinate(s2.config.NodeName) != nil {
+		t.Fatalf("s1 should have removed s2's cached coordinate")
+	}
+}
