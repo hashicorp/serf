@@ -3,6 +3,7 @@
 IMPROVEMENTS:
 
  * Syslog messages are now filtered by the configured log-level
+ * New `statsd_addr` for sending metrics via UDP to statsd
 
 ## 0.6.4 (Febuary 12, 2015)
 

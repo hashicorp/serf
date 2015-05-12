@@ -3,12 +3,6 @@ package agent
 import (
 	"flag"
 	"fmt"
-	"github.com/armon/go-metrics"
-	"github.com/hashicorp/go-syslog"
-	"github.com/hashicorp/logutils"
-	"github.com/hashicorp/memberlist"
-	"github.com/hashicorp/serf/serf"
-	"github.com/mitchellh/cli"
 	"io"
 	"log"
 	"net"
@@ -18,6 +12,13 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-syslog"
+	"github.com/hashicorp/logutils"
+	"github.com/hashicorp/memberlist"
+	"github.com/hashicorp/serf/serf"
+	"github.com/mitchellh/cli"
 )
 
 const (
@@ -508,13 +509,30 @@ func (c *Command) Run(args []string) int {
 	metrics.DefaultInmemSignal(inm)
 	metricsConf := metrics.DefaultConfig("serf-agent")
 
+	// Configure the statsite sink
+	var fanout metrics.FanoutSink
 	if config.StatsiteAddr != "" {
 		sink, err := metrics.NewStatsiteSink(config.StatsiteAddr)
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Failed to start statsite sink. Got: %s", err))
 			return 1
 		}
-		fanout := metrics.FanoutSink{inm, sink}
+		fanout = append(fanout, sink)
+	}
+
+	// Configure the statsd sink
+	if config.StatsdAddr != "" {
+		sink, err := metrics.NewStatsdSink(config.StatsdAddr)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Failed to start statsd sink. Got: %s", err))
+			return 1
+		}
+		fanout = append(fanout, sink)
+	}
+
+	// Initialize the global sink
+	if len(fanout) > 0 {
+		fanout = append(fanout, inm)
 		metrics.NewGlobal(metricsConf, fanout)
 	} else {
 		metricsConf.EnableHostname = false

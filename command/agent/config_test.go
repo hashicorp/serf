@@ -330,14 +330,18 @@ func TestDecodeConfig(t *testing.T) {
 		t.Fatalf("bad: %#v", config)
 	}
 
-	// Rejoin configs
-	input = `{"statsite_addr": "127.0.0.1:8123"}`
+	// Stats configs
+	input = `{"statsite_addr": "127.0.0.1:8123", "statsd_addr": "127.0.0.1:8125"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
 	if config.StatsiteAddr != "127.0.0.1:8123" {
+		t.Fatalf("bad: %#v", config)
+	}
+
+	if config.StatsdAddr != "127.0.0.1:8125" {
 		t.Fatalf("bad: %#v", config)
 	}
 }

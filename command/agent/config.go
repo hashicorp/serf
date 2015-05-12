@@ -4,8 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/serf/serf"
-	"github.com/mitchellh/mapstructure"
 	"io"
 	"net"
 	"os"
@@ -13,6 +11,9 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/serf/serf"
+	"github.com/mitchellh/mapstructure"
 )
 
 // This is the default port that we use for Serf communication
@@ -193,6 +194,10 @@ type Config struct {
 	// StatsiteAddr is the address of a statsite instance. If provided,
 	// metrics will be streamed to that instance.
 	StatsiteAddr string `mapstructure:"statsite_addr"`
+
+	// StatsdAddr is the address of a statsd instance. If provided,
+	// metrics will be sent to that instance.
+	StatsdAddr string `mapstructure:"statsd_addr"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -413,6 +418,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.StatsiteAddr != "" {
 		result.StatsiteAddr = b.StatsiteAddr
+	}
+	if b.StatsdAddr != "" {
+		result.StatsdAddr = b.StatsdAddr
 	}
 
 	// Copy the event handlers
