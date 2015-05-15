@@ -5,10 +5,11 @@
 set :base_url, "https://www.serfdom.io/"
 
 activate :hashicorp do |h|
-  h.version      = '0.6.4'
-  h.bintray_repo = 'mitchellh/serf'
-  h.bintray_user = 'mitchellh'
-  h.bintray_key  = ENV['BINTRAY_API_KEY']
+  h.version         = "0.6.4"
+  h.bintray_enabled = ENV["BINTRAY_ENABLED"]
+  h.bintray_repo    = "mitchellh/serf"
+  h.bintray_user    = "mitchellh"
+  h.bintray_key     = ENV["BINTRAY_API_KEY"]
 
   # Currently, Serf builds are not prefixed with serf_*
   h.bintray_prefixed = false
