@@ -24,7 +24,7 @@ import (
 // version to memberlist below.
 const (
 	ProtocolVersionMin uint8 = 2
-	ProtocolVersionMax       = 4
+	ProtocolVersionMax       = 5
 )
 
 const (
