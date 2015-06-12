@@ -1,69 +1,75 @@
 package coordinate
 
 import (
-	"math"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
 
-func TestNewClient(t *testing.T) {
+func TestClient_NewClient(t *testing.T) {
 	config := DefaultConfig()
+
+	config.Dimensionality = 0
 	client, err := NewClient(config)
+	if err == nil || !strings.Contains(err.Error(), "dimensionality") {
+		t.Fatal(err)
+	}
+
+	config.Dimensionality = 7
+	client, err = NewClient(config)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	origin := NewCoordinate(config)
-	if !reflect.DeepEqual(origin, client.GetCoordinate()) {
-		t.Fatalf("A new client should come with a new coordinate")
+	if !reflect.DeepEqual(client.GetCoordinate(), origin) {
+		t.Fatalf("fresh client should be located at the origin")
 	}
 }
 
-func TestUpdate(t *testing.T) {
-	rtt := 100.0 * time.Millisecond
-	a, err := NewClient(DefaultConfig())
+func TestClient_Update(t *testing.T) {
+	config := DefaultConfig()
+	config.Dimensionality = 3
+
+	client, err := NewClient(config)
 	if err != nil {
 		t.Fatal(err)
-	}
-	b, err := NewClient(DefaultConfig())
-	if err != nil {
-		t.Fatal(err)
-	}
-	for i := 0; i < 100000; i++ {
-		err := a.Update(b.coord, rtt)
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = b.Update(a.coord, rtt)
-		if err != nil {
-			t.Fatal(err)
-		}
 	}
 
-	dist := a.DistanceTo(b.coord)
-	if !(math.Abs(float64((rtt - dist).Nanoseconds())) < 0.01*float64(rtt.Nanoseconds())) {
-		t.Fatalf("The computed distance should be %f but is actually %f.\n%+v\n%+v",
-			rtt, dist, a, b)
+	// Make sure the Euclidian part of our coordinate is what we expect.
+	c := client.GetCoordinate()
+	verifyEqualVectors(t, c.Vec, []float64{0.0, 0.0, 0.0})
+
+	// Place a node right above the client and observe an RTT longer than the
+	// client expects, given its distance.
+	other := NewCoordinate(config)
+	other.Vec[2] = 0.001
+	rtt := time.Duration(2.0*other.Vec[2]*secondsToNanoseconds)
+	client.Update(other, rtt)
+
+	// The client should have scooted down to get away from it.
+	c = client.GetCoordinate()
+	if !(c.Vec[2] < 0.0) {
+		t.Fatalf("client z coordinate %9.6f should be < 0.0", c.Vec[2])
 	}
 }
 
-/*
+func TestClient_DistanceTo(t *testing.T) {
+	config := DefaultConfig()
+	config.Dimensionality = 3
 
-func TestUpdateError(t *testing.T) {
-	config1 := DefaultConfig()
-	config2 := DefaultConfig()
-	config2.Dimensionality += 1
-
-	client, err := NewClient(config1)
+	client, err := NewClient(config)
 	if err != nil {
 		t.Fatal(err)
 	}
-	coord := NewCoordinate(config2)
-	err = client.Update(coord, time.Second)
-	if err == nil {
-		t.Fatalf("Updating using a coord with the wrong dimensionality should result in an error")
+
+	// Fiddle a raw coordinate to put it a specific number of seconds away.
+	other := NewCoordinate(config)
+	other.Vec[2] = 12.345
+	expected := time.Duration(other.Vec[2] * secondsToNanoseconds)
+	dist := client.DistanceTo(other)
+	if dist != expected {
+		t.Fatalf("distance doesn't match %9.6f != %9.6f", dist.Seconds(), expected.Seconds())
 	}
 }
-
-*/
