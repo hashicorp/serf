@@ -6,161 +6,141 @@ import (
 	"math/rand"
 )
 
-var (
-	ErrDimensionalityConflict = errors.New("coordinate dimensionality does not match")
-)
-
-// Coordinate is a Vivaldi network coordinate.  Refer to the Vivaldi paper for a detailed
-// description.
+// Coordinate is a specialized structure for holding network coordinates for the
+// Vivaldi-based coordinate mapping algorithm. All of the fields should be public
+// to enable this to be serialized.
 type Coordinate struct {
-	// The unit of time used for the following fields is millisecond
-	// The fields need to be public for them to be serializable
+	// Vec is the Euclidian portion of the coordinate. This is used along
+	// with the other fields to provide an overall distance estimate.
 	Vec        []float64
-	Height     float64
+
+	// Err reflects the confidence in the given coordinate and is updated
+	// dynamically by the Vivaldi Client.
 	Err        float64
+
+	// Adjustment is a distance offset computed based on a calculation over
+	// observations from all other nodes over a fixed window and is updated
+	// dynamically by the Vivaldi Client.
 	Adjustment float64
 }
 
-// NewCoordinate creates a new network coordinate located at the origin
-func NewCoordinate(config *Config) (*Coordinate, error) {
-	if err := config.Verify(); err != nil {
-		return nil, err
-	}
+var (
+	// ErrDimensionalityConflict will be panic-d if you try to perform
+	// operations with incompatible dimensions.
+	ErrDimensionalityConflict = errors.New("coordinate dimensionality does not match")
+)
 
+// NewCoordinate creates a new coordinate at the origin, using the given config
+// to supply key initial values.
+func NewCoordinate(config *Config) (*Coordinate) {
 	return &Coordinate{
-		Vec:        make([]float64, config.Dimension),
-		Height:     config.MinHeightThreshold,
-		Err:        config.VivaldiError,
-		Adjustment: 0,
-	}, nil
+		Vec:        make([]float64, config.Dimensionality),
+		Err:        config.MaxVivaldiError,
+		Adjustment: 0.0,
+	}
 }
 
-// Clone returns a copy of the receiver
+// Clone creates an independent copy of this coordinate.
 func (c *Coordinate) Clone() *Coordinate {
 	vec := make([]float64, len(c.Vec))
 	copy(vec, c.Vec)
 	return &Coordinate{
 		Vec:        vec,
-		Height:     c.Height,
 		Err:        c.Err,
 		Adjustment: c.Adjustment,
 	}
 }
 
-// Add is used to add up two coordinates, returning the sum
-func (c *Coordinate) Add(other *Coordinate, conf *Config) (*Coordinate, error) {
+// ApplyForce returns the result of applying the force in the direction of the
+// other coordinate.
+func (c *Coordinate) ApplyForce(force float64, other *Coordinate) (*Coordinate) {
 	if len(c.Vec) != len(other.Vec) {
-		return nil, ErrDimensionalityConflict
-	}
-	ret, err := NewCoordinate(conf)
-	if err != nil {
-		return nil, err
+		panic(ErrDimensionalityConflict)
 	}
 
-	if ret.Height < conf.MinHeightThreshold {
-		ret.Height = conf.MinHeightThreshold
-	}
-
-	for i, _ := range c.Vec {
-		ret.Vec[i] = c.Vec[i] + other.Vec[i]
-	}
-
-	return ret, nil
+	ret := c.Clone()
+	ret.Vec = add(ret.Vec, mul(unitVectorAt(ret.Vec, other.Vec), force))
+	return ret
 }
 
-// Sub is used to subtract the second coordinate from the first, returning the diff
-func (c *Coordinate) Sub(other *Coordinate, conf *Config) (*Coordinate, error) {
+// DistanceTo returns the distance between this coordinate and the other
+// coordinate.
+func (c *Coordinate) DistanceTo(other *Coordinate) (float64) {
 	if len(c.Vec) != len(other.Vec) {
-		return nil, ErrDimensionalityConflict
-	}
-	ret, err := NewCoordinate(conf)
-	if err != nil {
-		return nil, err
+		panic(ErrDimensionalityConflict)
 	}
 
-	ret.Height = c.Height + other.Height
-
-	for i, _ := range c.Vec {
-		ret.Vec[i] = c.Vec[i] - other.Vec[i]
-	}
-
-	return ret, nil
+	euclidianPart := magnitude(diff(c.Vec, other.Vec))
+	adjustmentPart := c.Adjustment + other.Adjustment
+	return euclidianPart + adjustmentPart
 }
 
-// Mul is used to multiply a given factor with the given coordinate, returning a new coordinate
-func (c *Coordinate) Mul(factor float64, conf *Config) (*Coordinate, error) {
-	ret, err := NewCoordinate(conf)
-	if err != nil {
-		return nil, err
+// add returns the sum of vec1 and vec2. This assumes the dimensions have
+// already been checked to be compatible.
+func add(vec1 []float64, vec2 []float64) ([]float64) {
+	ret := make([]float64, len(vec1))
+	for i, _ := range ret {
+		ret[i] = vec1[i] + vec2[i]
 	}
-
-	ret.Height = c.Height * float64(factor)
-	if ret.Height < conf.MinHeightThreshold {
-		ret.Height = conf.MinHeightThreshold
-	}
-
-	for i, _ := range c.Vec {
-		ret.Vec[i] = c.Vec[i] * float64(factor)
-	}
-
-	return ret, nil
+	return ret
 }
 
-// DistanceTo returns the distance between the receiver and the given coordinate
-func (c *Coordinate) DistanceTo(coord *Coordinate, conf *Config) (float64, error) {
-	tmp, err := c.Sub(coord, conf)
-	if err != nil {
-		return 0, err
+// diff returns the difference between the vec1 and vec2. This assumes the
+// dimensions have already been checked to be compatible.
+func diff(vec1 []float64, vec2 []float64) ([]float64) {
+	ret := make([]float64, len(vec1))
+	for i, _ := range ret {
+		ret[i] = vec1[i] - vec2[i]
 	}
+	return ret
+}
 
+// mul returns vec multiplied by a scalar factor.
+func mul(vec []float64, factor float64) ([]float64) {
+	ret := make([]float64, len(vec))
+	for i, _ := range vec {
+		ret[i] = vec[i] * factor
+	}
+	return ret
+}
+
+// magnitude computes the magnitude of the vec.
+func magnitude(vec []float64) (float64) {
 	sum := 0.0
-	for i, _ := range tmp.Vec {
-		sum += math.Pow(tmp.Vec[i], 2)
+	for i, _ := range vec {
+		sum += vec[i] * vec[i]
 	}
-
-	return math.Sqrt(sum) + tmp.Height, nil
+	return math.Sqrt(sum)
 }
 
-// DirectionTo returns a coordinate other represents a unit-length Vector, which represents
-// the direction from the receiver to the given coordinate.  In case the two coordinates are
-// located together, a random direction is returned.
-func (c *Coordinate) DirectionTo(coord *Coordinate, conf *Config) (*Coordinate, error) {
-	tmp, err := c.Sub(coord, conf)
-	if err != nil {
-		return nil, err
+// unitVectorAt returns a unit vector pointing at vec1 from vec2 (the way an
+// object positioned at vec1 would move if it was being repelled by an object at
+// vec2). If the two positions are the same then a random unit vector is returned.
+func unitVectorAt(vec1 []float64, vec2 []float64) ([]float64) {
+	ret := diff(vec1, vec2)
+
+	// If the coordinates aren't on top of each other we can normalize.
+	const zeroThreshold = 1.0e-6
+	if mag := magnitude(ret); mag > zeroThreshold {
+		return mul(ret, 1.0/mag)
 	}
 
-	dist, err := c.DistanceTo(coord, conf)
-	if err != nil {
-		return nil, err
+	// Otherwise, just return a random unit vector.
+	for i, _ := range ret {
+		ret[i] = rand.Float64() - 0.5
+	}
+	if mag := magnitude(ret); mag > zeroThreshold {
+		return mul(ret, 1.0/mag)
 	}
 
-	if dist != c.Height+coord.Height {
-		tmp, err = tmp.Mul(1.0/dist, conf)
-		if err != nil {
-			return nil, err
+	// And finally just give up and make a unit vector along the first
+	// dimension. This should be exceedingly rare.
+	for i, _ := range ret {
+		if i == 0 {
+			ret[i] = 1.0
+		} else {
+			ret[i] = 0.0
 		}
-		return tmp, nil
-	} else {
-		for i, _ := range c.Vec {
-			tmp.Vec[i] = (10-0.1)*rand.Float64() + 0.1
-		}
-
-		origin, err := NewCoordinate(conf)
-		if err != nil {
-			return nil, err
-		}
-
-		dist, err = tmp.DistanceTo(origin, conf)
-		if err != nil {
-			return nil, err
-		}
-
-		tmp, err = tmp.Mul(1.0/dist, conf)
-		if err != nil {
-			return nil, err
-		}
-
-		return tmp, nil
 	}
+	return ret
 }

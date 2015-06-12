@@ -64,10 +64,7 @@ func TestAlgorithm(t *testing.T) {
 	for i := range nodes {
 		for j := range nodes {
 			if i != j {
-				dist, err := nodes[i].DistanceTo(nodes[j].GetCoordinate())
-				if err != nil {
-					t.Fatal(err)
-				}
+				dist := nodes[i].DistanceTo(nodes[j].GetCoordinate())
 				totalErr += math.Abs((dist - matrix[i][j]).Seconds()) / math.Abs(matrix[i][j].Seconds())
 				counter += 1
 			}
