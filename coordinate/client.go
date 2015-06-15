@@ -49,21 +49,21 @@ func (c *Client) GetCoordinate() *Coordinate {
 	return c.coord.Clone()
 }
 
-// Update takes other, a coordinate for another node, and rttDuration, a round trip
+// Update takes other, a coordinate for another node, and rtt, a round trip
 // time observation for a ping to that node, and updates the estimated position of
 // the client's coordinate.
-func (c *Client) Update(other *Coordinate, rttDuration time.Duration) {
+func (c *Client) Update(other *Coordinate, rtt time.Duration) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
 	const zeroThreshold = 1.0e-6
 
 	dist := c.coord.DistanceTo(other)
-	rtt := rttDuration.Seconds()
-	if rtt < zeroThreshold {
-		rtt = zeroThreshold
+	rttSeconds := rtt.Seconds()
+	if rttSeconds < zeroThreshold {
+		rttSeconds = zeroThreshold
 	}
-	wrongness := math.Abs(dist-rtt) / rtt
+	wrongness := math.Abs(dist-rttSeconds) / rttSeconds
 
 	totalError := c.coord.Error + other.Error
 	if totalError < zeroThreshold {
@@ -77,7 +77,7 @@ func (c *Client) Update(other *Coordinate, rttDuration time.Duration) {
 	}
 
 	delta := c.config.VivaldiCC * weight
-	force := delta * (rtt - dist)
+	force := delta * (rttSeconds - dist)
 	c.coord = c.coord.ApplyForce(force, other)
 }
 

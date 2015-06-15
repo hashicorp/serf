@@ -45,7 +45,7 @@ func TestClient_Update(t *testing.T) {
 	// client expects, given its distance.
 	other := NewCoordinate(config)
 	other.Vec[2] = 0.001
-	rtt := time.Duration(2.0*other.Vec[2]*secondsToNanoseconds)
+	rtt := time.Duration(2.0 * other.Vec[2] * secondsToNanoseconds)
 	client.Update(other, rtt)
 
 	// The client should have scooted down to get away from it.
