@@ -17,10 +17,10 @@ type Config struct {
 	// particular, there was no noticeable improvement beyond 7 dimensions.
 	Dimensionality uint
 
-	// MaxVivaldiError is the default error value when a node hasn't yet made
+	// VivaldiErrorMax is the default error value when a node hasn't yet made
 	// any observations. It also serves as an upper limit on the error value in
 	// case observations cause the error value to increase without bound.
-	MaxVivaldiError float64
+	VivaldiErrorMax float64
 
 	// VivaldiCE is a tuning factor that controls the maximum impact an
 	// observation can have on a node's confidence. See [1] for more details.
@@ -36,7 +36,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Dimensionality:  8,
-		MaxVivaldiError: 1.5,
+		VivaldiErrorMax: 1.5,
 		VivaldiCE:       0.25,
 		VivaldiCC:       0.25,
 	}

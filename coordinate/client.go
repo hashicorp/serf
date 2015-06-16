@@ -72,8 +72,8 @@ func (c *Client) Update(other *Coordinate, rtt time.Duration) {
 	weight := c.coord.Error / totalError
 
 	c.coord.Error = c.config.VivaldiCE*weight*wrongness + c.coord.Error*(1-c.config.VivaldiCE*weight)
-	if c.coord.Error > c.config.MaxVivaldiError {
-		c.coord.Error = c.config.MaxVivaldiError
+	if c.coord.Error > c.config.VivaldiErrorMax {
+		c.coord.Error = c.config.VivaldiErrorMax
 	}
 
 	delta := c.config.VivaldiCC * weight
