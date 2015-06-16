@@ -1,7 +1,7 @@
 package coordinate
 
 // Config is used to set the parameters of the Vivaldi-based coordinate mapping
-// algorithm. All units for float64 values are in seconds.
+// algorithm.
 //
 // The following references are called out at various points in the documentation
 // here:

@@ -11,16 +11,17 @@ import (
 // to enable this to be serialized. All values in here are in units of seconds.
 type Coordinate struct {
 	// Vec is the Euclidian portion of the coordinate. This is used along
-	// with the other fields to provide an overall distance estimate.
+	// with the other fields to provide an overall distance estimate. The
+	// units here are seconds.
 	Vec []float64
 
 	// Err reflects the confidence in the given coordinate and is updated
-	// dynamically by the Vivaldi Client.
+	// dynamically by the Vivaldi Client. This is dimensionless.
 	Error float64
 
 	// Adjustment is a distance offset computed based on a calculation over
 	// observations from all other nodes over a fixed window and is updated
-	// dynamically by the Vivaldi Client.
+	// dynamically by the Vivaldi Client. The units here are seconds.
 	Adjustment float64
 }
 
