@@ -1,8 +1,10 @@
 package coordinate
 
 // Config is used to set the parameters of the Vivaldi-based coordinate mapping
-// algorithm. The following references are called out at various points in the
-// documentation here:
+// algorithm. All units for float64 values are in seconds.
+//
+// The following references are called out at various points in the documentation
+// here:
 //
 // [1] Dabek, Frank, et al. "Vivaldi: A decentralized network coordinate system."
 //     ACM SIGCOMM Computer Communication Review. Vol. 34. No. 4. ACM, 2004.
@@ -35,9 +37,9 @@ type Config struct {
 // basic testing of the algorithm, but not tuned to any particular type of cluster.
 func DefaultConfig() *Config {
 	return &Config{
-		Dimensionality:  8,
-		VivaldiErrorMax: 1.5,
-		VivaldiCE:       0.25,
-		VivaldiCC:       0.25,
+		Dimensionality:   8,
+		VivaldiErrorMax:  1.5,
+		VivaldiCE:        0.25,
+		VivaldiCC:        0.25,
 	}
 }
