@@ -1,6 +1,7 @@
 package serf
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/memberlist"
+	"github.com/hashicorp/serf/coordinate"
 	"github.com/hashicorp/serf/testutil"
 )
 
@@ -1692,7 +1694,7 @@ func TestSerf_Join_Cancel(t *testing.T) {
 	}
 }
 
-func TestSerf_ClearCachedCoordinates(t *testing.T) {
+func TestSerf_Coordinates(t *testing.T) {
 	s1Config := testConfig()
 	s1Config.EnableCoordinates = true
 	s1Config.CacheCoordinates = true
@@ -1706,35 +1708,130 @@ func TestSerf_ClearCachedCoordinates(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-
-	defer s1.Shutdown()
 	defer s2.Shutdown()
 
+	// Make sure both nodes start out the origin so we can prove they did
+	// an update later.
+	var c1 *coordinate.Coordinate
+	if c1, err = s1.GetCoordinate(); err != nil {
+		t.Fatalf("could not get coordinate from s1: %s", err)
+	}
+	var c2 *coordinate.Coordinate
+	if c2, err = s1.GetCoordinate(); err != nil {
+		t.Fatalf("could not get coordinate from s2: %s", err)
+	}
+	const zeroThreshold = 1.0e-6
+	if c1.DistanceTo(c2) > zeroThreshold {
+		t.Fatalf("coordinates didn't start at the origin")
+	}
+
+	// Join the two nodes together and give them time to probe each other.
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("could not join s1 and s2: %s", err)
 	}
-
 	testutil.Yield()
 
-	if s1.GetCachedCoordinate(s2.config.NodeName) == nil {
-		t.Fatalf("s1 should have s2's coordinate cached")
+	// See if they know about each other.
+	if _, err = s1.GetCachedCoordinate(s2.config.NodeName); err != nil {
+		t.Fatalf("s1 didn't get a coordinate for s2: %s", err)
+	}
+	if _, err = s2.GetCachedCoordinate(s1.config.NodeName); err != nil {
+		t.Fatalf("s2 didn't get a coordinate for s1: %s", err)
 	}
 
+	// With only one ping they won't have a good estimate of the other node's
+	// coordinate, but they should both have updated their own coordinate.
+	if c1, err = s1.GetCoordinate(); err != nil {
+		t.Fatalf("could not get coordinate from s1: %s", err)
+	}
+	if c2, err = s2.GetCoordinate(); err != nil {
+		t.Fatalf("could not get coordinate from s2: %s", err)
+	}
+	if c1.DistanceTo(c2) < zeroThreshold {
+		t.Fatalf("coordinates didn't update after probes")
+	}
+
+	// Break up the cluster and make sure the coordinates get removed by
+	// the reaper.
 	err = s2.Leave()
+	if err != nil {
+		t.Fatalf("s2 could not leave: %s", err)
+	}
+	time.Sleep(s1Config.ReapInterval * 3)
+	if _, err = s1.GetCachedCoordinate(s2.config.NodeName); err == nil {
+		t.Fatalf("s1 should have removed s2's cached coordinate")
+	}
+	if _, err = s2.GetCachedCoordinate(s1.config.NodeName); err == nil {
+		t.Fatalf("s2 should have removed s1's cached coordinate")
+	}
+}
+
+type pingMetaDelegate struct {
+	pingDelegate
+}
+
+// AckPayload is called to produce a payload to send back in response to a ping
+// request. In this case we send back a bogus ping response.
+func (p *pingMetaDelegate) AckPayload() []byte {
+	var buf bytes.Buffer
+
+	// Send back the next ping version, which is bad be default.
+	version := []byte{PingVersion+1}
+	buf.Write(version)
+
+	buf.Write([]byte("this is bad and not a real message"))
+	return buf.Bytes()
+}
+
+
+func TestSerf_PingDelegateVersioning(t *testing.T) {
+	s1Config := testConfig()
+	s1Config.EnableCoordinates = true
+	s1Config.CacheCoordinates = true
+	s1Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
+	s2Config := testConfig()
+	s2Config.EnableCoordinates = true
+	s2Config.CacheCoordinates = true
+	s2Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
+
+	s1, err := Create(s1Config)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
+	defer s1.Shutdown()
 
-	// Give the reaper time to reap nodes
-	time.Sleep(s1Config.ReapInterval * 2)
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
 
-	if s1.GetCachedCoordinate(s2.config.NodeName) != nil {
-		t.Fatalf("s1 should have removed s2's cached coordinate")
+	// Monkey patch s1 to send weird versions of the ping messages.
+	s1.config.MemberlistConfig.Ping = &pingMetaDelegate{pingDelegate{s1}}
+
+	// Join the two nodes together and give them time to probe each other.
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("could not join s1 and s2: %s", err)
+	}
+	testutil.Yield()
+
+	// They both should show 2 members, but only s1 should know about s2
+	// in the cache, since s1 spoke an alien ping protocol.
+	if len(s1.Members()) != 2 || len(s2.Members()) != 2 {
+		t.Fatalf("s1 and s2 didn't probe each other")
+	}
+	if _, err = s1.GetCachedCoordinate(s2.config.NodeName); err != nil {
+		t.Fatalf("s1 didn't get a coordinate for s2: %s", err)
+	}
+	if _, err = s2.GetCachedCoordinate(s1.config.NodeName); err == nil {
+		t.Fatalf("s2 got an unexpected coordinate for s1")
 	}
 }
