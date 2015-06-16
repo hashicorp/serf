@@ -84,10 +84,10 @@ func GenerateSplit(nodes int, lan time.Duration, wan time.Duration) [][]time.Dur
 	return truth
 }
 
-// GenerateRandom returns a truth matrix for a set of nodes with random delays, up
-// to the given max. The RNG is re-seeded so you always get the same matrix for a
-// given size.
-func GenerateRandom(nodes int, max time.Duration) [][]time.Duration {
+// GenerateRandom returns a truth matrix for a set of nodes with normally
+// distributed delays, with the given mean and deviation. The RNG is re-seeded
+// so you always get the same matrix for a given size.
+func GenerateRandom(nodes int, mean time.Duration, deviation time.Duration) [][]time.Duration {
 	rand.Seed(1)
 
 	truth := make([][]time.Duration, nodes)
@@ -97,7 +97,8 @@ func GenerateRandom(nodes int, max time.Duration) [][]time.Duration {
 
 	for i := 0; i < nodes; i++ {
 		for j := i + 1; j < nodes; j++ {
-			rtt := time.Duration(rand.Float64() * float64(max))
+			rttSeconds := rand.NormFloat64() * deviation.Seconds() + mean.Seconds()
+			rtt := time.Duration(rttSeconds * secondsToNanoseconds)
 			truth[i][j], truth[j][i] = rtt, rtt
 		}
 	}
