@@ -19,6 +19,12 @@ type Client struct {
 	// the algorithm.
 	config *Config
 
+	// adjustmentIndex is the current index into the adjustmentSamples slice.
+	adjustmentIndex uint
+
+	// adjustment is used to store samples for the adjustment calculation.
+	adjustmentSamples []float64
+
 	// mutex enables safe concurrent access to the client.
 	mutex *sync.RWMutex
 }
@@ -37,6 +43,8 @@ func NewClient(config *Config) (*Client, error) {
 	return &Client{
 		coord:  NewCoordinate(config),
 		config: config,
+		adjustmentIndex: 0,
+		adjustmentSamples: make([]float64, config.AdjustmentWindowSize),
 		mutex:  &sync.RWMutex{},
 	}, nil
 }
@@ -49,17 +57,12 @@ func (c *Client) GetCoordinate() *Coordinate {
 	return c.coord.Clone()
 }
 
-// Update takes other, a coordinate for another node, and rtt, a round trip
-// time observation for a ping to that node, and updates the estimated position of
-// the client's coordinate.
-func (c *Client) Update(other *Coordinate, rtt time.Duration) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
+// updateVivialdi updates the Vivaldi portion of the client's coordinate. This
+// assumes that the mutex has been locked already.
+func (c *Client) updateVivaldi(other *Coordinate, rttSeconds float64) {
 	const zeroThreshold = 1.0e-6
 
 	dist := c.coord.DistanceTo(other)
-	rttSeconds := rtt.Seconds()
 	if rttSeconds < zeroThreshold {
 		rttSeconds = zeroThreshold
 	}
@@ -71,7 +74,7 @@ func (c *Client) Update(other *Coordinate, rtt time.Duration) {
 	}
 	weight := c.coord.Error / totalError
 
-	c.coord.Error = c.config.VivaldiCE*weight*wrongness + c.coord.Error*(1-c.config.VivaldiCE*weight)
+	c.coord.Error = c.config.VivaldiCE*weight*wrongness + c.coord.Error*(1.0-c.config.VivaldiCE*weight)
 	if c.coord.Error > c.config.VivaldiErrorMax {
 		c.coord.Error = c.config.VivaldiErrorMax
 	}
@@ -81,12 +84,50 @@ func (c *Client) Update(other *Coordinate, rtt time.Duration) {
 	c.coord = c.coord.ApplyForce(force, other)
 }
 
+// updateAdjustment updates the adjustment portion of the client's coordinate, if
+// the feature is enabled. This assumes that the mutex has been locked already.
+func (c *Client) updateAdjustment(other *Coordinate, rttSeconds float64) {
+	if c.config.AdjustmentWindowSize == 0 {
+		return
+	}
+
+	dist := c.coord.DistanceTo(other)
+	c.adjustmentSamples[c.adjustmentIndex] = rttSeconds - dist
+	c.adjustmentIndex = (c.adjustmentIndex + 1) % c.config.AdjustmentWindowSize
+
+	sum := 0.0
+	for _, sample := range c.adjustmentSamples {
+		sum += sample
+	}
+	c.coord.Adjustment = sum / (2.0*float64(c.config.AdjustmentWindowSize))
+}
+
+// Update takes other, a coordinate for another node, and rtt, a round trip
+// time observation for a ping to that node, and updates the estimated position of
+// the client's coordinate.
+func (c *Client) Update(other *Coordinate, rtt time.Duration) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	rttSeconds := rtt.Seconds()
+	c.updateVivaldi(other, rttSeconds)
+	c.updateAdjustment(other, rttSeconds)
+}
+
 // DistanceTo returns the estimated RTT from the client's coordinate to other, the
 // coordinate for another node.
 func (c *Client) DistanceTo(other *Coordinate) time.Duration {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
-	dist := c.coord.DistanceTo(other) * secondsToNanoseconds
-	return time.Duration(dist)
+	// It's important that the adjustment values are summed here, and not down
+	// in the coordinate's DistanceTo() function, because the calculation of
+	// the adjustment is based only on the current Vivaldi distance, and not
+	// the current adjustment factors.
+	dist := c.coord.DistanceTo(other)
+	adjustedDist := dist + c.coord.Adjustment + other.Adjustment
+	if adjustedDist > 0.0 {
+		dist = adjustedDist
+	}
+	return time.Duration(dist*secondsToNanoseconds)
 }

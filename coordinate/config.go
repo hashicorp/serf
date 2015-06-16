@@ -31,15 +31,21 @@ type Config struct {
 	// VivaldiCC is a tuning factor that controls the maximum impact an
 	// observation can have on a node's coordinate. See [1] for more details.
 	VivaldiCC float64
+
+	// AdjustmentWindowSize is a tuning factor that determines how many samples
+	// we retain to calculate the adjustment factor as discussed in [3]. Setting
+	// this to zero disables this feature.
+	AdjustmentWindowSize uint
 }
 
 // DefaultConfig returns a Config that has some default values suitable for
 // basic testing of the algorithm, but not tuned to any particular type of cluster.
 func DefaultConfig() *Config {
 	return &Config{
-		Dimensionality:   8,
-		VivaldiErrorMax:  1.5,
-		VivaldiCE:        0.25,
-		VivaldiCC:        0.25,
+		Dimensionality:       8,
+		VivaldiErrorMax:      1.5,
+		VivaldiCE:            0.25,
+		VivaldiCC:            0.25,
+		AdjustmentWindowSize: 20,
 	}
 }

@@ -45,7 +45,7 @@ func TestClient_Update(t *testing.T) {
 	// client expects, given its distance.
 	other := NewCoordinate(config)
 	other.Vec[2] = 0.001
-	rtt := time.Duration(2.0 * other.Vec[2] * secondsToNanoseconds)
+	rtt := time.Duration(2.0*other.Vec[2]*secondsToNanoseconds)
 	client.Update(other, rtt)
 
 	// The client should have scooted down to get away from it.
@@ -67,8 +67,23 @@ func TestClient_DistanceTo(t *testing.T) {
 	// Fiddle a raw coordinate to put it a specific number of seconds away.
 	other := NewCoordinate(config)
 	other.Vec[2] = 12.345
-	expected := time.Duration(other.Vec[2] * secondsToNanoseconds)
+	expected := time.Duration(other.Vec[2]*secondsToNanoseconds)
 	dist := client.DistanceTo(other)
+	if dist != expected {
+		t.Fatalf("distance doesn't match %9.6f != %9.6f", dist.Seconds(), expected.Seconds())
+	}
+
+	// Make sure negative adjustment factors are ignored.
+	client.coord.Adjustment = -(other.Vec[2] + 0.1)
+	dist = client.DistanceTo(other)
+	if dist != expected {
+		t.Fatalf("distance doesn't match %9.6f != %9.6f", dist.Seconds(), expected.Seconds())
+	}
+
+	// Make sure positive adjustment factors affect the distance.
+	client.coord.Adjustment = 0.1
+	expected = time.Duration((other.Vec[2] + 0.1)*secondsToNanoseconds)
+	dist = client.DistanceTo(other)
 	if dist != expected {
 		t.Fatalf("distance doesn't match %9.6f != %9.6f", dist.Seconds(), expected.Seconds())
 	}

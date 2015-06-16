@@ -70,9 +70,7 @@ func (c *Coordinate) DistanceTo(other *Coordinate) float64 {
 		panic(ErrDimensionalityConflict)
 	}
 
-	euclidianPart := magnitude(diff(c.Vec, other.Vec))
-	adjustmentPart := c.Adjustment + other.Adjustment
-	return euclidianPart + adjustmentPart
+	return magnitude(diff(c.Vec, other.Vec))
 }
 
 // add returns the sum of vec1 and vec2. This assumes the dimensions have
