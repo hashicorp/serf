@@ -189,13 +189,14 @@ type Config struct {
 	// node stays while the other node will leave the cluster and exit.
 	EnableNameConflictResolution bool
 
-	// EnableCoordinates controls if Serf will maintain a network coordinate
-	// internally.  A network coordinate is useful for estimating the
-	// network distance (i.e. round trip time) between two nodes.
+	// EnableCoordinates controls if Serf will maintain an estimate of this
+	// node's network coordinate internally. A network coordinate is useful
+	// for estimating the network distance (i.e. round trip time) between
+	// two nodes.
 	EnableCoordinates bool
 
-	// CacheCoordinates controls if Serf will cache the coordinates of other
-	// members in the gossip pool.
+	// CacheCoordinates controls if Serf will cache the network coordinates
+	// of other members in the gossip pool.
 	//
 	// This option is only in effect if EnableCoordinates is set to true.
 	// If both this option and EnableCoordinates are set to true, then the

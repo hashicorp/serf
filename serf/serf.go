@@ -95,7 +95,7 @@ type Serf struct {
 	snapshotter *Snapshotter
 	keyManager  *KeyManager
 
-	coord          *coordinate.Client
+	coordClient    *coordinate.Client
 	coordCache     map[string]*coordinate.Coordinate
 	coordCacheLock sync.RWMutex
 }
@@ -350,16 +350,16 @@ func Create(conf *Config) (*Serf, error) {
 	conf.MemberlistConfig.DelegateProtocolVersion = conf.ProtocolVersion
 	conf.MemberlistConfig.DelegateProtocolMin = ProtocolVersionMin
 	conf.MemberlistConfig.DelegateProtocolMax = ProtocolVersionMax
+	conf.MemberlistConfig.Name = conf.NodeName
+	conf.MemberlistConfig.ProtocolVersion = ProtocolVersionMap[conf.ProtocolVersion]
 	if conf.EnableCoordinates {
 		conf.MemberlistConfig.Ping = &pingDelegate{serf: serf}
-		serf.coord, err = coordinate.NewClient(coordinate.DefaultConfig())
+		serf.coordClient, err = coordinate.NewClient(coordinate.DefaultConfig())
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Failed to create coordinate client: %v", err)
 		}
 		serf.coordCache = make(map[string]*coordinate.Coordinate)
 	}
-	conf.MemberlistConfig.Name = conf.NodeName
-	conf.MemberlistConfig.ProtocolVersion = ProtocolVersionMap[conf.ProtocolVersion]
 
 	// Setup a merge delegate if necessary
 	if conf.Merge != nil {
@@ -372,7 +372,7 @@ func Create(conf *Config) (*Serf, error) {
 	// and failure detection for the Serf instance.
 	memberlist, err := memberlist.Create(conf.MemberlistConfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to create memberlist: %v", err)
 	}
 
 	serf.memberlist = memberlist
@@ -1630,14 +1630,30 @@ func (s *Serf) writeKeyringFile() error {
 	return nil
 }
 
-// GetCoordinate returns the network coordinate of the serf instance
-func (s *Serf) GetCoordinate() *coordinate.Coordinate {
-	return s.coord.GetCoordinate()
+// GetCoordinate returns the network coordinate of the local node. This will only
+// be valid if EnableCoordinates is set to true in your config.
+func (s *Serf) GetCoordinate() (*coordinate.Coordinate, error) {
+	if s.config.EnableCoordinates {
+		return s.coordClient.GetCoordinate(), nil
+	}
+
+	return nil, fmt.Errorf("Coordinate support not enabled")
 }
 
-// GetCachedCoordinate returns the cached coordinate of the given node
-func (s *Serf) GetCachedCoordinate(name string) *coordinate.Coordinate {
-	s.coordCacheLock.RLock()
-	defer s.coordCacheLock.RUnlock()
-	return s.coordCache[name]
+
+// GetCachedCoordinate returns the network coordinate for the node with the given
+// name. This will only be valid if EnableCoordinates and CacheCoordinates are
+// both set to true in your config.
+func (s *Serf) GetCachedCoordinate(name string) (*coordinate.Coordinate, error) {
+	if s.config.EnableCoordinates && s.config.CacheCoordinates {
+		s.coordCacheLock.RLock()
+		defer s.coordCacheLock.RUnlock()
+		if coord, ok := s.coordCache[name]; ok {
+			return coord, nil
+		}
+
+		return nil, fmt.Errorf("No coordinate available for node %s", name)
+	}
+
+	return nil, fmt.Errorf("Coordinate support and/or caching not enabled")
 }
