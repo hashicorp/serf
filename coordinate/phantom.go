@@ -31,7 +31,7 @@ func GenerateLine(nodes int, spacing time.Duration) [][]time.Duration {
 	}
 
 	for i := 0; i < nodes; i++ {
-		for j := i+1; j < nodes; j++ {
+		for j := i + 1; j < nodes; j++ {
 			rtt := time.Duration(j-i) * spacing
 			truth[i][j], truth[j][i] = rtt, rtt
 		}
@@ -49,9 +49,9 @@ func GenerateGrid(nodes int, spacing time.Duration) [][]time.Duration {
 
 	n := int(math.Sqrt(float64(nodes)))
 	for i := 0; i < nodes; i++ {
-		for j := i+1; j < nodes; j++ {
-			x1, y1 := float64(i % n), float64(i / n)
-			x2, y2 := float64(j % n), float64(j / n)
+		for j := i + 1; j < nodes; j++ {
+			x1, y1 := float64(i%n), float64(i/n)
+			x2, y2 := float64(j%n), float64(j/n)
 			dx, dy := x2-x1, y2-y1
 			dist := math.Sqrt(dx*dx + dy*dy)
 			rtt := time.Duration(dist * float64(spacing))
@@ -73,9 +73,9 @@ func GenerateSplit(nodes int, lan time.Duration, wan time.Duration) [][]time.Dur
 
 	split := nodes / 2
 	for i := 0; i < nodes; i++ {
-		for j := i+1; j < nodes; j++ {
+		for j := i + 1; j < nodes; j++ {
 			rtt := lan
-			if (i<=split && j>split) || (i>split && j<=split) {
+			if (i <= split && j > split) || (i > split && j <= split) {
 				rtt += wan
 			}
 			truth[i][j], truth[j][i] = rtt, rtt
@@ -96,7 +96,7 @@ func GenerateRandom(nodes int, max time.Duration) [][]time.Duration {
 	}
 
 	for i := 0; i < nodes; i++ {
-		for j := i+1; j < nodes; j++ {
+		for j := i + 1; j < nodes; j++ {
 			rtt := time.Duration(rand.Float64() * float64(max))
 			truth[i][j], truth[j][i] = rtt, rtt
 		}
@@ -148,10 +148,10 @@ func Evaluate(clients []*Client, truth [][]time.Duration) (stats Stats) {
 	nodes := len(clients)
 	count := 0
 	for i := 0; i < nodes; i++ {
-		for j := i+1; j < nodes; j++ {
+		for j := i + 1; j < nodes; j++ {
 			est := clients[i].DistanceTo(clients[j].GetCoordinate()).Seconds()
 			actual := truth[i][j].Seconds()
-			error := math.Abs(est - actual) / actual
+			error := math.Abs(est-actual) / actual
 			stats.ErrorMax = math.Max(stats.ErrorMax, error)
 			stats.ErrorAvg += error
 			count += 1
