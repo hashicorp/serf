@@ -35,7 +35,7 @@ var (
 func NewCoordinate(config *Config) *Coordinate {
 	return &Coordinate{
 		Vec:        make([]float64, config.Dimensionality),
-		Error:      config.MaxVivaldiError,
+		Error:      config.VivaldiErrorMax,
 		Adjustment: 0.0,
 	}
 }
