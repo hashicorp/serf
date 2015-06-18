@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/memberlist"
-	"github.com/hashicorp/serf/coordinate"
 	"github.com/hashicorp/serf/testutil"
 )
 
@@ -1699,17 +1698,16 @@ func TestSerf_Coordinates(t *testing.T) {
 	s1Config.EnableCoordinates = true
 	s1Config.CacheCoordinates = true
 	s1Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
-	s2Config := testConfig()
-	s2Config.EnableCoordinates = true
-	s2Config.CacheCoordinates = true
-	s2Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
-
 	s1, err := Create(s1Config)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 	defer s1.Shutdown()
 
+	s2Config := testConfig()
+	s2Config.EnableCoordinates = true
+	s2Config.CacheCoordinates = true
+	s2Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
 	s2, err := Create(s2Config)
 	if err != nil {
 		t.Fatalf("err: %s", err)
@@ -1718,14 +1716,7 @@ func TestSerf_Coordinates(t *testing.T) {
 
 	// Make sure both nodes start out the origin so we can prove they did
 	// an update later.
-	var c1 *coordinate.Coordinate
-	if c1, err = s1.GetCoordinate(); err != nil {
-		t.Fatalf("could not get coordinate from s1: %s", err)
-	}
-	var c2 *coordinate.Coordinate
-	if c2, err = s1.GetCoordinate(); err != nil {
-		t.Fatalf("could not get coordinate from s2: %s", err)
-	}
+	c1, c2 := s1.GetCoordinate(), s2.GetCoordinate()
 	const zeroThreshold = 1.0e-6
 	if c1.DistanceTo(c2) > zeroThreshold {
 		t.Fatalf("coordinates didn't start at the origin")
@@ -1739,46 +1730,40 @@ func TestSerf_Coordinates(t *testing.T) {
 	testutil.Yield()
 
 	// See if they know about each other.
-	if _, err = s1.GetCachedCoordinate(s2.config.NodeName); err != nil {
+	if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); !ok {
 		t.Fatalf("s1 didn't get a coordinate for s2: %s", err)
 	}
-	if _, err = s2.GetCachedCoordinate(s1.config.NodeName); err != nil {
+	if _, ok := s2.GetCachedCoordinate(s1.config.NodeName); !ok {
 		t.Fatalf("s2 didn't get a coordinate for s1: %s", err)
 	}
 
 	// With only one ping they won't have a good estimate of the other node's
 	// coordinate, but they should both have updated their own coordinate.
-	if c1, err = s1.GetCoordinate(); err != nil {
-		t.Fatalf("could not get coordinate from s1: %s", err)
-	}
-	if c2, err = s2.GetCoordinate(); err != nil {
-		t.Fatalf("could not get coordinate from s2: %s", err)
-	}
+	c1, c2 = s1.GetCoordinate(), s2.GetCoordinate()
 	if c1.DistanceTo(c2) < zeroThreshold {
 		t.Fatalf("coordinates didn't update after probes")
 	}
 
 	// Break up the cluster and make sure the coordinates get removed by
 	// the reaper.
-	err = s2.Leave()
-	if err != nil {
+	if err = s2.Leave(); err != nil {
 		t.Fatalf("s2 could not leave: %s", err)
 	}
-	time.Sleep(s1Config.ReapInterval * 3)
-	if _, err = s1.GetCachedCoordinate(s2.config.NodeName); err == nil {
+	time.Sleep(s1Config.ReapInterval * 2)
+	if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); ok {
 		t.Fatalf("s1 should have removed s2's cached coordinate")
-	}
-	if _, err = s2.GetCachedCoordinate(s1.config.NodeName); err == nil {
-		t.Fatalf("s2 should have removed s1's cached coordinate")
 	}
 }
 
+// pingMetaDelegate is used to monkey patch a ping delegate so that it sends bad
+// ping messages.
 type pingMetaDelegate struct {
 	pingDelegate
 }
 
 // AckPayload is called to produce a payload to send back in response to a ping
-// request. In this case we send back a bogus ping response.
+// request. In this case we send back a bogus ping response with a bad version
+// and payload.
 func (p *pingMetaDelegate) AckPayload() []byte {
 	var buf bytes.Buffer
 
@@ -1828,10 +1813,10 @@ func TestSerf_PingDelegateVersioning(t *testing.T) {
 	if len(s1.Members()) != 2 || len(s2.Members()) != 2 {
 		t.Fatalf("s1 and s2 didn't probe each other")
 	}
-	if _, err = s1.GetCachedCoordinate(s2.config.NodeName); err != nil {
+	if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); !ok {
 		t.Fatalf("s1 didn't get a coordinate for s2: %s", err)
 	}
-	if _, err = s2.GetCachedCoordinate(s1.config.NodeName); err == nil {
+	if _, ok := s2.GetCachedCoordinate(s1.config.NodeName); ok {
 		t.Fatalf("s2 got an unexpected coordinate for s1")
 	}
 }
