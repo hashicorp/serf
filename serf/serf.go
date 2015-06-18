@@ -1631,29 +1631,30 @@ func (s *Serf) writeKeyringFile() error {
 }
 
 // GetCoordinate returns the network coordinate of the local node. This will only
-// be valid if EnableCoordinates is set to true in your config.
-func (s *Serf) GetCoordinate() (*coordinate.Coordinate, error) {
+// be valid if EnableCoordinates is set to true in your config, otherwise you'll
+// always get a coordinate back that's at the origin.
+func (s *Serf) GetCoordinate() *coordinate.Coordinate {
 	if s.config.EnableCoordinates {
-		return s.coordClient.GetCoordinate(), nil
+		return s.coordClient.GetCoordinate()
 	}
 
-	return nil, fmt.Errorf("Coordinate support not enabled")
+	return coordinate.NewCoordinate(coordinate.DefaultConfig())
 }
 
 
 // GetCachedCoordinate returns the network coordinate for the node with the given
 // name. This will only be valid if EnableCoordinates and CacheCoordinates are
-// both set to true in your config.
-func (s *Serf) GetCachedCoordinate(name string) (*coordinate.Coordinate, error) {
+// both set to true in your config, otherwise ok will always be false.
+func (s *Serf) GetCachedCoordinate(name string) (coord *coordinate.Coordinate, ok bool) {
 	if s.config.EnableCoordinates && s.config.CacheCoordinates {
 		s.coordCacheLock.RLock()
 		defer s.coordCacheLock.RUnlock()
-		if coord, ok := s.coordCache[name]; ok {
-			return coord, nil
+		if coord, ok = s.coordCache[name]; ok {
+			return coord, true
 		}
 
-		return nil, fmt.Errorf("No coordinate available for node %s", name)
+		return nil, false
 	}
 
-	return nil, fmt.Errorf("Coordinate support and/or caching not enabled")
+	return nil, false
 }
