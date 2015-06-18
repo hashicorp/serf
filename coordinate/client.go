@@ -91,7 +91,9 @@ func (c *Client) updateAdjustment(other *Coordinate, rttSeconds float64) {
 		return
 	}
 
-	dist := c.coord.DistanceTo(other)
+	// Note that the existing adjustment factors don't figure in to this
+	// calculation so we use the raw distance here.
+	dist := c.coord.rawDistanceTo(other)
 	c.adjustmentSamples[c.adjustmentIndex] = rttSeconds - dist
 	c.adjustmentIndex = (c.adjustmentIndex + 1) % c.config.AdjustmentWindowSize
 
@@ -120,14 +122,6 @@ func (c *Client) DistanceTo(other *Coordinate) time.Duration {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
-	// It's important that the adjustment values are summed here, and not down
-	// in the coordinate's DistanceTo() function, because the calculation of
-	// the adjustment is based only on the current Vivaldi distance, and not
-	// the current adjustment factors.
 	dist := c.coord.DistanceTo(other)
-	adjustedDist := dist + c.coord.Adjustment + other.Adjustment
-	if adjustedDist > 0.0 {
-		dist = adjustedDist
-	}
 	return time.Duration(dist*secondsToNanoseconds)
 }

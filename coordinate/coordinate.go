@@ -65,12 +65,24 @@ func (c *Coordinate) ApplyForce(force float64, other *Coordinate) *Coordinate {
 }
 
 // DistanceTo returns the distance between this coordinate and the other
-// coordinate.
+// coordinate in seconds, including adjustments.
 func (c *Coordinate) DistanceTo(other *Coordinate) float64 {
 	if len(c.Vec) != len(other.Vec) {
 		panic(ErrDimensionalityConflict)
 	}
 
+	dist := c.rawDistanceTo(other)
+	adjustedDist := dist + c.Adjustment + other.Adjustment
+	if adjustedDist > 0.0 {
+		dist = adjustedDist
+	}
+	return dist
+}
+
+// rawDistanceTo returns the Vivaldi distance between this coordinate and the
+// other coordinate in seconds, not including adjustments. This assumes the
+// dimensions have already been checked to be compatible.
+func (c *Coordinate) rawDistanceTo(other *Coordinate) float64 {
 	return magnitude(diff(c.Vec, other.Vec))
 }
 
