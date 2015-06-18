@@ -90,10 +90,37 @@ func TestCoordinate_DistanceTo(t *testing.T) {
 	verifyEqualFloats(t, c1.DistanceTo(c2), c2.DistanceTo(c1))
 	verifyEqualFloats(t, c1.DistanceTo(c2), 4.104875150354758)
 
+	// Make sure negative adjustment factors are ignored.
+	c1.Adjustment = -1.0e6
+	verifyEqualFloats(t, c1.DistanceTo(c2), 4.104875150354758)
+
+	// Make sure positive adjustment factors affect the distance.
+	c1.Adjustment = 0.1
+	c2.Adjustment = 0.2
+	verifyEqualFloats(t, c1.DistanceTo(c2), 4.104875150354758 + 0.3)
+
 	// Shenanigans should get called if the dimensions don't match.
 	bad := c1.Clone()
 	bad.Vec = make([]float64, len(bad.Vec)+1)
 	verifyDimensionPanic(t, func() { _ = c1.DistanceTo(bad) })
+}
+
+func TestCoordinate_rawDistanceTo(t *testing.T) {
+	config := DefaultConfig()
+	config.Dimensionality = 3
+
+	c1, c2 := NewCoordinate(config), NewCoordinate(config)
+	c1.Vec = []float64{-0.5, 1.3, 2.4}
+	c2.Vec = []float64{1.2, -2.3, 3.4}
+
+	verifyEqualFloats(t, c1.rawDistanceTo(c1), 0.0)
+	verifyEqualFloats(t, c1.rawDistanceTo(c2), c2.rawDistanceTo(c1))
+	verifyEqualFloats(t, c1.rawDistanceTo(c2), 4.104875150354758)
+
+	// Make sure that the adjustment doesn't factor into the raw
+	// distance.
+	c1.Adjustment = 1.0e6
+	verifyEqualFloats(t, c1.rawDistanceTo(c2), 4.104875150354758)
 }
 
 func TestCoordinate_add(t *testing.T) {
