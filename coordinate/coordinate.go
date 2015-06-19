@@ -52,7 +52,7 @@ func (c *Coordinate) Clone() *Coordinate {
 	}
 }
 
-// ApplyForce returns the result of applying the force in the direction of the
+// ApplyForce returns the result of applying the force from the direction of the
 // other coordinate.
 func (c *Coordinate) ApplyForce(force float64, other *Coordinate) *Coordinate {
 	if len(c.Vec) != len(other.Vec) {
