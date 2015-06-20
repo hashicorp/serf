@@ -352,7 +352,7 @@ func Create(conf *Config) (*Serf, error) {
 	conf.MemberlistConfig.DelegateProtocolMax = ProtocolVersionMax
 	conf.MemberlistConfig.Name = conf.NodeName
 	conf.MemberlistConfig.ProtocolVersion = ProtocolVersionMap[conf.ProtocolVersion]
-	if conf.EnableCoordinates {
+	if !conf.DisableCoordinates {
 		conf.MemberlistConfig.Ping = &pingDelegate{serf: serf}
 		serf.coordClient, err = coordinate.NewClient(coordinate.DefaultConfig())
 		if err != nil {
@@ -1631,10 +1631,10 @@ func (s *Serf) writeKeyringFile() error {
 }
 
 // GetCoordinate returns the network coordinate of the local node. This will only
-// be valid if EnableCoordinates is set to true in your config, otherwise you'll
+// be valid if DisableCoordinates is set to false in your config, otherwise you'll
 // always get a coordinate back that's at the origin.
 func (s *Serf) GetCoordinate() *coordinate.Coordinate {
-	if s.config.EnableCoordinates {
+	if !s.config.DisableCoordinates {
 		return s.coordClient.GetCoordinate()
 	}
 
@@ -1643,10 +1643,10 @@ func (s *Serf) GetCoordinate() *coordinate.Coordinate {
 
 
 // GetCachedCoordinate returns the network coordinate for the node with the given
-// name. This will only be valid if EnableCoordinates and CacheCoordinates are
-// both set to true in your config, otherwise ok will always be false.
+// name. This will only be valid if DisableCoordinates is set to false and
+// CacheCoordinates is set to true in your config, otherwise ok will always be false.
 func (s *Serf) GetCachedCoordinate(name string) (coord *coordinate.Coordinate, ok bool) {
-	if s.config.EnableCoordinates && s.config.CacheCoordinates {
+	if (!s.config.DisableCoordinates) && s.config.CacheCoordinates {
 		s.coordCacheLock.RLock()
 		defer s.coordCacheLock.RUnlock()
 		if coord, ok = s.coordCache[name]; ok {

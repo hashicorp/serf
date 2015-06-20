@@ -189,17 +189,17 @@ type Config struct {
 	// node stays while the other node will leave the cluster and exit.
 	EnableNameConflictResolution bool
 
-	// EnableCoordinates controls if Serf will maintain an estimate of this
+	// DisableCoordinates controls if Serf will maintain an estimate of this
 	// node's network coordinate internally. A network coordinate is useful
 	// for estimating the network distance (i.e. round trip time) between
-	// two nodes.
-	EnableCoordinates bool
+	// two nodes. Enabling this option adds some overhead to ping messages.
+	DisableCoordinates bool
 
 	// CacheCoordinates controls if Serf will cache the network coordinates
 	// of other members in the gossip pool.
 	//
-	// This option is only in effect if EnableCoordinates is set to true.
-	// If both this option and EnableCoordinates are set to true, then the
+	// This option is only in effect if DisableCoordinates is set to false.
+	// If coordinates are not disabled and this is set to true, then the
 	// cached coordinates can be accessied via the GetCachedCoordinate()
 	// method defined on Serf.
 	CacheCoordinates bool
@@ -245,7 +245,7 @@ func DefaultConfig() *Config {
 		MemberlistConfig:             memberlist.DefaultLANConfig(),
 		QueryTimeoutMult:             16,
 		EnableNameConflictResolution: true,
-		EnableCoordinates:            true,
+		DisableCoordinates:           false,
 		CacheCoordinates:             false,
 	}
 }
