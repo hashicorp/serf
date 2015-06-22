@@ -15,7 +15,7 @@ func GetBindAddr() net.IP {
 
 	result := net.IPv4(127, 0, 0, bindNum)
 	bindNum++
-	if bindNum > 255 {
+	if bindNum == 0 {
 		bindNum = 10
 	}
 
