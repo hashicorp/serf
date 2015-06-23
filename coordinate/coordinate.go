@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"math/rand"
+	"time"
 )
 
 // Coordinate is a specialized structure for holding network coordinates for the
@@ -29,6 +30,11 @@ var (
 	// ErrDimensionalityConflict will be panic-d if you try to perform
 	// operations with incompatible dimensions.
 	ErrDimensionalityConflict = errors.New("coordinate dimensionality does not match")
+)
+
+const (
+	// secondsToNanoseconds is used to convert float seconds to nanoseconds.
+	secondsToNanoseconds = 1.0e9
 )
 
 // NewCoordinate creates a new coordinate at the origin, using the given config
@@ -65,8 +71,8 @@ func (c *Coordinate) ApplyForce(force float64, other *Coordinate) *Coordinate {
 }
 
 // DistanceTo returns the distance between this coordinate and the other
-// coordinate in seconds, including adjustments.
-func (c *Coordinate) DistanceTo(other *Coordinate) float64 {
+// coordinate, including adjustments.
+func (c *Coordinate) DistanceTo(other *Coordinate) time.Duration {
 	if len(c.Vec) != len(other.Vec) {
 		panic(ErrDimensionalityConflict)
 	}
@@ -76,7 +82,7 @@ func (c *Coordinate) DistanceTo(other *Coordinate) float64 {
 	if adjustedDist > 0.0 {
 		dist = adjustedDist
 	}
-	return dist
+	return time.Duration(dist*secondsToNanoseconds)
 }
 
 // rawDistanceTo returns the Vivaldi distance between this coordinate and the

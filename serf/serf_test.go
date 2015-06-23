@@ -1718,7 +1718,7 @@ func TestSerf_Coordinates(t *testing.T) {
 	// an update later.
 	c1, c2 := s1.GetCoordinate(), s2.GetCoordinate()
 	const zeroThreshold = 1.0e-6
-	if c1.DistanceTo(c2) > zeroThreshold {
+	if c1.DistanceTo(c2).Seconds() > zeroThreshold {
 		t.Fatalf("coordinates didn't start at the origin")
 	}
 
@@ -1740,7 +1740,7 @@ func TestSerf_Coordinates(t *testing.T) {
 	// With only one ping they won't have a good estimate of the other node's
 	// coordinate, but they should both have updated their own coordinate.
 	c1, c2 = s1.GetCoordinate(), s2.GetCoordinate()
-	if c1.DistanceTo(c2) < zeroThreshold {
+	if c1.DistanceTo(c2).Seconds() < zeroThreshold {
 		t.Fatalf("coordinates didn't update after probes")
 	}
 
