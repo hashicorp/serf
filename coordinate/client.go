@@ -29,11 +29,6 @@ type Client struct {
 	mutex *sync.RWMutex
 }
 
-const (
-	// secondsToNanoseconds is used to convert float seconds to nanoseconds.
-	secondsToNanoseconds = 1.0e9
-)
-
 // NewClient creates a new Client and verifies the configuration is valid.
 func NewClient(config *Config) (*Client, error) {
 	if !(config.Dimensionality > 0) {
@@ -62,7 +57,7 @@ func (c *Client) GetCoordinate() *Coordinate {
 func (c *Client) updateVivaldi(other *Coordinate, rttSeconds float64) {
 	const zeroThreshold = 1.0e-6
 
-	dist := c.coord.DistanceTo(other)
+	dist := c.coord.DistanceTo(other).Seconds()
 	if rttSeconds < zeroThreshold {
 		rttSeconds = zeroThreshold
 	}
@@ -122,6 +117,5 @@ func (c *Client) DistanceTo(other *Coordinate) time.Duration {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
-	dist := c.coord.DistanceTo(other)
-	return time.Duration(dist*secondsToNanoseconds)
+	return c.coord.DistanceTo(other)
 }

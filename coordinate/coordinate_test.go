@@ -70,7 +70,7 @@ func TestCoordinate_ApplyForce(t *testing.T) {
 	// in a random direction, one unit away. This makes sure the unit vector
 	// build up doesn't divide by zero.
 	c = origin.ApplyForce(1.0, origin)
-	verifyEqualFloats(t, origin.DistanceTo(c), 1.0)
+	verifyEqualFloats(t, origin.DistanceTo(c).Seconds(), 1.0)
 
 	// Shenanigans should get called if the dimensions don't match.
 	bad := c.Clone()
@@ -86,18 +86,18 @@ func TestCoordinate_DistanceTo(t *testing.T) {
 	c1.Vec = []float64{-0.5, 1.3, 2.4}
 	c2.Vec = []float64{1.2, -2.3, 3.4}
 
-	verifyEqualFloats(t, c1.DistanceTo(c1), 0.0)
-	verifyEqualFloats(t, c1.DistanceTo(c2), c2.DistanceTo(c1))
-	verifyEqualFloats(t, c1.DistanceTo(c2), 4.104875150354758)
+	verifyEqualFloats(t, c1.DistanceTo(c1).Seconds(), 0.0)
+	verifyEqualFloats(t, c1.DistanceTo(c2).Seconds(), c2.DistanceTo(c1).Seconds())
+	verifyEqualFloats(t, c1.DistanceTo(c2).Seconds(), 4.104875150354758)
 
 	// Make sure negative adjustment factors are ignored.
 	c1.Adjustment = -1.0e6
-	verifyEqualFloats(t, c1.DistanceTo(c2), 4.104875150354758)
+	verifyEqualFloats(t, c1.DistanceTo(c2).Seconds(), 4.104875150354758)
 
 	// Make sure positive adjustment factors affect the distance.
 	c1.Adjustment = 0.1
 	c2.Adjustment = 0.2
-	verifyEqualFloats(t, c1.DistanceTo(c2), 4.104875150354758 + 0.3)
+	verifyEqualFloats(t, c1.DistanceTo(c2).Seconds(), 4.104875150354758 + 0.3)
 
 	// Shenanigans should get called if the dimensions don't match.
 	bad := c1.Clone()
