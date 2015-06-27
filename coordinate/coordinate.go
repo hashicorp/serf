@@ -1,7 +1,6 @@
 package coordinate
 
 import (
-	"errors"
 	"math"
 	"math/rand"
 	"time"
@@ -26,16 +25,20 @@ type Coordinate struct {
 	Adjustment float64
 }
 
-var (
-	// ErrDimensionalityConflict will be panic-d if you try to perform
-	// operations with incompatible dimensions.
-	ErrDimensionalityConflict = errors.New("coordinate dimensionality does not match")
-)
-
 const (
 	// secondsToNanoseconds is used to convert float seconds to nanoseconds.
 	secondsToNanoseconds = 1.0e9
 )
+
+// ErrDimensionalityConflict will be panic-d if you try to perform operations
+// with incompatible dimensions.
+type DimensionalityConflictError struct {}
+
+// Adds the error interface.
+func (e DimensionalityConflictError) Error() string {
+	return "coordinate dimensionality does not match"
+}
+
 
 // NewCoordinate creates a new coordinate at the origin, using the given config
 // to supply key initial values.
@@ -58,11 +61,18 @@ func (c *Coordinate) Clone() *Coordinate {
 	}
 }
 
+// IsCompatibleWith checks to see if the two coordinates are compatible
+// dimensionally. If this returns true then you are guaranteed to not get
+// any runtime errors operating on them.
+func (c *Coordinate) IsCompatibleWith(other *Coordinate) bool {
+	return len(c.Vec) == len(other.Vec)
+}
+
 // ApplyForce returns the result of applying the force from the direction of the
 // other coordinate.
 func (c *Coordinate) ApplyForce(force float64, other *Coordinate) *Coordinate {
-	if len(c.Vec) != len(other.Vec) {
-		panic(ErrDimensionalityConflict)
+	if !c.IsCompatibleWith(other) {
+		panic(DimensionalityConflictError{})
 	}
 
 	ret := c.Clone()
@@ -73,8 +83,8 @@ func (c *Coordinate) ApplyForce(force float64, other *Coordinate) *Coordinate {
 // DistanceTo returns the distance between this coordinate and the other
 // coordinate, including adjustments.
 func (c *Coordinate) DistanceTo(other *Coordinate) time.Duration {
-	if len(c.Vec) != len(other.Vec) {
-		panic(ErrDimensionalityConflict)
+	if !c.IsCompatibleWith(other) {
+		panic(DimensionalityConflictError{})
 	}
 
 	dist := c.rawDistanceTo(other)

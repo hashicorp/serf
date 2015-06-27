@@ -12,7 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/memberlist"
+	"github.com/hashicorp/serf/coordinate"
 	"github.com/hashicorp/serf/testutil"
 )
 
@@ -1755,19 +1757,19 @@ func TestSerf_Coordinates(t *testing.T) {
 	}
 }
 
-// pingMetaDelegate is used to monkey patch a ping delegate so that it sends bad
-// ping messages.
-type pingMetaDelegate struct {
+// pingVersionMetaDelegate is used to monkey patch a ping delegate so that it
+// sends ping messages with an unknown version number.
+type pingVersionMetaDelegate struct {
 	pingDelegate
 }
 
 // AckPayload is called to produce a payload to send back in response to a ping
 // request. In this case we send back a bogus ping response with a bad version
 // and payload.
-func (p *pingMetaDelegate) AckPayload() []byte {
+func (p *pingVersionMetaDelegate) AckPayload() []byte {
 	var buf bytes.Buffer
 
-	// Send back the next ping version, which is bad be default.
+	// Send back the next ping version, which is bad by default.
 	version := []byte{PingVersion+1}
 	buf.Write(version)
 
@@ -1799,7 +1801,7 @@ func TestSerf_PingDelegateVersioning(t *testing.T) {
 	defer s2.Shutdown()
 
 	// Monkey patch s1 to send weird versions of the ping messages.
-	s1.config.MemberlistConfig.Ping = &pingMetaDelegate{pingDelegate{s1}}
+	s1.config.MemberlistConfig.Ping = &pingVersionMetaDelegate{pingDelegate{s1}}
 
 	// Join the two nodes together and give them time to probe each other.
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
@@ -1810,6 +1812,79 @@ func TestSerf_PingDelegateVersioning(t *testing.T) {
 
 	// They both should show 2 members, but only s1 should know about s2
 	// in the cache, since s1 spoke an alien ping protocol.
+	if len(s1.Members()) != 2 || len(s2.Members()) != 2 {
+		t.Fatalf("s1 and s2 didn't probe each other")
+	}
+	if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); !ok {
+		t.Fatalf("s1 didn't get a coordinate for s2: %s", err)
+	}
+	if _, ok := s2.GetCachedCoordinate(s1.config.NodeName); ok {
+		t.Fatalf("s2 got an unexpected coordinate for s1")
+	}
+}
+
+// pingDimensionMetaDelegate is used to monkey patch a ping delegate so that it
+// sends coordinates with the wrong number of dimensions.
+type pingDimensionMetaDelegate struct {
+	t *testing.T
+	pingDelegate
+}
+
+// AckPayload is called to produce a payload to send back in response to a ping
+// request. In this case we send back a legit ping response with a bad coordinate.
+func (p *pingDimensionMetaDelegate) AckPayload() []byte {
+	var buf bytes.Buffer
+
+	// The first byte is the version number, forming a simple header.
+	version := []byte{PingVersion}
+	buf.Write(version)
+
+	// Make a bad coordinate with the wrong number of dimensions.
+	coord := coordinate.NewCoordinate(coordinate.DefaultConfig())
+	coord.Vec = make([]float64, 2*len(coord.Vec))
+
+	// The rest of the message is the serialized coordinate.
+	enc := codec.NewEncoder(&buf, &codec.MsgpackHandle{})
+	if err := enc.Encode(coord); err != nil {
+		p.t.Fatalf("err: %v", err)
+	}
+	return buf.Bytes()
+}
+
+func TestSerf_PingDelegateRogueCoordinate(t *testing.T) {
+	s1Config := testConfig()
+	s1Config.DisableCoordinates = false
+	s1Config.CacheCoordinates = true
+	s1Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
+	s2Config := testConfig()
+	s2Config.DisableCoordinates = false
+	s2Config.CacheCoordinates = true
+	s2Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+
+	// Monkey patch s1 to send ping messages with bad coordinates.
+	s1.config.MemberlistConfig.Ping = &pingDimensionMetaDelegate{t, pingDelegate{s1}}
+
+	// Join the two nodes together and give them time to probe each other.
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("could not join s1 and s2: %s", err)
+	}
+	testutil.Yield()
+
+	// They both should show 2 members, but only s1 should know about s2
+	// in the cache, since s1 sent a bad coordinate.
 	if len(s1.Members()) != 2 || len(s2.Members()) != 2 {
 		t.Fatalf("s1 and s2 didn't probe each other")
 	}
