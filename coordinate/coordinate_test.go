@@ -10,7 +10,7 @@ import (
 func verifyDimensionPanic(t *testing.T, f func()) {
 	defer func() {
 		if r := recover(); r != nil {
-			if r != ErrDimensionalityConflict {
+			if _, ok := r.(DimensionalityConflictError); !ok {
 				t.Fatalf("panic isn't the right type")
 			}
 		} else {
@@ -43,6 +43,31 @@ func TestCoordinate_Clone(t *testing.T) {
 	other.Vec[0] = c.Vec[0] + 0.5
 	if reflect.DeepEqual(c, other) {
 		t.Fatalf("cloned coordinate is still pointing at its ancestor")
+	}
+}
+
+func TestCoordinate_IsCompatibleWith(t *testing.T) {
+	config := DefaultConfig()
+
+	config.Dimensionality = 3
+	c1 := NewCoordinate(config)
+	c2 := NewCoordinate(config)
+
+	config.Dimensionality = 2
+	alien := NewCoordinate(config)
+
+	if !c1.IsCompatibleWith(c1) || !c2.IsCompatibleWith(c2) ||
+		!alien.IsCompatibleWith(alien) {
+		t.Fatalf("coordinates should be compatible with themselves")
+	}
+
+	if !c1.IsCompatibleWith(c2) || !c2.IsCompatibleWith(c1) {
+		t.Fatalf("coordinates should be compatible with each other")
+	}
+
+	if c1.IsCompatibleWith(alien) || c2.IsCompatibleWith(alien) ||
+		alien.IsCompatibleWith(c1) || alien.IsCompatibleWith(c2) {
+		t.Fatalf("alien should not be compatible with the other coordinates")
 	}
 }
 

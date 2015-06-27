@@ -62,12 +62,19 @@ func (p *pingDelegate) NotifyPingComplete(other *memberlist.Node, rtt time.Durat
 	if err := dec.Decode(&coord); err != nil {
 		log.Printf("[ERR] serf: Failed to decode coordinate from ping: %v", err)
 	}
-	p.serf.coordClient.Update(&coord, rtt)
 
-	// Cache the coordinate if the relevant option is set to true
-	if p.serf.config.CacheCoordinates {
-		p.serf.coordCacheLock.Lock()
-		defer p.serf.coordCacheLock.Unlock()
-		p.serf.coordCache[other.Name] = &coord
+	// Apply the update. Since this is a coordinate coming from some place
+	// else we harden this and look for dimensionality problems proactively.
+	if p.serf.coordClient.GetCoordinate().IsCompatibleWith(&coord) {
+		p.serf.coordClient.Update(&coord, rtt)
+
+		// Cache the coordinate if the relevant option is set to true
+		if p.serf.config.CacheCoordinates {
+			p.serf.coordCacheLock.Lock()
+			defer p.serf.coordCacheLock.Unlock()
+			p.serf.coordCache[other.Name] = &coord
+		}
+	} else {
+		log.Printf("[ERR] serf: Rejected bad coordinate: %v\n", coord)
 	}
 }
