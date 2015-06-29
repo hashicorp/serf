@@ -1718,7 +1718,14 @@ func TestSerf_Coordinates(t *testing.T) {
 
 	// Make sure both nodes start out the origin so we can prove they did
 	// an update later.
-	c1, c2 := s1.GetCoordinate(), s2.GetCoordinate()
+	c1, err := s1.GetCoordinate()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	c2, err := s2.GetCoordinate()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
 	const zeroThreshold = 1.0e-6
 	if c1.DistanceTo(c2).Seconds() > zeroThreshold {
 		t.Fatalf("coordinates didn't start at the origin")
@@ -1741,7 +1748,14 @@ func TestSerf_Coordinates(t *testing.T) {
 
 	// With only one ping they won't have a good estimate of the other node's
 	// coordinate, but they should both have updated their own coordinate.
-	c1, c2 = s1.GetCoordinate(), s2.GetCoordinate()
+	c1, err = s1.GetCoordinate()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	c2, err = s2.GetCoordinate()
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
 	if c1.DistanceTo(c2).Seconds() < zeroThreshold {
 		t.Fatalf("coordinates didn't update after probes")
 	}
@@ -1754,6 +1768,31 @@ func TestSerf_Coordinates(t *testing.T) {
 	time.Sleep(s1Config.ReapInterval * 2)
 	if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); ok {
 		t.Fatalf("s1 should have removed s2's cached coordinate")
+	}
+
+	// Try a setup with coordinates disabled.
+	s3Config := testConfig()
+	s3Config.DisableCoordinates = true
+	s3Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
+	s3, err := Create(s3Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s3.Shutdown()
+
+	_, err = s3.Join([]string{s1Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("could not join s1 and s3: %s", err)
+	}
+	testutil.Yield()
+
+	_, err = s3.GetCoordinate()
+	if err == nil || !strings.Contains(err.Error(), "Coordinates are disabled") {
+		t.Fatalf("expected coordinate disabled error, got %s", err)
+	}
+	_, ok := s3.GetCachedCoordinate(s1.config.NodeName)
+	if ok {
+		t.Fatalf("should not have been able to get cached coordinate")
 	}
 }
 
