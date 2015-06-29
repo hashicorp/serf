@@ -71,8 +71,8 @@ func (p *pingDelegate) NotifyPingComplete(other *memberlist.Node, rtt time.Durat
 		// Cache the coordinate if the relevant option is set to true
 		if p.serf.config.CacheCoordinates {
 			p.serf.coordCacheLock.Lock()
-			defer p.serf.coordCacheLock.Unlock()
 			p.serf.coordCache[other.Name] = &coord
+			p.serf.coordCacheLock.Unlock()
 		}
 	} else {
 		log.Printf("[ERR] serf: Rejected bad coordinate: %v\n", coord)

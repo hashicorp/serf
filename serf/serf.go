@@ -1630,15 +1630,13 @@ func (s *Serf) writeKeyringFile() error {
 	return nil
 }
 
-// GetCoordinate returns the network coordinate of the local node. This will only
-// be valid if DisableCoordinates is set to false in your config, otherwise you'll
-// always get a coordinate back that's at the origin.
-func (s *Serf) GetCoordinate() *coordinate.Coordinate {
+// GetCoordinate returns the network coordinate of the local node.
+func (s *Serf) GetCoordinate() (*coordinate.Coordinate, error) {
 	if !s.config.DisableCoordinates {
-		return s.coordClient.GetCoordinate()
+		return s.coordClient.GetCoordinate(), nil
 	}
 
-	return coordinate.NewCoordinate(coordinate.DefaultConfig())
+	return nil, fmt.Errorf("Coordinates are disabled")
 }
 
 
