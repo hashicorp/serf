@@ -18,9 +18,9 @@ type pingDelegate struct {
 }
 
 const (
-	// PingVersion is an internal version of the ping data, above the normal
+	// PingVersion is an internal version for the ping message, above the normal
 	// versioning we get from the protocol version. This enables small updates
-	// to the ping data without a full protocol bump.
+	// to the ping message without a full protocol bump.
 	PingVersion = 1
 )
 
@@ -68,10 +68,14 @@ func (p *pingDelegate) NotifyPingComplete(other *memberlist.Node, rtt time.Durat
 	if p.serf.coordClient.GetCoordinate().IsCompatibleWith(&coord) {
 		p.serf.coordClient.Update(&coord, rtt)
 
-		// Cache the coordinate if the relevant option is set to true
+		// Cache the coordinate for the other node, and add our own
+		// to the cache as well since it just got updated. This lets
+		// users call GetCachedCoordinate with our node name, which is
+		// more friendly.
 		if p.serf.config.CacheCoordinates {
 			p.serf.coordCacheLock.Lock()
 			p.serf.coordCache[other.Name] = &coord
+			p.serf.coordCache[p.serf.config.NodeName] = p.serf.coordClient.GetCoordinate()
 			p.serf.coordCacheLock.Unlock()
 		}
 	} else {

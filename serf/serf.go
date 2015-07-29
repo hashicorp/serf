@@ -359,6 +359,9 @@ func Create(conf *Config) (*Serf, error) {
 			return nil, fmt.Errorf("Failed to create coordinate client: %v", err)
 		}
 		serf.coordCache = make(map[string]*coordinate.Coordinate)
+		if conf.CacheCoordinates {
+			serf.coordCache[conf.NodeName] = serf.coordClient.GetCoordinate()
+		}
 	}
 
 	// Setup a merge delegate if necessary
@@ -1638,7 +1641,6 @@ func (s *Serf) GetCoordinate() (*coordinate.Coordinate, error) {
 
 	return nil, fmt.Errorf("Coordinates are disabled")
 }
-
 
 // GetCachedCoordinate returns the network coordinate for the node with the given
 // name. This will only be valid if DisableCoordinates is set to false and
