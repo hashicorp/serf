@@ -1760,6 +1760,14 @@ func TestSerf_Coordinates(t *testing.T) {
 		t.Fatalf("coordinates didn't update after probes")
 	}
 
+	// Make sure they cached their own coordinates.
+	if _, ok := s1.GetCachedCoordinate(s1.config.NodeName); !ok {
+		t.Fatalf("s1 didn't cache coordinate for s1")
+	}
+	if _, ok := s2.GetCachedCoordinate(s2.config.NodeName); !ok {
+		t.Fatalf("s2 didn't cache coordinate for s2")
+	}
+
 	// Break up the cluster and make sure the coordinates get removed by
 	// the reaper.
 	if err = s2.Leave(); err != nil {
