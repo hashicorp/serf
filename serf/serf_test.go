@@ -1760,12 +1760,13 @@ func TestSerf_Coordinates(t *testing.T) {
 		t.Fatalf("coordinates didn't update after probes")
 	}
 
-	// Make sure they cached their own coordinates.
-	if _, ok := s1.GetCachedCoordinate(s1.config.NodeName); !ok {
+	// Make sure they cached their own current coordinate after the update.
+	c1c, ok := s1.GetCachedCoordinate(s1.config.NodeName)
+	if !ok {
 		t.Fatalf("s1 didn't cache coordinate for s1")
 	}
-	if _, ok := s2.GetCachedCoordinate(s2.config.NodeName); !ok {
-		t.Fatalf("s2 didn't cache coordinate for s2")
+	if !reflect.DeepEqual(c1, c1c) {
+		t.Fatalf("coordinates are not equal: %v != %v", c1, c1c)
 	}
 
 	// Break up the cluster and make sure the coordinates get removed by
@@ -1798,8 +1799,7 @@ func TestSerf_Coordinates(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "Coordinates are disabled") {
 		t.Fatalf("expected coordinate disabled error, got %s", err)
 	}
-	_, ok := s3.GetCachedCoordinate(s1.config.NodeName)
-	if ok {
+	if _, ok := s3.GetCachedCoordinate(s1.config.NodeName); ok {
 		t.Fatalf("should not have been able to get cached coordinate")
 	}
 }
