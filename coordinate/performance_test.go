@@ -16,7 +16,7 @@ func TestPerformance_Line(t *testing.T) {
 	truth := GenerateLine(nodes, spacing)
 	Simulate(clients, truth, cycles, nil)
 	stats := Evaluate(clients, truth)
-	if stats.ErrorAvg > 0.004 || stats.ErrorMax > 0.015 {
+	if stats.ErrorAvg > 0.0012 || stats.ErrorMax > 0.0055 {
 		t.Fatalf("performance stats are out of spec: %v", stats)
 	}
 }
@@ -32,7 +32,7 @@ func TestPerformance_Grid(t *testing.T) {
 	truth := GenerateGrid(nodes, spacing)
 	Simulate(clients, truth, cycles, nil)
 	stats := Evaluate(clients, truth)
-	if stats.ErrorAvg > 0.005 || stats.ErrorMax > 0.051 {
+	if stats.ErrorAvg > 0.0014 || stats.ErrorMax > 0.0158 {
 		t.Fatalf("performance stats are out of spec: %v", stats)
 	}
 }
@@ -48,7 +48,7 @@ func TestPerformance_Split(t *testing.T) {
 	truth := GenerateSplit(nodes, lan, wan)
 	Simulate(clients, truth, cycles, nil)
 	stats := Evaluate(clients, truth)
-	if stats.ErrorAvg > 0.044 || stats.ErrorMax > 0.343 {
+	if stats.ErrorAvg > 0.000057 || stats.ErrorMax > 0.00035 {
 		t.Fatalf("performance stats are out of spec: %v", stats)
 	}
 }
@@ -64,7 +64,7 @@ func TestPerformance_Random(t *testing.T) {
 	truth := GenerateRandom(nodes, mean, deviation)
 	Simulate(clients, truth, cycles, nil)
 	stats := Evaluate(clients, truth)
-	if stats.ErrorAvg > 0.079 || stats.ErrorMax > 0.363 {
+	if stats.ErrorAvg > 0.046 || stats.ErrorMax > 0.184 {
 		t.Fatalf("performance stats are out of spec: %v", stats)
 	}
 }
