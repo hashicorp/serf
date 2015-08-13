@@ -1356,7 +1356,7 @@ func TestSerf_Query_sizeLimit(t *testing.T) {
 	defer s1.Shutdown()
 
 	name := "this is too large a query"
-	payload := make([]byte, QuerySizeLimit)
+	payload := make([]byte, s1.querySizeLimit)
 	_, err = s1.Query(name, payload, nil)
 	if err == nil {
 		t.Fatalf("should get error")

@@ -30,6 +30,8 @@ func DefaultConfig() *Config {
 		Protocol:       serf.ProtocolVersionMax,
 		ReplayOnJoin:   false,
 		Profile:        "lan",
+		QueryResponseSizeLimit: 1024,
+		QuerySizeLimit: 1024,
 		RetryInterval:  30 * time.Second,
 		SyslogFacility: "LOCAL0",
 	}
@@ -403,6 +405,12 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.EnableSyslog {
 		result.EnableSyslog = true
+	}
+	if b.QueryResponseSizeLimit != 0 {
+		result.QueryResponseSizeLimit = b.QueryResponseSizeLimit
+	}
+	if b.QuerySizeLimit != 0 {
+		result.QuerySizeLimit = b.QuerySizeLimit
 	}
 	if b.RetryMaxAttempts != 0 {
 		result.RetryMaxAttempts = b.RetryMaxAttempts
