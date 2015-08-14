@@ -682,7 +682,7 @@ Usage: serf agent [options]
 
 Options:
 
-  -bind=0.0.0.0            Address to bind network listeners to
+  -bind=0.0.0.0:7946       Address to bind network listeners to.
   -iface                   Network interface to bind to. Can be used instead of
                            -bind if the interface is known but not the address.
                            If both are provided, then Serf verifies that the
@@ -695,7 +695,7 @@ Options:
                            from. This will read every file ending in ".json"
                            as configuration in this directory in alphabetical
                            order.
-  -discover=cluster        Discover is set to enable mDNS discovery of peer. On
+  -discover=cluster        A cluster name used to discovery peers. On
                            networks that support multicast, this can be used to have
                            peers join each other without an explicit join.
   -encrypt=foo             Key for encrypting network traffic within Serf.
