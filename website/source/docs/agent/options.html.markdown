@@ -63,8 +63,8 @@ The options below are all specified on the command-line.
   in alphabetical order. For more information on the format of the configuration
   files, see the "Configuration Files" section below.
 
-* `-discover` - Discover provides a cluster name, which is used with mDNS to
-  automatically discover Serf peers. When provided, Serf will respond to mDNS
+* `-discover` - A cluster name, which is used with mDNS to
+  automatically discover peers. When provided, Serf will respond to mDNS
   queries and periodically poll for new peers. This feature requires a network
   environment that supports multicasting.
 
