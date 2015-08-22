@@ -159,7 +159,8 @@ func Simulate(clients []*Client, truth [][]time.Duration, cycles int, callback S
 			if j := rand.Intn(nodes); j != i {
 				c := clients[j].GetCoordinate()
 				rtt := truth[i][j]
-				clients[i].Update(c, rtt)
+				node := fmt.Sprintf("node_%d", j)
+				clients[i].Update(node, c, rtt)
 			}
 		}
 	}

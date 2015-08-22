@@ -3,6 +3,7 @@ package coordinate
 import (
 	"fmt"
 	"math"
+	"sort"
 	"sync"
 	"time"
 )
@@ -25,6 +26,11 @@ type Client struct {
 	// adjustment is used to store samples for the adjustment calculation.
 	adjustmentSamples []float64
 
+	// latencyFilterSamples is used to store the last several RTT samples,
+	// keyed by node name. We will use the config's LatencyFilterSamples
+	// value to determine how many samples we keep, per node.
+	latencyFilterSamples map[string][]float64
+
 	// mutex enables safe concurrent access to the client.
 	mutex *sync.RWMutex
 }
@@ -36,11 +42,12 @@ func NewClient(config *Config) (*Client, error) {
 	}
 
 	return &Client{
-		coord:             NewCoordinate(config),
-		config:            config,
-		adjustmentIndex:   0,
-		adjustmentSamples: make([]float64, config.AdjustmentWindowSize),
-		mutex:             &sync.RWMutex{},
+		coord:                NewCoordinate(config),
+		config:               config,
+		adjustmentIndex:      0,
+		adjustmentSamples:    make([]float64, config.AdjustmentWindowSize),
+		latencyFilterSamples: make(map[string][]float64),
+		mutex:                &sync.RWMutex{},
 	}, nil
 }
 
@@ -50,6 +57,36 @@ func (c *Client) GetCoordinate() *Coordinate {
 	defer c.mutex.RUnlock()
 
 	return c.coord.Clone()
+}
+
+// ForgetNode removes any client state for the given node.
+func (c *Client) ForgetNode(node string) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	delete(c.latencyFilterSamples, node)
+}
+
+// latencyFilter applies a simple moving median filter with a new sample for
+// a node. This assumes that the mutex has been locked already.
+func (c *Client) latencyFilter(node string, rttSeconds float64) float64 {
+	samples, ok := c.latencyFilterSamples[node]
+	if !ok {
+		samples = make([]float64, 0, c.config.LatencyFilterSize)
+	}
+
+	// Add the new sample and trim the list, if needed.
+	samples = append(samples, rttSeconds)
+	if len(samples) > int(c.config.LatencyFilterSize) {
+		samples = samples[1:]
+	}
+	c.latencyFilterSamples[node] = samples
+
+	// Sort a copy of the samples and return the median.
+	sorted := make([]float64, len(samples))
+	copy(sorted, samples)
+	sort.Float64s(sorted)
+	return sorted[len(sorted)/2]
 }
 
 // updateVivialdi updates the Vivaldi portion of the client's coordinate. This
@@ -102,11 +139,11 @@ func (c *Client) updateAdjustment(other *Coordinate, rttSeconds float64) {
 // Update takes other, a coordinate for another node, and rtt, a round trip
 // time observation for a ping to that node, and updates the estimated position of
 // the client's coordinate.
-func (c *Client) Update(other *Coordinate, rtt time.Duration) {
+func (c *Client) Update(node string, other *Coordinate, rtt time.Duration) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	rttSeconds := rtt.Seconds()
+	rttSeconds := c.latencyFilter(node, rtt.Seconds())
 	c.updateVivaldi(other, rttSeconds)
 	c.updateAdjustment(other, rttSeconds)
 }
