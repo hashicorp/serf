@@ -66,7 +66,7 @@ func (p *pingDelegate) NotifyPingComplete(other *memberlist.Node, rtt time.Durat
 	// Apply the update. Since this is a coordinate coming from some place
 	// else we harden this and look for dimensionality problems proactively.
 	if p.serf.coordClient.GetCoordinate().IsCompatibleWith(&coord) {
-		p.serf.coordClient.Update(&coord, rtt)
+		p.serf.coordClient.Update(other.Name, &coord, rtt)
 
 		// Cache the coordinate for the other node, and add our own
 		// to the cache as well since it just got updated. This lets

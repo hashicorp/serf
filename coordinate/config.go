@@ -42,6 +42,12 @@ type Config struct {
 	// the chosen value should be relatively small compared to "normal"
 	// coordinates.
 	HeightMin float64
+
+	// LatencyFilterSamples is the maximum number of samples that are retained
+	// per node, in order to compute a median. The intent is to ride out blips
+	// but still keep the delay low, since our time to probe any given node is
+	// pretty infrequent. See [2] for more details.
+	LatencyFilterSize uint
 }
 
 // DefaultConfig returns a Config that has some default values suitable for
@@ -54,5 +60,6 @@ func DefaultConfig() *Config {
 		VivaldiCC:            0.25,
 		AdjustmentWindowSize: 20,
 		HeightMin:            10.0e-6,
+		LatencyFilterSize:    3,
 	}
 }

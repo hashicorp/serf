@@ -1413,7 +1413,12 @@ func (s *Serf) reap(old []*memberState, timeout time.Duration) []*memberState {
 		// Delete from members
 		delete(s.members, m.Name)
 
-		// Delete its cached coordinate
+		// Tell the coordinate client the node has gone away.
+		if !s.config.DisableCoordinates {
+			s.coordClient.ForgetNode(m.Name)
+		}
+
+		// Delete its cached coordinate.
 		if s.config.CacheCoordinates {
 			s.coordCacheLock.Lock()
 			delete(s.coordCache, m.Name)
