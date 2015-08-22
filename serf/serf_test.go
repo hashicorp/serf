@@ -1726,7 +1726,7 @@ func TestSerf_Coordinates(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	const zeroThreshold = 1.0e-6
+	const zeroThreshold = 20.0e-6
 	if c1.DistanceTo(c2).Seconds() > zeroThreshold {
 		t.Fatalf("coordinates didn't start at the origin")
 	}
@@ -1817,13 +1817,12 @@ func (p *pingVersionMetaDelegate) AckPayload() []byte {
 	var buf bytes.Buffer
 
 	// Send back the next ping version, which is bad by default.
-	version := []byte{PingVersion+1}
+	version := []byte{PingVersion + 1}
 	buf.Write(version)
 
 	buf.Write([]byte("this is bad and not a real message"))
 	return buf.Bytes()
 }
-
 
 func TestSerf_PingDelegateVersioning(t *testing.T) {
 	s1Config := testConfig()

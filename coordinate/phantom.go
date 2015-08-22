@@ -84,6 +84,36 @@ func GenerateSplit(nodes int, lan time.Duration, wan time.Duration) [][]time.Dur
 	return truth
 }
 
+// GenerateCircle returns a truth matrix for a set of nodes, evenly distributed
+// around a circle with the given radius. The first node is at the "center" of the
+// circle because it's equidistant from all the other nodes, but we place it at
+// double the radius, so it should show up above all the other nodes in height.
+func GenerateCircle(nodes int, radius time.Duration) [][]time.Duration {
+	truth := make([][]time.Duration, nodes)
+	for i := range truth {
+		truth[i] = make([]time.Duration, nodes)
+	}
+
+	for i := 0; i < nodes; i++ {
+		for j := i + 1; j < nodes; j++ {
+			var rtt time.Duration
+			if i == 0 {
+				rtt = 2 * radius
+			} else {
+				t1 := 2.0 * math.Pi * float64(i) / float64(nodes)
+				x1, y1 := math.Cos(t1), math.Sin(t1)
+				t2 := 2.0 * math.Pi * float64(j) / float64(nodes)
+				x2, y2 := math.Cos(t2), math.Sin(t2)
+				dx, dy := x2-x1, y2-y1
+				dist := math.Sqrt(dx*dx + dy*dy)
+				rtt = time.Duration(dist * float64(radius))
+			}
+			truth[i][j], truth[j][i] = rtt, rtt
+		}
+	}
+	return truth
+}
+
 // GenerateRandom returns a truth matrix for a set of nodes with normally
 // distributed delays, with the given mean and deviation. The RNG is re-seeded
 // so you always get the same matrix for a given size.
@@ -97,7 +127,7 @@ func GenerateRandom(nodes int, mean time.Duration, deviation time.Duration) [][]
 
 	for i := 0; i < nodes; i++ {
 		for j := i + 1; j < nodes; j++ {
-			rttSeconds := rand.NormFloat64() * deviation.Seconds() + mean.Seconds()
+			rttSeconds := rand.NormFloat64()*deviation.Seconds() + mean.Seconds()
 			rtt := time.Duration(rttSeconds * secondsToNanoseconds)
 			truth[i][j], truth[j][i] = rtt, rtt
 		}

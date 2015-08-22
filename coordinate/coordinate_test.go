@@ -34,6 +34,7 @@ func TestCoordinate_Clone(t *testing.T) {
 	c.Vec[0], c.Vec[1], c.Vec[2] = 1.0, 2.0, 3.0
 	c.Error = 5.0
 	c.Adjustment = 10.0
+	c.Height = 4.2
 
 	other := c.Clone()
 	if !reflect.DeepEqual(c, other) {
@@ -74,6 +75,7 @@ func TestCoordinate_IsCompatibleWith(t *testing.T) {
 func TestCoordinate_ApplyForce(t *testing.T) {
 	config := DefaultConfig()
 	config.Dimensionality = 3
+	config.HeightMin = 0
 
 	origin := NewCoordinate(config)
 
@@ -81,31 +83,44 @@ func TestCoordinate_ApplyForce(t *testing.T) {
 	// force multiplier correctly.
 	above := NewCoordinate(config)
 	above.Vec = []float64{0.0, 0.0, 2.9}
-	c := origin.ApplyForce(5.3, above)
+	c := origin.ApplyForce(config, 5.3, above)
 	verifyEqualVectors(t, c.Vec, []float64{0.0, 0.0, -5.3})
 
 	// Scoot a point not starting at the origin to make sure there's nothing
 	// special there.
 	right := NewCoordinate(config)
 	right.Vec = []float64{3.4, 0.0, -5.3}
-	c = c.ApplyForce(2.0, right)
+	c = c.ApplyForce(config, 2.0, right)
 	verifyEqualVectors(t, c.Vec, []float64{-2.0, 0.0, -5.3})
 
 	// If the points are right on top of each other, then we should end up
 	// in a random direction, one unit away. This makes sure the unit vector
 	// build up doesn't divide by zero.
-	c = origin.ApplyForce(1.0, origin)
+	c = origin.ApplyForce(config, 1.0, origin)
 	verifyEqualFloats(t, origin.DistanceTo(c).Seconds(), 1.0)
+
+	// Enable a minimum height and make sure that gets factored in properly.
+	config.HeightMin = 10.0e-6
+	origin = NewCoordinate(config)
+	c = origin.ApplyForce(config, 5.3, above)
+	verifyEqualVectors(t, c.Vec, []float64{0.0, 0.0, -5.3})
+	verifyEqualFloats(t, c.Height, config.HeightMin+5.3*config.HeightMin/2.9)
+
+	// Make sure the height minimum is enforced.
+	c = origin.ApplyForce(config, -5.3, above)
+	verifyEqualVectors(t, c.Vec, []float64{0.0, 0.0, 5.3})
+	verifyEqualFloats(t, c.Height, config.HeightMin)
 
 	// Shenanigans should get called if the dimensions don't match.
 	bad := c.Clone()
 	bad.Vec = make([]float64, len(bad.Vec)+1)
-	verifyDimensionPanic(t, func() { c.ApplyForce(1.0, bad) })
+	verifyDimensionPanic(t, func() { c.ApplyForce(config, 1.0, bad) })
 }
 
 func TestCoordinate_DistanceTo(t *testing.T) {
 	config := DefaultConfig()
 	config.Dimensionality = 3
+	config.HeightMin = 0
 
 	c1, c2 := NewCoordinate(config), NewCoordinate(config)
 	c1.Vec = []float64{-0.5, 1.3, 2.4}
@@ -122,7 +137,12 @@ func TestCoordinate_DistanceTo(t *testing.T) {
 	// Make sure positive adjustment factors affect the distance.
 	c1.Adjustment = 0.1
 	c2.Adjustment = 0.2
-	verifyEqualFloats(t, c1.DistanceTo(c2).Seconds(), 4.104875150354758 + 0.3)
+	verifyEqualFloats(t, c1.DistanceTo(c2).Seconds(), 4.104875150354758+0.3)
+
+	// Make sure the heights affect the distance.
+	c1.Height = 0.7
+	c2.Height = 0.1
+	verifyEqualFloats(t, c1.DistanceTo(c2).Seconds(), 4.104875150354758+0.3+0.8)
 
 	// Shenanigans should get called if the dimensions don't match.
 	bad := c1.Clone()
@@ -133,6 +153,7 @@ func TestCoordinate_DistanceTo(t *testing.T) {
 func TestCoordinate_rawDistanceTo(t *testing.T) {
 	config := DefaultConfig()
 	config.Dimensionality = 3
+	config.HeightMin = 0
 
 	c1, c2 := NewCoordinate(config), NewCoordinate(config)
 	c1.Vec = []float64{-0.5, 1.3, 2.4}
@@ -146,6 +167,11 @@ func TestCoordinate_rawDistanceTo(t *testing.T) {
 	// distance.
 	c1.Adjustment = 1.0e6
 	verifyEqualFloats(t, c1.rawDistanceTo(c2), 4.104875150354758)
+
+	// Make sure the heights affect the distance.
+	c1.Height = 0.7
+	c2.Height = 0.1
+	verifyEqualFloats(t, c1.rawDistanceTo(c2), 4.104875150354758+0.8)
 }
 
 func TestCoordinate_add(t *testing.T) {
@@ -177,14 +203,16 @@ func TestCoordinate_magnitude(t *testing.T) {
 func TestCoordinate_unitVectorAt(t *testing.T) {
 	vec1 := []float64{1.0, 2.0, 3.0}
 	vec2 := []float64{0.5, 0.6, 0.7}
-	u := unitVectorAt(vec1, vec2)
+	u, mag := unitVectorAt(vec1, vec2)
 	verifyEqualVectors(t, u, []float64{0.18257418583505536, 0.511207720338155, 0.8398412548412546})
 	verifyEqualFloats(t, magnitude(u), 1.0)
+	verifyEqualFloats(t, mag, magnitude(diff(vec1, vec2)))
 
 	// If we give positions that are equal we should get a random unit vector
 	// returned to us, rather than a divide by zero.
-	u = unitVectorAt(vec1, vec1)
+	u, mag = unitVectorAt(vec1, vec1)
 	verifyEqualFloats(t, magnitude(u), 1.0)
+	verifyEqualFloats(t, mag, 0.0)
 
 	// We can't hit the final clause without heroics so I manually forced it
 	// there to verify it works.

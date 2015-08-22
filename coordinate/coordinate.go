@@ -23,22 +23,31 @@ type Coordinate struct {
 	// observations from all other nodes over a fixed window and is updated
 	// dynamically by the Vivaldi Client. The units here are seconds.
 	Adjustment float64
+
+	// Height is a distance offset that accounts for non-Euclidian effects
+	// which model the access links from nodes to the core Internet. The access
+	// links are usually set by bandwidth and congestion, and the core links
+	// usually follow distance based on geography.
+	Height float64
 }
 
 const (
 	// secondsToNanoseconds is used to convert float seconds to nanoseconds.
 	secondsToNanoseconds = 1.0e9
+
+	// zeroThreshold is used to decide if two coordinates are on top of each
+	// other.
+	zeroThreshold = 1.0e-6
 )
 
 // ErrDimensionalityConflict will be panic-d if you try to perform operations
 // with incompatible dimensions.
-type DimensionalityConflictError struct {}
+type DimensionalityConflictError struct{}
 
 // Adds the error interface.
 func (e DimensionalityConflictError) Error() string {
 	return "coordinate dimensionality does not match"
 }
-
 
 // NewCoordinate creates a new coordinate at the origin, using the given config
 // to supply key initial values.
@@ -47,6 +56,7 @@ func NewCoordinate(config *Config) *Coordinate {
 		Vec:        make([]float64, config.Dimensionality),
 		Error:      config.VivaldiErrorMax,
 		Adjustment: 0.0,
+		Height:     config.HeightMin,
 	}
 }
 
@@ -58,6 +68,7 @@ func (c *Coordinate) Clone() *Coordinate {
 		Vec:        vec,
 		Error:      c.Error,
 		Adjustment: c.Adjustment,
+		Height:     c.Height,
 	}
 }
 
@@ -70,13 +81,18 @@ func (c *Coordinate) IsCompatibleWith(other *Coordinate) bool {
 
 // ApplyForce returns the result of applying the force from the direction of the
 // other coordinate.
-func (c *Coordinate) ApplyForce(force float64, other *Coordinate) *Coordinate {
+func (c *Coordinate) ApplyForce(config *Config, force float64, other *Coordinate) *Coordinate {
 	if !c.IsCompatibleWith(other) {
 		panic(DimensionalityConflictError{})
 	}
 
 	ret := c.Clone()
-	ret.Vec = add(ret.Vec, mul(unitVectorAt(ret.Vec, other.Vec), force))
+	unit, mag := unitVectorAt(c.Vec, other.Vec)
+	ret.Vec = add(ret.Vec, mul(unit, force))
+	if mag > zeroThreshold {
+		ret.Height = ret.Height + force*(ret.Height+other.Height)/mag
+		ret.Height = math.Max(ret.Height, config.HeightMin)
+	}
 	return ret
 }
 
@@ -92,14 +108,14 @@ func (c *Coordinate) DistanceTo(other *Coordinate) time.Duration {
 	if adjustedDist > 0.0 {
 		dist = adjustedDist
 	}
-	return time.Duration(dist*secondsToNanoseconds)
+	return time.Duration(dist * secondsToNanoseconds)
 }
 
 // rawDistanceTo returns the Vivaldi distance between this coordinate and the
 // other coordinate in seconds, not including adjustments. This assumes the
 // dimensions have already been checked to be compatible.
 func (c *Coordinate) rawDistanceTo(other *Coordinate) float64 {
-	return magnitude(diff(c.Vec, other.Vec))
+	return magnitude(diff(c.Vec, other.Vec)) + c.Height + other.Height
 }
 
 // add returns the sum of vec1 and vec2. This assumes the dimensions have
@@ -143,13 +159,14 @@ func magnitude(vec []float64) float64 {
 // unitVectorAt returns a unit vector pointing at vec1 from vec2 (the way an
 // object positioned at vec1 would move if it was being repelled by an object at
 // vec2). If the two positions are the same then a random unit vector is returned.
-func unitVectorAt(vec1 []float64, vec2 []float64) []float64 {
+// We also return the distance between the points for use in the later height
+// calculation.
+func unitVectorAt(vec1 []float64, vec2 []float64) ([]float64, float64) {
 	ret := diff(vec1, vec2)
 
 	// If the coordinates aren't on top of each other we can normalize.
-	const zeroThreshold = 1.0e-6
 	if mag := magnitude(ret); mag > zeroThreshold {
-		return mul(ret, 1.0/mag)
+		return mul(ret, 1.0/mag), mag
 	}
 
 	// Otherwise, just return a random unit vector.
@@ -157,17 +174,12 @@ func unitVectorAt(vec1 []float64, vec2 []float64) []float64 {
 		ret[i] = rand.Float64() - 0.5
 	}
 	if mag := magnitude(ret); mag > zeroThreshold {
-		return mul(ret, 1.0/mag)
+		return mul(ret, 1.0/mag), 0.0
 	}
 
 	// And finally just give up and make a unit vector along the first
 	// dimension. This should be exceedingly rare.
-	for i, _ := range ret {
-		if i == 0 {
-			ret[i] = 1.0
-		} else {
-			ret[i] = 0.0
-		}
-	}
-	return ret
+	ret = make([]float64, len(ret))
+	ret[0] = 1.0
+	return ret, 0.0
 }

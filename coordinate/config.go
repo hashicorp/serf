@@ -15,8 +15,8 @@ package coordinate
 //     on 18.1 (2010): 27-40.
 type Config struct {
 	// The dimensionality of the coordinate system. As discussed in [2], more
-	// dimensions improves the accuracy of the estimates up to a point. In
-	// particular, there was no noticeable improvement beyond 7 dimensions.
+	// dimensions improves the accuracy of the estimates up to a point. Per [2]
+	// we chose 4 dimensions plus a non-Euclidian height.
 	Dimensionality uint
 
 	// VivaldiErrorMax is the default error value when a node hasn't yet made
@@ -36,16 +36,23 @@ type Config struct {
 	// we retain to calculate the adjustment factor as discussed in [3]. Setting
 	// this to zero disables this feature.
 	AdjustmentWindowSize uint
+
+	// HeightMin is the minimum value of the height parameter. Since this
+	// always must be positive, it will introduce a small amount error, so
+	// the chosen value should be relatively small compared to "normal"
+	// coordinates.
+	HeightMin float64
 }
 
 // DefaultConfig returns a Config that has some default values suitable for
 // basic testing of the algorithm, but not tuned to any particular type of cluster.
 func DefaultConfig() *Config {
 	return &Config{
-		Dimensionality:       8,
+		Dimensionality:       4,
 		VivaldiErrorMax:      1.5,
 		VivaldiCE:            0.25,
 		VivaldiCC:            0.25,
 		AdjustmentWindowSize: 20,
+		HeightMin:            10.0e-6,
 	}
 }
