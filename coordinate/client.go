@@ -36,11 +36,11 @@ func NewClient(config *Config) (*Client, error) {
 	}
 
 	return &Client{
-		coord:  NewCoordinate(config),
-		config: config,
-		adjustmentIndex: 0,
+		coord:             NewCoordinate(config),
+		config:            config,
+		adjustmentIndex:   0,
 		adjustmentSamples: make([]float64, config.AdjustmentWindowSize),
-		mutex:  &sync.RWMutex{},
+		mutex:             &sync.RWMutex{},
 	}, nil
 }
 
@@ -76,7 +76,7 @@ func (c *Client) updateVivaldi(other *Coordinate, rttSeconds float64) {
 
 	delta := c.config.VivaldiCC * weight
 	force := delta * (rttSeconds - dist)
-	c.coord = c.coord.ApplyForce(force, other)
+	c.coord = c.coord.ApplyForce(c.config, force, other)
 }
 
 // updateAdjustment updates the adjustment portion of the client's coordinate, if
@@ -96,7 +96,7 @@ func (c *Client) updateAdjustment(other *Coordinate, rttSeconds float64) {
 	for _, sample := range c.adjustmentSamples {
 		sum += sample
 	}
-	c.coord.Adjustment = sum / (2.0*float64(c.config.AdjustmentWindowSize))
+	c.coord.Adjustment = sum / (2.0 * float64(c.config.AdjustmentWindowSize))
 }
 
 // Update takes other, a coordinate for another node, and rtt, a round trip
