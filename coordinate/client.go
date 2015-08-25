@@ -153,7 +153,7 @@ func (c *Client) updateAdjustment(other *Coordinate, rttSeconds float64) {
 // mutex is locked already.
 func (c *Client) updateGravity() {
 	dist := c.origin.DistanceTo(c.coord).Seconds()
-	force := -1.0 * math.Pow(dist / c.config.GravityRho, 2.0)
+	force := -1.0 * math.Pow(dist/c.config.GravityRho, 2.0)
 	c.coord = c.coord.ApplyForce(c.config, force, c.origin)
 }
 
