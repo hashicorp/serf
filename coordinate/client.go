@@ -35,7 +35,7 @@ type Client struct {
 	latencyFilterSamples map[string][]float64
 
 	// mutex enables safe concurrent access to the client.
-	mutex *sync.RWMutex
+	mutex sync.RWMutex
 }
 
 // NewClient creates a new Client and verifies the configuration is valid.
@@ -51,7 +51,6 @@ func NewClient(config *Config) (*Client, error) {
 		adjustmentIndex:      0,
 		adjustmentSamples:    make([]float64, config.AdjustmentWindowSize),
 		latencyFilterSamples: make(map[string][]float64),
-		mutex:                &sync.RWMutex{},
 	}, nil
 }
 
