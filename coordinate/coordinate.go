@@ -156,11 +156,9 @@ func magnitude(vec []float64) float64 {
 	return math.Sqrt(sum)
 }
 
-// unitVectorAt returns a unit vector pointing at vec1 from vec2 (the way an
-// object positioned at vec1 would move if it was being repelled by an object at
-// vec2). If the two positions are the same then a random unit vector is returned.
-// We also return the distance between the points for use in the later height
-// calculation.
+// unitVectorAt returns a unit vector pointing at vec1 from vec2. If the two
+// positions are the same then a random unit vector is returned. We also return
+// the distance between the points for use in the later height calculation.
 func unitVectorAt(vec1 []float64, vec2 []float64) ([]float64, float64) {
 	ret := diff(vec1, vec2)
 

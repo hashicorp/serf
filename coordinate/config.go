@@ -48,6 +48,10 @@ type Config struct {
 	// but still keep the delay low, since our time to probe any given node is
 	// pretty infrequent. See [2] for more details.
 	LatencyFilterSize uint
+
+	// GravityRho is a tuning factor that sets how much gravity has an effect
+	// to try to re-center coordinates. See [2] for more details.
+	GravityRho float64
 }
 
 // DefaultConfig returns a Config that has some default values suitable for
@@ -61,5 +65,6 @@ func DefaultConfig() *Config {
 		AdjustmentWindowSize: 20,
 		HeightMin:            10.0e-6,
 		LatencyFilterSize:    3,
+		GravityRho:           150.0,
 	}
 }

@@ -16,6 +16,9 @@ type Client struct {
 	// coord is the current estimate of the client's network coordinate.
 	coord *Coordinate
 
+	// origin is a coordinate sitting at the origin.
+	origin *Coordinate
+
 	// config contains the tuning parameters that govern the performance of
 	// the algorithm.
 	config *Config
@@ -43,6 +46,7 @@ func NewClient(config *Config) (*Client, error) {
 
 	return &Client{
 		coord:                NewCoordinate(config),
+		origin:               NewCoordinate(config),
 		config:               config,
 		adjustmentIndex:      0,
 		adjustmentSamples:    make([]float64, config.AdjustmentWindowSize),
@@ -136,6 +140,15 @@ func (c *Client) updateAdjustment(other *Coordinate, rttSeconds float64) {
 	c.coord.Adjustment = sum / (2.0 * float64(c.config.AdjustmentWindowSize))
 }
 
+// updateGravity applies a small amount of gravity to pull coordinates towards
+// the center of the coordinate system to combat drift. This assumes that the
+// mutex is locked already.
+func (c *Client) updateGravity() {
+	dist := c.origin.DistanceTo(c.coord).Seconds()
+	force := -1.0 * math.Pow(dist / c.config.GravityRho, 2.0)
+	c.coord = c.coord.ApplyForce(c.config, force, c.origin)
+}
+
 // Update takes other, a coordinate for another node, and rtt, a round trip
 // time observation for a ping to that node, and updates the estimated position of
 // the client's coordinate.
@@ -146,6 +159,7 @@ func (c *Client) Update(node string, other *Coordinate, rtt time.Duration) {
 	rttSeconds := c.latencyFilter(node, rtt.Seconds())
 	c.updateVivaldi(other, rttSeconds)
 	c.updateAdjustment(other, rttSeconds)
+	c.updateGravity()
 }
 
 // DistanceTo returns the estimated RTT from the client's coordinate to other, the
