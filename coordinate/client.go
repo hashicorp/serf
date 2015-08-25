@@ -65,16 +65,16 @@ func (c *Client) GetCoordinate() *Coordinate {
 
 // SetCoordinate forces the client's coordinate to a known state.
 func (c *Client) SetCoordinate(coord *Coordinate) {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
 	c.coord = coord.Clone()
 }
 
 // ForgetNode removes any client state for the given node.
 func (c *Client) ForgetNode(node string) {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
 	delete(c.latencyFilterSamples, node)
 }
