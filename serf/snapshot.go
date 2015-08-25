@@ -178,7 +178,11 @@ func (s *Snapshotter) Leave() {
 // stream is a long running routine that is used to handle events
 func (s *Snapshotter) stream() {
 	clockTicker := time.NewTicker(clockUpdateInterval)
+	defer clockTicker.Stop()
+
 	coordinateTicker := time.NewTicker(coordinateUpdateInterval)
+	defer coordinateTicker.Stop()
+
 	for {
 		select {
 		case <-s.leaveCh:
