@@ -58,7 +58,7 @@ type Config struct {
 // basic testing of the algorithm, but not tuned to any particular type of cluster.
 func DefaultConfig() *Config {
 	return &Config{
-		Dimensionality:       4,
+		Dimensionality:       8,
 		VivaldiErrorMax:      1.5,
 		VivaldiCE:            0.25,
 		VivaldiCC:            0.25,
