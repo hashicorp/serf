@@ -135,26 +135,17 @@ func GenerateRandom(nodes int, mean time.Duration, deviation time.Duration) [][]
 	return truth
 }
 
-// SimCycleFn will get called for each cycle of Simulate to allow users to evaluate
-// the progress of the algorithm over time.
-type SimCycleFn func(cycle int, clients []*Client, truth [][]time.Duration)
-
 // Simulate runs the given number of cycles using the given list of clients and
 // truth matrix. On each cycle, each client will pick a random node and observe
-// the truth RTT, updating its coordinate estimate. An optional callback will be
-// called each cycle to evaluate process (this can be nil). The RNG is re-seeded
-// for each simulation run to get deterministic results (for this algorithm and
-// the underlying algorithm which will use random numbers for position vectors
-// when starting out with everything at the origin).
-func Simulate(clients []*Client, truth [][]time.Duration, cycles int, callback SimCycleFn) {
+// the truth RTT, updating its coordinate estimate. The RNG is re-seeded for
+// each simulation run to get deterministic results (for this algorithm and the
+// underlying algorithm which will use random numbers for position vectors when
+// starting out with everything at the origin).
+func Simulate(clients []*Client, truth [][]time.Duration, cycles int) {
 	rand.Seed(1)
 
 	nodes := len(clients)
 	for cycle := 0; cycle < cycles; cycle++ {
-		if callback != nil {
-			callback(cycle, clients, truth)
-		}
-
 		for i, _ := range clients {
 			if j := rand.Intn(nodes); j != i {
 				c := clients[j].GetCoordinate()
