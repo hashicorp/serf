@@ -90,7 +90,7 @@ func (c *Coordinate) ApplyForce(config *Config, force float64, other *Coordinate
 	unit, mag := unitVectorAt(c.Vec, other.Vec)
 	ret.Vec = add(ret.Vec, mul(unit, force))
 	if mag > zeroThreshold {
-		ret.Height = ret.Height + force*(ret.Height+other.Height)/mag
+		ret.Height = (ret.Height+other.Height)*force/mag + ret.Height
 		ret.Height = math.Max(ret.Height, config.HeightMin)
 	}
 	return ret
