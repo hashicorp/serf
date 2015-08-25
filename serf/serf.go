@@ -315,11 +315,9 @@ func Create(conf *Config) (*Serf, error) {
 
 	// Set up the coordinate cache. We do this after we read the snapshot to
 	// make sure we get a good initial value from there, if we got one.
-	if !conf.DisableCoordinates {
+	if (!conf.DisableCoordinates) && conf.CacheCoordinates {
 		serf.coordCache = make(map[string]*coordinate.Coordinate)
-		if conf.CacheCoordinates {
-			serf.coordCache[conf.NodeName] = serf.coordClient.GetCoordinate()
-		}
+		serf.coordCache[conf.NodeName] = serf.coordClient.GetCoordinate()
 	}
 
 	// Setup the various broadcast queues, which we use to send our own
