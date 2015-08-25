@@ -53,6 +53,12 @@ func TestClient_Update(t *testing.T) {
 	if !(c.Vec[2] < 0.0) {
 		t.Fatalf("client z coordinate %9.6f should be < 0.0", c.Vec[2])
 	}
+
+	// Set the coordinate to a known state.
+	c.Vec[2] = 99.0
+	client.SetCoordinate(c)
+	c = client.GetCoordinate()
+	verifyEqualFloats(t, c.Vec[2], 99.0)
 }
 
 func TestClient_DistanceTo(t *testing.T) {

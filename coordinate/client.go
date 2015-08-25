@@ -63,6 +63,14 @@ func (c *Client) GetCoordinate() *Coordinate {
 	return c.coord.Clone()
 }
 
+// SetCoordinate forces the client's coordinate to a known state.
+func (c *Client) SetCoordinate(coord *Coordinate) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	c.coord = coord.Clone()
+}
+
 // ForgetNode removes any client state for the given node.
 func (c *Client) ForgetNode(node string) {
 	c.mutex.RLock()
