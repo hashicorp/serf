@@ -279,15 +279,25 @@ func Create(conf *Config) (*Serf, error) {
 	}
 	conf.EventCh = outCh
 
+	// Set up network coordinate client.
+	if !conf.DisableCoordinates {
+		serf.coordClient, err = coordinate.NewClient(coordinate.DefaultConfig())
+		if err != nil {
+			return nil, fmt.Errorf("Failed to create coordinate client: %v", err)
+		}
+	}
+
 	// Try access the snapshot
 	var oldClock, oldEventClock, oldQueryClock LamportTime
 	var prev []*PreviousNode
 	if conf.SnapshotPath != "" {
-		eventCh, snap, err := NewSnapshotter(conf.SnapshotPath,
+		eventCh, snap, err := NewSnapshotter(
+			conf.SnapshotPath,
 			snapshotSizeLimit,
 			conf.RejoinAfterLeave,
 			serf.logger,
 			&serf.clock,
+			serf.coordClient,
 			conf.EventCh,
 			serf.shutdownCh)
 		if err != nil {
@@ -301,6 +311,15 @@ func Create(conf *Config) (*Serf, error) {
 		oldQueryClock = snap.LastQueryClock()
 		serf.eventMinTime = oldEventClock + 1
 		serf.queryMinTime = oldQueryClock + 1
+	}
+
+	// Set up the coordinate cache. We do this after we read the snapshot to
+	// make sure we get a good initial value from there, if we got one.
+	if !conf.DisableCoordinates {
+		serf.coordCache = make(map[string]*coordinate.Coordinate)
+		if conf.CacheCoordinates {
+			serf.coordCache[conf.NodeName] = serf.coordClient.GetCoordinate()
+		}
 	}
 
 	// Setup the various broadcast queues, which we use to send our own
@@ -354,14 +373,6 @@ func Create(conf *Config) (*Serf, error) {
 	conf.MemberlistConfig.ProtocolVersion = ProtocolVersionMap[conf.ProtocolVersion]
 	if !conf.DisableCoordinates {
 		conf.MemberlistConfig.Ping = &pingDelegate{serf: serf}
-		serf.coordClient, err = coordinate.NewClient(coordinate.DefaultConfig())
-		if err != nil {
-			return nil, fmt.Errorf("Failed to create coordinate client: %v", err)
-		}
-		serf.coordCache = make(map[string]*coordinate.Coordinate)
-		if conf.CacheCoordinates {
-			serf.coordCache[conf.NodeName] = serf.coordClient.GetCoordinate()
-		}
 	}
 
 	// Setup a merge delegate if necessary
