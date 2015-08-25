@@ -128,7 +128,7 @@ func TestPerformance_Drift(t *testing.T) {
 	for i := 0; i < nodes; i++ {
 		for j := i + 1; j < nodes; j++ {
 			rtt := dist
-			if (i % 2 == 0) && (j % 2 == 0) {
+			if (i%2 == 0) && (j%2 == 0) {
 				rtt = time.Duration(math.Sqrt2 * float64(rtt))
 			}
 			truth[i][j], truth[j][i] = rtt, rtt
@@ -147,7 +147,7 @@ func TestPerformance_Drift(t *testing.T) {
 
 		mid := make([]float64, config.Dimensionality)
 		for i, _ := range mid {
-			mid[i] = min.Vec[i] + (max.Vec[i] - min.Vec[i]) / 2
+			mid[i] = min.Vec[i] + (max.Vec[i]-min.Vec[i])/2
 		}
 		return magnitude(mid)
 	}
@@ -160,7 +160,7 @@ func TestPerformance_Drift(t *testing.T) {
 	// Now run for a bunch more cycles and see if gravity pulls the center
 	// in the right direction.
 	Simulate(clients, truth, 10000)
-	if error := calcCenterError(); error > 0.8 * baseline {
+	if error := calcCenterError(); error > 0.8*baseline {
 		t.Fatalf("drift performance out of spec: %9.6f -> %9.6f", baseline, error)
 	}
 }
