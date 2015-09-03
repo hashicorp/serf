@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/armon/go-metrics"
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/coordinate"
@@ -65,8 +66,14 @@ func (p *pingDelegate) NotifyPingComplete(other *memberlist.Node, rtt time.Durat
 
 	// Apply the update. Since this is a coordinate coming from some place
 	// else we harden this and look for dimensionality problems proactively.
-	if p.serf.coordClient.GetCoordinate().IsCompatibleWith(&coord) {
-		p.serf.coordClient.Update(other.Name, &coord, rtt)
+	before := p.serf.coordClient.GetCoordinate()
+	if before.IsCompatibleWith(&coord) {
+		after := p.serf.coordClient.Update(other.Name, &coord, rtt)
+
+		// Publish some metrics to give us an idea of how much we are
+		// adjusting each time we update.
+		d := float32(before.DistanceTo(after).Seconds() * 1.0e3)
+		metrics.AddSample([]string{"serf", "coordinate", "adjustment-ms"}, d)
 
 		// Cache the coordinate for the other node, and add our own
 		// to the cache as well since it just got updated. This lets

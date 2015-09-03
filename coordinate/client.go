@@ -158,8 +158,8 @@ func (c *Client) updateGravity() {
 
 // Update takes other, a coordinate for another node, and rtt, a round trip
 // time observation for a ping to that node, and updates the estimated position of
-// the client's coordinate.
-func (c *Client) Update(node string, other *Coordinate, rtt time.Duration) {
+// the client's coordinate. Returns the updated coordinate.
+func (c *Client) Update(node string, other *Coordinate, rtt time.Duration) *Coordinate {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -167,6 +167,7 @@ func (c *Client) Update(node string, other *Coordinate, rtt time.Duration) {
 	c.updateVivaldi(other, rttSeconds)
 	c.updateAdjustment(other, rttSeconds)
 	c.updateGravity()
+	return c.coord.Clone()
 }
 
 // DistanceTo returns the estimated RTT from the client's coordinate to other, the
