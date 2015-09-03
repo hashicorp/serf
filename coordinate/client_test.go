@@ -46,10 +46,9 @@ func TestClient_Update(t *testing.T) {
 	other := NewCoordinate(config)
 	other.Vec[2] = 0.001
 	rtt := time.Duration(2.0 * other.Vec[2] * secondsToNanoseconds)
-	client.Update("node", other, rtt)
+	c = client.Update("node", other, rtt)
 
 	// The client should have scooted down to get away from it.
-	c = client.GetCoordinate()
 	if !(c.Vec[2] < 0.0) {
 		t.Fatalf("client z coordinate %9.6f should be < 0.0", c.Vec[2])
 	}
