@@ -76,7 +76,7 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.Var((*AppendSliceValue)(&tags), "tag",
 		"tag pair, specified as key=value")
 	cmdFlags.StringVar(&cmdConfig.Discover, "discover", "", "mDNS discovery name")
-	cmdFlags.StringVar(&cmdConfig.SRVName, "srvname", "", "SRV record to lookup")
+	cmdFlags.StringVar(&cmdConfig.SRVRecords, "srvrecords", "", "SRV record to lookup")
 	cmdFlags.StringVar(&cmdConfig.Interface, "iface", "", "interface to bind to")
 	cmdFlags.StringVar(&cmdConfig.TagsFile, "tags-file", "", "tag persistence file")
 	cmdFlags.BoolVar(&cmdConfig.EnableSyslog, "syslog", false,
@@ -383,9 +383,9 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	bindAddr := &net.TCPAddr{IP: net.ParseIP(bindIP), Port: bindPort}
 
 	// Start the SRV lookup layer
-	if config.SRVName != "" {
+	if config.SRVRecords != "" {
 
-		_, err := NewAgentSRV(agent, logOutput, config.ReplayOnJoin, config.SRVName)
+		_, err := NewAgentSRV(agent, logOutput, config.ReplayOnJoin, config.SRVRecords)
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error starting SRV resolver: %s", err))
 			return nil
@@ -439,8 +439,8 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 		c.Ui.Info(fmt.Sprintf("  mDNS cluster: %s", config.Discover))
 	}
 
-	if config.SRVName != "" {
-		c.Ui.Info(fmt.Sprintf("  SRV record: %s", config.SRVName))
+	if config.SRVRecords != "" {
+		c.Ui.Info(fmt.Sprintf("  SRV record: %s", config.SRVRecords))
 	}
 
 	return ipc
@@ -753,7 +753,7 @@ Options:
                            can be reloaded during later agent starts. This option
                            is incompatible with the '-tag' option and requires there
                            be no tags in the agent configuration file, if given.
-  -srvname                 SRV record to discover peers
+  -srvrecords              SRV record(s) to discover peers. Accepts comma separated list.
   -syslog                  When provided, logs will also be sent to syslog.
 
 Event handlers:

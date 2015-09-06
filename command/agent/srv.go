@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -17,18 +18,18 @@ const (
 // And attempts to join the hosts supplied
 type AgentSRV struct {
 	agent   *Agent
-	srvname string
+	srvrecords string
 	logger  *log.Logger
 	replay  bool
 }
 
 // NewAgentSRV is used to create a new AgentSRV
-func NewAgentSRV(agent *Agent, logOutput io.Writer, replay bool, srvname string) (*AgentSRV, error) {
+func NewAgentSRV(agent *Agent, logOutput io.Writer, replay bool, srvrecords string) (*AgentSRV, error) {
 
 	// Initialize the AgentSRV
 	m := &AgentSRV{
 		agent:   agent,
-		srvname: srvname,
+		srvrecords: srvrecords,
 		logger:  log.New(logOutput, "", log.LstdFlags),
 		replay:  replay,
 	}
@@ -76,11 +77,15 @@ func (m *AgentSRV) run() {
 
 // poll is invoked periodically to check for new hosts
 func (m *AgentSRV) poll(hosts chan *net.SRV) {
-	_, results, err := net.LookupSRV("", "", m.srvname)
-	if err != nil {
-		m.logger.Printf("[ERR] agent.srv: Failed to poll for new hosts: %v", err)
-	}
-	for _, host := range results {
-		hosts <- host
+	for _, record := range strings.Split(m.srvrecords, ",") {
+		_, results, err := net.LookupSRV("", "", record)
+
+		if err != nil {
+			m.logger.Printf("[ERR] agent.srv: Failed to poll for new hosts: %v", err)
+		}
+
+		for _, host := range results {
+			hosts <- host
+		}
 	}
 }
