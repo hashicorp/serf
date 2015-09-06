@@ -134,9 +134,9 @@ type Config struct {
 
 	// SRVRecords is used look for other agents using DNS SRV records.
 	// When this is set, the agent will periodically look up the SRV record
-	// and attempt to add any hosts it finds. You may pass a comma separated
-	// list if you wish to check multiple records
-	SRVRecords string `mapstructure:"srvrecords"`
+	// and attempt to add any hosts it finds. You can specify multiple times
+	// to look up multiple SRV records.
+	SRVRecords []string `mapstructure:"srvrecord"`
 
 	// Interface is used to provide a binding interface to use. It can be
 	// used instead of providing a bind address, as Serf will discover the
@@ -386,7 +386,7 @@ func MergeConfig(a, b *Config) *Config {
 	if b.Discover != "" {
 		result.Discover = b.Discover
 	}
-	if b.SRVRecords != "" {
+	if len(b.SRVRecords) > 0 {
 		result.SRVRecords = b.SRVRecords
 	}
 	if b.Interface != "" {

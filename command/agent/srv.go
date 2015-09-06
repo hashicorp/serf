@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"net"
-	"strings"
 	"time"
 )
 
@@ -17,21 +16,21 @@ const (
 // AgentSRV periodically polls an SRV record
 // And attempts to join the hosts supplied
 type AgentSRV struct {
-	agent   *Agent
-	srvrecords string
-	logger  *log.Logger
-	replay  bool
+	agent      *Agent
+	srvrecords []string
+	logger     *log.Logger
+	replay     bool
 }
 
 // NewAgentSRV is used to create a new AgentSRV
-func NewAgentSRV(agent *Agent, logOutput io.Writer, replay bool, srvrecords string) (*AgentSRV, error) {
+func NewAgentSRV(agent *Agent, logOutput io.Writer, replay bool, srvrecords []string) (*AgentSRV, error) {
 
 	// Initialize the AgentSRV
 	m := &AgentSRV{
-		agent:   agent,
+		agent:      agent,
 		srvrecords: srvrecords,
-		logger:  log.New(logOutput, "", log.LstdFlags),
-		replay:  replay,
+		logger:     log.New(logOutput, "", log.LstdFlags),
+		replay:     replay,
 	}
 
 	// Start the background workers
@@ -77,7 +76,7 @@ func (m *AgentSRV) run() {
 
 // poll is invoked periodically to check for new hosts
 func (m *AgentSRV) poll(hosts chan *net.SRV) {
-	for _, record := range strings.Split(m.srvrecords, ",") {
+	for _, record := range m.srvrecords {
 		_, results, err := net.LookupSRV("", "", record)
 
 		if err != nil {
