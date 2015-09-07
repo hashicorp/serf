@@ -13,6 +13,7 @@ const (
 const (
 	handshakeCommand       = "handshake"
 	eventCommand           = "event"
+	getConfigCommand       = "getconfig"
 	forceLeaveCommand      = "force-leave"
 	joinCommand            = "join"
 	membersCommand         = "members"
