@@ -365,6 +365,18 @@ func (c *RPCClient) Stats() (map[string]map[string]string, error) {
 	return resp, err
 }
 
+// Stats is used to get the running config data
+func (c *RPCClient) GetConfig() (string, error) {
+	header := requestHeader{
+		Command: getConfigCommand,
+		Seq:     c.getSeq(),
+	}
+	var resp string
+
+	err := c.genericRPC(&header, nil, &resp)
+	return resp, err
+}
+
 type monitorHandler struct {
 	client *RPCClient
 	closed bool

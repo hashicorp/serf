@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -428,4 +429,32 @@ func (a *Agent) Stats() map[string]map[string]string {
 		"tags":    local.Tags,
 	}
 	return output
+}
+
+func (a *Agent) GetConfig() string {
+	a.logger.Printf("[INFO] agent: Dumping config")
+
+	var configCopy *Config
+
+	config_data, _ := json.Marshal(*a.agentConf)
+
+	// Here we unmarshal the data we just dumped
+	// As a hack to copy the agent config
+	// So that we can redact any sensitive data here
+	_ = json.Unmarshal(config_data, &configCopy)
+
+	// Redact sensitive data on our copy of the config
+	configCopy.EncryptKey = Redact(configCopy.EncryptKey)
+	configCopy.KeyringFile = Redact(configCopy.KeyringFile)
+
+	// Now we marshall it again, this time prettier
+	json_config, _ := json.MarshalIndent(configCopy, "", "    ")
+
+	return string(json_config)
+}
+
+func Redact(data string) string {
+	h := sha256.New()
+	io.WriteString(h, data)
+	return fmt.Sprintf("%x", h.Sum(nil))
 }

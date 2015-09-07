@@ -47,6 +47,7 @@ const (
 const (
 	handshakeCommand       = "handshake"
 	eventCommand           = "event"
+	getConfigCommand       = "getconfig"
 	forceLeaveCommand      = "force-leave"
 	joinCommand            = "join"
 	membersCommand         = "members"
@@ -476,6 +477,9 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 	case eventCommand:
 		return i.handleEvent(client, seq)
 
+	case getConfigCommand:
+		return i.handleGetConfig(client, seq)
+
 	case membersCommand, membersFilteredCommand:
 		return i.handleMembers(client, command, seq)
 
@@ -568,6 +572,19 @@ func (i *AgentIPC) handleAuth(client *IPCClient, seq uint64) error {
 		resp.Error = invalidAuthToken
 	}
 	return client.Send(&resp, nil)
+}
+
+func (i *AgentIPC) handleGetConfig(client *IPCClient, seq uint64) error {
+
+	// Attempt the send
+	resp := i.agent.GetConfig()
+
+	// Respond
+	header := responseHeader{
+		Seq:   seq,
+		Error: "",
+	}
+	return client.Send(&header, resp)
 }
 
 func (i *AgentIPC) handleEvent(client *IPCClient, seq uint64) error {

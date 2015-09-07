@@ -22,6 +22,12 @@ func init() {
 			}, nil
 		},
 
+		"getconfig": func() (cli.Command, error) {
+			return &command.GetConfigCommand{
+				Ui: ui,
+			}, nil
+		},
+
 		"event": func() (cli.Command, error) {
 			return &command.EventCommand{
 				Ui: ui,
