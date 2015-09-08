@@ -419,13 +419,22 @@ func (a *Agent) loadKeyringFile(keyringFile string) error {
 // Stats is used to get various runtime information and stats
 func (a *Agent) Stats() map[string]map[string]string {
 	local := a.serf.LocalMember()
+	handlers := make(map[string]string)
+
+	// Convert event handlres from a string slice to a string map
+	for _, handler := range a.agentConf.EventHandlers {
+		tokens := strings.SplitN(handler, "=", 2)
+		handlers[tokens[0]] = tokens[1]
+	}
+
 	output := map[string]map[string]string{
 		"agent": map[string]string{
 			"name": local.Name,
 		},
-		"runtime": runtimeStats(),
-		"serf":    a.serf.Stats(),
-		"tags":    local.Tags,
+		"runtime":        runtimeStats(),
+		"serf":           a.serf.Stats(),
+		"tags":           local.Tags,
+		"event_handlers": handlers,
 	}
 	return output
 }
