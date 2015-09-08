@@ -420,11 +420,10 @@ func (a *Agent) loadKeyringFile(keyringFile string) error {
 func (a *Agent) Stats() map[string]map[string]string {
 	local := a.serf.LocalMember()
 	event_handlers := make(map[string]string)
-	var script_filter string
 
-	// Convert event handlres from a string slice to a string map
+	// Convert event handlers from a string slice to a string map
 	for _, script := range a.agentConf.EventScripts() {
-		script_filter = fmt.Sprintf("%s:%s", script.EventFilter.Event, script.EventFilter.Name)
+		script_filter := fmt.Sprintf("%s:%s", script.EventFilter.Event, script.EventFilter.Name)
 		event_handlers[script_filter] = script.Script
 	}
 
