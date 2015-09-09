@@ -754,7 +754,7 @@ Options:
                            can be reloaded during later agent starts. This option
                            is incompatible with the '-tag' option and requires there
                            be no tags in the agent configuration file, if given.
-  -srvrecord               SRV record to discover peers. Can be specified multiple times
+  -srvrecord               SRV record to discover peers. Can be specified multiple times.
   -syslog                  When provided, logs will also be sent to syslog.
 
 Event handlers:

@@ -9,8 +9,7 @@ import (
 )
 
 const (
-	srvPollInterval  = 60 * time.Second
-	srvQuietInterval = 100 * time.Millisecond
+	srvPollInterval = 60 * time.Second
 )
 
 // AgentSRV periodically polls an SRV record
@@ -33,58 +32,46 @@ func NewAgentSRV(agent *Agent, logOutput io.Writer, replay bool, srvrecords []st
 		replay:     replay,
 	}
 
-	// Start the background workers
+	// Start the poller in the background
 	go m.run()
 	return m, nil
 }
 
 // run is a long running goroutine that scans for new hosts periodically
 func (m *AgentSRV) run() {
-	hosts := make(chan *net.SRV)
-	poll := time.After(0)
-	var quiet <-chan time.Time
-	var join []string
 
 	for {
-		select {
-		case h := <-hosts:
-			// Format the host address
-			addr := fmt.Sprintf("%s:%d", h.Target, h.Port)
+		// Format the host address
+		records := m.querySRV()
 
-			// Queue for handling
-			join = append(join, addr)
-			quiet = time.After(srvQuietInterval)
+		n, err := m.agent.Join(records, m.replay)
 
-		case <-quiet:
-			// Attempt the join
-			n, err := m.agent.Join(join, m.replay)
-			if err != nil {
-				m.logger.Printf("[ERR] agent.srv: Failed to join: %v", err)
-			}
-			if n > 0 {
-				m.logger.Printf("[INFO] agent.srv: Joined %d hosts", n)
-			}
-
-			join = nil
-
-		case <-poll:
-			poll = time.After(srvPollInterval)
-			go m.poll(hosts)
+		// Attempt the join
+		if err != nil {
+			m.logger.Printf("[ERR] agent.srv: Failed to join: %v", err)
 		}
+		if n > 0 {
+			m.logger.Printf("[INFO] agent.srv: Joined %d hosts", n)
+		}
+
+		time.Sleep(srvPollInterval)
 	}
 }
 
-// poll is invoked periodically to check for new hosts
-func (m *AgentSRV) poll(hosts chan *net.SRV) {
+// querySRV looks up the SRV records and returns a slice of all SRV records
+func (m *AgentSRV) querySRV() []string {
+	var hosts []string
 	for _, record := range m.srvrecords {
-		_, results, err := net.LookupSRV("", "", record)
+		_, srvhosts, err := net.LookupSRV("", "", record)
 
 		if err != nil {
 			m.logger.Printf("[ERR] agent.srv: Failed to poll for new hosts: %v", err)
 		}
 
-		for _, host := range results {
-			hosts <- host
+		for _, host := range srvhosts {
+			addr := fmt.Sprintf("%s:%d", host.Target, host.Port)
+			hosts = append(hosts, addr)
 		}
 	}
+	return hosts
 }
