@@ -10,6 +10,7 @@ import (
 
 const (
 	srvPollInterval = 60 * time.Second
+	srvFindTimeout  = srvPollInterval / 2
 )
 
 // AgentSRV periodically polls an SRV record
@@ -41,21 +42,27 @@ func NewAgentSRV(agent *Agent, logOutput io.Writer, replay bool, srvrecords []st
 func (m *AgentSRV) run() {
 
 	for {
-		// Format the host address
-		records := m.findSRV()
+		// Set up a channel and select so we can timeout if findSRV takes too long
+		// set channel to 1 so that goroutines can't pile-up
+		c := make(chan []string, 1)
+		go func() { c <- m.findSRV() }()
+		select {
+		case records := <-c:
+			// Attempt the join only if there are new records
+			if len(records) > 0 {
+				n, err := m.agent.Join(records, m.replay)
 
-		// Attempt the join only if there are new records
-		if len(records) > 0 {
-			n, err := m.agent.Join(records, m.replay)
-
-			if err != nil {
-				m.logger.Printf("[ERR] agent.srv: Failed to join: %v", err)
+				if err != nil {
+					m.logger.Printf("[ERR] agent.srv: Failed to join: %v", err)
+				}
+				if n > 0 {
+					m.logger.Printf("[INFO] agent.srv: Joined %d hosts", n)
+				}
 			}
-			if n > 0 {
-				m.logger.Printf("[INFO] agent.srv: Joined %d hosts", n)
-			}
+		// Report the timeout
+		case <-time.After(srvFindTimeout):
+			m.logger.Printf("[ERR] agent.srv: findSRV timed out")
 		}
-
 		// Sleep until it's time to poll again
 		time.Sleep(srvPollInterval)
 	}
