@@ -76,8 +76,10 @@ func (m *AgentSRV) findSRV() []string {
 	// map the members so that we only do a single O(n) search through members
 	known_members := make(map[string]bool)
 	for _, v := range m.agent.Serf().Members() {
-		member := fmt.Sprintf("%s:%d", v.Addr.String(), v.Port)
-		known_members[member] = true
+		if v.Status.String() == "alive" {
+			member := fmt.Sprintf("%s:%d", v.Addr.String(), v.Port)
+			known_members[member] = true
+		}
 	}
 
 	// Look up each SRV record and check if it's already in the cluster
