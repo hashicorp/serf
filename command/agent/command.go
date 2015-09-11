@@ -78,6 +78,8 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.StringVar(&cmdConfig.Discover, "discover", "", "mDNS discovery name")
 	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.SRVRecords), "srvrecord",
 		"SRV record to lookup")
+	cmdFlags.BoolVar(&cmdConfig.RetrySRV, "retry-srv", false,
+		"poll the SRV record for changes and keep trying to join")
 	cmdFlags.StringVar(&cmdConfig.Interface, "iface", "", "interface to bind to")
 	cmdFlags.StringVar(&cmdConfig.TagsFile, "tags-file", "", "tag persistence file")
 	cmdFlags.BoolVar(&cmdConfig.EnableSyslog, "syslog", false,
@@ -386,7 +388,7 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	// Start the SRV lookup layer
 	if len(config.SRVRecords) > 0 {
 
-		_, err := NewAgentSRV(agent, logOutput, config.ReplayOnJoin, config.SRVRecords)
+		_, err := NewAgentSRV(agent, logOutput, config.ReplayOnJoin, config.SRVRecords, config.RetrySRV)
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error starting SRV resolver: %s", err))
 			return nil
@@ -755,6 +757,8 @@ Options:
                            is incompatible with the '-tag' option and requires there
                            be no tags in the agent configuration file, if given.
   -srvrecord               SRV record to discover peers. Can be specified multiple times.
+  -retry-srv               When provided, continuously try to join SRV hosts
+                           that are not already members of the cluster.
   -syslog                  When provided, logs will also be sent to syslog.
 
 Event handlers:

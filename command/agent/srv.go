@@ -6,11 +6,12 @@ import (
 	"log"
 	"net"
 	"time"
+
+	"github.com/hashicorp/serf/serf"
 )
 
 const (
 	srvPollInterval = 60 * time.Second
-	srvFindTimeout  = srvPollInterval / 2
 )
 
 // AgentSRV periodically polls an SRV record
@@ -20,10 +21,11 @@ type AgentSRV struct {
 	srvrecords []string
 	logger     *log.Logger
 	replay     bool
+	retry      bool
 }
 
 // NewAgentSRV is used to create a new AgentSRV
-func NewAgentSRV(agent *Agent, logOutput io.Writer, replay bool, srvrecords []string) (*AgentSRV, error) {
+func NewAgentSRV(agent *Agent, logOutput io.Writer, replay bool, srvrecords []string, retry bool) (*AgentSRV, error) {
 
 	// Initialize the AgentSRV
 	m := &AgentSRV{
@@ -31,40 +33,44 @@ func NewAgentSRV(agent *Agent, logOutput io.Writer, replay bool, srvrecords []st
 		srvrecords: srvrecords,
 		logger:     log.New(logOutput, "", log.LstdFlags),
 		replay:     replay,
+		retry:      retry,
 	}
 
-	// Start the poller in the background
-	go m.run()
+	if m.retry {
+		// Start the poller in the background
+		m.logger.Printf("[INFO] Starting SRV background poller.")
+		go m.poll()
+	} else {
+		m.logger.Printf("[INFO] Starting SRV for one-shot join.")
+		// A one-shot attempt to try to join the cluster via SRV
+		go m.joinSRV()
+	}
 	return m, nil
 }
 
 // run is a long running goroutine that scans for new hosts periodically
-func (m *AgentSRV) run() {
+func (m *AgentSRV) poll() {
 
 	for {
-		// Set up a channel and select so we can timeout if findSRV takes too long
-		// set channel to 1 so that goroutines can't pile-up
-		c := make(chan []string, 1)
-		go func() { c <- m.findSRV() }()
-		select {
-		case records := <-c:
-			// Attempt the join only if there are new records
-			if len(records) > 0 {
-				n, err := m.agent.Join(records, m.replay)
-
-				if err != nil {
-					m.logger.Printf("[ERR] agent.srv: Failed to join: %v", err)
-				}
-				if n > 0 {
-					m.logger.Printf("[INFO] agent.srv: Joined %d hosts", n)
-				}
-			}
-		// Report the timeout
-		case <-time.After(srvFindTimeout):
-			m.logger.Printf("[ERR] agent.srv: findSRV timed out")
-		}
+		m.joinSRV()
 		// Sleep until it's time to poll again
 		time.Sleep(srvPollInterval)
+	}
+}
+
+// Attempt to any hosts in the SRV record not already in the cluster
+func (m *AgentSRV) joinSRV() {
+	records := m.findSRV()
+	// Attempt the join only if there are new records
+	if len(records) > 0 {
+		n, err := m.agent.Join(records, m.replay)
+
+		if err != nil {
+			m.logger.Printf("[ERR] agent.srv: Failed to join: %v", err)
+		}
+		if n > 0 {
+			m.logger.Printf("[INFO] agent.srv: Joined %d hosts", n)
+		}
 	}
 }
 
@@ -76,7 +82,7 @@ func (m *AgentSRV) findSRV() []string {
 	// map the members so that we only do a single O(n) search through members
 	known_members := make(map[string]bool)
 	for _, v := range m.agent.Serf().Members() {
-		if v.Status.String() == "alive" {
+		if v.Status.String() == serf.SerfAlive.String() {
 			member := fmt.Sprintf("%s:%d", v.Addr.String(), v.Port)
 			known_members[member] = true
 		}

@@ -138,6 +138,10 @@ type Config struct {
 	// to look up multiple SRV records.
 	SRVRecords []string `mapstructure:"srvrecord"`
 
+	// If set, continuously poll the SRV records supplied to try and join
+	// all hosts that are not already members of the cluster.
+	RetrySRV bool `mapstructure:"retry-srv"`
+
 	// Interface is used to provide a binding interface to use. It can be
 	// used instead of providing a bind address, as Serf will discover the
 	// address of the provided interface. It is also used to set the multicast
@@ -388,6 +392,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if len(b.SRVRecords) > 0 {
 		result.SRVRecords = b.SRVRecords
+	}
+	if b.RetrySRV {
+		result.RetrySRV = true
 	}
 	if b.Interface != "" {
 		result.Interface = b.Interface
