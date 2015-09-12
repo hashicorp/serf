@@ -133,14 +133,13 @@ type Config struct {
 	Discover string `mapstructure:"discover"`
 
 	// SRVRecords is used look for other agents using DNS SRV records.
-	// When this is set, the agent will periodically look up the SRV record
+	// When this is set, the agent will look up the SRV record
 	// and attempt to add any hosts it finds. You can specify multiple times
 	// to look up multiple SRV records.
-	SRVRecords []string `mapstructure:"srvrecord"`
+	JoinSRV []string `mapstructure:"join-srv"`
 
-	// If set, continuously poll the SRV records supplied to try and join
-	// all hosts that are not already members of the cluster.
-	RetrySRV bool `mapstructure:"retry-srv"`
+	// Exactly like join-srv, only keep trying until a successful join happens.
+	RetryJoinSRV []string `mapstructure:"retry-join-srv"`
 
 	// Interface is used to provide a binding interface to use. It can be
 	// used instead of providing a bind address, as Serf will discover the
@@ -390,11 +389,11 @@ func MergeConfig(a, b *Config) *Config {
 	if b.Discover != "" {
 		result.Discover = b.Discover
 	}
-	if len(b.SRVRecords) > 0 {
-		result.SRVRecords = b.SRVRecords
+	if len(b.JoinSRV) > 0 {
+		result.JoinSRV = b.JoinSRV
 	}
-	if b.RetrySRV {
-		result.RetrySRV = true
+	if len(b.RetryJoinSRV) > 0 {
+		result.RetryJoinSRV = b.RetryJoinSRV
 	}
 	if b.Interface != "" {
 		result.Interface = b.Interface

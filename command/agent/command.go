@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -76,10 +77,10 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.Var((*AppendSliceValue)(&tags), "tag",
 		"tag pair, specified as key=value")
 	cmdFlags.StringVar(&cmdConfig.Discover, "discover", "", "mDNS discovery name")
-	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.SRVRecords), "srvrecord",
-		"SRV record to lookup")
-	cmdFlags.BoolVar(&cmdConfig.RetrySRV, "retry-srv", false,
-		"poll the SRV record for changes and keep trying to join")
+	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.JoinSRV), "join-srv",
+		"SRV record to join on startup")
+	cmdFlags.Var((*AppendSliceValue)(&cmdConfig.RetryJoinSRV), "retry-join-srv",
+		"SRV record to join on startup with retry")
 	cmdFlags.StringVar(&cmdConfig.Interface, "iface", "", "interface to bind to")
 	cmdFlags.StringVar(&cmdConfig.TagsFile, "tags-file", "", "tag persistence file")
 	cmdFlags.BoolVar(&cmdConfig.EnableSyslog, "syslog", false,
@@ -385,16 +386,6 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	bindIP, bindPort, err := config.AddrParts(config.BindAddr)
 	bindAddr := &net.TCPAddr{IP: net.ParseIP(bindIP), Port: bindPort}
 
-	// Start the SRV lookup layer
-	if len(config.SRVRecords) > 0 {
-
-		_, err := NewAgentSRV(agent, logOutput, config.ReplayOnJoin, config.SRVRecords, config.RetrySRV)
-		if err != nil {
-			c.Ui.Error(fmt.Sprintf("Error starting SRV resolver: %s", err))
-			return nil
-		}
-	}
-
 	// Start the discovery layer
 	if config.Discover != "" {
 		// Use the advertise addr and port
@@ -442,11 +433,126 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 		c.Ui.Info(fmt.Sprintf("  mDNS cluster: %s", config.Discover))
 	}
 
-	if len(config.SRVRecords) > 0 {
-		c.Ui.Info(fmt.Sprintf("  SRV records: %s", strings.Join(config.SRVRecords, ", ")))
+	return ipc
+}
+
+// startupJoin is invoked to handle any joins specified to take place at start time
+func (c *Command) startupJoinSRV(config *Config, agent *Agent) error {
+	if len(config.JoinSRV) == 0 {
+		return nil
 	}
 
-	return ipc
+	c.Ui.Output(fmt.Sprintf("Joining cluster via SRV...(replay: %v)", config.ReplayOnJoin))
+	n, err := c.joinSRV(agent, config.ReplayOnJoin, config.JoinSRV)
+	if err != nil {
+		return err
+	}
+
+	if n == 0 {
+		return errors.New("Failed to join any hosts via SRV")
+	}
+
+	c.Ui.Info(fmt.Sprintf("Join completed. Synced with %d initial agents", n))
+	return nil
+
+}
+
+// retryJoinSRV is invoked to handle joins with retries. This runs until at least a
+// single successful join or RetryMaxAttempts is reached
+func (c *Command) retryJoinSRV(config *Config, agent *Agent, errCh chan struct{}) {
+	// Quit fast if there is no nodes to join
+	if len(config.RetryJoinSRV) == 0 {
+		return
+	}
+
+	// Track the number of join attempts
+	attempt := 0
+	for {
+		// Try to perform the join
+		n, err := c.joinSRV(agent, config.ReplayOnJoin, config.RetryJoinSRV)
+
+		if err != nil {
+			c.logger.Printf("[ERR] agent: Failed to join via SRV: %v", err)
+		}
+
+		if err == nil && n > 0 {
+			c.logger.Printf("[INFO] agent: Join completed. Synced with %d initial agents", n)
+		}
+
+		// Check if the maximum attempts has been exceeded
+		attempt++
+		if config.RetryMaxAttempts > 0 && attempt > config.RetryMaxAttempts {
+			c.logger.Printf("[ERR] agent: maximum retry SRV join attempts made, exiting")
+			close(errCh)
+			return
+		}
+
+		c.logger.Printf("[INFO] agent: Will check SRV again in %v", config.RetryInterval)
+		time.Sleep(config.RetryInterval)
+	}
+}
+
+func (c *Command) joinSRV(agent *Agent, replay bool, srvrecords []string) (int, error) {
+	records := c.findSRV(agent, srvrecords)
+	// Attempt the join only if there are new records
+	if len(records) > 0 {
+		n, err := agent.Join(records, replay)
+
+		if err != nil {
+			return n, err
+		}
+
+		if n > 0 {
+			c.logger.Printf("[INFO] agent: Joined %d hosts via SRV", n)
+		}
+
+	}
+	return 0, nil
+}
+
+// findSRV looks up the SRV records and returns a slice of all SRV records
+// that are not currently cluster members
+func (c *Command) findSRV(agent *Agent, srvrecords []string) []string {
+	var hosts []string
+
+	// map the members so that we only do a single O(n) search through members
+	known_members := make(map[string]bool)
+	for _, v := range agent.Serf().Members() {
+		if v.Status.String() == serf.SerfAlive.String() {
+			member := fmt.Sprintf("%s:%d", v.Addr.String(), v.Port)
+			known_members[member] = true
+		}
+	}
+
+	// Look up each SRV record and check if it's already in the cluster
+	for _, record := range srvrecords {
+		_, srvhosts, err := net.LookupSRV("", "", record)
+
+		if err != nil {
+			c.logger.Printf("[ERR] agent: Failed to poll for new SRV hosts: %v", err)
+		}
+
+		// Filter each hosts in the SRV record
+		for _, host := range srvhosts {
+			// Find its addresses, as it's the only unique ID we can rely on
+			ipaddrs, err := net.LookupIP(host.Target)
+
+			if err != nil {
+				c.logger.Printf("[ERR] agent: resolve SRV record %s to IP %v", host.Target, err)
+			}
+
+			// For each address the host has, check if it's already in the cluster
+			for _, ipaddr := range ipaddrs {
+				addr := fmt.Sprintf("%s:%d", ipaddr.String(), host.Port)
+				if _, known := known_members[addr]; !known {
+					// If the host is not already in the cluster,
+					// Add it to the list of hosts to try to join
+					hosts = append(hosts, addr)
+				}
+			}
+		}
+	}
+	return hosts
 }
 
 // startupJoin is invoked to handle any joins specified to take place at start time
@@ -578,6 +684,11 @@ func (c *Command) Run(args []string) int {
 		return 1
 	}
 
+	if err := c.startupJoinSRV(config, agent); err != nil {
+		c.Ui.Error(err.Error())
+		return 1
+	}
+
 	// Enable log streaming
 	c.Ui.Info("")
 	c.Ui.Output("Log data will now stream in as it occurs:\n")
@@ -586,6 +697,7 @@ func (c *Command) Run(args []string) int {
 	// Start the retry joins
 	retryJoinCh := make(chan struct{})
 	go c.retryJoin(config, agent, retryJoinCh)
+	go c.retryJoinSRV(config, agent, retryJoinCh)
 
 	// Wait for exit
 	return c.handleSignals(config, agent, retryJoinCh)
@@ -739,7 +851,9 @@ Options:
   -retry-join=addr         An agent to join with. This flag be specified multiple times.
                            Does not exit on failure like -join, used to retry until success.
   -retry-interval=30s      Sets the interval on which a node will attempt to retry joining
-                           nodes provided by -retry-join. Defaults to 30s.
+                           nodes provided by -retry-join or -retry-join-srv. Defaults to 30s.
+  -join-srv=record         SRV record to discover peers. Can be specified multiple times.
+  -retry-join-srv=record   Like join-srv, but retry on failure.
   -retry-max=0             Limits the number of retry events. Defaults to 0 for unlimited.
   -role=foo                The role of this node, if any. This can be used
                            by event scripts to differentiate different types
@@ -756,9 +870,6 @@ Options:
                            can be reloaded during later agent starts. This option
                            is incompatible with the '-tag' option and requires there
                            be no tags in the agent configuration file, if given.
-  -srvrecord               SRV record to discover peers. Can be specified multiple times.
-  -retry-srv               When provided, continuously try to join SRV hosts
-                           that are not already members of the cluster.
   -syslog                  When provided, logs will also be sent to syslog.
 
 Event handlers:
