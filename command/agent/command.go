@@ -477,6 +477,7 @@ func (c *Command) retryJoinSRV(config *Config, agent *Agent, errCh chan struct{}
 
 		if err == nil && n > 0 {
 			c.logger.Printf("[INFO] agent: Join completed. Synced with %d initial agents", n)
+			return
 		}
 
 		// Check if the maximum attempts has been exceeded
@@ -505,19 +506,9 @@ func (c *Command) joinSRV(agent *Agent, replay bool, srvrecords []string) (int, 
 
 }
 
-// findSRV looks up the SRV records and returns a slice of all SRV records
-// that are not currently cluster members
+// findSRV looks up the SRV records and returns a slice of all hosts in the records
 func (c *Command) findSRV(agent *Agent, srvrecords []string) []string {
 	var hosts []string
-
-	// map the members so that we only do a single O(n) search through members
-	known_members := make(map[string]bool)
-	for _, v := range agent.Serf().Members() {
-		if v.Status.String() == serf.SerfAlive.String() {
-			member := fmt.Sprintf("%s:%d", v.Addr.String(), v.Port)
-			known_members[member] = true
-		}
-	}
 
 	// Look up each SRV record and check if it's already in the cluster
 	for _, record := range srvrecords {
@@ -528,24 +519,10 @@ func (c *Command) findSRV(agent *Agent, srvrecords []string) []string {
 			continue
 		}
 
-		// Filter each hosts in the SRV record
+		// Add the hosts from the SRV record
 		for _, host := range srvhosts {
-			// Find its addresses, as it's the only unique ID we can rely on
-			ipaddrs, err := net.LookupIP(host.Target)
-
-			if err != nil {
-				c.logger.Printf("[ERR] agent: resolve SRV record %s to IP %v", host.Target, err)
-			}
-
-			// For each address the host has, check if it's already in the cluster
-			for _, ipaddr := range ipaddrs {
-				addr := fmt.Sprintf("%s:%d", ipaddr.String(), host.Port)
-				if _, known := known_members[addr]; !known {
-					// If the host is not already in the cluster,
-					// Add it to the list of hosts to try to join
-					hosts = append(hosts, addr)
-				}
-			}
+			addr := fmt.Sprintf("%s:%d", host.Target, host.Port)
+			hosts = append(hosts, addr)
 		}
 	}
 	return hosts
