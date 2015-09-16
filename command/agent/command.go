@@ -497,7 +497,7 @@ func (c *Command) joinSRV(agent *Agent, replay bool, srvrecords []string) (int, 
 	records := c.findSRV(agent, srvrecords)
 	// Attempt the join only if there are new records
 	if len(records) == 0 {
-		return 0, nil
+		return 0, errors.New("No hosts found in SRV record")
 	}
 
 	n, err := agent.Join(records, replay)
