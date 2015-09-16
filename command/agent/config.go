@@ -136,10 +136,10 @@ type Config struct {
 	// When this is set, the agent will look up the SRV record
 	// and attempt to add any hosts it finds. You can specify multiple times
 	// to look up multiple SRV records.
-	JoinSRV []string `mapstructure:"join-srv"`
+	JoinSRV []string `mapstructure:"join_srv"`
 
 	// Exactly like join-srv, only keep trying until a successful join happens.
-	RetryJoinSRV []string `mapstructure:"retry-join-srv"`
+	RetryJoinSRV []string `mapstructure:"retry_join_srv"`
 
 	// Interface is used to provide a binding interface to use. It can be
 	// used instead of providing a bind address, as Serf will discover the

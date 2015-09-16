@@ -436,7 +436,7 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	return ipc
 }
 
-// startupJoin is invoked to handle any joins specified to take place at start time
+// startupJoinSRV attempts to join a cluster provided by SRV records
 func (c *Command) startupJoinSRV(config *Config, agent *Agent) error {
 	if len(config.JoinSRV) == 0 {
 		return nil
@@ -495,19 +495,14 @@ func (c *Command) retryJoinSRV(config *Config, agent *Agent, errCh chan struct{}
 func (c *Command) joinSRV(agent *Agent, replay bool, srvrecords []string) (int, error) {
 	records := c.findSRV(agent, srvrecords)
 	// Attempt the join only if there are new records
-	if len(records) > 0 {
-		n, err := agent.Join(records, replay)
-
-		if err != nil {
-			return n, err
-		}
-
-		if n > 0 {
-			c.logger.Printf("[INFO] agent: Joined %d hosts via SRV", n)
-		}
-
+	if len(records) == 0 {
+		return 0, nil
 	}
-	return 0, nil
+
+	n, err := agent.Join(records, replay)
+
+	return n, err
+
 }
 
 // findSRV looks up the SRV records and returns a slice of all SRV records
@@ -529,7 +524,8 @@ func (c *Command) findSRV(agent *Agent, srvrecords []string) []string {
 		_, srvhosts, err := net.LookupSRV("", "", record)
 
 		if err != nil {
-			c.logger.Printf("[ERR] agent: Failed to poll for new SRV hosts: %v", err)
+			c.logger.Printf("[ERR] agent: Failed to poll %s for new SRV hosts: %v", record, err)
+			continue
 		}
 
 		// Filter each hosts in the SRV record
