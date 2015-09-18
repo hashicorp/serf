@@ -130,7 +130,7 @@ The options below are all specified on the command-line.
   the join every `-retry-interval` up to `-retry-max` attempts. This can be used
   instead of `-join` to continue attempting to join the cluster.
 
-* `-retry-interval` - Provides a duration string to control how after the
+* `-retry-interval` - Provides a duration string to control how often the
   retry join is performed. By default, the join is attempted every 30 seconds
   until success. This should use the "s" suffix for second, "m" for minute,
   or "h" for hour.
