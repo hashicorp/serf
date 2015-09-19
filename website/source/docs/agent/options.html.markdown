@@ -37,6 +37,7 @@ The options below are all specified on the command-line.
   "7946" will be used. An important compatibility note, protocol version 2
   introduces support for non-consistent ports across the cluster. For more information,
   see the [compatibility page](/docs/compatibility.html).
+  Note: To use an IPv6 address, specify "[::1]" or "[::1]:7946.
 
 * `-iface` - This flag can be used to provide a binding interface. It can be
   used instead of `-bind` if the interface is known but not the address. If both
