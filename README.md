@@ -105,7 +105,7 @@ $ bin/serf
 ...
 ```
 
-*note: `make` will also place a copy of the binary in the first part of your $GOPATH*
+*note: `make` will also place a copy of the executable under $GOPATH/bin*
 
 You can run tests by typing `make test`.
 
