@@ -92,7 +92,8 @@ http://www.serfdom.io/docs
 ## Developing Serf
 
 If you wish to work on Serf itself, you'll first need [Go](http://golang.org)
-installed (version 1.2+ is _required_). Make sure you have Go properly installed,
+installed (version 1.2+ is _required_). Make sure you have Go properly 
+[installed](https://golang.org/doc/install),
 including setting up your [GOPATH](http://golang.org/doc/code.html#GOPATH).
 
 Next, clone this repository into `$GOPATH/src/github.com/hashicorp/serf` and
