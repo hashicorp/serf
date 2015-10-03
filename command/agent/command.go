@@ -682,7 +682,8 @@ Usage: serf agent [options]
 
 Options:
 
-  -bind=0.0.0.0:7946       Address to bind network listeners to.
+  -bind=0.0.0.0:7946       Address to bind network listeners to. To use an IPv6
+                           address, specify [::1] or [::1]:7946.
   -iface                   Network interface to bind to. Can be used instead of
                            -bind if the interface is known but not the address.
                            If both are provided, then Serf verifies that the
