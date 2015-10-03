@@ -56,7 +56,7 @@ sets up an index.html to just say what host it is.
 At this stage, the load balancer is running HAProxy, and the web servers
 are running Apache, but they're not aware of each other in any way.
 
-Next, both nodes run `setup_serf.sh` which installs Serf and configures it
+Next, all nodes run `setup_serf.sh` which installs Serf and configures it
 to run. This script also starts the Serf agent. For web servers, it also
 starts a task that continuosly tries to join the Serf cluster at address
 `10.0.0.5`, which happens to be the static IP assigned to the load balancer.
@@ -73,7 +73,7 @@ to dynamically generate the index page.
 
 The Serf configuration is very simple. Each node runs a Serf agent. The
 web servers run the agent with a role of "web" and the load balancer runs
-the agent with a role "lb".
+the agent with a role of "lb".
 
 #### Event: member-join
 
@@ -99,21 +99,22 @@ done
 /etc/init.d/haproxy reload
 ```
 
-The script first checks if it is a load balancer. If it isn't a load balancer,
-we don't do anything on the "member-join" event. Web servers don't care about
-other members.
+The script first checks if this node is a load balancer. If it isn't a load
+balancer, we don't do anything on the "member-join" event. Web servers simply
+don't care about other members.
 
-Otherwise, if we are a load balancer, then it reads the member join data
-and begins outputting configuration to HAProxy. In a production environment,
-you might use something like a template processor to do this rather than
-appending to the configuration. But this works as well.
+Otherwise, if this is a load balancer, then it handles the "member-join" event
+and reads the event data and updates the configuration of HAProxy. In a
+production environment, you might use something like a template processor to do
+this rather than appending to the configuration. For the purposes of this demo,
+this works as well.
 
 Finally, HAProxy is reloaded so the configuration is read.
 
 The result of this is that as members join, they're automatically added into
 rotation on the load balancer.
 
-#### Event: member-leave,member-failed
+#### Event: member-leave, member-failed
 
 On member-leave and member-failed evets, the following shell script is run.
 This demo doesn't differentiate between the two events, treating both
@@ -133,6 +134,6 @@ done
 /etc/init.d/haproxy reload
 ```
 
-This script also does nothing if it is a web server. Otherwise, it just
-uses `sed` to remove each of the nodes from the HAProxy configuration and
+This script also does nothing if this node is not a load balanacer. Otherwise,
+it uses `sed` to remove each of the nodes from the HAProxy configuration and
 reloads it.
