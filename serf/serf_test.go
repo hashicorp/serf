@@ -207,6 +207,54 @@ func TestSerf_eventsLeave(t *testing.T) {
 		[]EventType{EventMemberJoin, EventMemberLeave})
 }
 
+func TestSerf_RemoveFailed_eventsLeave(t *testing.T) {
+	// Create the s1 config with an event channel so we can listen
+	eventCh := make(chan Event, 4)
+	s1Config := testConfig()
+	s1Config.EventCh = eventCh
+
+	s2Config := testConfig()
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	defer s1.Shutdown()
+	defer s2.Shutdown()
+
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	if err := s2.Shutdown(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 3)
+
+	if err := s1.RemoveFailedNode(s2Config.NodeName); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Now that s2 has failed and been marked as left, we check the
+	// events to make sure we got a leave event in s1 about the leave.
+	testEvents(t, eventCh, s2Config.NodeName,
+		[]EventType{EventMemberJoin, EventMemberFailed, EventMemberLeave})
+}
+
 func TestSerf_eventsUser(t *testing.T) {
 	// Create the s1 config with an event channel so we can listen
 	eventCh := make(chan Event, 4)

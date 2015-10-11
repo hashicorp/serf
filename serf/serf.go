@@ -1018,6 +1018,17 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		s.failedMembers = removeOldMember(s.failedMembers, member.Name)
 		s.leftMembers = append(s.leftMembers, member)
 
+		// We must push a message indicating the node has now
+		// left to allow higher-level applications to handle the
+		// graceful leave.
+		s.logger.Printf("[INFO] serf: EventMemberLeave (forced): %s %s",
+			member.Member.Name, member.Member.Addr)
+		if s.config.EventCh != nil {
+			s.config.EventCh <- MemberEvent{
+				Type:    EventMemberLeave,
+				Members: []Member{member.Member},
+			}
+		}
 		return true
 	default:
 		return false
