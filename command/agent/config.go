@@ -22,6 +22,7 @@ const DefaultBindPort int = 7946
 // DefaultConfig contains the defaults for configurations.
 func DefaultConfig() *Config {
 	return &Config{
+		DisableCoordinates: false,
 		Tags:           make(map[string]string),
 		BindAddr:       "0.0.0.0",
 		AdvertiseAddr:  "",
@@ -49,6 +50,7 @@ type Config struct {
 	// more info.
 	NodeName string `mapstructure:"node_name"`
 	Role     string `mapstructure:"role"`
+	DisableCoordinates bool `mapstructure:"disable_coordinates"`
 
 	// Tags are used to attach key/value metadata to a node. They have
 	// replaced 'Role' as a more flexible meta data mechanism. For compatibility,
@@ -334,6 +336,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.Role != "" {
 		result.Role = b.Role
+	}
+	if b.DisableCoordinates == true {
+		result.DisableCoordinates = true
 	}
 	if b.Tags != nil {
 		if result.Tags == nil {
