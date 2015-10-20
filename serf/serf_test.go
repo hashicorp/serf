@@ -1698,7 +1698,6 @@ func TestSerf_Join_Cancel(t *testing.T) {
 func TestSerf_Coordinates(t *testing.T) {
 	s1Config := testConfig()
 	s1Config.DisableCoordinates = false
-	s1Config.CacheCoordinates = true
 	s1Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
 	s1, err := Create(s1Config)
 	if err != nil {
@@ -1708,7 +1707,6 @@ func TestSerf_Coordinates(t *testing.T) {
 
 	s2Config := testConfig()
 	s2Config.DisableCoordinates = false
-	s2Config.CacheCoordinates = true
 	s2Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
 	s2, err := Create(s2Config)
 	if err != nil {
@@ -1827,11 +1825,9 @@ func (p *pingVersionMetaDelegate) AckPayload() []byte {
 func TestSerf_PingDelegateVersioning(t *testing.T) {
 	s1Config := testConfig()
 	s1Config.DisableCoordinates = false
-	s1Config.CacheCoordinates = true
 	s1Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
 	s2Config := testConfig()
 	s2Config.DisableCoordinates = false
-	s2Config.CacheCoordinates = true
 	s2Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
 
 	s1, err := Create(s1Config)
@@ -1900,11 +1896,9 @@ func (p *pingDimensionMetaDelegate) AckPayload() []byte {
 func TestSerf_PingDelegateRogueCoordinate(t *testing.T) {
 	s1Config := testConfig()
 	s1Config.DisableCoordinates = false
-	s1Config.CacheCoordinates = true
 	s1Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
 	s2Config := testConfig()
 	s2Config.DisableCoordinates = false
-	s2Config.CacheCoordinates = true
 	s2Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
 
 	s1, err := Create(s1Config)
