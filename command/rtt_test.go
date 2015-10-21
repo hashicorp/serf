@@ -1,8 +1,8 @@
 package command
 
 import (
-	"github.com/mitchellh/cli"
 	"fmt"
+	"github.com/mitchellh/cli"
 	"strings"
 	"testing"
 )

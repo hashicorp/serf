@@ -48,9 +48,9 @@ type Config struct {
 	// All the configurations in this section are identical to their
 	// Serf counterparts. See the documentation for Serf.Config for
 	// more info.
-	NodeName string `mapstructure:"node_name"`
-	Role     string `mapstructure:"role"`
-	DisableCoordinates bool `mapstructure:"disable_coordinates"`
+	NodeName           string `mapstructure:"node_name"`
+	Role               string `mapstructure:"role"`
+	DisableCoordinates bool   `mapstructure:"disable_coordinates"`
 
 	// Tags are used to attach key/value metadata to a node. They have
 	// replaced 'Role' as a more flexible meta data mechanism. For compatibility,
