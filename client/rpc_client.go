@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/logutils"
+	"github.com/hashicorp/serf/coordinate"
 	"log"
 	"net"
 	"sync"
@@ -363,6 +364,26 @@ func (c *RPCClient) Stats() (map[string]map[string]string, error) {
 
 	err := c.genericRPC(&header, nil, &resp)
 	return resp, err
+}
+
+// GetCoordinate is used to retrieve the cached coordinate of a node.
+func (c *RPCClient) GetCoordinate(node string) (*coordinate.Coordinate, error) {
+	header := requestHeader{
+		Command: getCoordinateCommand,
+		Seq:     c.getSeq(),
+	}
+	req := coordinateRequest{
+		Node: node,
+	}
+	var resp coordinateResponse
+
+	if err := c.genericRPC(&header, &req, &resp); err != nil {
+		return nil, err
+	}
+	if resp.Ok {
+		return &resp.Coord, nil
+	}
+	return nil, nil
 }
 
 type monitorHandler struct {

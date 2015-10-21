@@ -989,3 +989,32 @@ func TestRPCClientStats(t *testing.T) {
 		t.Fatalf("bad: %v", stats)
 	}
 }
+
+func TestRPCClientGetCoordinate(t *testing.T) {
+	client, a1, ipc := testRPCClient(t)
+	defer ipc.Shutdown()
+	defer client.Close()
+	defer a1.Shutdown()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	coord, err := client.GetCoordinate(a1.conf.NodeName)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if coord == nil {
+		t.Fatalf("should have gotten a coordinate")
+	}
+
+	coord, err = client.GetCoordinate("nope")
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if coord != nil {
+		t.Fatalf("should have not gotten a coordinate")
+	}
+}

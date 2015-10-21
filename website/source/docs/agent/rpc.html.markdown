@@ -68,6 +68,7 @@ Possible commands include:
 * remove-key - Removes an existing encryption key
 * list-keys - Provides a list of encryption keys in use in the cluster
 * stats - Provides a debugging information about the running serf agent
+* get-coordinate - Returns the network coordinate for a node
 
 Below each command is documented along with any request or
 response body that is applicable.
@@ -538,3 +539,37 @@ running serf agent. There is no request body, but the response looks like:
         "tags": {}
     }
 ```
+
+### get-coordinate
+
+The get-coordinate command is used to obtain the network coordinate of a given
+node.
+
+Serf builds up a set of network coordinates for all the nodes in the cluster.
+Agents cache these, and once the coordinates for two nodes are known, it's
+possible to estimate the network round trip time between them using a simple
+calculation.
+
+The request looks like:
+
+```
+    {"Node": "n1"}
+```
+
+Once invoked, this method will look up the coordinate in the agent's cache and
+return it, yielding a response like this:
+
+```
+    {
+        "Coord": {
+            "Adjustment": 0,
+            "Error": 1.5,
+            "Vec": [0,0,0,0,0,0,0,0]
+        },
+        "Ok": true
+}
+```
+
+The returned coordinate is valid only if `Ok` is true. Otherwise, there wasn't
+a coordinate available for the given node. This might mean that coordinates
+are not enabled, or that the node has not yet contacted the agent.
