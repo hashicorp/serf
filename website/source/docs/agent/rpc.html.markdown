@@ -564,6 +564,7 @@ return it, yielding a response like this:
         "Coord": {
             "Adjustment": 0,
             "Error": 1.5,
+            "Height": 0,
             "Vec": [0,0,0,0,0,0,0,0]
         },
         "Ok": true
@@ -573,3 +574,7 @@ return it, yielding a response like this:
 The returned coordinate is valid only if `Ok` is true. Otherwise, there wasn't
 a coordinate available for the given node. This might mean that coordinates
 are not enabled, or that the node has not yet contacted the agent.
+
+See the [Network Coordinates](/docs/internals/coordinates.html)
+internals guide for more information on how these coordinates are computed, and
+for details on how to perform calculations with them.

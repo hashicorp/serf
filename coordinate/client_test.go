@@ -37,7 +37,7 @@ func TestClient_Update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Make sure the Euclidian part of our coordinate is what we expect.
+	// Make sure the Euclidean part of our coordinate is what we expect.
 	c := client.GetCoordinate()
 	verifyEqualVectors(t, c.Vec, []float64{0.0, 0.0, 0.0})
 

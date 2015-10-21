@@ -1,8 +1,10 @@
 package coordinate
 
 import (
+	"math"
 	"reflect"
 	"testing"
+	"time"
 )
 
 // verifyDimensionPanic will run the supplied func and make sure it panics with
@@ -148,6 +150,45 @@ func TestCoordinate_DistanceTo(t *testing.T) {
 	bad := c1.Clone()
 	bad.Vec = make([]float64, len(bad.Vec)+1)
 	verifyDimensionPanic(t, func() { _ = c1.DistanceTo(bad) })
+}
+
+// dist is a self-contained example that appears in documentation.
+func dist(a *Coordinate, b *Coordinate) time.Duration {
+	// Coordinates will always have the same dimensionality, so this is
+	// just a sanity check.
+	if len(a.Vec) != len(b.Vec) {
+		panic("dimensions aren't compatible")
+	}
+
+	// Calculate the Euclidean distance plus the heights.
+	sumsq := 0.0
+	for i := 0; i < len(a.Vec); i++ {
+		diff := a.Vec[i] - b.Vec[i]
+		sumsq += diff * diff
+	}
+	rtt := math.Sqrt(sumsq) + a.Height + b.Height
+
+	// Apply the adjustment components, guarding against negatives.
+	adjusted := rtt + a.Adjustment + b.Adjustment
+	if adjusted > 0.0 {
+		rtt = adjusted
+	}
+
+	// Go's times are natively nanoseconds, so we convert from seconds.
+	const secondsToNanoseconds = 1.0e9
+	return time.Duration(rtt * secondsToNanoseconds)
+}
+
+func TestCoordinate_dist_Example(t *testing.T) {
+	config := DefaultConfig()
+	c1, c2 := NewCoordinate(config), NewCoordinate(config)
+	c1.Vec = []float64{-0.5, 1.3, 2.4}
+	c2.Vec = []float64{1.2, -2.3, 3.4}
+	c1.Adjustment = 0.1
+	c2.Adjustment = 0.2
+	c1.Height = 0.7
+	c2.Height = 0.1
+	verifyEqualFloats(t, c1.DistanceTo(c2).Seconds(), dist(c1, c2).Seconds())
 }
 
 func TestCoordinate_rawDistanceTo(t *testing.T) {

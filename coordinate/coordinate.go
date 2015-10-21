@@ -10,7 +10,7 @@ import (
 // Vivaldi-based coordinate mapping algorithm. All of the fields should be public
 // to enable this to be serialized. All values in here are in units of seconds.
 type Coordinate struct {
-	// Vec is the Euclidian portion of the coordinate. This is used along
+	// Vec is the Euclidean portion of the coordinate. This is used along
 	// with the other fields to provide an overall distance estimate. The
 	// units here are seconds.
 	Vec []float64
@@ -24,7 +24,7 @@ type Coordinate struct {
 	// dynamically by the Vivaldi Client. The units here are seconds.
 	Adjustment float64
 
-	// Height is a distance offset that accounts for non-Euclidian effects
+	// Height is a distance offset that accounts for non-Euclidean effects
 	// which model the access links from nodes to the core Internet. The access
 	// links are usually set by bandwidth and congestion, and the core links
 	// usually follow distance based on geography.

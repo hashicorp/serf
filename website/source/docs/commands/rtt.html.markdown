@@ -11,7 +11,8 @@ description: |-
 Command: `serf rtt`
 
 The 'rtt' command estimates the network round trip time between two nodes using
-Serf's network coordinate model of the cluster.
+Serf's network coordinate model of the cluster. See the [Network Coordinates](/docs/internals/coordinates.html)
+internals guide for more information on how these coordinates are computed.
 
 While contacting nodes as part of its normal gossip protocol, Serf builds up a
 set of network coordinates for all the nodes in the cluster. Agents cache these,

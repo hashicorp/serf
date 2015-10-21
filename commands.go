@@ -93,7 +93,7 @@ func init() {
 
 		"rtt": func() (cli.Command, error) {
 			return &command.RTTCommand{
-				Ui:         ui,
+				Ui: ui,
 			}, nil
 		},
 
