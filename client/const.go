@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/hashicorp/serf/coordinate"
 	"github.com/hashicorp/serf/serf"
 	"net"
 	"time"
@@ -30,6 +31,7 @@ const (
 	respondCommand         = "respond"
 	authCommand            = "auth"
 	statsCommand           = "stats"
+	getCoordinateCommand   = "get-coordinate"
 )
 
 const (
@@ -69,6 +71,15 @@ type handshakeRequest struct {
 
 type authRequest struct {
 	AuthKey string
+}
+
+type coordinateRequest struct {
+	Node string
+}
+
+type coordinateResponse struct {
+	Coord coordinate.Coordinate
+	Ok    bool
 }
 
 type eventRequest struct {
