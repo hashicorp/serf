@@ -76,9 +76,8 @@ added to Serf's implementation on top of the core Vivaldi algorithm:
 
 * A non-Euclidean "height" term was added to the network coordinates in order to
   to help model real-world situations. In particular, height helps model access
-  links that nodes have to the Internet that are dominated by factors like bandwidth
-  and congestion, leaving the Euclidean part to model distance based on physical
-  factors like geography.
+  links that nodes have to the rest of the network, such as the fixed latency
+  overhead of a virtual machine through a hypervisor to a network card.
 
 * Another non-Euclidean "adjustment" term was added to help the system perform
   better with hosts that are near each other in terms of network round trip time.
@@ -100,8 +99,8 @@ added to Serf's implementation on top of the core Vivaldi algorithm:
   at the expense of a slightly longer response time to actual changes in round
   trip times.
 
-With all these in place, a network coordinate consists of a seven-dimensional
-Euclidean vector, plus single values for adjustment, error, and height. Seven
+With all these in place, a network coordinate consists of an eight-dimensional
+Euclidean vector, plus single values for adjustment, error, and height. Eight
 dimensions were chosen based on a survey of the literature as well as some
 experimental testing.
 
