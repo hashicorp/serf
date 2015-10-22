@@ -215,6 +215,8 @@ at a single JSON object with configuration within it.
 
 * `role` - **Deprecated**. Equivalent to the `-role` command-line flag.
 
+* `disable_coordinates` - Disables features related to [network coordinates](/docs/internals/coordinates.html).
+
 * `tags` - This is a dictionary of tag values. It is the same as specifying
   the `tag` command-line flag once per tag.
 
