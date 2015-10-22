@@ -195,15 +195,6 @@ type Config struct {
 	// two nodes. Enabling this option adds some overhead to ping messages.
 	DisableCoordinates bool
 
-	// CacheCoordinates controls if Serf will cache the network coordinates
-	// of other members in the gossip pool.
-	//
-	// This option is only in effect if DisableCoordinates is set to false.
-	// If coordinates are not disabled and this is set to true, then the
-	// cached coordinates can be accessied via the GetCachedCoordinate()
-	// method defined on Serf.
-	CacheCoordinates bool
-
 	// KeyringFile provides the location of a writable file where Serf can
 	// persist changes to the encryption keyring.
 	KeyringFile string
@@ -246,6 +237,5 @@ func DefaultConfig() *Config {
 		QueryTimeoutMult:             16,
 		EnableNameConflictResolution: true,
 		DisableCoordinates:           false,
-		CacheCoordinates:             false,
 	}
 }

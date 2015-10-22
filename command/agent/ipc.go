@@ -27,6 +27,7 @@ import (
 	"github.com/armon/go-metrics"
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/logutils"
+	"github.com/hashicorp/serf/coordinate"
 	"github.com/hashicorp/serf/serf"
 	"io"
 	"log"
@@ -64,6 +65,7 @@ const (
 	respondCommand         = "respond"
 	authCommand            = "auth"
 	statsCommand           = "stats"
+	getCoordinateCommand   = "get-coordinate"
 )
 
 const (
@@ -103,6 +105,15 @@ type handshakeRequest struct {
 
 type authRequest struct {
 	AuthKey string
+}
+
+type coordinateRequest struct {
+	Node string
+}
+
+type coordinateResponse struct {
+	Coord coordinate.Coordinate
+	Ok    bool
 }
 
 type eventRequest struct {
@@ -520,6 +531,9 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 
 	case statsCommand:
 		return i.handleStats(client, seq)
+
+	case getCoordinateCommand:
+		return i.handleGetCoordinate(client, seq)
 
 	default:
 		respHeader := responseHeader{Seq: seq, Error: unsupportedCommand}
@@ -1022,6 +1036,32 @@ func (i *AgentIPC) handleStats(client *IPCClient, seq uint64) error {
 	}
 	resp := i.agent.Stats()
 	return client.Send(&header, resp)
+}
+
+// handleGetCoordinate is used to get the cached coordinate for a node.
+func (i *AgentIPC) handleGetCoordinate(client *IPCClient, seq uint64) error {
+	var req coordinateRequest
+	if err := client.dec.Decode(&req); err != nil {
+		return fmt.Errorf("decode failed: %v", err)
+	}
+
+	// Fetch the coordinate.
+	var result coordinate.Coordinate
+	coord, ok := i.agent.Serf().GetCachedCoordinate(req.Node)
+	if ok {
+		result = *coord
+	}
+
+	// Respond
+	header := responseHeader{
+		Seq:   seq,
+		Error: errToString(nil),
+	}
+	resp := coordinateResponse{
+		Coord: result,
+		Ok:    ok,
+	}
+	return client.Send(&header, &resp)
 }
 
 // Used to convert an error to a string representation

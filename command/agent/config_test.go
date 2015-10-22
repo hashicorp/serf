@@ -367,6 +367,7 @@ func TestMergeConfig(t *testing.T) {
 
 	b := &Config{
 		NodeName:              "bname",
+		DisableCoordinates:    true,
 		Protocol:              -1,
 		EncryptKey:            "foo",
 		EventHandlers:         []string{"bar"},
@@ -395,6 +396,10 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	if c.Role != "bar" {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if c.DisableCoordinates != true {
 		t.Fatalf("bad: %#v", c)
 	}
 

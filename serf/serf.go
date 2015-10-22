@@ -315,7 +315,7 @@ func Create(conf *Config) (*Serf, error) {
 
 	// Set up the coordinate cache. We do this after we read the snapshot to
 	// make sure we get a good initial value from there, if we got one.
-	if (!conf.DisableCoordinates) && conf.CacheCoordinates {
+	if !conf.DisableCoordinates {
 		serf.coordCache = make(map[string]*coordinate.Coordinate)
 		serf.coordCache[conf.NodeName] = serf.coordClient.GetCoordinate()
 	}
@@ -1422,13 +1422,11 @@ func (s *Serf) reap(old []*memberState, timeout time.Duration) []*memberState {
 		// Delete from members
 		delete(s.members, m.Name)
 
-		// Tell the coordinate client the node has gone away.
+		// Tell the coordinate client the node has gone away and delete
+		// its cached coordinates.
 		if !s.config.DisableCoordinates {
 			s.coordClient.ForgetNode(m.Name)
-		}
 
-		// Delete its cached coordinate.
-		if s.config.CacheCoordinates {
 			s.coordCacheLock.Lock()
 			delete(s.coordCache, m.Name)
 			s.coordCacheLock.Unlock()
@@ -1657,10 +1655,9 @@ func (s *Serf) GetCoordinate() (*coordinate.Coordinate, error) {
 }
 
 // GetCachedCoordinate returns the network coordinate for the node with the given
-// name. This will only be valid if DisableCoordinates is set to false and
-// CacheCoordinates is set to true in your config, otherwise ok will always be false.
+// name. This will only be valid if DisableCoordinates is set to false.
 func (s *Serf) GetCachedCoordinate(name string) (coord *coordinate.Coordinate, ok bool) {
-	if (!s.config.DisableCoordinates) && s.config.CacheCoordinates {
+	if !s.config.DisableCoordinates {
 		s.coordCacheLock.RLock()
 		defer s.coordCacheLock.RUnlock()
 		if coord, ok = s.coordCache[name]; ok {

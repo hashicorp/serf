@@ -79,12 +79,10 @@ func (p *pingDelegate) NotifyPingComplete(other *memberlist.Node, rtt time.Durat
 		// to the cache as well since it just got updated. This lets
 		// users call GetCachedCoordinate with our node name, which is
 		// more friendly.
-		if p.serf.config.CacheCoordinates {
-			p.serf.coordCacheLock.Lock()
-			p.serf.coordCache[other.Name] = &coord
-			p.serf.coordCache[p.serf.config.NodeName] = p.serf.coordClient.GetCoordinate()
-			p.serf.coordCacheLock.Unlock()
-		}
+		p.serf.coordCacheLock.Lock()
+		p.serf.coordCache[other.Name] = &coord
+		p.serf.coordCache[p.serf.config.NodeName] = p.serf.coordClient.GetCoordinate()
+		p.serf.coordCacheLock.Unlock()
 	} else {
 		log.Printf("[ERR] serf: Rejected bad coordinate: %v\n", coord)
 	}
