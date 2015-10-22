@@ -91,6 +91,12 @@ func init() {
 			}, nil
 		},
 
+		"rtt": func() (cli.Command, error) {
+			return &command.RTTCommand{
+				Ui: ui,
+			}, nil
+		},
+
 		"info": func() (cli.Command, error) {
 			return &command.InfoCommand{
 				Ui: ui,

@@ -22,16 +22,17 @@ const DefaultBindPort int = 7946
 // DefaultConfig contains the defaults for configurations.
 func DefaultConfig() *Config {
 	return &Config{
-		Tags:           make(map[string]string),
-		BindAddr:       "0.0.0.0",
-		AdvertiseAddr:  "",
-		LogLevel:       "INFO",
-		RPCAddr:        "127.0.0.1:7373",
-		Protocol:       serf.ProtocolVersionMax,
-		ReplayOnJoin:   false,
-		Profile:        "lan",
-		RetryInterval:  30 * time.Second,
-		SyslogFacility: "LOCAL0",
+		DisableCoordinates: false,
+		Tags:               make(map[string]string),
+		BindAddr:           "0.0.0.0",
+		AdvertiseAddr:      "",
+		LogLevel:           "INFO",
+		RPCAddr:            "127.0.0.1:7373",
+		Protocol:           serf.ProtocolVersionMax,
+		ReplayOnJoin:       false,
+		Profile:            "lan",
+		RetryInterval:      30 * time.Second,
+		SyslogFacility:     "LOCAL0",
 	}
 }
 
@@ -45,8 +46,9 @@ type Config struct {
 	// All the configurations in this section are identical to their
 	// Serf counterparts. See the documentation for Serf.Config for
 	// more info.
-	NodeName string `mapstructure:"node_name"`
-	Role     string `mapstructure:"role"`
+	NodeName           string `mapstructure:"node_name"`
+	Role               string `mapstructure:"role"`
+	DisableCoordinates bool   `mapstructure:"disable_coordinates"`
 
 	// Tags are used to attach key/value metadata to a node. They have
 	// replaced 'Role' as a more flexible meta data mechanism. For compatibility,
@@ -332,6 +334,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.Role != "" {
 		result.Role = b.Role
+	}
+	if b.DisableCoordinates == true {
+		result.DisableCoordinates = true
 	}
 	if b.Tags != nil {
 		if result.Tags == nil {

@@ -38,6 +38,7 @@ Available commands are:
     monitor         Stream logs from a Serf agent
     query           Send a query to the Serf cluster
     reachability    Test network reachability
+    rtt             Estimates network round trip time between nodes
     tags            Modify tags of a running Serf agent
     version         Prints the Serf version
 ```
