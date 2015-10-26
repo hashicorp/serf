@@ -39,3 +39,11 @@ if [ -z $NOSIGN ]; then
   gpg --default-key 348FFC4C --detach-sig ./serf_${VERSION}_SHA256SUMS
 fi
 popd
+
+# Upload
+if [ -z $NORELEASE ]; then
+  echo "==> Uploading binaries..."
+  hc-releases -upload=./pkg/dist
+fi
+
+exit 0
