@@ -27,15 +27,15 @@ subnet:
 	@sh -c "'$(CURDIR)/scripts/setup_test_subnet'"
 
 # test runs the test suite and vets the code
-test: generate
+test: subnet generate
 	go test $(TEST) $(TESTARGS) -timeout=30s -parallel=4
 
 # testinteg runs the integration test suite
-testinteg: generate
+testinteg: subnet generate
 	INTEG_TESTS=yes go test $(TEST) $(TESTARGS)
 
 # testrace runs the race checker
-testrace: generate
+testrace: subnet generate
 	go test -race $(TEST) $(TESTARGS)
 
 # updatedeps installs all the dependencies needed to test, build, and run
