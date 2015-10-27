@@ -579,6 +579,95 @@ func TestSerf_reconnect_sameIP(t *testing.T) {
 		[]EventType{EventMemberJoin, EventMemberFailed, EventMemberJoin})
 }
 
+func TestSerf_update(t *testing.T) {
+	eventCh := make(chan Event, 64)
+	s1Config := testConfig()
+	s1Config.EventCh = eventCh
+
+	s2Config := testConfig()
+	s2Addr := s2Config.MemberlistConfig.BindAddr
+	s2Name := s2Config.NodeName
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	defer s1.Shutdown()
+
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Now force the shutdown of s2 so it appears to fail.
+	if err := s2.Shutdown(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Don't wait for a failure to be detected. Bring back s2 immediately
+	// by mimicking its name and address.
+	s2Config = testConfig()
+	s2Config.MemberlistConfig.BindAddr = s2Addr
+	s2Config.NodeName = s2Name
+
+	// Add a tag to force an update event, and add a version downgrade as
+	// well (that alone won't trigger an update).
+	s2Config.ProtocolVersion -= 1
+	s2Config.Tags["foo"] = "bar"
+
+	// We try for a little while to wait for s2 to fully shutdown since the
+	// shutdown method doesn't block until that's done.
+	start := time.Now()
+	for {
+		s2, err = Create(s2Config)
+		if err == nil {
+			defer s2.Shutdown()
+			break
+		} else if !strings.Contains(err.Error(), "address already in use") {
+			t.Fatalf("err: %s", err)
+		}
+
+		if time.Now().Sub(start) > 2*time.Second {
+			t.Fatalf("timed out trying to restart")
+		}
+	}
+
+	_, err = s2.Join([]string{s1Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	testEvents(t, eventCh, s2Name,
+		[]EventType{EventMemberJoin, EventMemberUpdate})
+
+	// Verify that the member data got updated.
+	found := false
+	members := s1.Members()
+	for _, member := range members {
+		if member.Name == s2Name {
+			found = true
+			if member.Tags["foo"] != "bar" || member.DelegateCur != s2Config.ProtocolVersion {
+				t.Fatalf("bad: %#v", member)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("didn't find s2 in members")
+	}
+}
+
 func TestSerf_role(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()
