@@ -24,15 +24,11 @@ dist: #bin
 # subnet sets up the require subnet for testing on darwin (osx) - you must run
 # this before running other tests if you are on osx.
 subnet:
-	@sh -c "'$(CURDIR)/scripts/setup_test_subnet'"
+	@sh -c "'$(CURDIR)/scripts/setup_test_subnet.sh'"
 
-# test runs the test suite and vets the code
+# test runs the test suite
 test: subnet generate
-	go test $(TEST) $(TESTARGS) -timeout=30s -parallel=4
-
-# testinteg runs the integration test suite
-testinteg: subnet generate
-	INTEG_TESTS=yes go test $(TEST) $(TESTARGS)
+	go list $(TEST) | xargs -n1 go test $(TESTARGS)
 
 # testrace runs the race checker
 testrace: subnet generate
@@ -54,4 +50,4 @@ generate:
 	find . -type f -name '.DS_Store' -delete
 	go generate ./...
 
-.PHONY: default bin cov dev dist subnet test testinteg testrace updatedeps generate
+.PHONY: default bin cov dev dist subnet test testrace updatedeps generate
