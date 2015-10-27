@@ -977,6 +977,19 @@ func (s *Serf) handleNodeUpdate(n *memberlist.Node) {
 	member.Port = n.Port
 	member.Tags = s.decodeTags(n.Meta)
 
+	// Snag the latest versions. NOTE - the current memberlist code will NOT
+	// fire an update event if the metadata (for Serf, tags) stays the same
+	// and only the protocol versions change. If we wake any Serf-level
+	// protocol changes where we want to get this event under those
+	// circumstances, we will need to update memberlist to do a check of
+	// versions as well as the metadata.
+	member.ProtocolMin = n.PMin
+	member.ProtocolMax = n.PMax
+	member.ProtocolCur = n.PCur
+	member.DelegateMin = n.DMin
+	member.DelegateMax = n.DMax
+	member.DelegateCur = n.DCur
+
 	// Update some metrics
 	metrics.IncrCounter([]string{"serf", "member", "update"}, 1)
 
