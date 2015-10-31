@@ -387,11 +387,6 @@ func (i *AgentIPC) listen() {
 			&codec.MsgpackHandle{RawToString: true, WriteExt: true})
 		client.enc = codec.NewEncoder(client.writer,
 			&codec.MsgpackHandle{RawToString: true, WriteExt: true})
-		if err != nil {
-			i.logger.Printf("[ERR] agent.ipc: Failed to create decoder: %v", err)
-			conn.Close()
-			continue
-		}
 
 		// Register the client
 		i.Lock()
