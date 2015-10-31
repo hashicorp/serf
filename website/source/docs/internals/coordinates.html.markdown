@@ -11,7 +11,7 @@ Serf uses a network tomography system to compute network coordinates for nodes i
 Serf uses a [network tomography](https://en.wikipedia.org/wiki/Network_tomography)
 system to compute network coordinates for nodes in the cluster. These coordinates
 allow the network round trip time to be estimated between any two nodes using a
-a very simple calculation.
+very simple calculation.
 
 Coordinates are obtained by adding a very small amount of data to the probe
 messages that Serf already sends as part of its [gossip protocol](/docs/internals/gossip.html),
