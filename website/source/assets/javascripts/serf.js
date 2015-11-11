@@ -10,7 +10,7 @@ var Serf = (function() {
     }else{
       Serf.Home.mobileHero();
     }
-
+    new Sidebar();
   }
 
     //api
