@@ -2,6 +2,8 @@ var Serf = (function() {
 
   function initialize (){
     Serf.Util.runIfClassNamePresent('page-home', initHome);
+    
+    new Sidebar();
   }
 
   function initHome() {
@@ -10,7 +12,6 @@ var Serf = (function() {
     }else{
       Serf.Home.mobileHero();
     }
-    new Sidebar();
   }
 
     //api
