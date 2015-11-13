@@ -127,6 +127,9 @@ type Config struct {
 	// are "wan", "lan", and "local". The default is "lan"
 	Profile string `mapstructure:"profile"`
 
+	// ProfilePath is path to .json file for configuration memberlist
+	ProfilePath string `mapstructure:"profile_path"`
+
 	// SnapshotPath is used to allow Serf to snapshot important transactional
 	// state to make a more graceful recovery possible. This enables auto
 	// re-joining a cluster on failure and avoids old message replay.
@@ -218,6 +221,32 @@ type Config struct {
 	// 5 seconds.
 	BroadcastTimeoutRaw string        `mapstructure:"broadcast_timeout"`
 	BroadcastTimeout    time.Duration `mapstructure:"-"`
+}
+
+// Profile is a configuration for custom profile
+// For description of fields, see memberlist config
+// https://github.com/hashicorp/memberlist/blob/master/config.go
+type Profile struct {
+	TCPTimeoutRaw string        `mapstructure:"tcp_timeout"`
+	TCPTimeout    time.Duration `mapstructure:"-"`
+
+	IndirectChecks int `mapstructure:"indirect_checks"`
+	RetransmitMult int `mapstructure:"retransmit_mult"`
+	SuspicionMult  int `mapstructure:"suspicion_mult"`
+
+	PushPullIntervalRaw string        `mapstructure:"push_pull_interval"`
+	PushPullInterval    time.Duration `mapstructure:"-"`
+
+	ProbeTimeoutRaw string        `mapstructure:"probe_timeout"`
+	ProbeTimeout    time.Duration `mapstructure:"-"`
+
+	ProbeIntervalRaw string        `mapstructure:"probe_interval"`
+	ProbeInterval    time.Duration `mapstructure:"-"`
+
+	GossipNodes int `mapstructure:"gossip_nodes"`
+
+	GossipIntervalRaw string        `mapstructure:"gossip_interval"`
+	GossipInterval    time.Duration `mapstructure:"-"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -338,6 +367,73 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 	return &result, nil
 }
 
+// DecodeProfile reads profile configuration from ProfilePath
+func DecodeProfile(f io.Reader) (*Profile, error) {
+	var raw interface{}
+	dec := json.NewDecoder(f)
+	if err := dec.Decode(&raw); err != nil {
+		return nil, err
+	}
+
+	// Decode
+	var md mapstructure.Metadata
+	var result Profile
+	msdec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Metadata:    &md,
+		Result:      &result,
+		ErrorUnused: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := msdec.Decode(raw); err != nil {
+		return nil, err
+	}
+
+	if result.TCPTimeoutRaw != "" {
+		dur, err := time.ParseDuration(result.TCPTimeoutRaw)
+		if err != nil {
+			return nil, err
+		}
+		result.TCPTimeout = dur
+	}
+
+	if result.PushPullIntervalRaw != "" {
+		dur, err := time.ParseDuration(result.PushPullIntervalRaw)
+		if err != nil {
+			return nil, err
+		}
+		result.PushPullInterval = dur
+	}
+
+	if result.ProbeTimeoutRaw != "" {
+		dur, err := time.ParseDuration(result.ProbeTimeoutRaw)
+		if err != nil {
+			return nil, err
+		}
+		result.ProbeTimeout = dur
+	}
+
+	if result.ProbeIntervalRaw != "" {
+		dur, err := time.ParseDuration(result.ProbeIntervalRaw)
+		if err != nil {
+			return nil, err
+		}
+		result.ProbeInterval = dur
+	}
+
+	if result.GossipIntervalRaw != "" {
+		dur, err := time.ParseDuration(result.GossipIntervalRaw)
+		if err != nil {
+			return nil, err
+		}
+		result.GossipInterval = dur
+	}
+
+	return &result, nil
+}
+
 // containsKey is used to check if a slice of string keys contains
 // another key
 func containsKey(keys []string, key string) bool {
@@ -398,6 +494,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.Profile != "" {
 		result.Profile = b.Profile
+	}
+	if b.ProfilePath != "" {
+		result.ProfilePath = b.ProfilePath
 	}
 	if b.SnapshotPath != "" {
 		result.SnapshotPath = b.SnapshotPath

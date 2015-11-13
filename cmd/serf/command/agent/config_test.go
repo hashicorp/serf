@@ -376,6 +376,17 @@ func TestDecodeConfig_unknownDirective(t *testing.T) {
 	}
 }
 
+func TestDecodeProfile(t *testing.T) {
+	input := `{"tcp_timeout: 10s"}`
+	profile, err := DecodeProfile(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	if profile.TCPTimeout != 10 * time.Second {
+		t.Fatalf("bad: %#v", profile)
+	}
+}
+
 func TestMergeConfig(t *testing.T) {
 	a := &Config{
 		NodeName:      "foo",
