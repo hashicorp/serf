@@ -278,6 +278,46 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 		return nil
 	}
 
+	if config.ProfilePath != "" {
+		path := config.ProfilePath
+		f, err := os.Open(path)
+		defer f.Close()
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading '%s': %s", path, err))
+			return nil
+		}
+		profileconfig, err := DecodeProfile(f)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("ProfilePath: %v", err))
+			return nil
+		}
+
+		if profileconfig.TCPTimeout != 0 {
+			serfConfig.MemberlistConfig.TCPTimeout = profileconfig.TCPTimeout
+		}
+		if profileconfig.IndirectChecks != 0 {
+			serfConfig.MemberlistConfig.IndirectChecks = profileconfig.IndirectChecks
+		}
+		if profileconfig.SuspicionMult != 0 {
+			serfConfig.MemberlistConfig.SuspicionMult = profileconfig.SuspicionMult
+		}
+		if profileconfig.PushPullInterval != 0 {
+			serfConfig.MemberlistConfig.PushPullInterval = profileconfig.PushPullInterval
+		}
+		if profileconfig.ProbeTimeout != 0 {
+			serfConfig.MemberlistConfig.ProbeTimeout = profileconfig.ProbeTimeout
+		}
+		if profileconfig.ProbeInterval != 0 {
+			serfConfig.MemberlistConfig.ProbeInterval = profileconfig.ProbeInterval
+		}
+		if profileconfig.GossipNodes != 0 {
+			serfConfig.MemberlistConfig.GossipNodes = profileconfig.GossipNodes
+		}
+		if profileconfig.GossipInterval != 0 {
+			serfConfig.MemberlistConfig.GossipInterval = profileconfig.GossipInterval
+		}
+	}
+
 	serfConfig.MemberlistConfig.BindAddr = bindIP
 	serfConfig.MemberlistConfig.BindPort = bindPort
 	serfConfig.MemberlistConfig.AdvertiseAddr = advertiseIP
