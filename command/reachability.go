@@ -40,6 +40,7 @@ Options:
 
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
   -rpc-auth=""              RPC auth token of the Serf agent.
+  -interval                 Checking reachability after interval
   -verbose                  Verbose mode
 `
 	return strings.TrimSpace(helpText)
@@ -47,9 +48,11 @@ Options:
 
 func (c *ReachabilityCommand) Run(args []string) int {
 	var verbose bool
+	var interval int
 	cmdFlags := flag.NewFlagSet("reachability", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.BoolVar(&verbose, "verbose", false, "verbose mode")
+	cmdFlags.IntVar(&interval, "interval", 0, "Checking reachability after interval")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	rpcAuth := RPCAuthFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
@@ -63,8 +66,8 @@ func (c *ReachabilityCommand) Run(args []string) int {
 	}
 	defer cl.Close()
 
+MEMBERS:
 	ackCh := make(chan string, 128)
-
 	// Get the list of members
 	members, err := cl.Members()
 	if err != nil {
@@ -162,6 +165,11 @@ OUTER:
 		c.Ui.Output(tooFewAcks)
 		c.Ui.Output(troubleshooting)
 		return 1
+	}
+
+    if interval > 0 {
+		time.Sleep(time.Duration(interval) * time.Second)
+		goto MEMBERS
 	}
 	return exit
 }
