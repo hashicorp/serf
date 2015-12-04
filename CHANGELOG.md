@@ -1,9 +1,28 @@
-## 0.6.5 (unreleased)
+## 0.7 (unreleased)
+
+FEATURES:
+
+ * Added new network tomography subsystem that computes network coordinates for
+   nodes in the cluster which can be used to estimate network round trip times
+   between any two nodes; exposes new `GetCoordinate` API as as well as a
+   a new `serf rtt` command to query RTT interactively
 
 IMPROVEMENTS:
 
  * Syslog messages are now filtered by the configured log-level
  * New `statsd_addr` for sending metrics via UDP to statsd
+ * Added support for sending telemetry to statsite
+ * `serf info` command now displays event handlers [GH-312]
+ * Added a `MemberLeave` message to the `EventCh` for a force-leave so higher-
+   level applications can handle the leave event
+ * Lots of documentation updates
+
+BUG FIXES:
+
+ * Fixed updating cached protocol version of a node when an update event
+   fires [GH-335]
+ * Fixed a bug where an empty remote state message would cause a crash in
+   `MergeRemoteState`
 
 ## 0.6.4 (Febuary 12, 2015)
 
