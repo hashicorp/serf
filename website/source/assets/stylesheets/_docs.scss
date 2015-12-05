@@ -90,7 +90,7 @@
 
 				> a{
                     -webkit-font-smoothing: antialiased;
-					font-family: $font-family-open-sans;
+					font-family: $font-family-source-sans;
 					padding: 6px 15px;
 				}
 			}
@@ -114,7 +114,7 @@
 
 	p, li, .alert {
 		font-size: 20px;
-		font-family: $font-family-open-sans;
+		font-family: $font-family-source-sans;
 		font-weight: $font-weight-open;
         line-height: 1.5em;
 		margin: 0 0 18px;

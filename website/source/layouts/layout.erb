@@ -14,52 +14,80 @@
   </head>
 
   <body class="page-<%= current_page.data.page_title ? "#{current_page.data.page_title}" : "home" %>">
-    <div id="header">
-      <div class="container">
-        <a class="navbar-brand logo" href="/">
-          <span></span>
-        </a>
-        <a class="navbar-brand text rls-l" href="/">SERF</a>
-
-        <ul class="buttons nav navbar-nav navbar-right rls-sb">
-          <li class="first"><a href="/downloads.html">Download</a></li>
-          <li><a href="https://github.com/hashicorp/serf">Github</a></li>
-        </ul>
-
-        <ul class="main-links nav navbar-nav navbar-right rls-sb">
-          <li><a href="/intro/index.html">Intro</a></li>
-          <li><a href="/docs/index.html">Docs</a></li>
-          <li><a href="/community.html">Community</a></li>
-        </ul>
-
-      </div>
+    <div id="header" class="navigation <%= current_page.data.page_title == "home" ? "" : "navbar-static-top" %>">
+    	<div class="container">
+    		<div class="row">
+    			<div class="col-xs-12">
+    				<div class="navbar-header">
+    					<div class="navbar-brand">
+    						<a class="logo rls-l" href="/">Serf</a>
+    						<a class="by-hashicorp white" href="https://hashicorp.com/"><span class="svg-wrap">by</span><%= partial "layouts/svg/svg-by-hashicorp" %><%= partial "layouts/svg/svg-hashicorp-logo" %>Hashicorp</a>
+    					</div>
+    					<button class="navbar-toggle white" type="button">
+    						<span class="sr-only">Toggle navigation</span>
+    						<span class="icon-bar"></span>
+    						<span class="icon-bar"></span>
+    						<span class="icon-bar"></span>
+    					</button>
+    				</div>
+    				<div class="buttons hidden-xs">
+    					<nav class="navigation-links" role="navigation">
+    						<ul class="external-links black nav navbar-nav navbar-right">
+    							<li class="first download">
+    								<a href="/downloads.html"><%= partial "layouts/svg/svg-download" %>Download</a>
+    							</li>
+    							<li class="github">
+    								<a href="https://github.com/hashicorp/serf"><%= partial "layouts/svg/svg-github" %>GitHub</a>
+    							</li>
+    						</ul>
+    						<ul class="main-links black nav navbar-nav navbar-right">
+    							<li class="first li-under"><a href="/intro/index.html">Intro</a></li>
+    							<li class="li-under"><a href="/docs/index.html">Docs</a></li>
+    							<li class="li-under"><a href="/community.html">Community</a></li>
+    						</ul>
+    					</nav>
+    				</div>
+    			</div>
+    		</div>
+    	</div>
     </div>
+    <%= partial "layouts/sidebar" %>
 
     <%= yield %>
 
-    <div id="footer">
+    <div id="footer" class="navigation">
       <div class="container">
-        <div class="footer-links">
-          <ul class="main-links nav navbar-nav rls-sb">
-            <li><a href="/intro/index.html">Intro</a></li>
-            <li class="active"><a href="/docs/index.html">Docs</a></li>
-            <li><a href="/community.html">Community</a></li>
-            <% if current_page.url != '/' %>
-              <li class="li-under"><a href="<%= github_url :current_page %>">Edit this page</a></li>
-            <% end %>
-          </ul>
-
-          <ul class="buttons nav navbar-nav rls-sb">
-            <li class="first"><a href="/downloads.html">Download</a></li>
-            <li><a href="https://github.com/hashicorp/serf">Github</a></li>
-          </ul>
-        </div>
-        <div class="footer-logo">
-          <span></span>
-        </div>
-        <div class="footer-hashi os">
-          <span>Copyright &copy; <%= Time.now.year %>. A <a href="http://www.hashicorp.com">HashiCorp</a> Project.</span>
-          <a href="http://www.hashicorp.com"><%= image_tag("hashi-logo-s.png") %></a>
+        <div class="row">
+          <% if current_page.url != '/' %>
+            <div class="edit-page-link"><a href="<%= github_url :current_page %>">Edit this page</a></div>
+          <% end %>
+          <div class="col-xs-12">
+            <div>
+              <ul class="main-links white nav navbar-nav">
+                <li><a href="/intro/index.html">Intro</a></li>
+                <li><a href="/docs/index.html">Docs</a></li>
+                <li><a href="/community.html">Community</a></li>
+              </ul>
+              <ul class="external-links white nav navbar-nav">
+                <li class="first download">
+                  <a href="/downloads.html"><%= partial "layouts/svg/svg-download" %>Download</a>
+                </li>
+                <li class="github">
+                  <a href="https://github.com/hashicorp/serf"><%= partial "layouts/svg/svg-github" %>GitHub</a>
+                </li>
+              </ul>
+            </  div>
+            <div class="footer-hashi pull-right">
+              <div class="">
+                <a class="hashicorp-project white" href="https://www.hashicorp.com">
+                  <span class="project-text">A </span>
+                  <%= partial "layouts/svg/svg-by-hashicorp" %>
+                  <span class="project-text">Project</span>
+                  <%= partial "layouts/svg/svg-hashicorp-logo" %>
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

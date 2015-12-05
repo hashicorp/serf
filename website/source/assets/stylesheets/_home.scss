@@ -13,7 +13,7 @@
 	h2{
 		font-size: 32px;
 		letter-spacing: 2px;
-		color: $gray;
+		color: $serf-gray;
 		text-transform: uppercase;
 		font-family: $font-family-rales;
 		font-weight: $font-weight-rales-sb;
@@ -22,8 +22,8 @@
 		font-size: 18px;
 		letter-spacing: 1px;
         line-height: 1.5em;
-		color: $gray-darker;
-		font-family: $font-family-open-sans;
+		color: $serf-gray-darker;
+		font-family: $font-family-source-sans;
 		font-weight: $font-weight-open;
 	}
 
@@ -111,43 +111,6 @@
 					background-position: 0 -880px;
 				}
 			}
-		}
-	}
-}
-
-
-
-#footer{
-	padding: 50px 0;
-	background: $black image-url("footer-pattern.jpg");
-
-	.footer-links{
-		margin-bottom: 20px;
-	}
-
-	.footer-logo{
-		span{
-			  display: inline-block;
-        width: 206px;
-        height: 206px;
-        margin-bottom: 30px;
-        border-radius: 103px;
-        background: $black image-url("logo-type-medium.png") center center no-repeat;
-        @include img-retina("logo-type-medium.png", "logo-type-medium@2x.png", 72px, 94px);
-        @include box-shadow( 0px 0px 5px rgba(0, 0, 0, 0.04) );
-		}
-	}
-
-	.footer-hashi{
-		letter-spacing: 2px;
-    margin-bottom: 30px;
-    span{
-    	margin-right: 20px;
-    }
-		img{
-			  display: inline-block;
-        width: 37px;
-        height: 40px;
 		}
 	}
 }
