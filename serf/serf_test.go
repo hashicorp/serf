@@ -1496,13 +1496,31 @@ func TestSerf_Query_sizeLimit(t *testing.T) {
 	defer s1.Shutdown()
 
 	name := "this is too large a query"
-	payload := make([]byte, QuerySizeLimit)
+	payload := make([]byte, s1.config.QuerySizeLimit)
 	_, err = s1.Query(name, payload, nil)
 	if err == nil {
 		t.Fatalf("should get error")
 	}
 	if !strings.HasPrefix(err.Error(), "query exceeds limit of ") {
 		t.Fatalf("should get size limit error: %v", err)
+	}
+}
+
+func TestSerf_Query_sizeLimitIncreased(t *testing.T) {
+	// Create the s1 config with an event channel so we can listen
+	s1Config := testConfig()
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	name := "this is too large a query"
+	payload := make([]byte, s1.config.QuerySizeLimit)
+	s1.config.QuerySizeLimit = 2048
+	_, err = s1.Query(name, payload, nil)
+	if err != nil {
+		t.Fatalf("should not get error: %v", err)
 	}
 }
 
