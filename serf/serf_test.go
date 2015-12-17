@@ -1487,7 +1487,6 @@ func TestSerf_Query_Filter(t *testing.T) {
 }
 
 func TestSerf_Query_sizeLimit(t *testing.T) {
-	// Create the s1 config with an event channel so we can listen
 	s1Config := testConfig()
 	s1, err := Create(s1Config)
 	if err != nil {
@@ -1507,7 +1506,6 @@ func TestSerf_Query_sizeLimit(t *testing.T) {
 }
 
 func TestSerf_Query_sizeLimitIncreased(t *testing.T) {
-	// Create the s1 config with an event channel so we can listen
 	s1Config := testConfig()
 	s1, err := Create(s1Config)
 	if err != nil {
@@ -1517,7 +1515,7 @@ func TestSerf_Query_sizeLimitIncreased(t *testing.T) {
 
 	name := "this is too large a query"
 	payload := make([]byte, s1.config.QuerySizeLimit)
-	s1.config.QuerySizeLimit = 2048
+	s1.config.QuerySizeLimit = 2 * s1.config.QuerySizeLimit
 	_, err = s1.Query(name, payload, nil)
 	if err != nil {
 		t.Fatalf("should not get error: %v", err)

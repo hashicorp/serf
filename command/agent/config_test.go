@@ -344,6 +344,17 @@ func TestDecodeConfig(t *testing.T) {
 	if config.StatsdAddr != "127.0.0.1:8125" {
 		t.Fatalf("bad: %#v", config)
 	}
+
+	// Query sizes
+	input = `{"query_response_size_limit": 123, "query_size_limit": 456}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.QueryResponseSizeLimit != 123 || config.QuerySizeLimit != 456 {
+		t.Fatalf("bad: %#v", config)
+	}
 }
 
 func TestDecodeConfig_unknownDirective(t *testing.T) {
@@ -366,27 +377,29 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	b := &Config{
-		NodeName:              "bname",
-		DisableCoordinates:    true,
-		Protocol:              -1,
-		EncryptKey:            "foo",
-		EventHandlers:         []string{"bar"},
-		StartJoin:             []string{"bar"},
-		LeaveOnTerm:           true,
-		SkipLeaveOnInt:        true,
-		Discover:              "tubez",
-		Interface:             "eth0",
-		ReconnectInterval:     15 * time.Second,
-		ReconnectTimeout:      48 * time.Hour,
-		RPCAuthKey:            "foobar",
-		DisableNameResolution: true,
-		TombstoneTimeout:      36 * time.Hour,
-		EnableSyslog:          true,
-		RetryJoin:             []string{"zip"},
-		RetryMaxAttempts:      10,
-		RetryInterval:         120 * time.Second,
-		RejoinAfterLeave:      true,
-		StatsiteAddr:          "127.0.0.1:8125",
+		NodeName:               "bname",
+		DisableCoordinates:     true,
+		Protocol:               -1,
+		EncryptKey:             "foo",
+		EventHandlers:          []string{"bar"},
+		StartJoin:              []string{"bar"},
+		LeaveOnTerm:            true,
+		SkipLeaveOnInt:         true,
+		Discover:               "tubez",
+		Interface:              "eth0",
+		ReconnectInterval:      15 * time.Second,
+		ReconnectTimeout:       48 * time.Hour,
+		RPCAuthKey:             "foobar",
+		DisableNameResolution:  true,
+		TombstoneTimeout:       36 * time.Hour,
+		EnableSyslog:           true,
+		RetryJoin:              []string{"zip"},
+		RetryMaxAttempts:       10,
+		RetryInterval:          120 * time.Second,
+		RejoinAfterLeave:       true,
+		StatsiteAddr:           "127.0.0.1:8125",
+		QueryResponseSizeLimit: 123,
+		QuerySizeLimit:         456,
 	}
 
 	c := MergeConfig(a, b)
@@ -482,6 +495,10 @@ func TestMergeConfig(t *testing.T) {
 
 	expected = []string{"zab", "zip"}
 	if !reflect.DeepEqual(c.RetryJoin, expected) {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if c.QueryResponseSizeLimit != 123 || c.QuerySizeLimit != 456 {
 		t.Fatalf("bad: %#v", c)
 	}
 }

@@ -149,8 +149,13 @@ type Config struct {
 	//
 	QueryTimeoutMult int
 
+	// QueryResponseSizeLimit and QuerySizeLimit limit the inbound and
+	// outbound payload sizes for queries, respectively. These must fit
+	// in a UDP packet with some additional overhead, so tuning these
+	// past the default values of 1024 will depend on your network
+	// configuration.
 	QueryResponseSizeLimit int
-	QuerySizeLimit int
+	QuerySizeLimit         int
 
 	// MemberlistConfig is the memberlist configuration that Serf will
 	// use to do the underlying membership management and gossip. Some
