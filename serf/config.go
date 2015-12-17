@@ -149,6 +149,14 @@ type Config struct {
 	//
 	QueryTimeoutMult int
 
+	// QueryResponseSizeLimit and QuerySizeLimit limit the inbound and
+	// outbound payload sizes for queries, respectively. These must fit
+	// in a UDP packet with some additional overhead, so tuning these
+	// past the default values of 1024 will depend on your network
+	// configuration.
+	QueryResponseSizeLimit int
+	QuerySizeLimit         int
+
 	// MemberlistConfig is the memberlist configuration that Serf will
 	// use to do the underlying membership management and gossip. Some
 	// fields in the MemberlistConfig will be overwritten by Serf no
@@ -235,6 +243,8 @@ func DefaultConfig() *Config {
 		TombstoneTimeout:             24 * time.Hour,
 		MemberlistConfig:             memberlist.DefaultLANConfig(),
 		QueryTimeoutMult:             16,
+		QueryResponseSizeLimit:       1024,
+		QuerySizeLimit:               1024,
 		EnableNameConflictResolution: true,
 		DisableCoordinates:           false,
 	}

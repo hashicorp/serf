@@ -22,17 +22,19 @@ const DefaultBindPort int = 7946
 // DefaultConfig contains the defaults for configurations.
 func DefaultConfig() *Config {
 	return &Config{
-		DisableCoordinates: false,
-		Tags:               make(map[string]string),
-		BindAddr:           "0.0.0.0",
-		AdvertiseAddr:      "",
-		LogLevel:           "INFO",
-		RPCAddr:            "127.0.0.1:7373",
-		Protocol:           serf.ProtocolVersionMax,
-		ReplayOnJoin:       false,
-		Profile:            "lan",
-		RetryInterval:      30 * time.Second,
-		SyslogFacility:     "LOCAL0",
+		DisableCoordinates:     false,
+		Tags:                   make(map[string]string),
+		BindAddr:               "0.0.0.0",
+		AdvertiseAddr:          "",
+		LogLevel:               "INFO",
+		RPCAddr:                "127.0.0.1:7373",
+		Protocol:               serf.ProtocolVersionMax,
+		ReplayOnJoin:           false,
+		Profile:                "lan",
+		RetryInterval:          30 * time.Second,
+		SyslogFacility:         "LOCAL0",
+		QueryResponseSizeLimit: 1024,
+		QuerySizeLimit:         1024,
 	}
 }
 
@@ -101,6 +103,14 @@ type Config struct {
 	// ReplayOnJoin tells Serf to replay past user events
 	// when joining based on a `StartJoin`.
 	ReplayOnJoin bool `mapstructure:"replay_on_join"`
+
+	// QueryResponseSizeLimit and QuerySizeLimit limit the inbound and
+	// outbound payload sizes for queries, respectively. These must fit
+	// in a UDP packet with some additional overhead, so tuning these
+	// past the default values of 1024 will depend on your network
+	// configuration.
+	QueryResponseSizeLimit int `mapstructure:"query_response_size_limit"`
+	QuerySizeLimit         int `mapstructure:"query_size_limit"`
 
 	// StartJoin is a list of addresses to attempt to join when the
 	// agent starts. If Serf is unable to communicate with any of these
@@ -426,6 +436,12 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.StatsdAddr != "" {
 		result.StatsdAddr = b.StatsdAddr
+	}
+	if b.QueryResponseSizeLimit != 0 {
+		result.QueryResponseSizeLimit = b.QueryResponseSizeLimit
+	}
+	if b.QuerySizeLimit != 0 {
+		result.QuerySizeLimit = b.QuerySizeLimit
 	}
 
 	// Copy the event handlers

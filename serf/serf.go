@@ -215,8 +215,6 @@ type queries struct {
 
 const (
 	UserEventSizeLimit     = 512        // Maximum byte size for event name and payload
-	QuerySizeLimit         = 1024       // Maximum byte size for query
-	QueryResponseSizeLimit = 1024       // Maximum bytes size for response
 	snapshotSizeLimit      = 128 * 1024 // Maximum 128 KB snapshot
 )
 
@@ -513,8 +511,8 @@ func (s *Serf) Query(name string, payload []byte, params *QueryParam) (*QueryRes
 	}
 
 	// Check the size
-	if len(raw) > QuerySizeLimit {
-		return nil, fmt.Errorf("query exceeds limit of %d bytes", QuerySizeLimit)
+	if len(raw) > s.config.QuerySizeLimit {
+		return nil, fmt.Errorf("query exceeds limit of %d bytes", s.config.QuerySizeLimit)
 	}
 
 	// Register QueryResponse to track acks and responses

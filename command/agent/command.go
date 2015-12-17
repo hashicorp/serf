@@ -289,6 +289,8 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	serfConfig.ProtocolVersion = uint8(config.Protocol)
 	serfConfig.CoalescePeriod = 3 * time.Second
 	serfConfig.QuiescentPeriod = time.Second
+	serfConfig.QueryResponseSizeLimit = config.QueryResponseSizeLimit
+	serfConfig.QuerySizeLimit = config.QuerySizeLimit
 	serfConfig.UserCoalescePeriod = 3 * time.Second
 	serfConfig.UserQuiescentPeriod = time.Second
 	if config.ReconnectInterval != 0 {
