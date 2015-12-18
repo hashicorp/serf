@@ -7,4 +7,5 @@ branches:
   only:
     - master
 
-script: make updatedeps && make test
+script:
+  - make test
