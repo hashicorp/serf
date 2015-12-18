@@ -28,7 +28,7 @@ func drainEventCh(ch <-chan string) {
 
 func getRPCAddr() string {
 	for i := 0; i < 500; i++ {
-		l, err := net.Listen("tcp", fmt.Sprintf(":%d", rand.Int31n(25000)+1024))
+		l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", rand.Int31n(25000)+1024))
 		if err == nil {
 			l.Close()
 			return l.Addr().String()
