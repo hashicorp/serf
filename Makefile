@@ -1,5 +1,7 @@
 TEST?=./...
 VERSION = $(shell awk -F\" '/^const Version/ { print $$2; exit }' version.go)
+GITSHA:=$(shell git rev-parse HEAD)
+GITBRANCH:=$(shell git symbolic-ref --short HEAD 2>/dev/null)
 
 default: test
 
@@ -35,15 +37,29 @@ testrace: subnet generate
 	go test -race $(TEST) $(TESTARGS)
 
 # updatedeps installs all the dependencies needed to test, build, and run
+# `go get -u` causes git to revert Serf to the master branch. This causes all
+# kinds of headaches. We record the git sha when make starts try to correct it
+# if we detect dift. DO NOT use `git checkout -f` for this because it will wipe
+# out your changes without asking.
 updatedeps:
+	@echo "INFO: Currently on $(GITBRANCH) ($(GITSHA))"
+	@git diff-index --quiet HEAD ; if [ $$? -ne 0 ]; then \
+		echo "ERROR: Your git working tree has uncommitted changes. updatedeps will fail. Please stash or commit your changes first."; \
+		exit 1; \
+	fi
 	go get -u github.com/mitchellh/gox
-	go get -f -t -u ./...
 	go list ./... \
 		| xargs go list -f '{{join .Deps "\n"}}' \
 		| grep -v github.com/hashicorp/serf \
 		| grep -v '/internal/' \
 		| sort -u \
-		| xargs go get -f -u
+		| xargs go get -f -u -v -d 
+	@if [ "$(GITBRANCH)" != "" ]; then git checkout -q $(GITBRANCH); else git checkout -q $(GITSHA); fi
+	@if [ `git rev-parse HEAD` != "$(GITSHA)" ]; then \
+		echo "ERROR: git checkout has drifted and we weren't able to correct it. Was $(GITBRANCH) ($(GITSHA))"; \
+		exit 1; \
+	fi
+	@echo "INFO: Currently on $(GITBRANCH) ($(GITSHA))"
 
 # generate runs `go generate` to build the dynamically generated source files
 generate:
