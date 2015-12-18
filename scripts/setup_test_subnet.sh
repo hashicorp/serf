@@ -8,7 +8,7 @@
 set -e
 
 # Check if loopback is setup
-if ping -c 1 -W 10 127.0.0.2 > /dev/null 2>&1
+if ping -c 1 -W 10 127.0.0.2
 then
     exit
 fi
