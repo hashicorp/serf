@@ -7,15 +7,6 @@
 # Fail if any commands fail (unchecked), namely sudo and ifconfig.
 set -e
 
-# If we're not on OS X, then just bail out since lo should be routable
-case $OSTYPE in
-    darwin*)
-        ;;
-    *)
-        exit 0
-        ;;
-esac
-
 # Check if loopback is setup
 if ping -c 1 -W 10 127.0.0.2 > /dev/null 2>&1
 then
