@@ -13,6 +13,16 @@ then
     exit
 fi
 
+# If we're not on OS X, then error
+case $OSTYPE in
+    darwin*)
+        ;;
+    *)
+        echo "Can't setup interfaces on non-Mac. Error!"
+        exit 1
+        ;;
+esac
+
 # Setup loopback
 echo "Using sudo to setup lo0 interface aliases for testing."
 sudo -v
