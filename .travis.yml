@@ -8,3 +8,5 @@ branches:
     - master
 
 script: make updatedeps && make test
+
+sudo: false
