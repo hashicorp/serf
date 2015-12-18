@@ -9,6 +9,7 @@ FEATURES:
 
 IMPROVEMENTS:
 
+ * Added support to configure query request size and query response size
  * Syslog messages are now filtered by the configured log-level
  * New `statsd_addr` for sending metrics via UDP to statsd
  * Added support for sending telemetry to statsite
