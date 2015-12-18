@@ -7,6 +7,12 @@
 # Fail if any commands fail (unchecked), namely sudo and ifconfig.
 set -e
 
+# Check if loopback is setup
+if ping -c 1 -W 10 127.0.0.2 > /dev/null 2>&1
+then
+    exit
+fi
+
 # If we're not on OS X, then error
 case $OSTYPE in
     darwin*)
@@ -16,12 +22,6 @@ case $OSTYPE in
         exit 1
         ;;
 esac
-
-# Check if loopback is setup
-if ping -c 1 -W 10 127.0.0.2 > /dev/null 2>&1
-then
-    exit
-fi
 
 # Setup loopback
 echo "Using sudo to setup lo0 interface aliases for testing."
