@@ -331,3 +331,14 @@ list is the primary key, which is the key used to encrypt all outgoing messages.
 The remaining keys in the list are considered secondary and are used for
 decryption only. During message decryption, Serf uses the configured encryption
 keys in the order they appear in the keyring file until all keys are exhausted.
+
+## Ports Used
+
+Serf requires 2 ports to work properly. Below we document the requirements for each
+port.
+
+* Gossip (Default 7946) This is used for communication between the Serf nodes. TCP
+and UDP.
+
+* RPC (Default 7373) This is used by agents to handle RPC from the CLI, as well as
+by custom RPC clients written by users. TCP only.
