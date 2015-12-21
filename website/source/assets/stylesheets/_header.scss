@@ -22,11 +22,11 @@
     }
 
     .by-hashicorp{
-      margin-left: -6px;
+      margin-left: -5px;
       &:hover{
         svg{
-          line{
-            stroke: $red;
+          .svg-bg-line{
+            opacity: .4;
           }
         }
       }
