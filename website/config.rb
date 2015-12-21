@@ -2,7 +2,7 @@ set :base_url, "https://www.serfdom.io/"
 
 activate :hashicorp do |h|
   h.name        = "serf"
-  h.version     = "0.6.4"
+  h.version     = "0.7.0"
   h.github_slug = "hashicorp/serf"
 end
 
