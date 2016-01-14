@@ -9,7 +9,7 @@ description: |-
 # Security Model
 
 Serf uses a symmetric key, or shared secret, cryptosystem to provide
-[confidentiality, integrity and authentication](http://en.wikipedia.org/wiki/Information_security).
+[confidentiality, integrity and authentication](https://en.wikipedia.org/wiki/Information_security).
 
 This means Serf communication is protected against eavesdropping, tampering,
 or attempts to generate fake events. This makes it possible to run Serf over
@@ -27,12 +27,12 @@ All members of the Serf cluster must be provided the shared secret ahead of time
 This places the burden of key distribution on the user.
 
 To support confidentiality, all messages are encrypted using the
-[AES-128 standard](http://en.wikipedia.org/wiki/Advanced_Encryption_Standard). The
+[AES-128 standard](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard). The
 AES standard is considered one of the most secure and modern encryption standards.
 Additionally, it is a fast algorithm, and modern CPUs provide hardware instructions to
 make encryption and decryption very lightweight.
 
-AES is used with the [Galois Counter Mode (GCM)](http://en.wikipedia.org/wiki/Galois/Counter_Mode),
+AES is used with the [Galois Counter Mode (GCM)](https://en.wikipedia.org/wiki/Galois/Counter_Mode),
 using a randomly generated nonce. The use of GCM provides message integrity,
 as the ciphertext is suffixed with a 'tag' that is used to verify integrity.
 

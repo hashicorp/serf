@@ -1,6 +1,6 @@
 # Serf
 
-* Website: http://www.serfdom.io
+* Website: https://www.serfdom.io
 * IRC: `#serfdom` on Freenode
 * Mailing list: [Google Groups](https://groups.google.com/group/serfdom/)
 
@@ -28,7 +28,7 @@ Here are some example use cases of Serf, though there are many others:
 
 ## Quick Start
 
-First, [download a pre-built Serf binary](http://www.serfdom.io/downloads.html)
+First, [download a pre-built Serf binary](https://www.serfdom.io/downloads.html)
 for your operating system or [compile Serf yourself](#developing-serf).
 
 Next, let's start a couple Serf agents. Agents run until they're told to quit
@@ -87,14 +87,14 @@ cluster of the node failure.
 
 Full, comprehensive documentation is viewable on the Serf website:
 
-http://www.serfdom.io/docs
+https://www.serfdom.io/docs
 
 ## Developing Serf
 
-If you wish to work on Serf itself, you'll first need [Go](http://golang.org)
+If you wish to work on Serf itself, you'll first need [Go](https://golang.org)
 installed (version 1.2+ is _required_). Make sure you have Go properly 
 [installed](https://golang.org/doc/install),
-including setting up your [GOPATH](http://golang.org/doc/code.html#GOPATH).
+including setting up your [GOPATH](https://golang.org/doc/code.html#GOPATH).
 
 Next, clone this repository into `$GOPATH/src/github.com/hashicorp/serf` and
 then just type `make`. In a few moments, you'll have a working `serf` executable:
