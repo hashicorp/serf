@@ -8,7 +8,7 @@ description: |-
 
 # Serf vs. Consul
 
-[Consul](http://www.consul.io) is a tool for service discovery and configuration.
+[Consul](https://www.consul.io) is a tool for service discovery and configuration.
 It provides high level features such as service discovery, health checking
 and key/value storage. It makes use of a group of strongly consistent servers
 to manage the datacenter.
@@ -37,7 +37,7 @@ Catalog, while Serf is only eventually consistent.
 In addition to the service level abstraction and improved health checking,
 Consul provides a key/value store and support for multiple datacenters.
 Serf can run across the WAN but with degraded performance. Consul makes use
-of [multiple gossip pools](http://www.consul.io/docs/internals/architecture.html),
+of [multiple gossip pools](https://www.consul.io/docs/internals/architecture.html),
 so that the performance of Serf over a LAN can be retained while still using it over
 a WAN for linking together multiple datacenters.
 
@@ -46,4 +46,3 @@ general purpose tool. Consul uses a CP architecture, favoring consistency over
 availability. Serf is a AP system, and sacrifices consistency for availability.
 This means Consul cannot operate if the central servers cannot form a quorum,
 while Serf will continue to function under almost all circumstances.
-
