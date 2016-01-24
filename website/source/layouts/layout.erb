@@ -113,5 +113,20 @@
     <script>
       Serf.initialize();
     </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "http://schema.org",
+      "@type": "Product",
+      "name": "Serf",
+      "alternateName": "Serf by HashiCorp",
+      "manufacturer": "HashiCorp",
+      "url": "https://www.serfdom.io",
+      "logo": "<%= File.join(base_url, image_path("logo_large.png")) %>",
+      "sameAs": [
+        "https://github.com/hashicorp/serf"
+      ]
+    }
+  </script>
   </body>
 </html>
