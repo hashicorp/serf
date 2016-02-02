@@ -1,12 +1,12 @@
 //= require jquery
 //= require bootstrap
 
-//= require highcharts
-//= require classy
-//= require simulator
+//= require lib/_d3
+//= require lib/_highcharts
+//= require lib/_classy
+//= require lib/_simulator
 
-//= require lib/Base
+//= require lib/_base
+//= require lib/_sidebar
 
-//= require d3
-//= require Sidebar
-//= require serf
+//= require _serf
