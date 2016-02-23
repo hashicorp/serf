@@ -214,8 +214,8 @@ type queries struct {
 }
 
 const (
-	UserEventSizeLimit     = 512        // Maximum byte size for event name and payload
-	snapshotSizeLimit      = 128 * 1024 // Maximum 128 KB snapshot
+	UserEventSizeLimit = 512        // Maximum byte size for event name and payload
+	snapshotSizeLimit  = 128 * 1024 // Maximum 128 KB snapshot
 )
 
 // Create creates a new Serf instance, starting all the background tasks
