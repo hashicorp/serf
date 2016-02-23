@@ -57,7 +57,7 @@ updatedeps:
 		| grep -v github.com/hashicorp/serf \
 		| grep -v '/internal/' \
 		| sort -u \
-		| xargs go get -f -u -v -d 
+		| xargs go get -f -u -v -d
 	@if [ "$(GITBRANCH)" != "" ]; then git checkout -q $(GITBRANCH); else git checkout -q $(GITSHA); fi
 	@if [ `git rev-parse HEAD` != "$(GITSHA)" ]; then \
 		echo "ERROR: git checkout has drifted and we weren't able to correct it. Was $(GITBRANCH) ($(GITSHA))"; \

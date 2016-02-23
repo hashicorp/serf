@@ -269,13 +269,13 @@ func TestSerf_eventsUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	defer s1.Shutdown()
 	defer s2.Shutdown()
 
 	testutil.Yield()
@@ -347,12 +347,12 @@ func TestSerf_joinLeave(t *testing.T) {
 
 	testutil.Yield()
 
-	if len(s1.Members()) != 1 {
-		t.Fatalf("s1 members: %d", len(s1.Members()))
+	if len(s1.Members()) != 1 || s1.NumNodes() != 1 {
+		t.Fatalf("s1 members: %d && %d", len(s1.Members()), s1.NumNodes())
 	}
 
-	if len(s2.Members()) != 1 {
-		t.Fatalf("s2 members: %d", len(s2.Members()))
+	if len(s2.Members()) != 1 || s2.NumNodes() != 1 {
+		t.Fatalf("s2 members: %d && %d", len(s2.Members()), s2.NumNodes())
 	}
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
@@ -362,12 +362,12 @@ func TestSerf_joinLeave(t *testing.T) {
 
 	testutil.Yield()
 
-	if len(s1.Members()) != 2 {
-		t.Fatalf("s1 members: %d", len(s1.Members()))
+	if len(s1.Members()) != 2 || s1.NumNodes() != 2 {
+		t.Fatalf("s1 members: %d && %d", len(s1.Members()), s1.NumNodes())
 	}
 
-	if len(s2.Members()) != 2 {
-		t.Fatalf("s2 members: %d", len(s2.Members()))
+	if len(s2.Members()) != 2 || s2.NumNodes() != 2 {
+		t.Fatalf("s2 members: %d && %d", len(s2.Members()), s2.NumNodes())
 	}
 
 	err = s1.Leave()
@@ -378,12 +378,12 @@ func TestSerf_joinLeave(t *testing.T) {
 	// Give the reaper time to reap nodes
 	time.Sleep(s1Config.ReapInterval * 2)
 
-	if len(s1.Members()) != 1 {
-		t.Fatalf("s1 members: %d", len(s1.Members()))
+	if len(s1.Members()) != 1 || s1.NumNodes() != 1 {
+		t.Fatalf("s1 members: %d && %d", len(s1.Members()), s1.NumNodes())
 	}
 
-	if len(s2.Members()) != 1 {
-		t.Fatalf("s2 members: %d", len(s2.Members()))
+	if len(s2.Members()) != 1 || s2.NumNodes() != 1 {
+		t.Fatalf("s2 members: %d && %d", len(s2.Members()), s2.NumNodes())
 	}
 }
 
@@ -972,12 +972,12 @@ func TestSerf_joinLeaveJoin(t *testing.T) {
 
 	testutil.Yield()
 
-	if len(s1.Members()) != 1 {
-		t.Fatalf("s1 members: %d", len(s1.Members()))
+	if s1.NumNodes() != 1 {
+		t.Fatalf("s1 members: %d", s1.NumNodes())
 	}
 
-	if len(s2.Members()) != 1 {
-		t.Fatalf("s2 members: %d", len(s2.Members()))
+	if s2.NumNodes() != 1 {
+		t.Fatalf("s2 members: %d", s2.NumNodes())
 	}
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
@@ -987,12 +987,12 @@ func TestSerf_joinLeaveJoin(t *testing.T) {
 
 	testutil.Yield()
 
-	if len(s1.Members()) != 2 {
-		t.Fatalf("s1 members: %d", len(s1.Members()))
+	if s1.NumNodes() != 2 {
+		t.Fatalf("s1 members: %d", s1.NumNodes())
 	}
 
-	if len(s2.Members()) != 2 {
-		t.Fatalf("s2 members: %d", len(s2.Members()))
+	if s2.NumNodes() != 2 {
+		t.Fatalf("s2 members: %d", s2.NumNodes())
 	}
 
 	// Leave and shutdown
@@ -1036,12 +1036,12 @@ func TestSerf_joinLeaveJoin(t *testing.T) {
 	testutil.Yield()
 
 	// Should be back to both members
-	if len(s1.Members()) != 2 {
-		t.Fatalf("s1 members: %d", len(s1.Members()))
+	if s1.NumNodes() != 2 {
+		t.Fatalf("s1 members: %d", s1.NumNodes())
 	}
 
-	if len(s2.Members()) != 2 {
-		t.Fatalf("s2 members: %d", len(s2.Members()))
+	if s2.NumNodes() != 2 {
+		t.Fatalf("s2 members: %d", s2.NumNodes())
 	}
 
 	// s1 should see the node as alive
@@ -1243,7 +1243,7 @@ func TestSerf_Leave_SnapshotRecovery(t *testing.T) {
 
 	// Verify that s2 is didn't join
 	testMember(t, s1.Members(), s2Config.NodeName, StatusLeft)
-	if len(s2.Members()) != 1 {
+	if s2.NumNodes() != 1 {
 		t.Fatalf("bad members: %#v", s2.Members())
 	}
 }
@@ -1959,7 +1959,7 @@ func TestSerf_PingDelegateVersioning(t *testing.T) {
 
 	// They both should show 2 members, but only s1 should know about s2
 	// in the cache, since s1 spoke an alien ping protocol.
-	if len(s1.Members()) != 2 || len(s2.Members()) != 2 {
+	if s1.NumNodes() != 2 || s2.NumNodes() != 2 {
 		t.Fatalf("s1 and s2 didn't probe each other")
 	}
 	if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); !ok {
@@ -2030,7 +2030,7 @@ func TestSerf_PingDelegateRogueCoordinate(t *testing.T) {
 
 	// They both should show 2 members, but only s1 should know about s2
 	// in the cache, since s1 sent a bad coordinate.
-	if len(s1.Members()) != 2 || len(s2.Members()) != 2 {
+	if s1.NumNodes() != 2 || s2.NumNodes() != 2 {
 		t.Fatalf("s1 and s2 didn't probe each other")
 	}
 	if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); !ok {
@@ -2038,5 +2038,43 @@ func TestSerf_PingDelegateRogueCoordinate(t *testing.T) {
 	}
 	if _, ok := s2.GetCachedCoordinate(s1.config.NodeName); ok {
 		t.Fatalf("s2 got an unexpected coordinate for s1")
+	}
+}
+
+func TestSerf_NumNodes(t *testing.T) {
+	s1Config := testConfig()
+	s2Config := testConfig()
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	if s1.NumNodes() != 1 {
+		t.Fatalf("Expected 1 members")
+	}
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+
+	if s2.NumNodes() != 1 {
+		t.Fatalf("Expected 1 members")
+	}
+
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	if s1.NumNodes() != 2 {
+		t.Fatalf("Expected 2 members")
 	}
 }
