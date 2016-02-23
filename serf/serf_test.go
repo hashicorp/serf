@@ -2040,3 +2040,41 @@ func TestSerf_PingDelegateRogueCoordinate(t *testing.T) {
 		t.Fatalf("s2 got an unexpected coordinate for s1")
 	}
 }
+
+func TestSerf_NumNodes(t *testing.T) {
+	s1Config := testConfig()
+	s2Config := testConfig()
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	if s1.NumNodes() != 1 {
+		t.Fatalf("Expected 1 members")
+	}
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+
+	if s2.NumNodes() != 1 {
+		t.Fatalf("Expected 1 members")
+	}
+
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	if s1.NumNodes() != 2 {
+		t.Fatalf("Expected 2 members")
+	}
+}

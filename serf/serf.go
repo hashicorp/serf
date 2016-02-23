@@ -1680,3 +1680,12 @@ func (s *Serf) GetCachedCoordinate(name string) (coord *coordinate.Coordinate, o
 
 	return nil, false
 }
+
+// NumNodes returns the number of nodes in the
+func (s *Serf) NumNodes() (numNodes int) {
+	s.queryLock.RLock()
+	numNodes = len(s.members)
+	s.queryLock.RUnlock()
+
+	return numNodes
+}
