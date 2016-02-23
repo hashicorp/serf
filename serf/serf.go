@@ -1684,9 +1684,9 @@ func (s *Serf) GetCachedCoordinate(name string) (coord *coordinate.Coordinate, o
 // NumNodes returns the number of nodes in the serf cluster, regardless of
 // their health or status.
 func (s *Serf) NumNodes() (numNodes int) {
-	s.queryLock.RLock()
+	s.memberLock.RLock()
 	numNodes = len(s.members)
-	s.queryLock.RUnlock()
+	s.memberLock.RUnlock()
 
 	return numNodes
 }
