@@ -269,13 +269,13 @@ func TestSerf_eventsUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	defer s1.Shutdown()
 	defer s2.Shutdown()
 
 	testutil.Yield()
