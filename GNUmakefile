@@ -31,7 +31,7 @@ subnet:
 
 # test runs the test suite
 test: subnet generate
-	go list $(TEST) | xargs -n1 go test $(TESTARGS)
+	go list $(TEST) | grep -v ^github.com/hashicorp/serf/vendor | xargs -n1 go test $(TESTARGS)
 
 # testrace runs the race checker
 testrace: subnet generate
@@ -45,10 +45,7 @@ updatedeps:: tools
 # generate runs `go generate` to build the dynamically generated source files
 generate:
 	find . -type f -name '.DS_Store' -delete
-	go list ./... | \
-		grep -v ^github.com/hashicorp/serf/vendor | \
-		xargs -n1 \
-			go generate
+	go list ./... | grep -v ^github.com/hashicorp/serf/vendor | xargs -n1 go generate
 
 vet:
 	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
