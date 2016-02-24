@@ -89,8 +89,8 @@
 		},
 		{
 			"path": "golang.org/x/sys/unix",
-			"revision": "20457ee8ea8546920d3f4e19e405da45250dc5a5",
-			"revisionTime": "2016-01-20T11:03:39-05:00"
+			"revision": "5eaf0df67e70d6997a9fe0ed24383fa1b01638d3",
+			"revisionTime": "2016-02-22T17:57:57+01:00"
 		}
 	]
 }
