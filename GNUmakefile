@@ -3,10 +3,10 @@ VERSION = $(shell awk -F\" '/^const Version/ { print $$2; exit }' version.go)
 GITSHA:=$(shell git rev-parse HEAD)
 GITBRANCH:=$(shell git symbolic-ref --short HEAD 2>/dev/null)
 
-default: test
+default:: test
 
 # bin generates the releasable binaries
-bin: tools
+bin:: tools
 	@sh -c "'$(CURDIR)/scripts/build.sh'"
 
 # cov generates the coverage output
@@ -23,6 +23,9 @@ dev::
 dist:: bin
 	@sh -c "'$(CURDIR)/scripts/dist.sh' $(VERSION)"
 
+get-tools::
+	go get -u -v $(GOTOOLS)
+
 # subnet sets up the require subnet for testing on darwin (osx) - you must run
 # this before running other tests if you are on osx.
 subnet::
@@ -35,6 +38,11 @@ test:: subnet tools
 # testrace runs the race checker
 testrace:: subnet
 	go test -race `govendor list -no-status +local` $(TESTARGS)
+
+tools::
+	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
+		$(MAKE) get-tools; \
+	fi
 
 # updatedeps installs all the dependencies needed to test, build, and run
 updatedeps:: tools
@@ -53,12 +61,4 @@ vet:: tools
 		echo "and fix them if necessary before submitting the code for reviewal."; \
 	fi
 
-tools::
-	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
-		$(MAKE) get-tools; \
-	fi
-
-get-tools::
-	go get -u -v $(GOTOOLS)
-
-.PHONY: default bin cov dev dist subnet test testrace tools updatedeps vet
+.PHONY: default bin cov dev dist get-tools subnet test testrace tools updatedeps vet
