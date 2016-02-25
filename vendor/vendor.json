@@ -1,0 +1,96 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"path": "github.com/armon/circbuf",
+			"revision": "bbbad097214e2918d8543d5201d12bfd7bca254d",
+			"revisionTime": "2015-08-26T17:49:46-07:00"
+		},
+		{
+			"path": "github.com/armon/go-metrics",
+			"revision": "345426c77237ece5dab0e1605c3e4b35c3f54757",
+			"revisionTime": "2015-12-30T17:07:39-08:00"
+		},
+		{
+			"path": "github.com/armon/go-radix",
+			"revision": "4239b77079c7b5d1243b7b4736304ce8ddb6f0f2",
+			"revisionTime": "2016-01-15T15:47:25-08:00"
+		},
+		{
+			"path": "github.com/bgentry/speakeasy",
+			"revision": "36e9cfdd690967f4f690c6edcc9ffacd006014a0",
+			"revisionTime": "2015-09-02T16:14:13-07:00"
+		},
+		{
+			"path": "github.com/hashicorp/go-msgpack/codec",
+			"revision": "fa3f63826f7c23912c15263591e65d54d080b458",
+			"revisionTime": "2015-05-18T16:42:57-07:00"
+		},
+		{
+			"path": "github.com/hashicorp/go-syslog",
+			"revision": "42a2b573b664dbf281bd48c3cc12c086b17a39ba",
+			"revisionTime": "2015-02-18T13:19:46-05:00"
+		},
+		{
+			"path": "github.com/hashicorp/go.net/internal/iana",
+			"revision": "104dcad90073cd8d1e6828b2af19185b60cf3e29",
+			"revisionTime": "2015-10-06T13:33:46-07:00"
+		},
+		{
+			"path": "github.com/hashicorp/go.net/ipv4",
+			"revision": "104dcad90073cd8d1e6828b2af19185b60cf3e29",
+			"revisionTime": "2015-10-06T13:33:46-07:00"
+		},
+		{
+			"path": "github.com/hashicorp/go.net/ipv6",
+			"revision": "104dcad90073cd8d1e6828b2af19185b60cf3e29",
+			"revisionTime": "2015-10-06T13:33:46-07:00"
+		},
+		{
+			"path": "github.com/hashicorp/logutils",
+			"revision": "0dc08b1671f34c4250ce212759ebd880f743d883",
+			"revisionTime": "2015-06-09T00:04:31-07:00"
+		},
+		{
+			"path": "github.com/hashicorp/mdns",
+			"revision": "9d85cf22f9f8d53cb5c81c1b2749f438b2ee333f",
+			"revisionTime": "2015-12-05T20:24:12-08:00"
+		},
+		{
+			"path": "github.com/hashicorp/memberlist",
+			"revision": "9888dc523910e5d22c5be4f6e34520943df21809",
+			"revisionTime": "2015-12-18T21:04:32-08:00"
+		},
+		{
+			"path": "github.com/mattn/go-isatty",
+			"revision": "56b76bdf51f7708750eac80fa38b952bb9f32639",
+			"revisionTime": "2015-12-11T09:06:21+09:00"
+		},
+		{
+			"path": "github.com/miekg/dns",
+			"revision": "905106d0e8908efdda8d4519c817622c7e8ee8ec",
+			"revisionTime": "2016-02-22T19:20:54Z"
+		},
+		{
+			"path": "github.com/mitchellh/cli",
+			"revision": "5c87c51cedf76a1737bf5ca3979e8644871598a6",
+			"revisionTime": "2016-02-03T21:55:45-08:00"
+		},
+		{
+			"path": "github.com/mitchellh/mapstructure",
+			"revision": "d2dd0262208475919e1a362f675cfc0e7c10e905",
+			"revisionTime": "2016-02-11T19:18:39-08:00"
+		},
+		{
+			"path": "github.com/ryanuber/columnize",
+			"revision": "983d3a5fab1bf04d1b412465d2d9f8430e2e917e",
+			"revisionTime": "2015-09-15T16:29:42-07:00"
+		},
+		{
+			"path": "golang.org/x/sys/unix",
+			"revision": "5eaf0df67e70d6997a9fe0ed24383fa1b01638d3",
+			"revisionTime": "2016-02-22T17:57:57+01:00"
+		}
+	]
+}

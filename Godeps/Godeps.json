@@ -1,0 +1,82 @@
+{
+	"ImportPath": "github.com/hashicorp/serf",
+	"GoVersion": "go1.6",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/armon/circbuf",
+			"Rev": "bbbad097214e2918d8543d5201d12bfd7bca254d"
+		},
+		{
+			"ImportPath": "github.com/armon/go-metrics",
+			"Rev": "345426c77237ece5dab0e1605c3e4b35c3f54757"
+		},
+		{
+			"ImportPath": "github.com/armon/go-radix",
+			"Rev": "4239b77079c7b5d1243b7b4736304ce8ddb6f0f2"
+		},
+		{
+			"ImportPath": "github.com/bgentry/speakeasy",
+			"Rev": "36e9cfdd690967f4f690c6edcc9ffacd006014a0"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-msgpack/codec",
+			"Rev": "fa3f63826f7c23912c15263591e65d54d080b458"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-syslog",
+			"Rev": "42a2b573b664dbf281bd48c3cc12c086b17a39ba"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go.net/internal/iana",
+			"Rev": "104dcad90073cd8d1e6828b2af19185b60cf3e29"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go.net/ipv4",
+			"Rev": "104dcad90073cd8d1e6828b2af19185b60cf3e29"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go.net/ipv6",
+			"Rev": "104dcad90073cd8d1e6828b2af19185b60cf3e29"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/logutils",
+			"Rev": "0dc08b1671f34c4250ce212759ebd880f743d883"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/mdns",
+			"Rev": "9d85cf22f9f8d53cb5c81c1b2749f438b2ee333f"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/memberlist",
+			"Rev": "9888dc523910e5d22c5be4f6e34520943df21809"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-isatty",
+			"Rev": "56b76bdf51f7708750eac80fa38b952bb9f32639"
+		},
+		{
+			"ImportPath": "github.com/miekg/dns",
+			"Rev": "75e6e86cc601825c5dbcd4e0c209eab180997cd7"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/cli",
+			"Rev": "cb6853d606ea4a12a15ac83cc43503df99fd28fb"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/mapstructure",
+			"Rev": "281073eb9eb092240d33ef253c404f1cca550309"
+		},
+		{
+			"ImportPath": "github.com/ryanuber/columnize",
+			"Comment": "v2.0.1-8-g983d3a5",
+			"Rev": "983d3a5fab1bf04d1b412465d2d9f8430e2e917e"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "20457ee8ea8546920d3f4e19e405da45250dc5a5"
+		}
+	]
+}
