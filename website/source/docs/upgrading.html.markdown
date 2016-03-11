@@ -24,7 +24,7 @@ below, assume you're running version A of Serf, and then version B comes out.
 
 2. Shut down version A, and start version B with the `-protocol=PREVIOUS`
    flag, where "PREVIOUS" is the protocol version of version A (which can
-   be discovered by running `serf -v` or `serf members -detailed).
+   be discovered by running `serf -v` or `serf members -detailed`).
 
 3. Once all nodes are running version B, go through every node and restart
    the version B agent _without_ the `-protocol` flag.
