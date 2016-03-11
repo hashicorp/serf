@@ -9,8 +9,8 @@
 		},
 		{
 			"path": "github.com/armon/go-metrics",
-			"revision": "345426c77237ece5dab0e1605c3e4b35c3f54757",
-			"revisionTime": "2015-12-30T17:07:39-08:00"
+			"revision": "f303b03b91d770a11a39677f1d3b55da4002bbcb",
+			"revisionTime": "2016-03-06T22:11:54-08:00"
 		},
 		{
 			"path": "github.com/armon/go-radix",
@@ -59,8 +59,8 @@
 		},
 		{
 			"path": "github.com/hashicorp/memberlist",
-			"revision": "9888dc523910e5d22c5be4f6e34520943df21809",
-			"revisionTime": "2015-12-18T21:04:32-08:00"
+			"revision": "cef12ad58224d55cf26caa9e3d239c2fcb3432a2",
+			"revisionTime": "2016-03-07T10:31:29-08:00"
 		},
 		{
 			"path": "github.com/mattn/go-isatty",
@@ -69,8 +69,8 @@
 		},
 		{
 			"path": "github.com/miekg/dns",
-			"revision": "905106d0e8908efdda8d4519c817622c7e8ee8ec",
-			"revisionTime": "2016-02-22T19:20:54Z"
+			"revision": "b9171237b0642de1d8e8004f16869970e065f46b",
+			"revisionTime": "2016-03-08T07:08:06Z"
 		},
 		{
 			"path": "github.com/mitchellh/cli",
@@ -89,8 +89,8 @@
 		},
 		{
 			"path": "golang.org/x/sys/unix",
-			"revision": "5eaf0df67e70d6997a9fe0ed24383fa1b01638d3",
-			"revisionTime": "2016-02-22T17:57:57+01:00"
+			"revision": "7a56174f0086b32866ebd746a794417edbc678a1",
+			"revisionTime": "2016-03-02T21:58:15+02:00"
 		}
 	]
 }
