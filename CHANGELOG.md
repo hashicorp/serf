@@ -1,3 +1,13 @@
+## 0.7.1 (UNRELEASED)
+
+IMRPOVEMENTS:
+
+ * Serf's Go dependencies are now vendored using govendor. [GH-383]
+
+BUG FIXES:
+
+ * Updated memberlist to pull in a fix for leaking goroutines when performing TCP fallback pings. This affected users with frequent UDP connectivity problems. [GH-381]
+
 ## 0.7 (December 21, 2015)
 
 FEATURES:
