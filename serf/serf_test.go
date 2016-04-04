@@ -1786,7 +1786,7 @@ func TestSerf_Join_Cancel(t *testing.T) {
 	testutil.Yield()
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
-	if err.Error() != "Merge canceled" {
+	if !strings.Contains(err.Error(), "Merge canceled") {
 		t.Fatalf("err: %s", err)
 	}
 
