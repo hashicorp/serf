@@ -23,9 +23,19 @@
 			"revisionTime": "2015-09-02T16:14:13-07:00"
 		},
 		{
+			"path": "github.com/hashicorp/errwrap",
+			"revision": "7554cd9344cec97297fa6649b055a8c98c2a1e55",
+			"revisionTime": "2014-10-27T22:47:10-07:00"
+		},
+		{
 			"path": "github.com/hashicorp/go-msgpack/codec",
 			"revision": "fa3f63826f7c23912c15263591e65d54d080b458",
 			"revisionTime": "2015-05-18T16:42:57-07:00"
+		},
+		{
+			"path": "github.com/hashicorp/go-multierror",
+			"revision": "d30f09973e19c1dfcd120b2d9c4f168e68d6b5d5",
+			"revisionTime": "2015-09-16T13:57:42-07:00"
 		},
 		{
 			"path": "github.com/hashicorp/go-syslog",
@@ -59,8 +69,8 @@
 		},
 		{
 			"path": "github.com/hashicorp/memberlist",
-			"revision": "cef12ad58224d55cf26caa9e3d239c2fcb3432a2",
-			"revisionTime": "2016-03-07T10:31:29-08:00"
+			"revision": "88ac4de0d1a0ca6def284b571342db3b777a4c37",
+			"revisionTime": "2016-03-28T23:05:08-07:00"
 		},
 		{
 			"path": "github.com/mattn/go-isatty",
@@ -69,8 +79,8 @@
 		},
 		{
 			"path": "github.com/miekg/dns",
-			"revision": "b9171237b0642de1d8e8004f16869970e065f46b",
-			"revisionTime": "2016-03-08T07:08:06Z"
+			"revision": "7e024ce8ce18b21b475ac6baf8fa3c42536bf2fa",
+			"revisionTime": "2016-03-28T15:46:43+01:00"
 		},
 		{
 			"path": "github.com/mitchellh/cli",
