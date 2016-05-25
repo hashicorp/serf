@@ -248,7 +248,7 @@ func DefaultConfig() *Config {
 		QueueDepthWarning:            128,
 		MaxQueueDepth:                4096,
 		TombstoneTimeout:             24 * time.Hour,
-		FlapTimeout:                  30 * time.Second,
+		FlapTimeout:                  60 * time.Second,
 		MemberlistConfig:             memberlist.DefaultLANConfig(),
 		QueryTimeoutMult:             16,
 		QueryResponseSizeLimit:       1024,
