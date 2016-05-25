@@ -1,4 +1,4 @@
-GOTOOLS = github.com/mitchellh/gox golang.org/x/tools/cmd/vet github.com/kardianos/govendor
+GOTOOLS = github.com/mitchellh/gox github.com/kardianos/govendor
 VERSION = $(shell awk -F\" '/^const Version/ { print $$2; exit }' version.go)
 GITSHA:=$(shell git rev-parse HEAD)
 GITBRANCH:=$(shell git symbolic-ref --short HEAD 2>/dev/null)
