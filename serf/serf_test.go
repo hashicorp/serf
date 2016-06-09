@@ -1734,6 +1734,7 @@ func TestSerfStats(t *testing.T) {
 		"failed":       "0",
 		"intent_queue": "0",
 		"left":         "0",
+		"health_score": "0",
 		"member_time":  "1",
 		"members":      "1",
 		"query_queue":  "0",
