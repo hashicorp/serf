@@ -1,6 +1,6 @@
 # Serf
 
-* Website: https://www.serfdom.io
+* Website: https://www.serf.io
 * IRC: `#serfdom` on Freenode
 * Mailing list: [Google Groups](https://groups.google.com/group/serfdom/)
 
@@ -28,7 +28,7 @@ Here are some example use cases of Serf, though there are many others:
 
 ## Quick Start
 
-First, [download a pre-built Serf binary](https://www.serfdom.io/downloads.html)
+First, [download a pre-built Serf binary](https://www.serf.io/downloads.html)
 for your operating system or [compile Serf yourself](#developing-serf).
 
 Next, let's start a couple Serf agents. Agents run until they're told to quit
@@ -87,7 +87,7 @@ cluster of the node failure.
 
 Full, comprehensive documentation is viewable on the Serf website:
 
-https://www.serfdom.io/docs
+https://www.serf.io/docs
 
 ## Developing Serf
 

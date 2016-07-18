@@ -1,4 +1,4 @@
-set :base_url, "https://www.serfdom.io/"
+set :base_url, "https://www.serf.io/"
 
 activate :hashicorp do |h|
   h.name        = "serf"

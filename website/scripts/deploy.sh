@@ -2,7 +2,7 @@
 set -e
 
 PROJECT="serf"
-PROJECT_URL="www.serfdom.io"
+PROJECT_URL="www.serf.io"
 FASTLY_SERVICE_ID="7GrxRJP3PVBuqQbyxYQ0MV"
 
 # Ensure the proper AWS environment variables are set
