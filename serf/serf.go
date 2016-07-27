@@ -1490,7 +1490,7 @@ func (s *Serf) reconnect() {
 	}
 
 	// Select a random member to try and join
-	idx := int(rand.Uint32() % uint32(n))
+	idx := rand.Int31n(int32(n))
 	mem := s.failedMembers[idx]
 	s.memberLock.RUnlock()
 
