@@ -19,9 +19,10 @@
 			"revisionTime": "2016-01-15T15:47:25-08:00"
 		},
 		{
+			"checksumSHA1": "dvd7Su+WNmHRP1+w1HezrPUCDsc=",
 			"path": "github.com/bgentry/speakeasy",
-			"revision": "36e9cfdd690967f4f690c6edcc9ffacd006014a0",
-			"revisionTime": "2015-09-02T16:14:13-07:00"
+			"revision": "e1439544d8ecd0f3e9373a636d447668096a8f81",
+			"revisionTime": "2016-05-20T23:26:10Z"
 		},
 		{
 			"path": "github.com/hashicorp/errwrap",
