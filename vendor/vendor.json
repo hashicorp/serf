@@ -88,9 +88,10 @@
 			"revisionTime": "2016-07-26T03:20:27Z"
 		},
 		{
+			"checksumSHA1": "yF39M9MGatDbq2d2oqlLy44jsRc=",
 			"path": "github.com/mitchellh/cli",
-			"revision": "5c87c51cedf76a1737bf5ca3979e8644871598a6",
-			"revisionTime": "2016-02-03T21:55:45-08:00"
+			"revision": "168daae10d6ff81b8b1201b0a4c9607d7e9b82e3",
+			"revisionTime": "2016-03-23T17:07:00Z"
 		},
 		{
 			"path": "github.com/mitchellh/mapstructure",
