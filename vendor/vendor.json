@@ -82,9 +82,10 @@
 			"revisionTime": "2016-08-06T12:27:52Z"
 		},
 		{
+			"checksumSHA1": "OUZ1FFXyKs+Cfg9M9rmXqqweQck=",
 			"path": "github.com/miekg/dns",
-			"revision": "7e024ce8ce18b21b475ac6baf8fa3c42536bf2fa",
-			"revisionTime": "2016-03-28T15:46:43+01:00"
+			"revision": "db96a2b759cdef4f11a34506a42eb8d1290c598e",
+			"revisionTime": "2016-07-26T03:20:27Z"
 		},
 		{
 			"path": "github.com/mitchellh/cli",
