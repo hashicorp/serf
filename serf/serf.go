@@ -65,12 +65,11 @@ type Serf struct {
 	memberLock    sync.RWMutex
 	members       map[string]*memberState
 
-	// Circular buffers for recent intents, used
-	// in case we get the intent before the relevant event
-	recentLeave      []nodeIntent
-	recentLeaveIndex int
-	recentJoin       []nodeIntent
-	recentJoinIndex  int
+	// recentLeave and recentJoin store the lamport time of intents in case
+	// we get an intent before the relevant memberlist event. These maps are
+	// indexed by node, and always store the latest lamport time we've seen.
+	recentLeave map[string]nodeIntent
+	recentJoin  map[string]nodeIntent
 
 	eventBroadcasts *memberlist.TransmitLimitedQueue
 	eventBuffer     []*userEvents
@@ -179,10 +178,14 @@ type memberState struct {
 	leaveTime   time.Time   // wall clock time of leave
 }
 
-// nodeIntent is used to buffer intents for out-of-order deliveries
+// nodeIntent is used to buffer intents for out-of-order deliveries.
 type nodeIntent struct {
+	// WallTime is the wall clock time we saw this intent in order to
+	// expire it from the buffer.
+	WallTime time.Time
+
+	// LTime is the Lamport time, used for cluster-wide ordering of events.
 	LTime LamportTime
-	Node  string
 }
 
 // userEvent is used to buffer events to prevent re-delivery
@@ -340,8 +343,8 @@ func Create(conf *Config) (*Serf, error) {
 	}
 
 	// Create the buffer for recent intents
-	serf.recentJoin = make([]nodeIntent, conf.RecentIntentBuffer)
-	serf.recentLeave = make([]nodeIntent, conf.RecentIntentBuffer)
+	serf.recentJoin = make(map[string]nodeIntent)
+	serf.recentLeave = make(map[string]nodeIntent)
 
 	// Create a buffer for events and queries
 	serf.eventBuffer = make([]*userEvents, conf.EventBuffer)
@@ -855,16 +858,16 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 			},
 		}
 
-		// Check if we have a join intent and use the LTime
-		if join := recentIntent(s.recentJoin, n.Name); join != nil {
-			member.statusLTime = join.LTime
+		// Check if we have a join intent
+		if join, ok := recentIntent(s.recentJoin, n.Name); ok {
+			member.statusLTime = join
 		}
 
 		// Check if we have a leave intent
-		if leave := recentIntent(s.recentLeave, n.Name); leave != nil {
-			if leave.LTime > member.statusLTime {
+		if leave, ok := recentIntent(s.recentLeave, n.Name); ok {
+			if leave > member.statusLTime {
 				member.Status = StatusLeaving
-				member.statusLTime = leave.LTime
+				member.statusLTime = leave
 			}
 		}
 
@@ -1016,18 +1019,8 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 
 	member, ok := s.members[leaveMsg.Node]
 	if !ok {
-		// If we've already seen this message don't rebroadcast
-		if recentIntent(s.recentLeave, leaveMsg.Node) != nil {
-			return false
-		}
-
-		// We don't know this member so store it in a buffer for now
-		s.recentLeave[s.recentLeaveIndex] = nodeIntent{
-			LTime: leaveMsg.LTime,
-			Node:  leaveMsg.Node,
-		}
-		s.recentLeaveIndex = (s.recentLeaveIndex + 1) % len(s.recentLeave)
-		return true
+		// Rebroadcast only if this was an update we hadn't seen before.
+		return upsertIntent(s.recentLeave, leaveMsg.Node, leaveMsg.LTime, time.Now)
 	}
 
 	// If the message is old, then it is irrelevant and we can skip it
@@ -1087,15 +1080,8 @@ func (s *Serf) handleNodeJoinIntent(joinMsg *messageJoin) bool {
 
 	member, ok := s.members[joinMsg.Node]
 	if !ok {
-		// If we've already seen this message don't rebroadcast
-		if recentIntent(s.recentJoin, joinMsg.Node) != nil {
-			return false
-		}
-
-		// We don't know this member so store it in a buffer for now
-		s.recentJoin[s.recentJoinIndex] = nodeIntent{LTime: joinMsg.LTime, Node: joinMsg.Node}
-		s.recentJoinIndex = (s.recentJoinIndex + 1) % len(s.recentJoin)
-		return true
+		// Rebroadcast only if this was an update we hadn't seen before.
+		return upsertIntent(s.recentJoin, joinMsg.Node, joinMsg.LTime, time.Now)
 	}
 
 	// Check if this time is newer than what we have
@@ -1387,14 +1373,18 @@ func (s *Serf) resolveNodeConflict() {
 	}
 }
 
-// handleReap periodically reaps the list of failed and left members.
+// handleReap periodically reaps the list of failed and left members, as well
+// as old buffered intents.
 func (s *Serf) handleReap() {
 	for {
 		select {
 		case <-time.After(s.config.ReapInterval):
 			s.memberLock.Lock()
-			s.failedMembers = s.reap(s.failedMembers, s.config.ReconnectTimeout)
-			s.leftMembers = s.reap(s.leftMembers, s.config.TombstoneTimeout)
+			now := time.Now()
+			s.failedMembers = s.reap(s.failedMembers, now, s.config.ReconnectTimeout)
+			s.leftMembers = s.reap(s.leftMembers, now, s.config.TombstoneTimeout)
+			reapIntents(s.recentJoin, now, s.config.RecentIntentTimeout)
+			reapIntents(s.recentLeave, now, s.config.RecentIntentTimeout)
 			s.memberLock.Unlock()
 		case <-s.shutdownCh:
 			return
@@ -1418,8 +1408,7 @@ func (s *Serf) handleReconnect() {
 // reap is called with a list of old members and a timeout, and removes
 // members that have exceeded the timeout. The members are removed from
 // both the old list and the members itself. Locking is left to the caller.
-func (s *Serf) reap(old []*memberState, timeout time.Duration) []*memberState {
-	now := time.Now()
+func (s *Serf) reap(old []*memberState, now time.Time, timeout time.Duration) []*memberState {
 	n := len(old)
 	for i := 0; i < n; i++ {
 		m := old[i]
@@ -1538,24 +1527,40 @@ func removeOldMember(old []*memberState, name string) []*memberState {
 	return old
 }
 
-// recentIntent checks the recent intent buffer for a matching
-// entry for a given node, and either returns the message or nil
-func recentIntent(recent []nodeIntent, node string) (intent *nodeIntent) {
-	for i := 0; i < len(recent); i++ {
-		// Break fast if we hit a zero entry
-		if recent[i].LTime == 0 {
-			break
-		}
-
-		// Check for a node match
-		if recent[i].Node == node {
-			// Take the most recent entry
-			if intent == nil || recent[i].LTime > intent.LTime {
-				intent = &recent[i]
-			}
+// reapIntents clears out any intents that are older than the timeout.
+func reapIntents(intents map[string]nodeIntent, now time.Time, timeout time.Duration) {
+	for node, intent := range intents {
+		if now.Sub(intent.WallTime) > timeout {
+			delete(intents, node)
 		}
 	}
-	return
+}
+
+// upsertIntent will update an existing intent with the supplied Lamport time,
+// or create a new entry. This will return true if a new entry was added. The
+// stamper is used to capture the wall clock time for expiring these buffered
+// intents.
+func upsertIntent(intents map[string]nodeIntent, node string, ltime LamportTime, stamper func() time.Time) bool {
+	if intent, ok := intents[node]; !ok || ltime > intent.LTime {
+		intents[node] = nodeIntent{
+			WallTime: stamper(),
+			LTime:    ltime,
+		}
+		return true
+	}
+
+	return false
+}
+
+// recentIntent checks the recent intent buffer for a matching entry for a given
+// node, and returns the Lamport time, if an intent is present, indicated by the
+// returned boolean
+func recentIntent(intents map[string]nodeIntent, node string) (LamportTime, bool) {
+	if intent, ok := intents[node]; ok {
+		return intent.LTime, true
+	}
+
+	return LamportTime(0), false
 }
 
 // handleRejoin attempts to reconnect to previously known alive nodes
