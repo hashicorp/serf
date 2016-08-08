@@ -8,9 +8,10 @@
 			"revisionTime": "2015-08-26T17:49:46-07:00"
 		},
 		{
+			"checksumSHA1": "d6798KSc0jDg2MHNxKdgyNfMK7A=",
 			"path": "github.com/armon/go-metrics",
-			"revision": "f303b03b91d770a11a39677f1d3b55da4002bbcb",
-			"revisionTime": "2016-03-06T22:11:54-08:00"
+			"revision": "3df31a1ada83e310c2e24b267c8e8b68836547b4",
+			"revisionTime": "2016-07-17T04:34:58Z"
 		},
 		{
 			"path": "github.com/armon/go-radix",
