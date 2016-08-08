@@ -100,9 +100,10 @@
 			"revisionTime": "2016-08-08T18:12:53Z"
 		},
 		{
+			"checksumSHA1": "ExnVEVNT8APpFTm26cUb5T09yR4=",
 			"path": "github.com/ryanuber/columnize",
-			"revision": "983d3a5fab1bf04d1b412465d2d9f8430e2e917e",
-			"revisionTime": "2015-09-15T16:29:42-07:00"
+			"revision": "9b3edd62028f107d7cabb19353292afd29311a4e",
+			"revisionTime": "2016-07-12T16:32:29Z"
 		},
 		{
 			"path": "golang.org/x/sys/unix",
