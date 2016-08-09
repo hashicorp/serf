@@ -8,16 +8,9 @@ description: |-
 
 # Install Serf
 
-Serf must first be installed on every node that will be a member of a
-Serf cluster. To make installation easy, Serf is distributed as a
-[binary package](/downloads.html) for all supported platforms and
-architectures. This page will not cover how to compile Serf from
-source.
-
-## Installing Serf
-
-To install Serf, find the [appropriate package](/downloads.html) for
-your system and download it. Serf is packaged as a "zip" archive.
+Serf must first be installed on every node that will be a member of a Serf
+cluster. To make installation easy, Serf is distributed as a
+[binary package](/downloads.html) for all supported platforms and architectures.
 
 After downloading Serf, unzip the package. Copy the `serf` binary to
 somewhere on the PATH so that it can be executed. On Unix systems,
@@ -25,6 +18,11 @@ somewhere on the PATH so that it can be executed. On Unix systems,
 depending on if you want to restrict the install to a single user or
 expose it to the entire system. On Windows systems, you can put it wherever
 you would like.
+
+It is also possible to build and install the `serf` binary through the standard
+`go` command-line utility (`go get -u github.com/hashicorp/serf/cmd/serf` which
+installs `serf` as `$GOPATH/bin/serf`), however we recommend running an official
+release.
 
 ### OS X
 
