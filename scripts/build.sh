@@ -39,10 +39,11 @@ fi
 echo "==> Building..."
 gox \
     -os="${XC_OS}" \
+    -osarch="!darwin/arm" \
     -arch="${XC_ARCH}" \
     -ldflags "-X main.GitCommit='${GIT_COMMIT}${GIT_DIRTY}'" \
     -output "pkg/{{.OS}}_{{.Arch}}/serf" \
-    .
+    ./cmd/serf/
 
 # Move all the compiled things to the $GOPATH/bin
 GOPATH=${GOPATH:-$(go env GOPATH)}

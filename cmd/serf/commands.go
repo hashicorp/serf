@@ -1,11 +1,12 @@
 package main
 
 import (
+	"os"
+	"os/signal"
+
 	"github.com/hashicorp/serf/command"
 	"github.com/hashicorp/serf/command/agent"
 	"github.com/mitchellh/cli"
-	"os"
-	"os/signal"
 )
 
 // Commands is the mapping of all the available Serf commands.
