@@ -33,7 +33,7 @@ subnet::
 
 # test runs the test suite
 test:: subnet tools
-	@govendor list -no-status +local | xargs -n1 go test $(TESTARGS)
+	@go list ./... | grep -v -E '^github.com/hashicorp/serf/(vendor|cmd/serf/vendor)' | xargs -n1 go test $(TESTARGS)
 
 # testrace runs the race checker
 testrace:: subnet
