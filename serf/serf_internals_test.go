@@ -64,7 +64,7 @@ func TestSerf_join_pendingIntent(t *testing.T) {
 	}
 	defer s.Shutdown()
 
-	upsertIntent(s.recentJoin, "test", 5, time.Now)
+	upsertIntent(s.recentIntents, "test", messageJoinType, 5, time.Now)
 	n := memberlist.Node{Name: "test",
 		Addr: nil,
 		Meta: []byte("test"),
@@ -89,8 +89,8 @@ func TestSerf_join_pendingIntents(t *testing.T) {
 	}
 	defer s.Shutdown()
 
-	upsertIntent(s.recentJoin, "test", 5, time.Now)
-	upsertIntent(s.recentLeave, "test", 6, time.Now)
+	upsertIntent(s.recentIntents, "test", messageJoinType, 5, time.Now)
+	upsertIntent(s.recentIntents, "test", messageLeaveType, 6, time.Now)
 	n := memberlist.Node{Name: "test",
 		Addr: nil,
 		Meta: []byte("test"),
@@ -125,7 +125,7 @@ func TestSerf_leaveIntent_bufferEarly(t *testing.T) {
 	}
 
 	// Check that we buffered
-	if leave, ok := recentIntent(s.recentLeave, "test"); !ok || leave != 10 {
+	if leave, ok := recentIntent(s.recentIntents, "test", messageLeaveType); !ok || leave != 10 {
 		t.Fatalf("bad buffer")
 	}
 }
@@ -150,7 +150,7 @@ func TestSerf_leaveIntent_oldMessage(t *testing.T) {
 		t.Fatalf("should not rebroadcast")
 	}
 
-	if _, ok := recentIntent(s.recentLeave, "test"); ok {
+	if _, ok := recentIntent(s.recentIntents, "test", messageLeaveType); ok {
 		t.Fatalf("should not have buffered intent")
 	}
 }
@@ -175,7 +175,7 @@ func TestSerf_leaveIntent_newer(t *testing.T) {
 		t.Fatalf("should rebroadcast")
 	}
 
-	if _, ok := recentIntent(s.recentLeave, "test"); ok {
+	if _, ok := recentIntent(s.recentIntents, "test", messageLeaveType); ok {
 		t.Fatalf("should not have buffered intent")
 	}
 
@@ -206,7 +206,7 @@ func TestSerf_joinIntent_bufferEarly(t *testing.T) {
 	}
 
 	// Check that we buffered
-	if join, ok := recentIntent(s.recentJoin, "test"); !ok || join != 10 {
+	if join, ok := recentIntent(s.recentIntents, "test", messageJoinType); !ok || join != 10 {
 		t.Fatalf("bad buffer")
 	}
 }
@@ -229,7 +229,7 @@ func TestSerf_joinIntent_oldMessage(t *testing.T) {
 	}
 
 	// Check that we didn't buffer anything
-	if _, ok := recentIntent(s.recentJoin, "test"); ok {
+	if _, ok := recentIntent(s.recentIntents, "test", messageJoinType); ok {
 		t.Fatalf("should not have buffered intent")
 	}
 }
@@ -252,7 +252,7 @@ func TestSerf_joinIntent_newer(t *testing.T) {
 		t.Fatalf("should rebroadcast")
 	}
 
-	if _, ok := recentIntent(s.recentJoin, "test"); ok {
+	if _, ok := recentIntent(s.recentIntents, "test", messageJoinType); ok {
 		t.Fatalf("should not have buffered intent")
 	}
 
@@ -285,7 +285,7 @@ func TestSerf_joinIntent_resetLeaving(t *testing.T) {
 		t.Fatalf("should rebroadcast")
 	}
 
-	if _, ok := recentIntent(s.recentJoin, "test"); ok {
+	if _, ok := recentIntent(s.recentIntents, "test", messageJoinType); ok {
 		t.Fatalf("should not have buffered intent")
 	}
 

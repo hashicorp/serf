@@ -861,12 +861,12 @@ func TestSerf_ReapHandler(t *testing.T) {
 		&memberState{m, 0, time.Now().Add(-10 * time.Second)},
 	}
 
-	upsertIntent(s.recentJoin, "foo", 1, time.Now)
-	upsertIntent(s.recentJoin, "bar", 2, func() time.Time {
+	upsertIntent(s.recentIntents, "alice", messageJoinType, 1, time.Now)
+	upsertIntent(s.recentIntents, "bob", messageJoinType, 2, func() time.Time {
 		return time.Now().Add(-10 * time.Second)
 	})
-	upsertIntent(s.recentLeave, "foo", 1, time.Now)
-	upsertIntent(s.recentLeave, "bar", 2, func() time.Time {
+	upsertIntent(s.recentIntents, "carol", messageLeaveType, 1, time.Now)
+	upsertIntent(s.recentIntents, "doug", messageLeaveType, 2, func() time.Time {
 		return time.Now().Add(-10 * time.Second)
 	})
 
@@ -880,16 +880,16 @@ func TestSerf_ReapHandler(t *testing.T) {
 	if len(s.leftMembers) != 2 {
 		t.Fatalf("should be shorter")
 	}
-	if _, ok := recentIntent(s.recentJoin, "foo"); !ok {
+	if _, ok := recentIntent(s.recentIntents, "alice", messageJoinType); !ok {
 		t.Fatalf("should be buffered")
 	}
-	if _, ok := recentIntent(s.recentJoin, "bar"); ok {
+	if _, ok := recentIntent(s.recentIntents, "bob", messageJoinType); ok {
 		t.Fatalf("should be reaped")
 	}
-	if _, ok := recentIntent(s.recentLeave, "foo"); !ok {
+	if _, ok := recentIntent(s.recentIntents, "carol", messageLeaveType); !ok {
 		t.Fatalf("should be buffered")
 	}
-	if _, ok := recentIntent(s.recentLeave, "bar"); ok {
+	if _, ok := recentIntent(s.recentIntents, "doug", messageLeaveType); ok {
 		t.Fatalf("should be reaped")
 	}
 }
@@ -931,7 +931,7 @@ func TestRemoveOldMember(t *testing.T) {
 }
 
 func TestRecentIntent(t *testing.T) {
-	if _, ok := recentIntent(nil, "foo"); ok {
+	if _, ok := recentIntent(nil, "foo", messageJoinType); ok {
 		t.Fatalf("should get nothing on empty recent")
 	}
 
@@ -944,57 +944,57 @@ func TestRecentIntent(t *testing.T) {
 	}
 
 	intents := make(map[string]nodeIntent)
-	if _, ok := recentIntent(intents, "foo"); ok {
+	if _, ok := recentIntent(intents, "foo", messageJoinType); ok {
 		t.Fatalf("should get nothing on empty recent")
 	}
-	if added := upsertIntent(intents, "foo", 1, expire); !added {
+	if added := upsertIntent(intents, "foo", messageJoinType, 1, expire); !added {
 		t.Fatalf("should have added")
 	}
-	if added := upsertIntent(intents, "bar", 2, expire); !added {
+	if added := upsertIntent(intents, "bar", messageLeaveType, 2, expire); !added {
 		t.Fatalf("should have added")
 	}
-	if added := upsertIntent(intents, "baz", 3, save); !added {
+	if added := upsertIntent(intents, "baz", messageJoinType, 3, save); !added {
 		t.Fatalf("should have added")
 	}
-	if added := upsertIntent(intents, "bar", 4, expire); !added {
+	if added := upsertIntent(intents, "bar", messageJoinType, 4, expire); !added {
 		t.Fatalf("should have added")
 	}
-	if added := upsertIntent(intents, "bar", 0, expire); added {
+	if added := upsertIntent(intents, "bar", messageJoinType, 0, expire); added {
 		t.Fatalf("should not have added")
 	}
-	if added := upsertIntent(intents, "bar", 5, expire); !added {
+	if added := upsertIntent(intents, "bar", messageJoinType, 5, expire); !added {
 		t.Fatalf("should have added")
 	}
 
-	if ltime, ok := recentIntent(intents, "foo"); !ok || ltime != 1 {
+	if ltime, ok := recentIntent(intents, "foo", messageJoinType); !ok || ltime != 1 {
 		t.Fatalf("bad: %v %v", ok, ltime)
 	}
-	if ltime, ok := recentIntent(intents, "bar"); !ok || ltime != 5 {
+	if ltime, ok := recentIntent(intents, "bar", messageJoinType); !ok || ltime != 5 {
 		t.Fatalf("bad: %v %v", ok, ltime)
 	}
-	if ltime, ok := recentIntent(intents, "baz"); !ok || ltime != 3 {
+	if ltime, ok := recentIntent(intents, "baz", messageJoinType); !ok || ltime != 3 {
 		t.Fatalf("bad: %v %v", ok, ltime)
 	}
-	if _, ok := recentIntent(intents, "tubez"); ok {
+	if _, ok := recentIntent(intents, "tubez", messageJoinType); ok {
 		t.Fatalf("should get nothing")
 	}
 
 	reapIntents(intents, now, time.Second)
-	if _, ok := recentIntent(intents, "foo"); ok {
+	if _, ok := recentIntent(intents, "foo", messageJoinType); ok {
 		t.Fatalf("should get nothing")
 	}
-	if _, ok := recentIntent(intents, "bar"); ok {
+	if _, ok := recentIntent(intents, "bar", messageJoinType); ok {
 		t.Fatalf("should get nothing")
 	}
-	if ltime, ok := recentIntent(intents, "baz"); !ok || ltime != 3 {
+	if ltime, ok := recentIntent(intents, "baz", messageJoinType); !ok || ltime != 3 {
 		t.Fatalf("bad: %v %v", ok, ltime)
 	}
-	if _, ok := recentIntent(intents, "tubez"); ok {
+	if _, ok := recentIntent(intents, "tubez", messageJoinType); ok {
 		t.Fatalf("should get nothing")
 	}
 
 	reapIntents(intents, now.Add(2*time.Second), time.Second)
-	if _, ok := recentIntent(intents, "baz"); ok {
+	if _, ok := recentIntent(intents, "baz", messageJoinType); ok {
 		t.Fatalf("should get nothing")
 	}
 }
