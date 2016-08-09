@@ -3,11 +3,12 @@ package command
 import (
 	"flag"
 	"fmt"
-	"github.com/hashicorp/serf/client"
-	"github.com/hashicorp/serf/command/agent"
-	"github.com/mitchellh/cli"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/serf/client"
+	"github.com/hashicorp/serf/cmd/serf/command/agent"
+	"github.com/mitchellh/cli"
 )
 
 // QueryCommand is a Command implementation that is used to trigger a new

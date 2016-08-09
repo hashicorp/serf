@@ -4,14 +4,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/memberlist"
-	"github.com/hashicorp/serf/serf"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/hashicorp/memberlist"
+	"github.com/hashicorp/serf/serf"
 )
 
 // Agent starts and manages a Serf instance, adding some niceties
