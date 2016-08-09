@@ -29,7 +29,8 @@ Here are some example use cases of Serf, though there are many others:
 ## Quick Start
 
 First, [download a pre-built Serf binary](https://www.serf.io/downloads.html)
-for your operating system or [compile Serf yourself](#developing-serf).
+for your operating system, [compile Serf yourself](#developing-serf), or install
+using `go get -u github.com/hashicorp/serf/cmd/serf`.
 
 Next, let's start a couple Serf agents. Agents run until they're told to quit
 and handle the communication of maintenance tasks of Serf. In a real Serf
@@ -106,9 +107,15 @@ $ bin/serf
 ...
 ```
 
-*note: `make` will also place a copy of the executable under $GOPATH/bin*
+*NOTE: `make` will also place a copy of the executable under `$GOPATH/bin/`*
 
-You can run tests by typing `make test`.
+Serf is first and foremost a library with a command-line interface, `serf`. The
+Serf library is independent of the command line agent, `serf`.  The `serf`
+binary is located under `cmd/serf` and can be installed stand alone by issuing
+the command `go get -u github.com/hashicorp/serf/cmd/serf`.  Applications using
+the Serf library should only need to include `github.com/hashicorp/serf`.
+
+Tests can be run by typing `make test`.
 
 If you make any changes to the code, run `make format` in order to automatically
 format the code according to Go standards.
