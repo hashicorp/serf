@@ -2,13 +2,14 @@ package command
 
 import (
 	"encoding/base64"
-	"github.com/hashicorp/memberlist"
-	"github.com/hashicorp/serf/client"
-	"github.com/hashicorp/serf/command/agent"
-	"github.com/hashicorp/serf/serf"
-	"github.com/mitchellh/cli"
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/memberlist"
+	"github.com/hashicorp/serf/client"
+	"github.com/hashicorp/serf/cmd/serf/command/agent"
+	"github.com/hashicorp/serf/serf"
+	"github.com/mitchellh/cli"
 )
 
 func testKeysCommandAgent(t *testing.T) *agent.Agent {

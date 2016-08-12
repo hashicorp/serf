@@ -7,10 +7,8 @@
 *.so
 
 # Folders
-bin
-_obj
-_test
-pkg/
+/bin/
+/pkg/
 
 # Architecture specific extensions/prefixes
 *.[568vq]

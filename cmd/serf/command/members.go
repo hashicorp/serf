@@ -3,11 +3,12 @@ package command
 import (
 	"flag"
 	"fmt"
-	"github.com/hashicorp/serf/command/agent"
-	"github.com/mitchellh/cli"
-	"github.com/ryanuber/columnize"
 	"net"
 	"strings"
+
+	"github.com/hashicorp/serf/cmd/serf/command/agent"
+	"github.com/mitchellh/cli"
+	"github.com/ryanuber/columnize"
 )
 
 // MembersCommand is a Command implementation that queries a running

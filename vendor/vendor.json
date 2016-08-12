@@ -81,6 +81,12 @@
 			"revisionTime": "2015-12-06T04:24:12Z"
 		},
 		{
+			"checksumSHA1": "8ytOx52G+38QMK4G194Kl6g6YGY=",
+			"path": "github.com/hashicorp/memberlist",
+			"revision": "b2053e314b4a87e5f0d2d47aeafd3e03be13da90",
+			"revisionTime": "2016-06-21T23:59:43Z"
+		},
+		{
 			"checksumSHA1": "xZuhljnmBysJPta/lMyYmJdujCg=",
 			"path": "github.com/mattn/go-isatty",
 			"revision": "66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8",

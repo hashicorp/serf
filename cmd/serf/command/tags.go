@@ -3,9 +3,10 @@ package command
 import (
 	"flag"
 	"fmt"
-	"github.com/hashicorp/serf/command/agent"
-	"github.com/mitchellh/cli"
 	"strings"
+
+	"github.com/hashicorp/serf/cmd/serf/command/agent"
+	"github.com/mitchellh/cli"
 )
 
 // TagsCommand is an interface to dynamically add or otherwise modify a
