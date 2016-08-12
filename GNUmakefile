@@ -40,7 +40,7 @@ testrace:: subnet
 	go test -race `govendor list -no-status +local` $(TESTARGS)
 
 tools::
-	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
+	@which gox 2>/dev/null ; if [ $$? -eq 1 ]; then \
 		$(MAKE) get-tools; \
 	fi
 

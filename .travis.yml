@@ -8,7 +8,7 @@ branches:
     - master
 
 install:
-  - make
+  - make bin
   - make get-tools
 
 script:
