@@ -17,7 +17,7 @@ Coordinates are obtained by adding a very small amount of data to the probe
 messages that Serf already sends as part of its [gossip protocol](/docs/internals/gossip.html),
 so this system scales well and incurs very little overhead.
 
-Serf's network tomography is based on ["Vivaldi: A Decentralized Network Coordinate System"](https://www.cs.ucsb.edu/~ravenben/classes/276/papers/vivaldi-sigcomm04.pdf), with some additions from ["Network Coordinates in the Wild"](https://www.usenix.org/legacy/events/nsdi07/tech/full_papers/ledlie/ledlie_html/index_save.html) and ["On Suitability of Euclidean Embedding for Host-Based Network Coordinate Systems"](https://user.informatik.uni-goettingen.de/~ychen/NC/Lee10-Suitability-Euclidean-Embedding-TON.pdf).
+Serf's network tomography is based on ["Vivaldi: A Decentralized Network Coordinate System"](https://www.cs.ucsb.edu/~ravenben/classes/276/papers/vivaldi-sigcomm04.pdf), with some additions from ["Network Coordinates in the Wild"](https://www.usenix.org/legacy/events/nsdi07/tech/full_papers/ledlie/ledlie_html/index_save.html) and ["On Suitability of Euclidean Embedding for Host-Based Network Coordinate Systems"](http://domino.research.ibm.com/library/cyberdig.nsf/papers/492D147FCCEA752C8525768F00535D8A).
 
 ~> **Advanced Topic!** This page covers the technical details of
 the internals of Serf. You don't need to know these details to effectively
