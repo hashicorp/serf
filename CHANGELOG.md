@@ -7,6 +7,7 @@ FEATURES:
 IMRPOVEMENTS:
 
  * Modified management of intents to be per-node to avoid intent queue overflow errors in large clusters. [GH-402]
+ * Joins based on a DNS lookup will use TCP and attempt to join with the full list of returned addresses. [GH-387]
  * Serf's Go dependencies are now vendored using govendor. [GH-383]
  * Updated all of Serf's dependencies. [GH-387] [GH-401]
 
