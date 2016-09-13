@@ -1,4 +1,4 @@
-# Serf
+# Serf [![Build Status](https://travis-ci.org/hashicorp/serf.png)](https://travis-ci.org/hashicorp/serf)
 
 * Website: https://www.serf.io
 * IRC: `#serfdom` on Freenode
