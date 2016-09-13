@@ -1,4 +1,4 @@
-## 0.7.1 (September 14, 2016)
+## 0.8 (September 14, 2016)
 
 FEATURES:
 
