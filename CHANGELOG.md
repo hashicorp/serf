@@ -8,7 +8,7 @@ IMRPOVEMENTS:
 
  * Modified management of intents to be per-node to avoid intent queue overflow errors in large clusters. [GH-402]
  * Serf's Go dependencies are now vendored using govendor. [GH-383]
- * Updated all of Serfs dependencies. [GH-387] [GH-401]
+ * Updated all of Serf's dependencies. [GH-387] [GH-401]
 
 BUG FIXES:
 
