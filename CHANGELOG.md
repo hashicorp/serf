@@ -1,8 +1,14 @@
-## 0.7.1 (UNRELEASED)
+## 0.7.1 (September 14, 2016)
+
+FEATURES:
+
+ * **Lifeguard Updates:** Implemented a new set of feedback controls for the gossip layer that help prevent degraded nodes that can't meet the soft real-time requirements from erroneously causing flapping in other, healthy nodes. This feature tunes itself automatically and requires no configuration. [GH-394]
 
 IMRPOVEMENTS:
 
+ * Modified management of intents to be per-node to avoid intent queue overflow errors in large clusters. [GH-402]
  * Serf's Go dependencies are now vendored using govendor. [GH-383]
+ * Updated all of Serfs dependencies. [GH-387] [GH-401]
 
 BUG FIXES:
 
