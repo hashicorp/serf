@@ -19,10 +19,6 @@ GIT_DIRTY="$(test -n "`git status --porcelain`" && echo "+CHANGES" || true)"
 XC_ARCH=${XC_ARCH:-"386 amd64 arm"}
 XC_OS=${XC_OS:-"linux darwin windows freebsd openbsd solaris"}
 
-# Install dependencies
-echo "==> Getting dependencies..."
-go get ./...
-
 # Delete the old dir
 echo "==> Removing old directory..."
 rm -f bin/*
