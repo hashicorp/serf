@@ -79,6 +79,34 @@ The changes from SWIM are noted here:
   state immediately upon learning that the node is dead. This change again helps
   the cluster converge more quickly.
 
+<a name="lifeguard"></a>
+## Lifeguard Enhancements
+
+SWIM's failure detection algorithm makes an assumption that the node doing the
+probing is healthy in the sense that soft real-time processing of packets is
+possible. In versions of Serf prior to 0.8, this can sometimes manifest in a
+severely degraded node falsely accusing others of being failed, causing occasional
+flaps in health of other nodes in the cluster. Serf 0.8 added two Lifeguard
+enhancements to the SWIM algorithm to help performance in the face of degraded
+nodes.
+
+Part of SWIM includes asking other peer nodes to probe a suspect node, so
+Serf 0.7 added a "nack" message to this process to allow the probing node to get
+some feedback about itself. If it realizes it is missing "nack" messages then it
+becomes aware that it may be degraded and slows down its failure detector.
+
+In addition to the "nack" feedback, Serf 0.8 also added a novel step where the
+probing node will initially start with a very long suspicion timeout before
+declaring another node as failed. As other nodes in the cluster confirm a node is
+suspect, this timer accelerates. During normal operation the detection time is
+actually the same as in previous versions of Serf. If a node is degraded and doesn't
+get confirmations, however, there's a long timeout which allows the suspected node
+to refute its status and remain healthy.
+
+These two mechanisms combine to make Serf much more robust to degraded nodes in a
+cluster, while keeping failure detection performance unchanged. There is no
+additional configuration for Lifeguard, it tunes itself automatically.
+
 ## Serf-Specific Messages
 
 On top of the SWIM-based gossip layer, Serf sends some custom message types.
