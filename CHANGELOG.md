@@ -10,6 +10,7 @@ IMRPOVEMENTS:
  * Joins based on a DNS lookup will use TCP and attempt to join with the full list of returned addresses. [GH-387]
  * Serf's Go dependencies are now vendored using govendor. [GH-383]
  * Updated all of Serf's dependencies. [GH-387] [GH-401]
+ * Moved dist build into a Docker container. [GH-409]
 
 BUG FIXES:
 
