@@ -20,7 +20,7 @@ dev::
 	@SERF_DEV=1 sh -c "'$(CURDIR)/scripts/build.sh'"
 
 # dist creates the binaries for distibution
-dist:: bin
+dist::
 	@sh -c "'$(CURDIR)/scripts/dist.sh' $(VERSION)"
 
 get-tools::
