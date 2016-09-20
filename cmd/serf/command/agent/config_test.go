@@ -300,6 +300,17 @@ func TestDecodeConfig(t *testing.T) {
 		t.Fatalf("bad: %#v", config)
 	}
 
+	// Broadcast timeout
+	input = `{"broadcast_timeout": "10s"}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if config.BroadcastTimeout != 10*time.Second {
+		t.Fatalf("bad: %#v", config)
+	}
+
 	// Retry configs
 	input = `{"retry_join": ["127.0.0.1", "127.0.0.2"]}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
@@ -400,6 +411,7 @@ func TestMergeConfig(t *testing.T) {
 		StatsiteAddr:           "127.0.0.1:8125",
 		QueryResponseSizeLimit: 123,
 		QuerySizeLimit:         456,
+		BroadcastTimeout:       20 * time.Second,
 	}
 
 	c := MergeConfig(a, b)
@@ -499,6 +511,10 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	if c.QueryResponseSizeLimit != 123 || c.QuerySizeLimit != 456 {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if c.BroadcastTimeout != 20*time.Second {
 		t.Fatalf("bad: %#v", c)
 	}
 }
