@@ -184,6 +184,10 @@ The options below are all specified on the command-line.
   This flag can only be enabled on Linux or OSX systems, as Windows and Plan 9 do
   not provide the syslog facility.
 
+* `-broadcast-timeout` - Sets the broadcast timeout, which is the max time allowed for
+  responses to events including leave and force remove messages. Defaults to 5s. This
+  should use the "s" suffix for second, "m" for minute, or "h" for hour.
+
 ## Configuration Files
 
 In addition to the command-line options, configuration can be put into
@@ -311,6 +315,8 @@ at a single JSON object with configuration within it.
   payload sizes for queries, respectively. These must fit in a UDP packet with some
   additional overhead, so tuning these past the default values of 1024 will depend
   on your network configuration.
+
+* `broadcast_timeout` - Equivalent to the `-broadcast-timeout` command-line flag.
 
 #### Example Keyring File
 

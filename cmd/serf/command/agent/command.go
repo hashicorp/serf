@@ -27,6 +27,9 @@ const (
 
 	// minRetryInterval applies a lower bound to the join retry interval
 	minRetryInterval = time.Second
+
+	// minBroadcastTimeout applies a lower bound to the broadcast timeout interval
+	minBroadcastTimeout = time.Second
 )
 
 // Command is a Command implementation that runs a Serf agent.
@@ -49,6 +52,7 @@ func (c *Command) readConfig() *Config {
 	var configFiles []string
 	var tags []string
 	var retryInterval string
+	var broadcastTimeout string
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.StringVar(&cmdConfig.BindAddr, "bind", "", "address to bind listeners to")
@@ -86,6 +90,7 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.StringVar(&retryInterval, "retry-interval", "", "retry join interval")
 	cmdFlags.BoolVar(&cmdConfig.RejoinAfterLeave, "rejoin", false,
 		"enable re-joining after a previous leave")
+	cmdFlags.StringVar(&broadcastTimeout, "broadcast-timeout", "", "timeout for broadcast messages")
 	if err := cmdFlags.Parse(c.args); err != nil {
 		return nil
 	}
@@ -98,7 +103,7 @@ func (c *Command) readConfig() *Config {
 	}
 	cmdConfig.Tags = tagValues
 
-	// Decode the interval if given
+	// Decode the retry interval if given
 	if retryInterval != "" {
 		dur, err := time.ParseDuration(retryInterval)
 		if err != nil {
@@ -106,6 +111,16 @@ func (c *Command) readConfig() *Config {
 			return nil
 		}
 		cmdConfig.RetryInterval = dur
+	}
+
+	// Decode the broadcast timeout if given
+	if broadcastTimeout != "" {
+		dur, err := time.ParseDuration(broadcastTimeout)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error: %s", err))
+			return nil
+		}
+		cmdConfig.BroadcastTimeout = dur
 	}
 
 	config := DefaultConfig()
@@ -152,8 +167,15 @@ func (c *Command) readConfig() *Config {
 
 	// Check for sane retry interval
 	if config.RetryInterval < minRetryInterval {
-		c.Ui.Output(fmt.Sprintf("Warning: 'RetryInterval' is too low. Setting to %v", config.RetryInterval))
 		config.RetryInterval = minRetryInterval
+		c.Ui.Output(fmt.Sprintf("Warning: 'RetryInterval' is too low. Setting to %v", config.RetryInterval))
+	}
+
+	// Check for sane broadcast timeout
+	if config.BroadcastTimeout < minBroadcastTimeout {
+		config.BroadcastTimeout = minBroadcastTimeout
+		c.Ui.Output(fmt.Sprintf("Warning: 'BroadcastTimeout' is too low. Setting to %v",
+			config.BroadcastTimeout))
 	}
 
 	// Check snapshot file is provided if we have RejoinAfterLeave
@@ -307,6 +329,9 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 		serfConfig.KeyringFile = config.KeyringFile
 	}
 	serfConfig.RejoinAfterLeave = config.RejoinAfterLeave
+	if config.BroadcastTimeout != 0 {
+		serfConfig.BroadcastTimeout = config.BroadcastTimeout
+	}
 
 	// Start Serf
 	c.Ui.Output("Starting Serf agent...")
@@ -741,6 +766,9 @@ Options:
                            is incompatible with the '-tag' option and requires there
                            be no tags in the agent configuration file, if given.
   -syslog                  When provided, logs will also be sent to syslog.
+  -broadcast-timeout=5s    Sets the broadcast timeout, which is the max time allowed for
+                           responses to events including leave and force remove messages.
+                           Defaults to 5s.
 
 Event handlers:
 
