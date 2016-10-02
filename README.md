@@ -118,4 +118,4 @@ the Serf library should only need to include `github.com/hashicorp/serf`.
 Tests can be run by typing `make test`.
 
 If you make any changes to the code, run `make format` in order to automatically
-format the code according to Go standards.
+format the code according to Go [standards](https://golang.org/doc/effective_go.html#formatting).
