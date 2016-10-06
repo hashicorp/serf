@@ -17,4 +17,4 @@ propagating events, detecting failures, etc.
 Due to the power and flexibility of this command, the Serf agent
 is documented in its own section. See the [Serf Agent](/docs/agent/basics.html)
 section for more information on how to use this command and the
-options it has.
+[options](/docs/agent/options.html) available.
