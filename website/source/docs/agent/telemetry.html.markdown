@@ -17,7 +17,7 @@ process. Windows users must use the `BREAK` signal instead.
 Once Serf receives the signal, it will dump the current telemetry
 information to the stderr of the agent.
 
-In general, the telemetry information is used for debugging or otherwise
+In general, the telemetry information is useful for debugging or otherwise
 getting a better view into what Serf is doing.
 
 Below is an example output:
