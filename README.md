@@ -1,5 +1,7 @@
 # Serf [![Build Status](https://travis-ci.org/hashicorp/serf.png)](https://travis-ci.org/hashicorp/serf)
 
+[![Join the chat at https://gitter.im/hashicorp-serf/Lobby](https://badges.gitter.im/hashicorp-serf/Lobby.svg)](https://gitter.im/hashicorp-serf/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 * Website: https://www.serf.io
 * IRC: `#serfdom` on Freenode
 * Mailing list: [Google Groups](https://groups.google.com/group/serfdom/)
