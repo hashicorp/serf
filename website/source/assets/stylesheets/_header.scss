@@ -59,8 +59,6 @@
       .logo{
         padding-left: 37px;
         font-size: 18px;
-        @include img-retina("logo-header.png", "logo-header@2x.png", $project-logo-width * .75, $project-logo-height * .75);
-        //background-position: 0 45%;
       }
     }
   }
