@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
 
-    <title><%= [current_page.data.page_title, "Serf by HashiCorp"].compact.join(" - ") %></title>
-    <meta name="description" content="<%= current_page.data.description %>">
+    <title><%= title_for(current_page) %></title>
+    <meta name="description" content="<%= description_for(current_page) %>">
 
     <meta name="HandheldFriendly" content="True" />
     <meta name="MobileOptimized" content="320" />
@@ -23,7 +23,7 @@
     				<div class="navbar-header">
     					<div class="navbar-brand">
     						<a class="logo rls-l" href="/">Serf</a>
-    						<a class="by-hashicorp white" href="https://www.hashicorp.com/"><span class="svg-wrap">by</span><%= partial "layouts/svg/svg-by-hashicorp" %><%= partial "layouts/svg/svg-hashicorp-logo" %>Hashicorp</a>
+    						<a class="by-hashicorp white" href="https://www.hashicorp.com/"><span class="svg-wrap">by</span><%= partial "layouts/svg/svg-by-hashicorp" %><%= partial "layouts/svg/svg-hashicorp-logo" %>HashiCorp</a>
     					</div>
     					<button class="navbar-toggle white" type="button">
     						<span class="sr-only">Toggle navigation</span>
