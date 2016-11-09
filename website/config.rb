@@ -14,10 +14,10 @@ helpers do
   # @return [String]
   def title_for(page)
     if page && page.data.page_title
-      return "#{page.data.page_title} - Consul by HashiCorp"
+      return "#{page.data.page_title} - Serf by HashiCorp"
     end
 
-     "Consul by HashiCorp"
+     "Serf by HashiCorp"
    end
 
   # Get the description for the page
