@@ -17,6 +17,8 @@ type MembersCommand struct {
 	Ui cli.Ui
 }
 
+var _ cli.Command = &MembersCommand{}
+
 // A container of member details. Maintaining a command-specific struct here
 // makes sense so that the agent.Member struct can evolve without changing the
 // keys in the output interface.

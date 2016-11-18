@@ -15,6 +15,8 @@ type GatedWriter struct {
 	lock  sync.RWMutex
 }
 
+var _ io.Writer = &GatedWriter{}
+
 // Flush tells the GatedWriter to flush any buffered data and to stop
 // buffering.
 func (w *GatedWriter) Flush() {

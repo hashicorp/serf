@@ -1,14 +1,11 @@
 package command
 
 import (
-	"github.com/mitchellh/cli"
 	"strings"
 	"testing"
-)
 
-func TestLeaveCommand_implements(t *testing.T) {
-	var _ cli.Command = &LeaveCommand{}
-}
+	"github.com/mitchellh/cli"
+)
 
 func TestLeaveCommandRun(t *testing.T) {
 	a1 := testAgent(t)

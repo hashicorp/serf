@@ -2,13 +2,10 @@ package command
 
 import (
 	"encoding/base64"
-	"github.com/mitchellh/cli"
 	"testing"
-)
 
-func TestKeygenCommand_implements(t *testing.T) {
-	var _ cli.Command = &KeygenCommand{}
-}
+	"github.com/mitchellh/cli"
+)
 
 func TestKeygenCommand(t *testing.T) {
 	ui := new(cli.MockUi)

@@ -34,10 +34,6 @@ func testKeysCommandAgent(t *testing.T) *agent.Agent {
 	return a1
 }
 
-func TestKeysCommand_implements(t *testing.T) {
-	var _ cli.Command = &KeysCommand{}
-}
-
 func TestKeysCommandRun_InstallKey(t *testing.T) {
 	a1 := testKeysCommandAgent(t)
 	defer a1.Shutdown()

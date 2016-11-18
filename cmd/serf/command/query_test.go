@@ -2,14 +2,11 @@ package command
 
 import (
 	"encoding/json"
-	"github.com/mitchellh/cli"
 	"strings"
 	"testing"
-)
 
-func TestQUeryCommand_implements(t *testing.T) {
-	var _ cli.Command = &QueryCommand{}
-}
+	"github.com/mitchellh/cli"
+)
 
 func TestQueryCommandRun_noName(t *testing.T) {
 	ui := new(cli.MockUi)

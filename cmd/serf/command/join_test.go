@@ -1,14 +1,11 @@
 package command
 
 import (
-	"github.com/mitchellh/cli"
 	"strings"
 	"testing"
-)
 
-func TestJoinCommand_implements(t *testing.T) {
-	var _ cli.Command = &JoinCommand{}
-}
+	"github.com/mitchellh/cli"
+)
 
 func TestJoinCommandRun(t *testing.T) {
 	a1 := testAgent(t)
