@@ -4,12 +4,15 @@ import (
 	"fmt"
 
 	"github.com/armon/go-metrics"
+	"github.com/hashicorp/memberlist"
 )
 
 // delegate is the memberlist.Delegate implementation that Serf uses.
 type delegate struct {
 	serf *Serf
 }
+
+var _ memberlist.Delegate = &delegate{}
 
 func (d *delegate) NodeMeta(limit int) []byte {
 	roleBytes := d.serf.encodeTags(d.serf.config.Tags)

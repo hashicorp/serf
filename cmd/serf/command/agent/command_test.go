@@ -2,18 +2,15 @@ package agent
 
 import (
 	"bytes"
-	"github.com/hashicorp/serf/client"
-	"github.com/hashicorp/serf/testutil"
-	"github.com/mitchellh/cli"
 	"log"
 	"os"
 	"testing"
 	"time"
-)
 
-func TestCommand_implements(t *testing.T) {
-	var _ cli.Command = new(Command)
-}
+	"github.com/hashicorp/serf/client"
+	"github.com/hashicorp/serf/testutil"
+	"github.com/mitchellh/cli"
+)
 
 func TestCommandRun(t *testing.T) {
 	shutdownCh := make(chan struct{})

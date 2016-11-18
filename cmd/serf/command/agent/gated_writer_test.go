@@ -2,13 +2,8 @@ package agent
 
 import (
 	"bytes"
-	"io"
 	"testing"
 )
-
-func TestGatedWriter_impl(t *testing.T) {
-	var _ io.Writer = new(GatedWriter)
-}
 
 func TestGatedWriter(t *testing.T) {
 	buf := new(bytes.Buffer)

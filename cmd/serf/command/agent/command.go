@@ -45,6 +45,8 @@ type Command struct {
 	logger        *log.Logger
 }
 
+var _ cli.Command = &Command{}
+
 // readConfig is responsible for setup of our configuration using
 // the command line and any file configs
 func (c *Command) readConfig() *Config {

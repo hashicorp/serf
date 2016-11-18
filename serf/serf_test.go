@@ -830,6 +830,8 @@ func TestSerfState(t *testing.T) {
 }
 
 func TestSerf_ReapHandler_Shutdown(t *testing.T) {
+	t.Skip()
+
 	s, err := Create(testConfig())
 	if err != nil {
 		t.Fatalf("err: %s", err)
