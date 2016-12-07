@@ -3,6 +3,7 @@
 IMPROVEMENTS:
 
  * Added the ability to tune the broadcast timeout, which might be necessary in very large clusters that experience very large, simultaneous changes to the cluster. [GH-412]
+ * Added a checksum to UDP gossip messages to guard against packet corruption. [GH-432]
 
 ## 0.8 (September 14, 2016)
 
