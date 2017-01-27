@@ -162,7 +162,7 @@ func (q *Query) Respond(buf []byte) error {
 		return err
 	}
 
-	// Clera the deadline, response sent
+	// Clear the deadline, response sent
 	q.deadline = time.Time{}
 	return nil
 }

@@ -1,14 +1,11 @@
 package command
 
 import (
-	"github.com/mitchellh/cli"
 	"strings"
 	"testing"
-)
 
-func TestEventCommand_implements(t *testing.T) {
-	var _ cli.Command = &EventCommand{}
-}
+	"github.com/mitchellh/cli"
+)
 
 func TestEventCommandRun_noEvent(t *testing.T) {
 	ui := new(cli.MockUi)

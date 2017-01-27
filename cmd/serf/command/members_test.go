@@ -1,14 +1,11 @@
 package command
 
 import (
-	"github.com/mitchellh/cli"
 	"strings"
 	"testing"
-)
 
-func TestMembersCommand_implements(t *testing.T) {
-	var _ cli.Command = &MembersCommand{}
-}
+	"github.com/mitchellh/cli"
+)
 
 func TestMembersCommandRun(t *testing.T) {
 	a1 := testAgent(t)

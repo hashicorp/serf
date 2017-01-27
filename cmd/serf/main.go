@@ -2,17 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/mitchellh/cli"
 	"io/ioutil"
 	"log"
 	"os"
+
+	"github.com/mitchellh/cli"
 )
 
 func main() {
-	os.Exit(realMain())
-}
-
-func realMain() int {
 	log.SetOutput(ioutil.Discard)
 
 	// Get the command line args. We shortcut "--version" and "-v" to
@@ -37,8 +34,8 @@ func realMain() int {
 	exitCode, err := cli.Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error executing CLI: %s\n", err.Error())
-		return 1
+		os.Exit(1)
 	}
 
-	return exitCode
+	os.Exit(exitCode)
 }

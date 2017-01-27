@@ -1,18 +1,9 @@
 package agent
 
 import (
-	"flag"
 	"reflect"
 	"testing"
 )
-
-func TestAppendSliceValue_implements(t *testing.T) {
-	var raw interface{}
-	raw = new(AppendSliceValue)
-	if _, ok := raw.(flag.Value); !ok {
-		t.Fatalf("AppendSliceValue should be a Value")
-	}
-}
 
 func TestAppendSliceValueSet(t *testing.T) {
 	sv := new(AppendSliceValue)
