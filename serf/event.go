@@ -2,6 +2,7 @@ package serf
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"sync"
 	"time"
@@ -146,7 +147,8 @@ func (q *Query) Respond(buf []byte) error {
 	}
 
 	// Format the response
-	raw, err := encodeMessage(messageQueryResponseType, &resp)
+	addr := net.UDPAddr{IP: q.addr, Port: int(q.port)}
+	raw, err := encodeRelayMessage(messageQueryResponseType, addr, &resp)
 	if err != nil {
 		return fmt.Errorf("Failed to format response: %v", err)
 	}
@@ -156,13 +158,53 @@ func (q *Query) Respond(buf []byte) error {
 		return fmt.Errorf("response exceeds limit of %d bytes", q.serf.config.QueryResponseSizeLimit)
 	}
 
-	// Send the response
-	addr := net.UDPAddr{IP: q.addr, Port: int(q.port)}
-	if err := q.serf.memberlist.SendTo(&addr, raw); err != nil {
-		return err
+	// Relay the response through up to QueryResponseRelayLimit nodes
+	members := q.serf.Members()
+	relayMembers := kRandomMembers(q.serf.config.QueryResponseRelayLimit, members, func(m Member) bool {
+		return m.Status != StatusAlive && m.ProtocolMax >= 5
+	})
+
+	for _, m := range relayMembers {
+		relayAddr := net.UDPAddr{IP: m.Addr, Port: int(m.Port)}
+		if err := q.serf.memberlist.SendTo(&relayAddr, raw); err != nil {
+			return err
+		}
 	}
 
-	// Clera the deadline, response sent
+	// Clear the deadline, response sent
 	q.deadline = time.Time{}
 	return nil
+}
+
+// kRandomMembers selects up to k members from a given list, optionally
+// filtering by the given filterFunc
+func kRandomMembers(k int, members []Member, filterFunc func(Member) bool) []Member {
+	n := len(members)
+	kMembers := make([]Member, 0, k)
+OUTER:
+	// Probe up to 3*n times, with large n this is not necessary
+	// since k << n, but with small n we want search to be
+	// exhaustive
+	for i := 0; i < 3*n && len(kMembers) < k; i++ {
+		// Get random member
+		idx := rand.Intn(n)
+		member := members[idx]
+
+		// Give the filter a shot at it.
+		if filterFunc != nil && filterFunc(member) {
+			continue OUTER
+		}
+
+		// Check if we have this member already
+		for j := 0; j < len(kMembers); j++ {
+			if member.Name == kMembers[j].Name {
+				continue OUTER
+			}
+		}
+
+		// Append the member
+		kMembers = append(kMembers, member)
+	}
+
+	return kMembers
 }

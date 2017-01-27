@@ -25,7 +25,7 @@ import (
 // version to memberlist below.
 const (
 	ProtocolVersionMin uint8 = 2
-	ProtocolVersionMax       = 4
+	ProtocolVersionMax       = 5
 )
 
 const (
@@ -1282,18 +1282,30 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 
 	// Process each type of response
 	if resp.Ack() {
+		// Exit early if this is a duplicate ack
+		if _, ok := query.acks[resp.From]; ok {
+			return
+		}
+
 		metrics.IncrCounter([]string{"serf", "query_acks"}, 1)
 		select {
 		case query.ackCh <- resp.From:
+			query.acks[resp.From] = true
 		default:
-			s.logger.Printf("[WARN] serf: Failed to delivery query ack, dropping")
+			s.logger.Printf("[WARN] serf: Failed to deliver query ack, dropping")
 		}
 	} else {
+		// Exit early if this is a duplicate response
+		if _, ok := query.responses[resp.From]; ok {
+			return
+		}
+
 		metrics.IncrCounter([]string{"serf", "query_responses"}, 1)
 		select {
 		case query.respCh <- NodeResponse{From: resp.From, Payload: resp.Payload}:
+			query.responses[resp.From] = true
 		default:
-			s.logger.Printf("[WARN] serf: Failed to delivery query response, dropping")
+			s.logger.Printf("[WARN] serf: Failed to deliver query response, dropping")
 		}
 	}
 }

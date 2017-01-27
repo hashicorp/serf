@@ -3,6 +3,7 @@ package serf
 import (
 	"bytes"
 	"github.com/hashicorp/go-msgpack/codec"
+	"net"
 	"time"
 )
 
@@ -20,6 +21,7 @@ const (
 	messageConflictResponseType
 	messageKeyRequestType
 	messageKeyResponseType
+	messageRelayType
 )
 
 const (
@@ -128,6 +130,23 @@ func decodeMessage(buf []byte, out interface{}) error {
 
 func encodeMessage(t messageType, msg interface{}) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
+	buf.WriteByte(uint8(t))
+
+	handle := codec.MsgpackHandle{}
+	encoder := codec.NewEncoder(buf, &handle)
+	err := encoder.Encode(msg)
+	return buf.Bytes(), err
+}
+
+// encodeRelayMessage wraps a message in the messageRelayType, adding the length and
+// address of the end recipient to the front of the message
+func encodeRelayMessage(t messageType, addr net.UDPAddr, msg interface{}) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	buf.WriteByte(uint8(messageRelayType))
+	rawAddr := []byte(addr.String())
+	buf.WriteByte(uint8(len(rawAddr)))
+	buf.Write(rawAddr)
+
 	buf.WriteByte(uint8(t))
 
 	handle := codec.MsgpackHandle{}
