@@ -138,20 +138,32 @@ func encodeMessage(t messageType, msg interface{}) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
+type relayHeader struct {
+	DestAddr net.UDPAddr
+}
+
 // encodeRelayMessage wraps a message in the messageRelayType, adding the length and
 // address of the end recipient to the front of the message
 func encodeRelayMessage(t messageType, addr net.UDPAddr, msg interface{}) ([]byte, error) {
+	headerBuf := bytes.NewBuffer(nil)
+	headerHandle := codec.MsgpackHandle{}
+	headerEncoder := codec.NewEncoder(headerBuf, &headerHandle)
+
+	err := headerEncoder.Encode(relayHeader{DestAddr: addr})
+	if err != nil {
+		return nil, err
+	}
+
 	buf := bytes.NewBuffer(nil)
-	buf.WriteByte(uint8(messageRelayType))
-	rawAddr := []byte(addr.String())
-	buf.WriteByte(uint8(len(rawAddr)))
-	buf.Write(rawAddr)
-
-	buf.WriteByte(uint8(t))
-
 	handle := codec.MsgpackHandle{}
 	encoder := codec.NewEncoder(buf, &handle)
-	err := encoder.Encode(msg)
+
+	buf.WriteByte(uint8(messageRelayType))
+	buf.WriteByte(uint8(len(headerBuf.Bytes())))
+	buf.Write(headerBuf.Bytes())
+
+	buf.WriteByte(uint8(t))
+	err = encoder.Encode(msg)
 	return buf.Bytes(), err
 }
 

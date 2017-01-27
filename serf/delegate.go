@@ -2,7 +2,6 @@ package serf
 
 import (
 	"fmt"
-	"net"
 
 	"github.com/armon/go-metrics"
 )
@@ -85,16 +84,17 @@ func (d *delegate) NotifyMsg(buf []byte) {
 		d.serf.handleQueryResponse(&resp)
 
 	case messageRelayType:
-		addrLen := int(buf[1])
-		addr, err := net.ResolveUDPAddr("udp", string(buf[2:addrLen+2]))
-		if err != nil {
-			d.serf.logger.Printf("[ERR] serf: Error parsing relay message: %s", err)
+		var header relayHeader
+		headerLen := int(buf[1])
+		if err := decodeMessage(buf[2:headerLen+2], &header); err != nil {
+			d.serf.logger.Printf("[ERR] serf: Error decoding relay message: %s", err)
 			break
 		}
 
-		raw := buf[addrLen+2:]
-		if err := d.serf.memberlist.SendTo(addr, raw); err != nil {
-			d.serf.logger.Printf("[ERR] serf: Error forwarding message to %s: %s", addr.IP.String(), err)
+		d.serf.logger.Printf("[DEBUG] serf: relaying message to %s", header.DestAddr.String())
+		raw := buf[headerLen+2:]
+		if err := d.serf.memberlist.SendTo(&header.DestAddr, raw); err != nil {
+			d.serf.logger.Printf("[ERR] serf: Error forwarding message to %s: %s", header.DestAddr.String(), err)
 			break
 		}
 

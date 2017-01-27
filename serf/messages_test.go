@@ -48,25 +48,21 @@ func TestEncodeRelayMessage(t *testing.T) {
 		t.Fatal("should have type header")
 	}
 
-	addrLen := int(raw[1])
-	if addrLen != len(addr.String()) {
-		t.Fatalf("bad: %d, %d", addrLen, len(addr.String()))
+	var header relayHeader
+	headerLen := int(raw[1])
+	if err := decodeMessage(raw[2:headerLen+2], &header); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(header.DestAddr, addr) {
+		t.Fatalf("bad: %v, %v", header.DestAddr, addr)
 	}
 
-	rawAddr, err := net.ResolveUDPAddr("udp", string(raw[2:addrLen+2]))
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-	if rawAddr.IP.String() != addr.IP.String() || rawAddr.Port != addr.Port {
-		t.Fatalf("bad: %v, %v", rawAddr, addr)
-	}
-
-	if raw[addrLen+2] != byte(messageLeaveType) {
+	if raw[headerLen+2] != byte(messageLeaveType) {
 		t.Fatal("should have type header")
 	}
 
 	var out messageLeave
-	if err := decodeMessage(raw[addrLen+3:], &out); err != nil {
+	if err := decodeMessage(raw[headerLen+3:], &out); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 

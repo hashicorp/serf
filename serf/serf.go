@@ -1250,6 +1250,7 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 			addr:     query.Addr,
 			port:     query.Port,
 			deadline: time.Now().Add(query.Timeout),
+			relayFactor: s.config.QueryResponseRelayLimit,
 		}
 	}
 	return rebroadcast
@@ -1290,7 +1291,7 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 		metrics.IncrCounter([]string{"serf", "query_acks"}, 1)
 		select {
 		case query.ackCh <- resp.From:
-			query.acks[resp.From] = true
+			query.acks[resp.From] = struct{}{}
 		default:
 			s.logger.Printf("[WARN] serf: Failed to deliver query ack, dropping")
 		}
@@ -1303,7 +1304,7 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 		metrics.IncrCounter([]string{"serf", "query_responses"}, 1)
 		select {
 		case query.respCh <- NodeResponse{From: resp.From, Payload: resp.Payload}:
-			query.responses[resp.From] = true
+			query.responses[resp.From] = struct{}{}
 		default:
 			s.logger.Printf("[WARN] serf: Failed to deliver query response, dropping")
 		}

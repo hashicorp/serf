@@ -96,18 +96,19 @@ func (u UserEvent) String() string {
 	return fmt.Sprintf("user-event: %s", u.Name)
 }
 
-// Query is the struct used EventQuery type events
+// Query is the struct used by EventQuery type events
 type Query struct {
 	LTime   LamportTime
 	Name    string
 	Payload []byte
 
-	serf     *Serf
-	id       uint32    // ID is not exported, since it may change
-	addr     []byte    // Address to respond to
-	port     uint16    // Port to respond to
-	deadline time.Time // Must respond by this deadline
-	respLock sync.Mutex
+	serf        *Serf
+	id          uint32    // ID is not exported, since it may change
+	addr        []byte    // Address to respond to
+	port        uint16    // Port to respond to
+	deadline    time.Time // Must respond by this deadline
+	relayFactor int       // Number of duplicate responses to relay back to sender
+	respLock    sync.Mutex
 }
 
 func (q *Query) EventType() EventType {
@@ -146,32 +147,51 @@ func (q *Query) Respond(buf []byte) error {
 		Payload: buf,
 	}
 
-	// Format the response
-	addr := net.UDPAddr{IP: q.addr, Port: int(q.port)}
-	raw, err := encodeRelayMessage(messageQueryResponseType, addr, &resp)
-	if err != nil {
-		return fmt.Errorf("Failed to format response: %v", err)
-	}
+	// Send a direct response
+	{
+		raw, err := encodeMessage(messageQueryResponseType, &resp)
+		if err != nil {
+			return fmt.Errorf("Failed to format response: %v", err)
+		}
 
-	// Check the size limit
-	if len(raw) > q.serf.config.QueryResponseSizeLimit {
-		return fmt.Errorf("response exceeds limit of %d bytes", q.serf.config.QueryResponseSizeLimit)
-	}
+		// Check the size limit
+		if len(raw) > q.serf.config.QueryResponseSizeLimit {
+			return fmt.Errorf("response exceeds limit of %d bytes", q.serf.config.QueryResponseSizeLimit)
+		}
 
-	// Relay the response through up to QueryResponseRelayLimit nodes
-	members := q.serf.Members()
-	relayMembers := kRandomMembers(q.serf.config.QueryResponseRelayLimit, members, func(m Member) bool {
-		return m.Status != StatusAlive && m.ProtocolMax >= 5
-	})
-
-	for _, m := range relayMembers {
-		relayAddr := net.UDPAddr{IP: m.Addr, Port: int(m.Port)}
-		if err := q.serf.memberlist.SendTo(&relayAddr, raw); err != nil {
+		addr := net.UDPAddr{IP: q.addr, Port: int(q.port)}
+		if err := q.serf.memberlist.SendTo(&addr, raw); err != nil {
 			return err
 		}
 	}
 
-	// Clear the deadline, response sent
+	// Relay the response through up to relayFactor other nodes
+	members := q.serf.Members()
+	if len(members) > 2 {
+		addr := net.UDPAddr{IP: q.addr, Port: int(q.port)}
+		raw, err := encodeRelayMessage(messageQueryResponseType, addr, &resp)
+		if err != nil {
+			return fmt.Errorf("Failed to format relayed response: %v", err)
+		}
+
+		// Check the size limit
+		if len(raw) > q.serf.config.QueryResponseSizeLimit {
+			return fmt.Errorf("relayed response exceeds limit of %d bytes", q.serf.config.QueryResponseSizeLimit)
+		}
+
+		relayMembers := kRandomMembers(q.relayFactor, members, func(m Member) bool {
+			return m.Status != StatusAlive || m.ProtocolMax < 5 || m.Name == q.serf.LocalMember().Name
+		})
+
+		for _, m := range relayMembers {
+			relayAddr := net.UDPAddr{IP: m.Addr, Port: int(m.Port)}
+			if err := q.serf.memberlist.SendTo(&relayAddr, raw); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Clear the deadline, responses sent
 	q.deadline = time.Time{}
 	return nil
 }

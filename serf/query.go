@@ -94,8 +94,8 @@ type QueryResponse struct {
 	respCh chan NodeResponse
 
 	// acks/responses are used to track the nodes that have sent an ack/response
-	acks      map[string]bool
-	responses map[string]bool
+	acks      map[string]struct{}
+	responses map[string]struct{}
 
 	closed    bool
 	closeLock sync.Mutex
@@ -108,11 +108,11 @@ func newQueryResponse(n int, q *messageQuery) *QueryResponse {
 		id:        q.ID,
 		lTime:     q.LTime,
 		respCh:    make(chan NodeResponse, n),
-		responses: make(map[string]bool),
+		responses: make(map[string]struct{}),
 	}
 	if q.Ack() {
 		resp.ackCh = make(chan string, n)
-		resp.acks = make(map[string]bool)
+		resp.acks = make(map[string]struct{})
 	}
 	return resp
 }
