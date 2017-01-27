@@ -1242,14 +1242,14 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 
 	if s.config.EventCh != nil {
 		s.config.EventCh <- &Query{
-			LTime:    query.LTime,
-			Name:     query.Name,
-			Payload:  query.Payload,
-			serf:     s,
-			id:       query.ID,
-			addr:     query.Addr,
-			port:     query.Port,
-			deadline: time.Now().Add(query.Timeout),
+			LTime:       query.LTime,
+			Name:        query.Name,
+			Payload:     query.Payload,
+			serf:        s,
+			id:          query.ID,
+			addr:        query.Addr,
+			port:        query.Port,
+			deadline:    time.Now().Add(query.Timeout),
 			relayFactor: s.config.QueryResponseRelayLimit,
 		}
 	}
