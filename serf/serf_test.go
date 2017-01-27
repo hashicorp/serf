@@ -835,12 +835,19 @@ func TestSerf_ReapHandler_Shutdown(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
+	// Make sure the reap handler exits on shutdown.
+	doneCh := make(chan struct{})
 	go func() {
-		s.Shutdown()
-		time.Sleep(time.Millisecond)
-		t.Fatalf("timeout")
+		s.handleReap()
+		close(doneCh)
 	}()
-	s.handleReap()
+
+	s.Shutdown()
+	select {
+	case <-doneCh:
+	case <-time.After(1 * time.Second):
+		t.Fatalf("timeout")
+	}
 }
 
 func TestSerf_ReapHandler(t *testing.T) {
