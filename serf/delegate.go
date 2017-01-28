@@ -1,9 +1,11 @@
 package serf
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-msgpack/codec"
 )
 
 // delegate is the memberlist.Delegate implementation that Serf uses.
@@ -85,14 +87,17 @@ func (d *delegate) NotifyMsg(buf []byte) {
 
 	case messageRelayType:
 		var header relayHeader
-		headerLen := int(buf[1])
-		if err := decodeMessage(buf[2:headerLen+2], &header); err != nil {
-			d.serf.logger.Printf("[ERR] serf: Error decoding relay message: %s", err)
+		var handle codec.MsgpackHandle
+		reader := bytes.NewReader(buf[1:])
+		decoder := codec.NewDecoder(reader, &handle)
+		if err := decoder.Decode(&header); err != nil {
+			d.serf.logger.Printf("[ERR] serf: Error decoding relay header: %s", err)
 			break
 		}
 
-		d.serf.logger.Printf("[DEBUG] serf: relaying message to %s", header.DestAddr.String())
-		raw := buf[headerLen+2:]
+		// The remaining contents are the message itself, so forward that
+		raw := make([]byte, reader.Len())
+		reader.Read(raw)
 		if err := d.serf.memberlist.SendTo(&header.DestAddr, raw); err != nil {
 			d.serf.logger.Printf("[ERR] serf: Error forwarding message to %s: %s", header.DestAddr.String(), err)
 			break

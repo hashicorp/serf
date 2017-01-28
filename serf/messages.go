@@ -2,9 +2,10 @@ package serf
 
 import (
 	"bytes"
-	"github.com/hashicorp/go-msgpack/codec"
 	"net"
 	"time"
+
+	"github.com/hashicorp/go-msgpack/codec"
 )
 
 // messageType are the types of gossip messages Serf will send along
@@ -145,25 +146,17 @@ type relayHeader struct {
 // encodeRelayMessage wraps a message in the messageRelayType, adding the length and
 // address of the end recipient to the front of the message
 func encodeRelayMessage(t messageType, addr net.UDPAddr, msg interface{}) ([]byte, error) {
-	headerBuf := bytes.NewBuffer(nil)
-	headerHandle := codec.MsgpackHandle{}
-	headerEncoder := codec.NewEncoder(headerBuf, &headerHandle)
-
-	err := headerEncoder.Encode(relayHeader{DestAddr: addr})
-	if err != nil {
-		return nil, err
-	}
-
 	buf := bytes.NewBuffer(nil)
 	handle := codec.MsgpackHandle{}
 	encoder := codec.NewEncoder(buf, &handle)
 
 	buf.WriteByte(uint8(messageRelayType))
-	buf.WriteByte(uint8(len(headerBuf.Bytes())))
-	buf.Write(headerBuf.Bytes())
+	if err := encoder.Encode(relayHeader{DestAddr: addr}); err != nil {
+		return nil, err
+	}
 
 	buf.WriteByte(uint8(t))
-	err = encoder.Encode(msg)
+	err := encoder.Encode(msg)
 	return buf.Bytes(), err
 }
 

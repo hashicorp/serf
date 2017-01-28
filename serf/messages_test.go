@@ -1,6 +1,8 @@
 package serf
 
 import (
+	"bytes"
+	"github.com/hashicorp/go-msgpack/codec"
 	"net"
 	"reflect"
 	"testing"
@@ -49,24 +51,30 @@ func TestEncodeRelayMessage(t *testing.T) {
 	}
 
 	var header relayHeader
-	headerLen := int(raw[1])
-	if err := decodeMessage(raw[2:headerLen+2], &header); err != nil {
+	var handle codec.MsgpackHandle
+	reader := bytes.NewReader(raw[1:])
+	decoder := codec.NewDecoder(reader, &handle)
+	if err := decoder.Decode(&header); err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(header.DestAddr, addr) {
 		t.Fatalf("bad: %v, %v", header.DestAddr, addr)
 	}
 
-	if raw[headerLen+2] != byte(messageLeaveType) {
-		t.Fatal("should have type header")
+	messageType, err := reader.ReadByte()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if messageType != byte(messageLeaveType) {
+		t.Fatal("bad: %v, %v", messageType, byte(messageLeaveType))
 	}
 
-	var out messageLeave
-	if err := decodeMessage(raw[headerLen+3:], &out); err != nil {
+	var message messageLeave
+	if err := decoder.Decode(&message); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	if !reflect.DeepEqual(in, &out) {
+	if !reflect.DeepEqual(in, &message) {
 		t.Fatalf("mis-match")
 	}
 }
