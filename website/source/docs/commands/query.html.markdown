@@ -51,6 +51,9 @@ The command-line flags are all optional. The list of available flags are:
   will acknowledge receipt of a query and potentially respond if they have a configured
   event handler.
 
+* `-relay-factor` - If provided, nodes responding to the query will relay their response
+  through the specified number of other nodes for redundancy. Must be between 0 and 255.
+
 * `-node node` - If provided, output is filtered to only nodes with the given
   node name. `-node` can be specified multiple times to allow multiple nodes.
 

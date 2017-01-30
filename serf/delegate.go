@@ -98,6 +98,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 		// The remaining contents are the message itself, so forward that
 		raw := make([]byte, reader.Len())
 		reader.Read(raw)
+		d.serf.logger.Printf("[DEBUG] serf: Relaying response to addr: %s", header.DestAddr.String())
 		if err := d.serf.memberlist.SendTo(&header.DestAddr, raw); err != nil {
 			d.serf.logger.Printf("[ERR] serf: Error forwarding message to %s: %s", header.DestAddr.String(), err)
 			break

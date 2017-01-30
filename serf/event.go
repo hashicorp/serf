@@ -107,7 +107,7 @@ type Query struct {
 	addr        []byte    // Address to respond to
 	port        uint16    // Port to respond to
 	deadline    time.Time // Must respond by this deadline
-	relayFactor int       // Number of duplicate responses to relay back to sender
+	relayFactor uint8     // Number of duplicate responses to relay back to sender
 	respLock    sync.Mutex
 }
 
@@ -179,7 +179,7 @@ func (q *Query) Respond(buf []byte) error {
 			return fmt.Errorf("relayed response exceeds limit of %d bytes", q.serf.config.QueryResponseSizeLimit)
 		}
 
-		relayMembers := kRandomMembers(q.relayFactor, members, func(m Member) bool {
+		relayMembers := kRandomMembers(int(q.relayFactor), members, func(m Member) bool {
 			return m.Status != StatusAlive || m.ProtocolMax < 5 || m.Name == q.serf.LocalMember().Name
 		})
 

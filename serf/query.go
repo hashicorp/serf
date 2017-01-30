@@ -24,6 +24,10 @@ type QueryParam struct {
 	// send an ack.
 	RequestAck bool
 
+	// RelayFactor controls the number of duplicate responses to relay
+	// back to the sender through other nodes for redundancy.
+	RelayFactor uint8
+
 	// The timeout limits how long the query is left open. If not provided,
 	// then a default timeout is used based on the configuration of Serf
 	Timeout time.Duration
@@ -41,10 +45,12 @@ func (s *Serf) DefaultQueryTimeout() time.Duration {
 
 // DefaultQueryParam is used to return the default query parameters
 func (s *Serf) DefaultQueryParams() *QueryParam {
+	relayFactor := math.Ceil(math.Log10(float64(s.memberlist.NumMembers() + 1)))
 	return &QueryParam{
 		FilterNodes: nil,
 		FilterTags:  nil,
 		RequestAck:  false,
+		RelayFactor: uint8(relayFactor),
 		Timeout:     s.DefaultQueryTimeout(),
 	}
 }

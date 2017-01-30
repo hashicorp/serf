@@ -165,10 +165,6 @@ type Config struct {
 	QueryResponseSizeLimit int
 	QuerySizeLimit         int
 
-	// QueryResponseRelayLimit controls the maximum number of nodes used to echo a
-	// query response back to the originator of the query
-	QueryResponseRelayLimit int
-
 	// MemberlistConfig is the memberlist configuration that Serf will
 	// use to do the underlying membership management and gossip. Some
 	// fields in the MemberlistConfig will be overwritten by Serf no
@@ -258,7 +254,6 @@ func DefaultConfig() *Config {
 		QueryTimeoutMult:             16,
 		QueryResponseSizeLimit:       1024,
 		QuerySizeLimit:               1024,
-		QueryResponseRelayLimit:      3,
 		EnableNameConflictResolution: true,
 		DisableCoordinates:           false,
 	}

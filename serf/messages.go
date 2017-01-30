@@ -78,15 +78,16 @@ type messageUserEvent struct {
 
 // messageQuery is used for query events
 type messageQuery struct {
-	LTime   LamportTime   // Event lamport time
-	ID      uint32        // Query ID, randomly generated
-	Addr    []byte        // Source address, used for a direct reply
-	Port    uint16        // Source port, used for a direct reply
-	Filters [][]byte      // Potential query filters
-	Flags   uint32        // Used to provide various flags
-	Timeout time.Duration // Maximum time between delivery and response
-	Name    string        // Query name
-	Payload []byte        // Query payload
+	LTime       LamportTime   // Event lamport time
+	ID          uint32        // Query ID, randomly generated
+	Addr        []byte        // Source address, used for a direct reply
+	Port        uint16        // Source port, used for a direct reply
+	Filters     [][]byte      // Potential query filters
+	Flags       uint32        // Used to provide various flags
+	RelayFactor uint8         // Used to set the number of duplicate relayed responses
+	Timeout     time.Duration // Maximum time between delivery and response
+	Name        string        // Query name
+	Payload     []byte        // Query payload
 }
 
 // Ack checks if the ack flag is set

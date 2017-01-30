@@ -1551,6 +1551,42 @@ func TestSerf_Query_Filter(t *testing.T) {
 	}
 }
 
+func TestSerf_Query_Deduplicate(t *testing.T) {
+	s := &Serf{}
+
+	// Set up a dummy query and response
+	mq := &messageQuery{
+		LTime:   123,
+		ID:      123,
+		Timeout: time.Second,
+	}
+	query := newQueryResponse(3, mq)
+	response := &messageQueryResponse{
+		LTime: mq.LTime,
+		ID:    mq.ID,
+		From:  "node1",
+	}
+	s.queryResponse = map[LamportTime]*QueryResponse{mq.LTime: query}
+
+	// Send a few duplicate responses
+	s.handleQueryResponse(response)
+	s.handleQueryResponse(response)
+	s.handleQueryResponse(response)
+
+	// Ensure we only get one NodeResponse off the channel
+	select {
+	case <-query.respCh:
+	default:
+		t.Fatalf("Should have a response")
+	}
+
+	select {
+	case <-query.respCh:
+		t.Fatalf("Should not have any other responses")
+	default:
+	}
+}
+
 func TestSerf_Query_sizeLimit(t *testing.T) {
 	s1Config := testConfig()
 	s1, err := Create(s1Config)

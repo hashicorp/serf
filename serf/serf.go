@@ -499,15 +499,16 @@ func (s *Serf) Query(name string, payload []byte, params *QueryParam) (*QueryRes
 
 	// Create a message
 	q := messageQuery{
-		LTime:   s.queryClock.Time(),
-		ID:      uint32(rand.Int31()),
-		Addr:    local.Addr,
-		Port:    local.Port,
-		Filters: filters,
-		Flags:   flags,
-		Timeout: params.Timeout,
-		Name:    name,
-		Payload: payload,
+		LTime:       s.queryClock.Time(),
+		ID:          uint32(rand.Int31()),
+		Addr:        local.Addr,
+		Port:        local.Port,
+		Filters:     filters,
+		Flags:       flags,
+		RelayFactor: params.RelayFactor,
+		Timeout:     params.Timeout,
+		Name:        name,
+		Payload:     payload,
 	}
 
 	// Encode the query
@@ -1250,7 +1251,7 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 			addr:        query.Addr,
 			port:        query.Port,
 			deadline:    time.Now().Add(query.Timeout),
-			relayFactor: s.config.QueryResponseRelayLimit,
+			relayFactor: query.RelayFactor,
 		}
 	}
 	return rebroadcast
