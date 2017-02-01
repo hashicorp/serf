@@ -191,3 +191,34 @@ func TestQueryCommandRun_formatJSON(t *testing.T) {
 		t.Fatalf("bad: %#v", out)
 	}
 }
+
+func TestQueryCommandRun_invalidRelayFactor(t *testing.T) {
+	ui := new(cli.MockUi)
+	{
+		c := &QueryCommand{Ui: ui}
+		args := []string{"-rpc-addr=foo", "-relay-factor=9999", "foo"}
+
+		code := c.Run(args)
+		if code != 1 {
+			t.Fatalf("bad: %d", code)
+		}
+
+		if !strings.Contains(ui.ErrorWriter.String(), "Relay factor must be") {
+			t.Fatalf("bad: %#v", ui.ErrorWriter.String())
+		}
+	}
+
+	{
+		c := &QueryCommand{Ui: ui}
+		args := []string{"-rpc-addr=foo", "-relay-factor=-1", "foo"}
+
+		code := c.Run(args)
+		if code != 1 {
+			t.Fatalf("bad: %d", code)
+		}
+
+		if !strings.Contains(ui.ErrorWriter.String(), "Relay factor must be") {
+			t.Fatalf("bad: %#v", ui.ErrorWriter.String())
+		}
+	}
+}

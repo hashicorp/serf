@@ -144,6 +144,7 @@ type queryRequest struct {
 	FilterNodes []string
 	FilterTags  map[string]string
 	RequestAck  bool
+	RelayFactor uint8
 	Timeout     time.Duration
 	Name        string
 	Payload     []byte

@@ -62,8 +62,12 @@ WAIT:
 		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
 	}
 
-	if m[1].Status != serf.StatusLeft {
-		t.Fatalf("should be left: %#v", m[1])
+	left := m[0]
+	if m[1].Name == a2.SerfConfig().NodeName {
+		left = m[1]
+	}
+	if left.Status != serf.StatusLeft {
+		t.Fatalf("should be left: %#v", left)
 	}
 }
 
