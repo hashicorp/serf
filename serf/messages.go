@@ -140,6 +140,7 @@ func encodeMessage(t messageType, msg interface{}) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
+// relayHeader is used to store the end destination of a relayed message
 type relayHeader struct {
 	DestAddr net.UDPAddr
 }

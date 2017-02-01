@@ -45,12 +45,10 @@ func (s *Serf) DefaultQueryTimeout() time.Duration {
 
 // DefaultQueryParam is used to return the default query parameters
 func (s *Serf) DefaultQueryParams() *QueryParam {
-	relayFactor := math.Ceil(math.Log10(float64(s.memberlist.NumMembers() + 1)))
 	return &QueryParam{
 		FilterNodes: nil,
 		FilterTags:  nil,
 		RequestAck:  false,
-		RelayFactor: uint8(relayFactor),
 		Timeout:     s.DefaultQueryTimeout(),
 	}
 }
