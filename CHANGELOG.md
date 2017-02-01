@@ -2,11 +2,11 @@
 
 IMPROVEMENTS:
 
+ * agent: Added support for relaying query responses through N other nodes for redundancy. [GH-439]
  * agent: Added the ability to tune the broadcast timeout, which might be necessary in very large clusters that experience very large, simultaneous changes to the cluster. [GH-412]
  * agent: Added a checksum to UDP gossip messages to guard against packet corruption. [GH-432]
  * agent: Added a short window where gossip will still flow to dead nodes so that they can more quickly refute. [GH-440]
  * build: Serf now builds with Go 1.7.5. [GH-443]
- * serf: Added support for relaying query responses through N other nodes for redundancy. [GH-439]
 
 ## 0.8 (September 14, 2016)
 
