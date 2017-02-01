@@ -241,7 +241,7 @@ func DefaultConfig() *Config {
 		EventBuffer:                  512,
 		QueryBuffer:                  512,
 		LogOutput:                    os.Stderr,
-		ProtocolVersion:              ProtocolVersionMax,
+		ProtocolVersion:              4,
 		ReapInterval:                 15 * time.Second,
 		RecentIntentTimeout:          5 * time.Minute,
 		ReconnectInterval:            30 * time.Second,

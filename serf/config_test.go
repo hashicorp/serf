@@ -6,7 +6,7 @@ import (
 
 func TestDefaultConfig(t *testing.T) {
 	c := DefaultConfig()
-	if c.ProtocolVersion != ProtocolVersionMax {
+	if c.ProtocolVersion != 4 {
 		t.Fatalf("bad: %#v", c)
 	}
 }
