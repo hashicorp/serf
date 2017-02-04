@@ -1515,10 +1515,25 @@ func TestSerf_Query_Filter(t *testing.T) {
 	}
 	testutil.Yield()
 
+	s3Config := testConfig()
+	s3, err := Create(s3Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s3.Shutdown()
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	testutil.Yield()
+
 	// Filter to only s1!
 	params := s2.DefaultQueryParams()
 	params.FilterNodes = []string{s1Config.NodeName}
 	params.RequestAck = true
+	params.RelayFactor = 1
 
 	// Start a query from s2
 	resp, err := s2.Query("load", []byte("sup girl"), params)
@@ -1566,6 +1581,7 @@ func TestSerf_Query_Deduplicate(t *testing.T) {
 		LTime:   123,
 		ID:      123,
 		Timeout: time.Second,
+		Flags:   queryFlagAck,
 	}
 	query := newQueryResponse(3, mq)
 	response := &messageQueryResponse{
@@ -1578,6 +1594,8 @@ func TestSerf_Query_Deduplicate(t *testing.T) {
 	// Send a few duplicate responses
 	s.handleQueryResponse(response)
 	s.handleQueryResponse(response)
+	response.Flags |= queryFlagAck
+	s.handleQueryResponse(response)
 	s.handleQueryResponse(response)
 
 	// Ensure we only get one NodeResponse off the channel
@@ -1588,8 +1606,20 @@ func TestSerf_Query_Deduplicate(t *testing.T) {
 	}
 
 	select {
+	case <-query.ackCh:
+	default:
+		t.Fatalf("Should have an ack")
+	}
+
+	select {
 	case <-query.respCh:
 		t.Fatalf("Should not have any other responses")
+	default:
+	}
+
+	select {
+	case <-query.ackCh:
+		t.Fatalf("Should not have any other acks")
 	default:
 	}
 }
