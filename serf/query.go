@@ -233,7 +233,7 @@ func (s *Serf) relayResponse(relayFactor uint8, addr net.UDPAddr, resp *messageQ
 	// nodes. If you have a tiny cluster then the relayFactor shouldn't
 	// be needed.
 	members := s.Members()
-	if uint8(len(members)) < relayFactor+1 {
+	if len(members) < int(relayFactor)+1 {
 		return nil
 	}
 
