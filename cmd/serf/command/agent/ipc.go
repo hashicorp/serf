@@ -178,6 +178,7 @@ type queryRequest struct {
 	FilterNodes []string
 	FilterTags  map[string]string
 	RequestAck  bool
+	RelayFactor uint8
 	Timeout     time.Duration
 	Name        string
 	Payload     []byte
@@ -974,6 +975,7 @@ func (i *AgentIPC) handleQuery(client *IPCClient, seq uint64) error {
 		FilterNodes: req.FilterNodes,
 		FilterTags:  req.FilterTags,
 		RequestAck:  req.RequestAck,
+		RelayFactor: req.RelayFactor,
 		Timeout:     req.Timeout,
 	}
 
