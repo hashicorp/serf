@@ -1,4 +1,4 @@
-## 0.8.1 (UNRELEASED)
+## 0.8.1 (February 6, 2017)
 
 IMPROVEMENTS:
 
