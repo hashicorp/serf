@@ -1381,7 +1381,7 @@ func (s *Serf) resolveNodeConflict() {
 
 		// Update the counters
 		responses++
-		if bytes.Equal(member.Addr, local.Addr) && member.Port == local.Port {
+		if member.Addr.Equal(local.Addr) && member.Port == local.Port {
 			matching++
 		}
 	}
