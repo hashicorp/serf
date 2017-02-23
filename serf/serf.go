@@ -801,13 +801,15 @@ func (s *Serf) Shutdown() error {
 		s.logger.Printf("[WARN] serf: Shutdown without a Leave")
 	}
 
+	// Wait to close the shutdown channel until after we've shut down the
+	// memberlist and its associated network resources, since the shutdown
+	// channel signals that we are cleaned up outside of Serf.
 	s.state = SerfShutdown
-	close(s.shutdownCh)
-
 	err := s.memberlist.Shutdown()
 	if err != nil {
 		return err
 	}
+	close(s.shutdownCh)
 
 	// Wait for the snapshoter to finish if we have one
 	if s.snapshotter != nil {
