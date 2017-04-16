@@ -1,0 +1,15 @@
+author: ""
+description: ""
+filesets:
+  includes:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+  excludes:
+      - \.git
+      - .*\.go
+settings:
+  targetdir: ""
+  outfiles: ["bin/serf"]
+  build: |
+      make all
