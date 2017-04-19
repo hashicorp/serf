@@ -10,6 +10,7 @@ IMRPOVEMENTS:
 * agent: Serf is now built with Go 1.8. [GH-455]
 * agent: Improved address comparison during conflict resolution. [GH-433]
 * library: Moved close of shutdown channel until after network resorces are released. [GH-453]
+* library: Fixed several race conditions with QueryResponse [GH-460]
 
 BUG FIXES:
 
