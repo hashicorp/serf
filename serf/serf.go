@@ -1319,11 +1319,9 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 		}
 
 		metrics.IncrCounter([]string{"serf", "query_responses"}, 1)
-		select {
-		case query.respCh <- NodeResponse{From: resp.From, Payload: resp.Payload}:
-			query.responses[resp.From] = struct{}{}
-		default:
-			s.logger.Printf("[WARN] serf: Failed to deliver query response, dropping")
+		err := query.sendResponse(NodeResponse{From: resp.From, Payload: resp.Payload})
+		if err != nil {
+			s.logger.Printf("[WARN] %v", err)
 		}
 	}
 }
