@@ -74,9 +74,12 @@ type Serf struct {
 
 	eventBroadcasts *memberlist.TransmitLimitedQueue
 	eventBuffer     []*userEvents
+
+	joinLock        sync.Mutex
 	eventJoinIgnore bool
-	eventMinTime    LamportTime
-	eventLock       sync.RWMutex
+
+	eventMinTime LamportTime
+	eventLock    sync.RWMutex
 
 	queryBroadcasts *memberlist.TransmitLimitedQueue
 	queryBuffer     []*queries
@@ -85,7 +88,6 @@ type Serf struct {
 	queryLock       sync.RWMutex
 
 	logger     *log.Logger
-	joinLock   sync.Mutex
 	stateLock  sync.Mutex
 	state      SerfState
 	shutdownCh chan struct{}
@@ -591,16 +593,16 @@ func (s *Serf) Join(existing []string, ignoreOld bool) (int, error) {
 		return 0, fmt.Errorf("Serf can't Join after Leave or Shutdown")
 	}
 
-	// Hold the joinLock, this is to make eventJoinIgnore safe
-	s.joinLock.Lock()
-	defer s.joinLock.Unlock()
-
 	// Ignore any events from a potential join. This is safe since we hold
 	// the joinLock and nobody else can be doing a Join
 	if ignoreOld {
+		s.joinLock.Lock()
 		s.eventJoinIgnore = true
+		s.joinLock.Unlock()
 		defer func() {
+			s.joinLock.Lock()
 			s.eventJoinIgnore = false
+			s.joinLock.Unlock()
 		}()
 	}
 
@@ -616,6 +618,13 @@ func (s *Serf) Join(existing []string, ignoreOld bool) (int, error) {
 	}
 
 	return num, err
+}
+
+// EventJoinIgnore returns a thread-safe boolean indicating the s.eventJoinIgnore status.
+func (s *Serf) EventJoinIgnore() bool {
+	s.joinLock.Lock()
+	defer s.joinLock.Unlock()
+	return s.eventJoinIgnore
 }
 
 // broadcastJoin broadcasts a new join intent with a
