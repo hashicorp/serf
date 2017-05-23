@@ -241,18 +241,13 @@ func Create(conf *Config) (*Serf, error) {
 			conf.ProtocolVersion, ProtocolVersionMin, ProtocolVersionMax)
 	}
 
-	if conf.LogOutput != nil && conf.Logger != nil {
-		return nil, fmt.Errorf("Cannot specify both LogOutput and Logger. Please choose a single log configuration setting.")
-	}
-
-	logDest := conf.LogOutput
-	if logDest == nil {
-		logDest = os.Stderr
-	}
-
 	logger := conf.Logger
 	if logger == nil {
-		logger = log.New(logDest, "", log.LstdFlags)
+		logOutput := conf.LogOutput
+		if logOutput == nil {
+			logOutput = os.Stderr
+		}
+		logger = log.New(logOutput, "", log.LstdFlags)
 	}
 
 	serf := &Serf{
