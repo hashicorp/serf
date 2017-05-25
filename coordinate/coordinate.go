@@ -72,6 +72,26 @@ func (c *Coordinate) Clone() *Coordinate {
 	}
 }
 
+// componentIsValid returns false if a floating point value is a NaN or an
+// infinity.
+func componentIsValid(f float64) bool {
+	return !math.IsInf(f, 0) && !math.IsNaN(f)
+}
+
+// IsValid returns false if any component of a coordinate isn't valid, per the
+// componentIsValid() helper above.
+func (c *Coordinate) IsValid() bool {
+	for i, _ := range c.Vec {
+		if !componentIsValid(c.Vec[i]) {
+			return false
+		}
+	}
+
+	return componentIsValid(c.Error) &&
+		componentIsValid(c.Adjustment) &&
+		componentIsValid(c.Height)
+}
+
 // IsCompatibleWith checks to see if the two coordinates are compatible
 // dimensionally. If this returns true then you are guaranteed to not get
 // any runtime errors operating on them.

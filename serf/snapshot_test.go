@@ -25,7 +25,9 @@ func TestSnapshotter(t *testing.T) {
 	}
 	coord := coordinate.NewCoordinate(coordinate.DefaultConfig())
 	coord.Vec[0] = 123.4
-	coordClient.SetCoordinate(coord)
+	if err := coordClient.SetCoordinate(coord); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
 	clock := new(LamportClock)
 	outCh := make(chan Event, 64)
@@ -203,7 +205,9 @@ func TestSnapshotter_forceCompact(t *testing.T) {
 	}
 	coord := coordinate.NewCoordinate(coordinate.DefaultConfig())
 	coord.Vec[0] = 123.4
-	coordClient.SetCoordinate(coord)
+	if err := coordClient.SetCoordinate(coord); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})

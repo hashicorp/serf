@@ -49,6 +49,44 @@ func TestCoordinate_Clone(t *testing.T) {
 	}
 }
 
+func TestCoordinate_IsValid(t *testing.T) {
+	c := NewCoordinate(DefaultConfig())
+
+	var fields []*float64
+	for i := range c.Vec {
+		fields = append(fields, &c.Vec[i])
+	}
+	fields = append(fields, &c.Error)
+	fields = append(fields, &c.Adjustment)
+	fields = append(fields, &c.Height)
+
+	for i, field := range fields {
+		if !c.IsValid() {
+			t.Fatalf("field %d should be valid", i)
+		}
+
+		*field = math.NaN()
+		if c.IsValid() {
+			t.Fatalf("field %d should not be valid (NaN)", i)
+		}
+
+		*field = 0.0
+		if !c.IsValid() {
+			t.Fatalf("field %d should be valid", i)
+		}
+
+		*field = math.Inf(0)
+		if c.IsValid() {
+			t.Fatalf("field %d should not be valid (Inf)", i)
+		}
+
+		*field = 0.0
+		if !c.IsValid() {
+			t.Fatalf("field %d should be valid", i)
+		}
+	}
+}
+
 func TestCoordinate_IsCompatibleWith(t *testing.T) {
 	config := DefaultConfig()
 
