@@ -14,6 +14,8 @@ IMRPOVEMENTS:
 
 BUG FIXES:
 
+* agent: Added defenses against invalid network coordinates with NaN and Inf values. [GH-468]
+
 ## 0.8.1 (February 6, 2017)
 
 IMPROVEMENTS:
