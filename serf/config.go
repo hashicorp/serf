@@ -222,6 +222,10 @@ type Config struct {
 	// persist changes to the encryption keyring.
 	KeyringFile string
 
+	// DisableKeyringFile prevents serf from writing keyring data to the
+	// KeyringFile.
+	DisableKeyringFile bool
+
 	// Merge can be optionally provided to intercept a cluster merge
 	// and conditionally abort the merge.
 	Merge MergeDelegate
