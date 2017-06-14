@@ -80,8 +80,9 @@ The options below are all specified on the command-line.
   than one encryption key until all members have received the new key. The
   keyring file helps persist changes to the encryption keyring, allowing the
   agent to start and rejoin the cluster successfully later on, even if key
-  rotations had been initiated by other members in the cluster. More information
-  on the format of the keyring file can be found below in the examples section.
+  rotations had been initiated by other members in the cluster. If left blank, the
+  keyring will not be persisted to a file. More information on the format of the
+  keyring file can be found below in the examples section.
 
   NOTE: this option is not compatible with the `-encrypt` option.
 
