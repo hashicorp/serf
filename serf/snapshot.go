@@ -320,7 +320,15 @@ func (s *Snapshotter) appendLine(l string) error {
 
 	n, err := s.buffered.WriteString(l)
 	if err != nil {
-		return err
+        s.logger.Printf("[ERR] serf: Failed to write to snapshot file due to error: %v, attempting compaction...", err)
+		err = s.compact()
+		if err != nil {
+			s.logger.Printf("[ERR] serf: Failed compaction due to error %v, check if you are out of disk space?", err)
+			return err
+		} else {
+			s.logger.Println("[INFO] serf: Finished compaction")
+			return nil
+		}
 	}
 
 	// Check if we should flush
