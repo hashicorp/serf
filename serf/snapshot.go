@@ -316,13 +316,12 @@ func (s *Snapshotter) tryAppend(l string) {
 		now := time.Now()
 		if now.Sub(s.lastAttemptedCompaction) > snapshotErrorRecoveryInterval {
 			s.lastAttemptedCompaction = now
-			wrErr := err
-			s.logger.Printf("[ERR] serf: Attempting compaction to recover from error...")
+			s.logger.Printf("[INFO] serf: Attempting compaction to recover from error...")
 			err = s.compact()
 			if err != nil {
-				s.logger.Printf("[ERR] serf: Failed compaction due to error %v, will reattempt in %v", err, snapshotErrorRecoveryInterval)
+				s.logger.Printf("[ERR] serf: Compaction failed, will reattempt after %v: %v", snapshotErrorRecoveryInterval, err)
 			} else {
-				s.logger.Printf("[INFO] serf: Finished compaction, successfully recovered from error state %q", wrErr)
+				s.logger.Printf("[INFO] serf: Finished compaction, successfully recovered from error state")
 			}
 		}
 	}
