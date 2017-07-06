@@ -110,6 +110,11 @@ These two mechanisms combine to make Serf much more robust to degraded nodes in 
 cluster, while keeping failure detection performance unchanged. There is no
 additional configuration for Lifeguard, it tunes itself automatically.
 
+For more details about Lifeguard, please see the
+[Making Gossip More Robust with Lifeguard](https://www.hashicorp.com/blog/making-gossip-more-robust-with-lifeguard/)
+blog post, which provides a high level overview of the HashiCorp Research paper
+[Lifeguard : SWIM-ing with Situational Awareness](https://arxiv.org/abs/1707.00788).
+
 ## Serf-Specific Messages
 
 On top of the SWIM-based gossip layer, Serf sends some custom message types.
