@@ -435,7 +435,7 @@ func (i *AgentIPC) handleClient(client *IPCClient) {
 				// The second part of this if is to block socket
 				// errors from Windows which appear to happen every
 				// time there is an EOF.
-				if err != io.EOF && !strings.Contains(err.Error(), "WSARecv") {
+				if err != io.EOF && !strings.Contains(strings.ToLower(err.Error()), "wsarecv") {
 					i.logger.Printf("[ERR] agent.ipc: failed to decode request header: %v", err)
 				}
 			}
