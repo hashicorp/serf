@@ -15,6 +15,7 @@ IMRPOVEMENTS:
 BUG FIXES:
 
 * agent: Added defenses against invalid network coordinates with NaN and Inf values. [GH-468]
+* agent: Fixed an issue on Windows where "wsarecv" errors were logged when clients accessed the RPC interface. [GH-479]
 
 ## 0.8.1 (February 6, 2017)
 
