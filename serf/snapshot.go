@@ -423,10 +423,18 @@ func (s *Snapshotter) compact() error {
 
 	// Flush the new snapshot
 	err = buf.Flush()
-	fh.Close()
+
 	if err != nil {
 		return fmt.Errorf("failed to flush new snapshot: %v", err)
 	}
+
+	err = fh.Sync()
+
+	if err != nil {
+		return fmt.Errorf("failed to fsync new snapshot: %v", err)
+	}
+
+	fh.Close()
 
 	// We now need to swap the old snapshot file with the new snapshot.
 	// Turns out, Windows won't let us rename the files if we have
