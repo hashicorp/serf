@@ -1,6 +1,7 @@
 package coordinate
 
 import (
+	"fmt"
 	"math"
 	"reflect"
 	"strings"
@@ -62,6 +63,38 @@ func TestClient_Update(t *testing.T) {
 	client.SetCoordinate(c)
 	c = client.GetCoordinate()
 	verifyEqualFloats(t, c.Vec[2], 99.0)
+}
+
+func TestClient_InvalidInPingValues(t *testing.T) {
+	config := DefaultConfig()
+	config.Dimensionality = 3
+
+	client, err := NewClient(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Place another node
+	other := NewCoordinate(config)
+	other.Vec[2] = 0.001
+	dist := client.DistanceTo(other)
+
+	// Update with a series of invalid ping periods, should return an error and estimated rtt remains unchanged
+	pings := []int{1<<63 - 1, -35, 11}
+
+	for _, ping := range pings {
+		expectedErr := fmt.Errorf("round trip time not in valid range, duration %v is not a positive value less than %v", ping, 10*time.Second)
+		_, err = client.Update("node", other, time.Duration(ping*secondsToNanoseconds))
+		if err == nil {
+			t.Fatalf("Unexpected error, wanted %v but got %v", expectedErr, err)
+		}
+
+		dist_new := client.DistanceTo(other)
+		if dist_new != dist {
+			t.Fatalf("distance estimate %v not equal to %v", dist_new, dist)
+		}
+	}
+
 }
 
 func TestClient_DistanceTo(t *testing.T) {
