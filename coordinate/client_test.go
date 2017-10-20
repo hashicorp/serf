@@ -74,46 +74,24 @@ func TestClient_InvalidInPingValues(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Make sure the Euclidean part of our coordinate is what we expect.
-	c := client.GetCoordinate()
-	verifyEqualVectors(t, c.Vec, []float64{0.0, 0.0, 0.0})
-
 	// Place another node
 	other := NewCoordinate(config)
 	other.Vec[2] = 0.001
-	rtt := time.Duration(2.0 * other.Vec[2] * secondsToNanoseconds)
-	c, err = client.Update("node", other, rtt)
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
-	dist_old := client.DistanceTo(other)
-	// Update with a valid ping period, should have an affect on estimated rtt
-	ping := 20
-	_, err = client.Update("node", other, time.Duration(ping*secondsToNanoseconds))
-	if err != nil {
-		t.Fatalf("Unexpected error ", err)
-	}
-
-	dist_new := client.DistanceTo(other)
-	if dist_new <= dist_old {
-		t.Fatalf("Invalid rtt estimate %v", dist_new)
-	}
+	dist := client.DistanceTo(other)
 
 	// Update with a series of invalid ping periods, should return an error and estimated rtt remains unchanged
-	pings := []int{1<<63 - 1, -35, -1 << 63, 35000}
-	dist_old = dist_new
+	pings := []int{1<<63 - 1, -35, 11}
 
 	for _, ping := range pings {
-		expectedErr := fmt.Errorf("Round trip time not in valid range, duration %v is not a positive value less than %v", ping, MAX_RTT_SECONDS)
+		expectedErr := fmt.Errorf("round trip time not in valid range, duration %v is not a positive value less than %v", ping, 10*time.Second)
 		_, err = client.Update("node", other, time.Duration(ping*secondsToNanoseconds))
 		if err == nil {
 			t.Fatalf("Unexpected error, wanted %v but got %v", expectedErr, err)
 		}
 
-		dist_new = client.DistanceTo(other)
-		if dist_new != dist_old {
-			t.Fatalf("distance est", dist_new)
+		dist_new := client.DistanceTo(other)
+		if dist_new != dist {
+			t.Fatalf("distance estimate %v not equal to %v", dist_new, dist)
 		}
 	}
 

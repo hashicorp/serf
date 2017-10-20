@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-const MAX_RTT_SECONDS = 32400 //9 hours is the upper bound for ping period
-
 // Client manages the estimated network coordinate for a given node, and adjusts
 // it as the node observes round trip times and estimated coordinates from other
 // nodes. The core algorithm is based on Vivaldi, see the documentation for Config
@@ -207,9 +205,9 @@ func (c *Client) Update(node string, other *Coordinate, rtt time.Duration) (*Coo
 		return nil, err
 	}
 
-	durSec := rtt.Seconds()
-	if durSec <= 0 || durSec > MAX_RTT_SECONDS {
-		return nil, fmt.Errorf("Round trip time not in valid range, duration %v is not a positive value less than %v ", durSec, MAX_RTT_SECONDS)
+	const maxRTT = 10 * time.Second
+	if rtt <= 0 || rtt > maxRTT {
+		return nil, fmt.Errorf("round trip time not in valid range, duration %v is not a positive value less than %v ", rtt, maxRTT)
 	}
 
 	rttSeconds := c.latencyFilter(node, rtt.Seconds())
