@@ -9,6 +9,7 @@ IMRPOVEMENTS:
 * agent: Properly seeds Go's random number generator using the seed library. [GH-451]
 * agent: Serf is now built with Go 1.8. [GH-455]
 * agent: Improved address comparison during conflict resolution. [GH-433]
+* agent: Updated memberlist to latest to pull several cleanups and fixes. [GH-491]
 * library: Moved close of shutdown channel until after network resorces are released. [GH-453]
 * library: Fixed several race conditions with QueryResponse [GH-460]
 
