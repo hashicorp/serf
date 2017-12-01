@@ -27,6 +27,7 @@ func testConfig() *Config {
 	config.MemberlistConfig.GossipInterval = 5 * time.Millisecond
 	config.MemberlistConfig.ProbeInterval = 50 * time.Millisecond
 	config.MemberlistConfig.ProbeTimeout = 25 * time.Millisecond
+	config.MemberlistConfig.TCPTimeout = 1 * time.Millisecond
 	config.MemberlistConfig.SuspicionMult = 1
 
 	config.NodeName = fmt.Sprintf("Node %s", config.MemberlistConfig.BindAddr)
