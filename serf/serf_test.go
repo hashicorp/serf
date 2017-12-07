@@ -329,6 +329,52 @@ func TestSerf_eventsUser_sizeLimit(t *testing.T) {
 	}
 }
 
+func TestSerf_getQueueMax(t *testing.T) {
+	s := &Serf{
+		config: DefaultConfig(),
+	}
+
+	// We don't need a running Serf so fake it out with the required
+	// state.
+	s.members = make(map[string]*memberState)
+	for i := 0; i < 100; i++ {
+		name := fmt.Sprintf("Member%d", i)
+		s.members[name] = &memberState{
+			Member: Member{
+				Name: name,
+			},
+		}
+	}
+
+	// Default mode just uses the max depth.
+	if got, want := s.getQueueMax(), 4096; got != want {
+		t.Fatalf("got %d want %d")
+	}
+
+	// Now configure a min which should take precedence.
+	s.config.MinQueueDepth = 1024
+	if got, want := s.getQueueMax(), 1024; got != want {
+		t.Fatalf("got %d want %d")
+	}
+
+	// Bring it under the number of nodes, so the calculation based on
+	// the number of nodes takes precedence.
+	s.config.MinQueueDepth = 16
+	if got, want := s.getQueueMax(), 200; got != want {
+		t.Fatalf("got %d want %d")
+	}
+
+	// Try adjusting the node count.
+	s.members["another"] = &memberState{
+		Member: Member{
+			Name: "another",
+		},
+	}
+	if got, want := s.getQueueMax(), 202; got != want {
+		t.Fatalf("got %d want %d")
+	}
+}
+
 func TestSerf_joinLeave(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()
