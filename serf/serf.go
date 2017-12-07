@@ -1515,6 +1515,22 @@ func (s *Serf) reconnect() {
 	s.memberlist.Join([]string{addr.String()})
 }
 
+// getQueueMax will get the maximum queue depth, which might be dynamic depending
+// on how Serf is configured.
+func (s *Serf) getQueueMax() int {
+	max := s.config.MaxQueueDepth
+	if s.config.MinQueueDepth > 0 {
+		s.memberLock.RLock()
+		max = 2 * len(s.members)
+		s.memberLock.RUnlock()
+
+		if max < s.config.MinQueueDepth {
+			max = s.config.MinQueueDepth
+		}
+	}
+	return max
+}
+
 // checkQueueDepth periodically checks the size of a queue to see if
 // it is too large
 func (s *Serf) checkQueueDepth(name string, queue *memberlist.TransmitLimitedQueue) {
@@ -1526,10 +1542,10 @@ func (s *Serf) checkQueueDepth(name string, queue *memberlist.TransmitLimitedQue
 			if numq >= s.config.QueueDepthWarning {
 				s.logger.Printf("[WARN] serf: %s queue depth: %d", name, numq)
 			}
-			if numq > s.config.MaxQueueDepth {
+			if max := s.getQueueMax(); numq > max {
 				s.logger.Printf("[WARN] serf: %s queue depth (%d) exceeds limit (%d), dropping messages!",
-					name, numq, s.config.MaxQueueDepth)
-				queue.Prune(s.config.MaxQueueDepth)
+					name, numq, max)
+				queue.Prune(max)
 			}
 		case <-s.shutdownCh:
 			return

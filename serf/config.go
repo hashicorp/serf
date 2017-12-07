@@ -127,6 +127,12 @@ type Config struct {
 	// prevent an unbounded growth of memory utilization
 	MaxQueueDepth int
 
+	// MinQueueDepth, if >0 will enforce a lower limit for dropping messages
+	// and then the max will be max(MinQueueDepth, 2*SizeOfCluster). This
+	// defaults to 0 which disables this dynamic sizing feature. If this is
+	// >0 then MaxQueueDepth will be ignored.
+	MinQueueDepth int
+
 	// RecentIntentTimeout is used to determine how long we store recent
 	// join and leave intents. This is used to guard against the case where
 	// Serf broadcasts an intent that arrives before the Memberlist event.
