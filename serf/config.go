@@ -112,6 +112,10 @@ type Config struct {
 	// node.
 	FlapTimeout time.Duration
 
+	// QueueCheckInterval is the interval at which we check the message
+	// queue to apply the warning and max depth.
+	QueueCheckInterval time.Duration
+
 	// QueueDepthWarning is used to generate warning message if the
 	// number of queued messages to broadcast exceeds this number. This
 	// is to provide the user feedback if events are being triggered
@@ -253,6 +257,7 @@ func DefaultConfig() *Config {
 		RecentIntentTimeout:          5 * time.Minute,
 		ReconnectInterval:            30 * time.Second,
 		ReconnectTimeout:             24 * time.Hour,
+		QueueCheckInterval:           30 * time.Second,
 		QueueDepthWarning:            128,
 		MaxQueueDepth:                4096,
 		TombstoneTimeout:             24 * time.Hour,

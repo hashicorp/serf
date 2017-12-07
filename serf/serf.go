@@ -1520,7 +1520,7 @@ func (s *Serf) reconnect() {
 func (s *Serf) checkQueueDepth(name string, queue *memberlist.TransmitLimitedQueue) {
 	for {
 		select {
-		case <-time.After(time.Second):
+		case <-time.After(s.config.QueueCheckInterval):
 			numq := queue.NumQueued()
 			metrics.AddSample([]string{"serf", "queue", name}, float32(numq))
 			if numq >= s.config.QueueDepthWarning {
