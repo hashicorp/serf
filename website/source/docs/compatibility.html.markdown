@@ -73,5 +73,5 @@ if all agents are running protocol version 3. If an agent is running an older pr
 then only the "role" tag is supported for backwards compatibility.
 
 ~> **Warning!** Version 0.6 introduces support for key rotation. This feature
-uses the same protocol version, but requires that all agents be on 0.6. Attempting to use
-key rotation will result in errors.
+uses the same protocol version, but requires that all agents be on 0.6. Unless this condition
+is met, attempting to use key rotation will result in errors.
