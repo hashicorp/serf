@@ -32,7 +32,7 @@ done
 
 This will be the script that we'll tell Serf to invoke for any event.
 The script outputs the event, which Serf puts into the `SERF_EVENT`
-environmental variable. The data for a Serf event always comes in via
+environment variable. The data for a Serf event always comes in via
 stdin, so the script then reads stdin and outputs any data it received.
 
 By sending data to stdin, Serf works extremely well with standard Unix
@@ -84,7 +84,7 @@ There are currently seven types of events that Serf invokes:
   didn't properly respond to ping requests.
 * `member-update` - One or more members have updated, likely to update the
   associated tags
-* `member-reap` - Serf has removed one or more members from it's list of members.
+* `member-reap` - Serf has removed one or more members from its list of members.
   This means a failed node exceeded the `reconnect_timeout`, or a left node reached
   the `tombstone_timeout`.
 * `user` - A custom user event, covered later in this guide.
