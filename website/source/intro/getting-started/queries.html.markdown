@@ -9,7 +9,7 @@ description: |-
 # Custom Queries
 
 While custom events provide an efficient "fire-and-forget" mechanism, queries
-send a request and nodes can provide responds. Custom queries provide even more
+send a request and nodes can provide responses. Custom queries provide even more
 flexibility than events, since the target nodes can be filtered, delivery
 can be acknowledged and custom responses can be sent back. This makes queries
 useful for gathering information about a running cluster in real-time.
@@ -36,10 +36,10 @@ If the cluster were made up of multiple members, all of the reachable
 members would have received this query.
 
 Event handlers used with queries are even more powerful, as their
-output is sent back to the query originator. This enables the query make
+output is sent back to the query originator. This enables the query to make
 a "request", while the event handler can generate the response.
 
-For example, if we had a "load" custom event, we might create return
+For example, if we had a "load" custom event, we might return
 the current load average of the machine.
 
 Serf agents must be configured to handle queries before they will
