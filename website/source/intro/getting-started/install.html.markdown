@@ -29,12 +29,7 @@ release.
 If you are using [homebrew](http://brew.sh/#install) as a package manager,
 than you can install serf as simple as:
 ```
-brew cask install serf
-```
-
-if you are missing the [cask plugin](http://caskroom.io/) you can install it with:
-```
-brew install caskroom/cask/brew-cask
+brew install serf
 ```
 
 ## Verifying the Installation
