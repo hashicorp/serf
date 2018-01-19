@@ -95,7 +95,7 @@ WAIT:
 		goto WAIT
 	}
 
-	if err := client.ForceLeave(a2.conf.NodeName); err != nil {
+	if _, err := client.ForceLeave(a2.conf.NodeName); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
@@ -108,6 +108,14 @@ WAIT:
 
 	if findMember(t, m, a2.conf.NodeName).Status != serf.StatusLeft {
 		t.Fatalf("should be left: %#v", m[1])
+	}
+
+	exists, err := client.ForceLeave("idontexist")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	if exists {
+		t.Fatal("tried to remove a node that does not exists in the cluster, but got back that it exists in the cluster")
 	}
 }
 
@@ -275,7 +283,7 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 	}
 
 	// Make sure that filters work on member status
-	if err := client.ForceLeave(a2.conf.NodeName); err != nil {
+	if _, err := client.ForceLeave(a2.conf.NodeName); err != nil {
 		t.Fatalf("bad: %s", err)
 	}
 

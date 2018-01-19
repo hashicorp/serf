@@ -831,6 +831,15 @@ func TestSerfRemoveFailedNode(t *testing.T) {
 	// Verify that s2 is gone
 	testMember(t, s1.Members(), s2Config.NodeName, StatusLeft)
 	testMember(t, s3.Members(), s2Config.NodeName, StatusLeft)
+
+	// try to force the shutdown of a node that is not a member
+	exists, err := s1.CheckAndRemoveFailedNode("idontexist")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	if exists {
+		t.Fatal("tried to remove a node that does not exists in the cluster, but got back that it exists in the cluster")
+	}
 }
 
 func TestSerfRemoveFailedNode_ourself(t *testing.T) {
@@ -843,7 +852,7 @@ func TestSerfRemoveFailedNode_ourself(t *testing.T) {
 
 	testutil.Yield()
 
-	if err := s1.RemoveFailedNode("somebody"); err != nil {
+	if err := s1.RemoveFailedNode(s1Config.NodeName); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 }

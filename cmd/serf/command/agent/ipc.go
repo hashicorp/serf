@@ -126,6 +126,10 @@ type forceLeaveRequest struct {
 	Node string
 }
 
+type forceLeaveResponse struct {
+	Exists bool
+}
+
 type joinRequest struct {
 	Existing []string
 	Replay   bool
@@ -604,14 +608,17 @@ func (i *AgentIPC) handleForceLeave(client *IPCClient, seq uint64) error {
 	}
 
 	// Attempt leave
-	err := i.agent.ForceLeave(req.Node)
+	exists, err := i.agent.ForceLeave(req.Node)
 
 	// Respond
-	resp := responseHeader{
+	header := responseHeader{
 		Seq:   seq,
 		Error: errToString(err),
 	}
-	return client.Send(&resp, nil)
+	resp := forceLeaveResponse{
+		Exists: exists,
+	}
+	return client.Send(&header, &resp)
 }
 
 func (i *AgentIPC) handleJoin(client *IPCClient, seq uint64) error {

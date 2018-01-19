@@ -186,7 +186,7 @@ func (c *RPCClient) Close() error {
 
 // ForceLeave is used to ask the agent to issue a leave command for
 // a given node
-func (c *RPCClient) ForceLeave(node string) error {
+func (c *RPCClient) ForceLeave(node string) (bool, error) {
 	header := requestHeader{
 		Command: forceLeaveCommand,
 		Seq:     c.getSeq(),
@@ -194,7 +194,9 @@ func (c *RPCClient) ForceLeave(node string) error {
 	req := forceLeaveRequest{
 		Node: node,
 	}
-	return c.genericRPC(&header, &req, nil)
+	var resp forceLeaveResponse
+	err := c.genericRPC(&header, &req, &resp)
+	return resp.Exists, err
 }
 
 // Join is used to instruct the agent to attempt a join

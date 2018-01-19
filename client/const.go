@@ -92,6 +92,10 @@ type forceLeaveRequest struct {
 	Node string
 }
 
+type forceLeaveResponse struct {
+	Exists bool
+}
+
 type joinRequest struct {
 	Existing []string
 	Replay   bool

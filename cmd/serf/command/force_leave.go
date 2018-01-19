@@ -37,10 +37,13 @@ func (c *ForceLeaveCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
-	err = client.ForceLeave(nodes[0])
+	exists, err := client.ForceLeave(nodes[0])
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error force leaving: %s", err))
 		return 1
+	}
+	if !exists {
+		c.Ui.Info("Node does not exist in cluster.")
 	}
 
 	return 0
@@ -59,7 +62,8 @@ Usage: serf force-leave [options] name
   the cluster. This command is most useful for cleaning out "failed" nodes
   that are never coming back. If you do not force leave a failed node,
   Serf will attempt to reconnect to those failed nodes for some period of
-  time before eventually reaping them.
+  time before eventually reaping them. If you try to remove a node that
+  does not exist in the cluster it will let you know.
 
 Options:
 

@@ -741,6 +741,19 @@ func (s *Serf) Members() []Member {
 	return members
 }
 
+// CheckAndRemoveFailedNode checks if a node exists and then forcibly removes
+// the node via RemoveFailedNode. If the node does not exist in the cluster, it
+// will return exists as false and will not try to remove the node
+func (s *Serf) CheckAndRemoveFailedNode(node string) (exists bool, err error) {
+	// Check to make sure that the node exists in the cluster
+	_, ok := s.members[node]
+	if !ok {
+		return false, nil
+	}
+
+	return true, s.RemoveFailedNode(node)
+}
+
 // RemoveFailedNode forcibly removes a failed node from the cluster
 // immediately, instead of waiting for the reaper to eventually reclaim it.
 // This also has the effect that Serf will no longer attempt to reconnect

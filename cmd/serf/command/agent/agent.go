@@ -172,13 +172,16 @@ func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
 }
 
 // ForceLeave is used to eject a failed node from the cluster
-func (a *Agent) ForceLeave(node string) error {
+func (a *Agent) ForceLeave(node string) (bool, error) {
 	a.logger.Printf("[INFO] agent: Force leaving node: %s", node)
-	err := a.serf.RemoveFailedNode(node)
+	exists, err := a.serf.CheckAndRemoveFailedNode(node)
 	if err != nil {
 		a.logger.Printf("[WARN] agent: failed to remove node: %v", err)
 	}
-	return err
+	if !exists {
+		a.logger.Printf("[INFO] agent: Cannot force leave node that does not exist in the cluster: %s", node)
+	}
+	return exists, err
 }
 
 // UserEvent sends a UserEvent on Serf, see Serf.UserEvent.
