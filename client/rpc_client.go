@@ -2,6 +2,7 @@ package client
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -188,6 +189,23 @@ func (c *RPCClient) Close() error {
 // ForceLeave is used to ask the agent to issue a leave command for
 // a given node
 func (c *RPCClient) ForceLeave(node string) error {
+	mem, err := c.Members()
+	if err != nil {
+		return err
+	}
+
+	found := false
+	for _, m := range mem {
+		if m.Name == node {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return errors.New(fmt.Sprintf("couldn't find node %s", node))
+	}
+
 	header := requestHeader{
 		Command: forceLeaveCommand,
 		Seq:     c.getSeq(),
