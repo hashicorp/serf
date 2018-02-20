@@ -21,6 +21,9 @@ Serf will reap "failed" nodes and stop trying to reconnect. The `force-leave`
 command can be used to transition the "failed" nodes to "left" nodes more
 quickly.
 
+This command will return 0 if the member leaves successfully and there are no errors.
+If for example the node cannot be found, it returns 1.
+
 ## Usage
 
 Usage: `serf force-leave [options] node`
