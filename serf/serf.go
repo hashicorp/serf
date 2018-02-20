@@ -768,6 +768,19 @@ func (s *Serf) RemoveFailedNode(node string) error {
 		return nil
 	}
 
+	found := false
+	mem := s.Members()
+	for _, m := range mem {
+		if m.Name == node {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("node not found: %s", node)
+	}
+
 	// Broadcast the remove
 	notifyCh := make(chan struct{})
 	if err := s.broadcast(messageLeaveType, &msg, notifyCh); err != nil {

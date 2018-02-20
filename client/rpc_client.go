@@ -2,7 +2,6 @@ package client
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -203,7 +202,7 @@ func (c *RPCClient) ForceLeave(node string) error {
 	}
 
 	if !found {
-		return errors.New(fmt.Sprintf("couldn't find node %s", node))
+		return fmt.Errorf("node not found: %s", node)
 	}
 
 	header := requestHeader{
