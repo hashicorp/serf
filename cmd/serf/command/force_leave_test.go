@@ -82,3 +82,43 @@ func TestForceLeaveCommandRun_noAddrs(t *testing.T) {
 		t.Fatalf("bad: %#v", ui.ErrorWriter.String())
 	}
 }
+
+func TestForceLeaveCommandRun_invalidNode(t *testing.T) {
+	a1 := testAgent(t)
+	a2 := testAgent(t)
+	defer a1.Shutdown()
+	defer a2.Shutdown()
+	rpcAddr, ipc := testIPC(t, a1)
+	defer ipc.Shutdown()
+
+	_, err := a1.Join([]string{a2.SerfConfig().MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	start := time.Now()
+WAIT:
+	time.Sleep(a2.SerfConfig().MemberlistConfig.ProbeInterval * 3)
+	m := a1.Serf().Members()
+	if len(m) != 2 {
+		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
+	}
+
+	if m[1].Status != serf.StatusFailed && time.Now().Sub(start) < 3*time.Second {
+		goto WAIT
+	}
+
+	ui := new(cli.MockUi)
+	c := &ForceLeaveCommand{Ui: ui}
+	args := []string{
+		"-rpc-addr=" + rpcAddr,
+		"invalidNode",
+	}
+
+	code := c.Run(args)
+	if code != 1 {
+		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
+	}
+}
