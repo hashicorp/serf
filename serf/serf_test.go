@@ -214,7 +214,7 @@ func TestSerf_eventsLeave(t *testing.T) {
 		[]EventType{EventMemberJoin, EventMemberLeave})
 }
 
-func TestSerf_RemoveFailed_eventsLeave(t *testing.T) {
+func TestSerf_RemoveFailedNode_eventsLeave(t *testing.T) {
 	// Create the s1 config with an event channel so we can listen
 	eventCh := make(chan Event, 4)
 	s1Config := testConfig()
