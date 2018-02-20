@@ -851,6 +851,36 @@ func TestSerfRemoveFailedNode_ourself(t *testing.T) {
 	}
 }
 
+func TestSerfRemoveFailedNode_invaidNode(t *testing.T) {
+	s1Config := testConfig()
+	s2Config := testConfig()
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	defer s1.Shutdown()
+	defer s2.Shutdown()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Now remove the failed node
+	if err := s1.RemoveFailedNode("invalidNode"); err == nil {
+		t.Fatalf("bad: expected a failure")
+	}
+}
+
 func TestSerfState(t *testing.T) {
 	s1, err := Create(testConfig())
 	if err != nil {
