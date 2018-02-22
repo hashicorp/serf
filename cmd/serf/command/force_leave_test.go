@@ -121,4 +121,8 @@ WAIT:
 	if code != 1 {
 		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
 	}
+
+	if !strings.Contains(ui.ErrorWriter.String(), "node not found: invalidNode") {
+		t.Fatalf("bad: %#v", ui.ErrorWriter.String())
+	}
 }
