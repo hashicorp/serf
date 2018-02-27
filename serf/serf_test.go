@@ -348,20 +348,20 @@ func TestSerf_getQueueMax(t *testing.T) {
 
 	// Default mode just uses the max depth.
 	if got, want := s.getQueueMax(), 4096; got != want {
-		t.Fatalf("got %d want %d")
+		t.Fatalf("got %d want %d", got, want)
 	}
 
 	// Now configure a min which should take precedence.
 	s.config.MinQueueDepth = 1024
 	if got, want := s.getQueueMax(), 1024; got != want {
-		t.Fatalf("got %d want %d")
+		t.Fatalf("got %d want %d", got, want)
 	}
 
 	// Bring it under the number of nodes, so the calculation based on
 	// the number of nodes takes precedence.
 	s.config.MinQueueDepth = 16
 	if got, want := s.getQueueMax(), 200; got != want {
-		t.Fatalf("got %d want %d")
+		t.Fatalf("got %d want %d", got, want)
 	}
 
 	// Try adjusting the node count.
@@ -371,7 +371,7 @@ func TestSerf_getQueueMax(t *testing.T) {
 		},
 	}
 	if got, want := s.getQueueMax(), 202; got != want {
-		t.Fatalf("got %d want %d")
+		t.Fatalf("got %d want %d", got, want)
 	}
 }
 

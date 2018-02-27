@@ -66,7 +66,7 @@ func TestEncodeRelayMessage(t *testing.T) {
 		t.Fatal(err)
 	}
 	if messageType != byte(messageLeaveType) {
-		t.Fatal("bad: %v, %v", messageType, byte(messageLeaveType))
+		t.Fatalf("bad: %v, %v", messageType, byte(messageLeaveType))
 	}
 
 	var message messageLeave
