@@ -17,6 +17,7 @@ BUG FIXES:
 
 * agent: Added defenses against invalid network coordinates with NaN and Inf values. [GH-468]
 * agent: Fixed an issue on Windows where "wsarecv" errors were logged when clients accessed the RPC interface. [GH-479]
+* agent: Fixed an issue where calling the serf Stats function could result in a deadlock. [[Consul Issue 4011](https://github.com/hashicorp/consul/issues/4011)]
 
 ## 0.8.1 (February 6, 2017)
 
