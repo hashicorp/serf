@@ -262,7 +262,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		NodeName:                     hostname,
 		BroadcastTimeout:             5 * time.Second,
-		LeavePropagateDelay: 		  2 * time.Second,
+		LeavePropagateDelay: 		  1 * time.Second,
 		EventBuffer:                  512,
 		QueryBuffer:                  512,
 		LogOutput:                    os.Stderr,
