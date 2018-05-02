@@ -116,12 +116,13 @@ func TestDelegate_LocalState(t *testing.T) {
 	}
 
 	// Verify the status
-	if len(pp.StatusLTimes) != 2 {
+	// Leave waits until propagation so this should only have one member
+	if len(pp.StatusLTimes) != 1 {
 		t.Fatalf("missing ltimes")
 	}
 
-	if len(pp.LeftMembers) != 1 {
-		t.Fatalf("missing left members")
+	if len(pp.LeftMembers) != 0 {
+		t.Fatalf("should have no left members")
 	}
 
 	if pp.EventLTime != s1.eventClock.Time() {
@@ -191,7 +192,7 @@ func TestDelegate_MergeRemoteState(t *testing.T) {
 	}
 
 	// Verify pending leave for foo
-	if leave, ok := recentIntent(s1.recentIntents, "foo", messageLeaveType); !ok || leave != 15 {
+	if leave, ok := recentIntent(s1.recentIntents, "foo", messageLeaveType); !ok || leave != 16 {
 		t.Fatalf("bad recent leave")
 	}
 
