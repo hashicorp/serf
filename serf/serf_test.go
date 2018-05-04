@@ -174,6 +174,9 @@ func TestSerf_eventsLeave(t *testing.T) {
 	eventCh := make(chan Event, 4)
 	s1Config := testConfig()
 	s1Config.EventCh = eventCh
+	// Make the reap interval longer in this test
+	// so that the leave does not also cause a reap
+	s1Config.ReapInterval = 30 * time.Second
 
 	s2Config := testConfig()
 
@@ -1345,9 +1348,9 @@ func TestSerf_Leave_SnapshotRecovery(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 5)
-
-	// Verify that s2 is "left"
-	testMember(t, s1.Members(), s2Config.NodeName, StatusLeft)
+	// Verify that s2 is not in the memberlist
+	// The join intent is ignored because the leave sleeps long enough for the leave intent to broadcast
+	testMember(t, s1.Members(), s2Config.NodeName, StatusNone)
 
 	// Restart s2 from the snapshot now!
 	s2Config.EventCh = nil
@@ -1361,7 +1364,7 @@ func TestSerf_Leave_SnapshotRecovery(t *testing.T) {
 	testutil.Yield()
 
 	// Verify that s2 is didn't join
-	testMember(t, s1.Members(), s2Config.NodeName, StatusLeft)
+	testMember(t, s1.Members(), s2Config.NodeName, StatusNone)
 	if s2.NumNodes() != 1 {
 		t.Fatalf("bad members: %#v", s2.Members())
 	}
