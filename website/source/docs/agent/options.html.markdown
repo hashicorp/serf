@@ -94,9 +94,10 @@ The options below are all specified on the command-line.
   Event handlers can be changed by reloading the configuration.
 
 * `-join` - Address of another agent to join upon starting up. This can be
-  specified multiple times to specify multiple agents to join. If Serf is
-  unable to join with any of the specified addresses, agent startup will
-  fail. By default, the agent won't join any nodes when it starts up.
+  specified multiple times to specify multiple agents to join. Startup will
+  succeed if any specified agent can be joined, but will fail if none of the
+  agents specified can be joined. By default, the agent won't join any nodes
+  when it starts up.
 
 * `-replay` - If set, old user events from the past will be replayed for the
   agent/cluster that is joining based on a `-join` configuration. Otherwise,
