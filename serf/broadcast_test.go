@@ -1,9 +1,10 @@
 package serf
 
 import (
-	"github.com/hashicorp/memberlist"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/memberlist"
 )
 
 func TestBroadcast_Impl(t *testing.T) {

@@ -2,12 +2,13 @@ package agent
 
 import (
 	"bytes"
-	"github.com/hashicorp/serf/serf"
 	"log"
 	"net"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/serf/serf"
 )
 
 type MockStreamClient struct {

@@ -2,14 +2,15 @@ package agent
 
 import (
 	"encoding/json"
-	"github.com/hashicorp/serf/serf"
-	"github.com/hashicorp/serf/testutil"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/serf/serf"
+	"github.com/hashicorp/serf/testutil"
 )
 
 func TestAgent_eventHandler(t *testing.T) {

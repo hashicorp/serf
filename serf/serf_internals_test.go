@@ -1,10 +1,11 @@
 package serf
 
 import (
-	"github.com/hashicorp/memberlist"
-	"github.com/hashicorp/serf/testutil"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/memberlist"
+	"github.com/hashicorp/serf/testutil"
 )
 
 func TestSerf_joinLeave_ltime(t *testing.T) {
