@@ -120,7 +120,15 @@ The options below are all specified on the command-line.
   The current choices are "lan", "wan", and "local". This defaults to "lan".
   If a "lan" or "local" profile is used over the Internet, or a "local" profile
   over the LAN, a high rate of false failures is risked, as the timing constrains
-  are too tight.
+  are too tight. Note that each individual profile option can be configured in a
+  separate file specified by `-profile-path`.
+  
+* `-profile-path` - A profile consists of a variety of options, as defined by
+  the underlying [`memberlist`][https://github.com/hashicorp/memberlist] library.
+  While the `lan`, `wan` and `local` profiles contain sensible defaults, it is
+  sometimes desirable to override specific settings with values appropriate to
+  a specific deployment environment. `-profile-path` specifies the path to a
+  JSON-formatted file containing memberlist settings, as documented below.
 
 * `-protocol` - The Serf protocol version to use. This defaults to the latest
   version. This should be set only when [upgrading](/docs/upgrading.html).
@@ -241,6 +249,8 @@ at a single JSON object with configuration within it.
 
 * `profile` - Equivalent to the `-profile` command-line flag.
 
+* `profile_path` - Equivalent to the `-profile_path` command-line flag.
+
 * `protocol` - Equivalent to the `-protocol` command-line flag.
 
 * `rpc_addr` - Equivalent to the `-rpc-addr` command-line flag.
@@ -339,6 +349,98 @@ The remaining keys in the list are considered secondary and are used for
 decryption only. During message decryption, Serf uses the configured encryption
 keys in the order they appear in the keyring file until all keys are exhausted.
 
+#### Memberlist Profile Configuration Key Reference
+
+The following configuration keys may be used in a configuration file referenced
+using the `profile_path` option in Serf configuration.
+
+Options with a `timeout`, `time` or `interval` suffix may be expressed using
+common unit suffixes for time units - for example `500ms`, `10s` and `1m`.
+  
+* `awareness_max_mult` - Increases the probe interval if the node becomes aware
+  that it might be degraded and not meeting the soft real time requirements to
+  reliably probe other nodes.
+
+* `gossip_interval` - The interval between sending messages that need to be 
+  gossiped that haven't been able to piggyback on probing messages. If this is set
+  to zero, non-piggyback gossip is disabled. By lowering this value (more frequent)
+  gossip messages are propagated across the cluster more quickly at the expense of
+  increased bandwidth.
+  
+* `gossip_nodes` - The number of random nodes to send gossip messages to per 
+  `GossipInterval`. Increasing this number causes the gossip messages to propagate
+  across the cluster more quickly at the expense of increased bandwidth.
+
+* `gossip_to_the_dead_time` - the interval after which a node has died that
+  we will still try to gossip to it. This gives the node a chance to refute.
+
+* `indirect_checks` - the number of nodes that will be asked to perform
+  an indirect probe of a node in the case a direct probe fails. Memberlist
+  waits for an ack from any single indirect node, so increasing this
+  number will increase the likelihood that an indirect probe will succeed
+  at the expense of bandwidth.
+  
+* `probe_interval` -  The interval between random node probes. Setting this lower
+  (more frequent probes) will cause the memberlist cluster to detect failed nodes
+  more quickly at the expense of increased bandwidth usage.
+  
+* `probe_timeout` - The timeout to wait for an ack from a probed node before 
+  assuming it is unhealthy. This should be set to 99-percentile of RTT (round-trip
+  time) on your network.
+
+* `push_pull_interval` - The interval between complete state syncs. Complete 
+  state syncs are done with a single node over TCP and are quite expensive relative
+  to standard gossiped messages. Setting this to zero will disable state push/pull
+  syncs completely.
+  
+  Setting this interval lower (more frequent) will increase convergence speeds 
+  across larger clusters at the expense of increased bandwidth usage.
+
+* `retransmit_mult` - The multiplier for the number of retransmissions that 
+  are attempted for messages broadcast over gossip. The actual count of 
+  retransmissions is calculated using the formula:
+  
+  ```
+  Retransmits = RetransmitMult * log(N+1)
+  ```
+  
+  This allows the retransmits to scale properly with cluster size. The 
+  higher the multiplier, the more likely a failed broadcast is to converge 
+  at the expense of increased bandwidth.
+
+* `stream_timeout` - is the timeout for establishing a stream connection with a
+  remote node for a full state sync, and for stream read and write operations.
+
+* `suspicion_mult` - SuspicionMult is the multiplier for determining the time an
+  inaccessible node is considered suspect before declaring it dead. The actual 
+  timeout is calculated using the formula:
+ 
+  ``` 
+  SuspicionTimeout = SuspicionMult * log(N+1) * ProbeInterval
+  ```
+  
+  This allows the timeout to scale properly with expected propagation delay with
+  a larger cluster size. The higher the multiplier, the longer an inaccessible 
+  node is considered part of the cluster before declaring it dead, giving that
+  suspect node more time to refute if it is indeed still alive.
+
+* `suspicion_max_timeout_mult` - The multiplier applied to the
+  SuspicionTimeout used as an upper bound on detection time. This max
+  timeout is calculated using the formula:
+
+  ```  
+  SuspicionMaxTimeout = SuspicionMaxTimeoutMult * SuspicionTimeout
+  ```
+  
+  If everything is working properly, confirmations from other nodes will
+  accelerate suspicion timers in a manner which will cause the timeout
+  to reach the base SuspicionTimeout before that elapses, so this value
+  will typically only come into play if a node is experiencing issues
+  communicating with other nodes. It should be set to a something fairly
+  large so that a node having problems will have a lot of chances to
+  recover before falsely declaring other nodes as failed, but short
+  enough for a legitimately isolated node to still make progress marking
+  nodes failed in a reasonable amount of time. 
 ## Ports Used
 
 Serf requires 2 ports to work properly. Below we document the requirements for each
