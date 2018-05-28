@@ -1,17 +1,14 @@
 package command
 
 import (
-	"github.com/hashicorp/serf/serf"
-	"github.com/hashicorp/serf/testutil"
-	"github.com/mitchellh/cli"
 	"strings"
 	"testing"
 	"time"
-)
 
-func TestForceLeaveCommand_implements(t *testing.T) {
-	var _ cli.Command = &ForceLeaveCommand{}
-}
+	"github.com/hashicorp/serf/serf"
+	"github.com/hashicorp/serf/testutil"
+	"github.com/mitchellh/cli"
+)
 
 func TestForceLeaveCommandRun(t *testing.T) {
 	a1 := testAgent(t)

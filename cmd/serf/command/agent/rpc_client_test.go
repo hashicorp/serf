@@ -3,15 +3,16 @@ package agent
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/hashicorp/serf/client"
-	"github.com/hashicorp/serf/serf"
-	"github.com/hashicorp/serf/testutil"
 	"io"
 	"net"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/serf/client"
+	"github.com/hashicorp/serf/serf"
+	"github.com/hashicorp/serf/testutil"
 )
 
 func testRPCClient(t *testing.T) (*client.RPCClient, *Agent, *AgentIPC) {

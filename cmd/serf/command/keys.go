@@ -3,14 +3,17 @@ package command
 import (
 	"flag"
 	"fmt"
+	"strings"
+
 	"github.com/mitchellh/cli"
 	"github.com/ryanuber/columnize"
-	"strings"
 )
 
 type KeysCommand struct {
 	Ui cli.Ui
 }
+
+var _ cli.Command = &KeysCommand{}
 
 func (c *KeysCommand) Help() string {
 	helpText := `

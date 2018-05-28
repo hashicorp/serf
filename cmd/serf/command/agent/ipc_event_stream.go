@@ -2,8 +2,9 @@ package agent
 
 import (
 	"fmt"
-	"github.com/hashicorp/serf/serf"
 	"log"
+
+	"github.com/hashicorp/serf/serf"
 )
 
 type streamClient interface {

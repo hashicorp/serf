@@ -24,11 +24,6 @@ package agent
 import (
 	"bufio"
 	"fmt"
-	"github.com/armon/go-metrics"
-	"github.com/hashicorp/go-msgpack/codec"
-	"github.com/hashicorp/logutils"
-	"github.com/hashicorp/serf/coordinate"
-	"github.com/hashicorp/serf/serf"
 	"io"
 	"log"
 	"net"
@@ -38,6 +33,12 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/hashicorp/logutils"
+	"github.com/hashicorp/serf/coordinate"
+	"github.com/hashicorp/serf/serf"
 )
 
 const (

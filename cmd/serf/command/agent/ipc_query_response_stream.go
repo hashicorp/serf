@@ -1,9 +1,10 @@
 package agent
 
 import (
-	"github.com/hashicorp/serf/serf"
 	"log"
 	"time"
+
+	"github.com/hashicorp/serf/serf"
 )
 
 // queryResponseStream is used to stream the query results back to a client

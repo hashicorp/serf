@@ -15,6 +15,8 @@ type TagsCommand struct {
 	Ui cli.Ui
 }
 
+var _ cli.Command = &TagsCommand{}
+
 func (c *TagsCommand) Help() string {
 	helpText := `
 Usage: serf tags [options] ...

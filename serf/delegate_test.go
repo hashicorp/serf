@@ -1,19 +1,11 @@
 package serf
 
 import (
-	"github.com/hashicorp/memberlist"
-	"github.com/hashicorp/serf/testutil"
 	"reflect"
 	"testing"
-)
 
-func TestDelegate_impl(t *testing.T) {
-	var raw interface{}
-	raw = new(delegate)
-	if _, ok := raw.(memberlist.Delegate); !ok {
-		t.Fatal("should be an Delegate")
-	}
-}
+	"github.com/hashicorp/serf/testutil"
+)
 
 func TestDelegate_NodeMeta_Old(t *testing.T) {
 	c := testConfig()

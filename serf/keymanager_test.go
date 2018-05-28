@@ -3,9 +3,10 @@ package serf
 import (
 	"bytes"
 	"encoding/base64"
+	"testing"
+
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/testutil"
-	"testing"
 )
 
 func testKeyring() (*memberlist.Keyring, error) {
