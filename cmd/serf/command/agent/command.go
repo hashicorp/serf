@@ -305,14 +305,14 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	if config.ProfilePath != "" {
 		path := config.ProfilePath
 		f, err := os.Open(path)
-		defer f.Close()
 		if err != nil {
-			c.Ui.Error(fmt.Sprintf("Error reading '%s': %s", path, err))
+			c.Ui.Error(fmt.Sprintf("Error reading %q: %s", path, err))
 			return nil
 		}
+		defer f.Close()
 		profileconfig, err := DecodeProfile(f)
 		if err != nil {
-			c.Ui.Error(fmt.Sprintf("ProfilePath: %v", err))
+			c.Ui.Error(fmt.Sprintf("Error reading %q: %s", path, err))
 			return nil
 		}
 
@@ -321,6 +321,9 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 		}
 		if profileconfig.IndirectChecks != 0 {
 			serfConfig.MemberlistConfig.IndirectChecks = profileconfig.IndirectChecks
+		}
+		if profileconfig.RetransmitMult != 0 {
+			serfConfig.MemberlistConfig.RetransmitMult = profileconfig.RetransmitMult
 		}
 		if profileconfig.SuspicionMult != 0 {
 			serfConfig.MemberlistConfig.SuspicionMult = profileconfig.SuspicionMult

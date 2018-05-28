@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"testing"
 	"time"
+	"encoding/json"
 )
 
 func TestConfigBindAddrParts(t *testing.T) {
@@ -377,12 +378,71 @@ func TestDecodeConfig_unknownDirective(t *testing.T) {
 }
 
 func TestDecodeProfile(t *testing.T) {
-	input := `{"tcp_timeout: 10s"}`
+	inputStruct := struct {
+		TCPTimeout       string `json:"tcp_timeout"`
+		IndirectChecks   int    `json:"indirect_checks"`
+		RetransmitMult   int    `json:"retransmit_mult"`
+		SuspicionMult    int    `json:"suspicion_mult"`
+		PushPullInterval string `json:"push_pull_interval"`
+		ProbeTimeout     string `json:"probe_timeout"`
+		ProbeInterval    string `json:"probe_interval"`
+		GossipNodes      int    `json:"gossip_nodes"`
+		GossipInterval   string `json:"gossip_interval"`
+	}{
+		TCPTimeout:       "10s",
+		IndirectChecks:   5,
+		RetransmitMult:   10,
+		SuspicionMult:    15,
+		PushPullInterval: "30s",
+		ProbeTimeout:     "15s",
+		ProbeInterval:    "9s",
+		GossipNodes:      13,
+		GossipInterval:   "1m",
+	}
+
+	input, err := json.MarshalIndent(inputStruct, "", "\t")
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
 	profile, err := DecodeProfile(bytes.NewReader([]byte(input)))
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	if profile.TCPTimeout != 10 * time.Second {
+
+	if profile.TCPTimeout != 10*time.Second {
+		t.Fatalf("bad: %#v", profile)
+	}
+
+	if profile.IndirectChecks != inputStruct.IndirectChecks {
+		t.Fatalf("bad: %#v", profile)
+	}
+
+	if profile.RetransmitMult != inputStruct.RetransmitMult {
+		t.Fatalf("bad: %#v", profile)
+	}
+
+	if profile.SuspicionMult != inputStruct.SuspicionMult {
+		t.Fatalf("bad: %#v", profile)
+	}
+
+	if profile.PushPullInterval != 30*time.Second {
+		t.Fatalf("bad: %#v", profile)
+	}
+
+	if profile.ProbeTimeout != 15*time.Second {
+		t.Fatalf("bad: %#v", profile)
+	}
+
+	if profile.ProbeInterval != 9*time.Second {
+		t.Fatalf("bad: %#v", profile)
+	}
+
+	if profile.GossipNodes != inputStruct.GossipNodes {
+		t.Fatalf("bad: %#v", profile)
+	}
+
+	if profile.GossipInterval != 1*time.Minute {
 		t.Fatalf("bad: %#v", profile)
 	}
 }
