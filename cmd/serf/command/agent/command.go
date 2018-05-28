@@ -328,6 +328,9 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 		if profileconfig.SuspicionMult != 0 {
 			serfConfig.MemberlistConfig.SuspicionMult = profileconfig.SuspicionMult
 		}
+		if profileconfig.SuspicionMaxTimeoutMult != 0 {
+			serfConfig.MemberlistConfig.SuspicionMaxTimeoutMult = profileconfig.SuspicionMaxTimeoutMult
+		}
 		if profileconfig.PushPullInterval != 0 {
 			serfConfig.MemberlistConfig.PushPullInterval = profileconfig.PushPullInterval
 		}
@@ -337,11 +340,17 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 		if profileconfig.ProbeInterval != 0 {
 			serfConfig.MemberlistConfig.ProbeInterval = profileconfig.ProbeInterval
 		}
+		if profileconfig.AwarenessMaxMult != 0 {
+			serfConfig.MemberlistConfig.AwarenessMaxMultiplier = profileconfig.AwarenessMaxMult
+		}
 		if profileconfig.GossipNodes != 0 {
 			serfConfig.MemberlistConfig.GossipNodes = profileconfig.GossipNodes
 		}
 		if profileconfig.GossipInterval != 0 {
 			serfConfig.MemberlistConfig.GossipInterval = profileconfig.GossipInterval
+		}
+		if profileconfig.GossipToTheDeadTime != 0 {
+			serfConfig.MemberlistConfig.GossipToTheDeadTime = profileconfig.GossipToTheDeadTime
 		}
 	}
 

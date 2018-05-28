@@ -230,9 +230,10 @@ type Profile struct {
 	StreamTimeoutRaw string        `mapstructure:"stream_timeout"`
 	StreamTimeout    time.Duration `mapstructure:"-"`
 
-	IndirectChecks int `mapstructure:"indirect_checks"`
-	RetransmitMult int `mapstructure:"retransmit_mult"`
-	SuspicionMult  int `mapstructure:"suspicion_mult"`
+	IndirectChecks          int `mapstructure:"indirect_checks"`
+	RetransmitMult          int `mapstructure:"retransmit_mult"`
+	SuspicionMult           int `mapstructure:"suspicion_mult"`
+	SuspicionMaxTimeoutMult int `mapstructure:"suspicion_max_timeout_mult"`
 
 	PushPullIntervalRaw string        `mapstructure:"push_pull_interval"`
 	PushPullInterval    time.Duration `mapstructure:"-"`
@@ -243,10 +244,15 @@ type Profile struct {
 	ProbeIntervalRaw string        `mapstructure:"probe_interval"`
 	ProbeInterval    time.Duration `mapstructure:"-"`
 
+	AwarenessMaxMult int `mapstructure:"awareness_max_mult"`
+
 	GossipNodes int `mapstructure:"gossip_nodes"`
 
 	GossipIntervalRaw string        `mapstructure:"gossip_interval"`
 	GossipInterval    time.Duration `mapstructure:"-"`
+
+	GossipToTheDeadTimeRaw string        `mapstructure:"gossip_to_the_dead_time"`
+	GossipToTheDeadTime    time.Duration `mapstructure:"-"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -429,6 +435,14 @@ func DecodeProfile(f io.Reader) (*Profile, error) {
 			return nil, err
 		}
 		result.GossipInterval = dur
+	}
+
+	if result.GossipToTheDeadTimeRaw != "" {
+		dur, err := time.ParseDuration(result.GossipToTheDeadTimeRaw)
+		if err != nil {
+			return nil, err
+		}
+		result.GossipToTheDeadTime = dur
 	}
 
 	return &result, nil

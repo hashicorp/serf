@@ -379,25 +379,31 @@ func TestDecodeConfig_unknownDirective(t *testing.T) {
 
 func TestDecodeProfile(t *testing.T) {
 	inputStruct := struct {
-		StreamTimeout    string `json:"stream_timeout"`
-		IndirectChecks   int    `json:"indirect_checks"`
-		RetransmitMult   int    `json:"retransmit_mult"`
-		SuspicionMult    int    `json:"suspicion_mult"`
-		PushPullInterval string `json:"push_pull_interval"`
-		ProbeTimeout     string `json:"probe_timeout"`
-		ProbeInterval    string `json:"probe_interval"`
-		GossipNodes      int    `json:"gossip_nodes"`
-		GossipInterval   string `json:"gossip_interval"`
+		StreamTimeout           string `json:"stream_timeout"`
+		IndirectChecks          int    `json:"indirect_checks"`
+		RetransmitMult          int    `json:"retransmit_mult"`
+		SuspicionMult           int    `json:"suspicion_mult"`
+		SuspicionMaxTimeoutMult int    `json:"suspicion_max_timeout_mult"`
+		PushPullInterval        string `json:"push_pull_interval"`
+		ProbeTimeout            string `json:"probe_timeout"`
+		ProbeInterval           string `json:"probe_interval"`
+		AwarenessMaxMult        int    `json:"awareness_max_mult"`
+		GossipNodes             int    `json:"gossip_nodes"`
+		GossipInterval          string `json:"gossip_interval"`
+		GossipToTheDeadTime     string `json:"gossip_to_the_dead_time"`
 	}{
-		StreamTimeout:    "10s",
-		IndirectChecks:   5,
-		RetransmitMult:   10,
-		SuspicionMult:    15,
-		PushPullInterval: "30s",
-		ProbeTimeout:     "15s",
-		ProbeInterval:    "9s",
-		GossipNodes:      13,
-		GossipInterval:   "1m",
+		StreamTimeout:           "10s",
+		IndirectChecks:          5,
+		RetransmitMult:          10,
+		SuspicionMult:           15,
+		SuspicionMaxTimeoutMult: 16,
+		PushPullInterval:        "30s",
+		ProbeTimeout:            "15s",
+		ProbeInterval:           "9s",
+		AwarenessMaxMult:        12,
+		GossipNodes:             13,
+		GossipInterval:          "1m",
+		GossipToTheDeadTime:     "10m",
 	}
 
 	input, err := json.MarshalIndent(inputStruct, "", "\t")
@@ -426,7 +432,15 @@ func TestDecodeProfile(t *testing.T) {
 		t.Fatalf("bad: %#v", profile)
 	}
 
+	if profile.SuspicionMaxTimeoutMult != inputStruct.SuspicionMaxTimeoutMult {
+		t.Fatalf("bad: %#v", profile)
+	}
+
 	if profile.PushPullInterval != 30*time.Second {
+		t.Fatalf("bad: %#v", profile)
+	}
+
+	if profile.AwarenessMaxMult != inputStruct.AwarenessMaxMult {
 		t.Fatalf("bad: %#v", profile)
 	}
 
@@ -443,6 +457,10 @@ func TestDecodeProfile(t *testing.T) {
 	}
 
 	if profile.GossipInterval != 1*time.Minute {
+		t.Fatalf("bad: %#v", profile)
+	}
+
+	if profile.GossipToTheDeadTime != 10*time.Minute {
 		t.Fatalf("bad: %#v", profile)
 	}
 }
