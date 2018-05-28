@@ -316,8 +316,8 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 			return nil
 		}
 
-		if profileconfig.TCPTimeout != 0 {
-			serfConfig.MemberlistConfig.TCPTimeout = profileconfig.TCPTimeout
+		if profileconfig.StreamTimeout != 0 {
+			serfConfig.MemberlistConfig.TCPTimeout = profileconfig.StreamTimeout
 		}
 		if profileconfig.IndirectChecks != 0 {
 			serfConfig.MemberlistConfig.IndirectChecks = profileconfig.IndirectChecks

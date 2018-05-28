@@ -227,8 +227,8 @@ type Config struct {
 // For description of fields, see memberlist config
 // https://github.com/hashicorp/memberlist/blob/master/config.go
 type Profile struct {
-	TCPTimeoutRaw string        `mapstructure:"tcp_timeout"`
-	TCPTimeout    time.Duration `mapstructure:"-"`
+	StreamTimeoutRaw string        `mapstructure:"stream_timeout"`
+	StreamTimeout    time.Duration `mapstructure:"-"`
 
 	IndirectChecks int `mapstructure:"indirect_checks"`
 	RetransmitMult int `mapstructure:"retransmit_mult"`
@@ -391,12 +391,12 @@ func DecodeProfile(f io.Reader) (*Profile, error) {
 		return nil, err
 	}
 
-	if result.TCPTimeoutRaw != "" {
-		dur, err := time.ParseDuration(result.TCPTimeoutRaw)
+	if result.StreamTimeoutRaw != "" {
+		dur, err := time.ParseDuration(result.StreamTimeoutRaw)
 		if err != nil {
 			return nil, err
 		}
-		result.TCPTimeout = dur
+		result.StreamTimeout = dur
 	}
 
 	if result.PushPullIntervalRaw != "" {

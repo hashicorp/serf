@@ -379,7 +379,7 @@ func TestDecodeConfig_unknownDirective(t *testing.T) {
 
 func TestDecodeProfile(t *testing.T) {
 	inputStruct := struct {
-		TCPTimeout       string `json:"tcp_timeout"`
+		StreamTimeout    string `json:"stream_timeout"`
 		IndirectChecks   int    `json:"indirect_checks"`
 		RetransmitMult   int    `json:"retransmit_mult"`
 		SuspicionMult    int    `json:"suspicion_mult"`
@@ -389,7 +389,7 @@ func TestDecodeProfile(t *testing.T) {
 		GossipNodes      int    `json:"gossip_nodes"`
 		GossipInterval   string `json:"gossip_interval"`
 	}{
-		TCPTimeout:       "10s",
+		StreamTimeout:    "10s",
 		IndirectChecks:   5,
 		RetransmitMult:   10,
 		SuspicionMult:    15,
@@ -410,7 +410,7 @@ func TestDecodeProfile(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	if profile.TCPTimeout != 10*time.Second {
+	if profile.StreamTimeout != 10*time.Second {
 		t.Fatalf("bad: %#v", profile)
 	}
 
