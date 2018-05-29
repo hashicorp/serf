@@ -123,13 +123,6 @@ The options below are all specified on the command-line.
   are too tight. Note that each individual profile option can be configured in a
   separate file specified by `-profile-path`.
   
-* `-profile-path` - A profile consists of a variety of options, as defined by
-  the underlying [`memberlist`][https://github.com/hashicorp/memberlist] library.
-  While the `lan`, `wan` and `local` profiles contain sensible defaults, it is
-  sometimes desirable to override specific settings with values appropriate to
-  a specific deployment environment. `-profile-path` specifies the path to a
-  JSON-formatted file containing memberlist settings, as documented below.
-
 * `-protocol` - The Serf protocol version to use. This defaults to the latest
   version. This should be set only when [upgrading](/docs/upgrading.html).
   You can view the protocol versions supported by Serf by running `serf -v`.
@@ -249,7 +242,11 @@ at a single JSON object with configuration within it.
 
 * `profile` - Equivalent to the `-profile` command-line flag.
 
-* `profile_path` - Equivalent to the `-profile_path` command-line flag.
+* `profile_overrides` - An object containing options for the configuration
+  of the [memberlist](https://github.com/hashicorp/memberlist) associated with
+  this Serf node. Each option overrides the associated default in the `profile`.
+
+  See below for the available options.
 
 * `protocol` - Equivalent to the `-protocol` command-line flag.
 
@@ -351,11 +348,14 @@ keys in the order they appear in the keyring file until all keys are exhausted.
 
 #### Memberlist Profile Configuration Key Reference
 
-The following configuration keys may be used in a configuration file referenced
-using the `profile_path` option in Serf configuration.
+The following configuration keys may be used in the `profile_overrides` object
+in Serf configuration.
 
 Options with a `timeout`, `time` or `interval` suffix may be expressed using
 common unit suffixes for time units - for example `500ms`, `10s` and `1m`.
+
+Defaults for each option depend on the profile selected. Documentation can be
+found in the [Memberlist code](https://github.com/hashicorp/memberlist/blob/master/config.go#L220-L295).
   
 * `awareness_max_mult` - Increases the probe interval if the node becomes aware
   that it might be degraded and not meeting the soft real time requirements to
@@ -371,10 +371,10 @@ common unit suffixes for time units - for example `500ms`, `10s` and `1m`.
   `GossipInterval`. Increasing this number causes the gossip messages to propagate
   across the cluster more quickly at the expense of increased bandwidth.
 
-* `gossip_to_the_dead_time` - the interval after which a node has died that
+* `gossip_to_the_dead_time` - The interval after which a node has died that
   we will still try to gossip to it. This gives the node a chance to refute.
 
-* `indirect_checks` - the number of nodes that will be asked to perform
+* `indirect_checks` - The number of nodes that will be asked to perform
   an indirect probe of a node in the case a direct probe fails. Memberlist
   waits for an ack from any single indirect node, so increasing this
   number will increase the likelihood that an indirect probe will succeed
@@ -408,7 +408,7 @@ common unit suffixes for time units - for example `500ms`, `10s` and `1m`.
   higher the multiplier, the more likely a failed broadcast is to converge 
   at the expense of increased bandwidth.
 
-* `stream_timeout` - is the timeout for establishing a stream connection with a
+* `stream_timeout` - The timeout for establishing a stream connection with a
   remote node for a full state sync, and for stream read and write operations.
 
 * `suspicion_mult` - SuspicionMult is the multiplier for determining the time an
@@ -441,6 +441,7 @@ common unit suffixes for time units - for example `500ms`, `10s` and `1m`.
   recover before falsely declaring other nodes as failed, but short
   enough for a legitimately isolated node to still make progress marking
   nodes failed in a reasonable amount of time. 
+
 ## Ports Used
 
 Serf requires 2 ports to work properly. Below we document the requirements for each

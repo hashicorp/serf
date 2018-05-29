@@ -378,7 +378,7 @@ func TestDecodeConfig_unknownDirective(t *testing.T) {
 }
 
 func TestDecodeProfile(t *testing.T) {
-	inputStruct := struct {
+	profileOverrides := struct {
 		StreamTimeout           string `json:"stream_timeout"`
 		IndirectChecks          int    `json:"indirect_checks"`
 		RetransmitMult          int    `json:"retransmit_mult"`
@@ -406,62 +406,68 @@ func TestDecodeProfile(t *testing.T) {
 		GossipToTheDeadTime:     "10m",
 	}
 
+	inputStruct := struct {
+		ProfileOverrides interface{} `json:"profile_overrides"`
+	}{
+		ProfileOverrides: profileOverrides,
+	}
+
 	input, err := json.MarshalIndent(inputStruct, "", "\t")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	profile, err := DecodeProfile(bytes.NewReader([]byte(input)))
+	config, err := DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	if profile.StreamTimeout != 10*time.Second {
-		t.Fatalf("bad: %#v", profile)
+	if config.ProfileOverrides.StreamTimeout != 10*time.Second {
+		t.Fatalf("bad: %#v", config)
 	}
 
-	if profile.IndirectChecks != inputStruct.IndirectChecks {
-		t.Fatalf("bad: %#v", profile)
+	if config.ProfileOverrides.IndirectChecks != profileOverrides.IndirectChecks {
+		t.Fatalf("bad: %#v", config)
 	}
 
-	if profile.RetransmitMult != inputStruct.RetransmitMult {
-		t.Fatalf("bad: %#v", profile)
+	if config.ProfileOverrides.RetransmitMult != profileOverrides.RetransmitMult {
+		t.Fatalf("bad: %#v", config)
 	}
 
-	if profile.SuspicionMult != inputStruct.SuspicionMult {
-		t.Fatalf("bad: %#v", profile)
+	if config.ProfileOverrides.SuspicionMult != profileOverrides.SuspicionMult {
+		t.Fatalf("bad: %#v", config)
 	}
 
-	if profile.SuspicionMaxTimeoutMult != inputStruct.SuspicionMaxTimeoutMult {
-		t.Fatalf("bad: %#v", profile)
+	if config.ProfileOverrides.SuspicionMaxTimeoutMult != profileOverrides.SuspicionMaxTimeoutMult {
+		t.Fatalf("bad: %#v", config)
 	}
 
-	if profile.PushPullInterval != 30*time.Second {
-		t.Fatalf("bad: %#v", profile)
+	if config.ProfileOverrides.PushPullInterval != 30*time.Second {
+		t.Fatalf("bad: %#v", config)
 	}
 
-	if profile.AwarenessMaxMult != inputStruct.AwarenessMaxMult {
-		t.Fatalf("bad: %#v", profile)
+	if config.ProfileOverrides.AwarenessMaxMult != profileOverrides.AwarenessMaxMult {
+		t.Fatalf("bad: %#v", config)
 	}
 
-	if profile.ProbeTimeout != 15*time.Second {
-		t.Fatalf("bad: %#v", profile)
+	if config.ProfileOverrides.ProbeTimeout != 15*time.Second {
+		t.Fatalf("bad: %#v", config)
 	}
 
-	if profile.ProbeInterval != 9*time.Second {
-		t.Fatalf("bad: %#v", profile)
+	if config.ProfileOverrides.ProbeInterval != 9*time.Second {
+		t.Fatalf("bad: %#v", config)
 	}
 
-	if profile.GossipNodes != inputStruct.GossipNodes {
-		t.Fatalf("bad: %#v", profile)
+	if config.ProfileOverrides.GossipNodes != profileOverrides.GossipNodes {
+		t.Fatalf("bad: %#v", config)
 	}
 
-	if profile.GossipInterval != 1*time.Minute {
-		t.Fatalf("bad: %#v", profile)
+	if config.ProfileOverrides.GossipInterval != 1*time.Minute {
+		t.Fatalf("bad: %#v", config)
 	}
 
-	if profile.GossipToTheDeadTime != 10*time.Minute {
-		t.Fatalf("bad: %#v", profile)
+	if config.ProfileOverrides.GossipToTheDeadTime != 10*time.Minute {
+		t.Fatalf("bad: %#v", config)
 	}
 }
 

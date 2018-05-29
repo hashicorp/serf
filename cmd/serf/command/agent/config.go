@@ -127,8 +127,9 @@ type Config struct {
 	// are "wan", "lan", and "local". The default is "lan"
 	Profile string `mapstructure:"profile"`
 
-	// ProfilePath is path to .json file for configuration memberlist
-	ProfilePath string `mapstructure:"profile_path"`
+	// ProfileOverrides is used to override Memberlist configuration options
+	// configured as part of the Profile
+	ProfileOverrides Profile `mapstructure:"profile_overrides"`
 
 	// SnapshotPath is used to allow Serf to snapshot important transactional
 	// state to make a more graceful recovery possible. This enables auto
@@ -370,79 +371,52 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 		result.BroadcastTimeout = dur
 	}
 
-	return &result, nil
-}
-
-// DecodeProfile reads profile configuration from ProfilePath
-func DecodeProfile(f io.Reader) (*Profile, error) {
-	var raw interface{}
-	dec := json.NewDecoder(f)
-	if err := dec.Decode(&raw); err != nil {
-		return nil, err
-	}
-
-	// Decode
-	var md mapstructure.Metadata
-	var result Profile
-	msdec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Metadata:    &md,
-		Result:      &result,
-		ErrorUnused: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if err := msdec.Decode(raw); err != nil {
-		return nil, err
-	}
-
-	if result.StreamTimeoutRaw != "" {
-		dur, err := time.ParseDuration(result.StreamTimeoutRaw)
+	if result.ProfileOverrides.StreamTimeoutRaw != "" {
+		dur, err := time.ParseDuration(result.ProfileOverrides.StreamTimeoutRaw)
 		if err != nil {
 			return nil, err
 		}
-		result.StreamTimeout = dur
+		result.ProfileOverrides.StreamTimeout = dur
 	}
 
-	if result.PushPullIntervalRaw != "" {
-		dur, err := time.ParseDuration(result.PushPullIntervalRaw)
+	if result.ProfileOverrides.PushPullIntervalRaw != "" {
+		dur, err := time.ParseDuration(result.ProfileOverrides.PushPullIntervalRaw)
 		if err != nil {
 			return nil, err
 		}
-		result.PushPullInterval = dur
+		result.ProfileOverrides.PushPullInterval = dur
 	}
 
-	if result.ProbeTimeoutRaw != "" {
-		dur, err := time.ParseDuration(result.ProbeTimeoutRaw)
+	if result.ProfileOverrides.ProbeTimeoutRaw != "" {
+		dur, err := time.ParseDuration(result.ProfileOverrides.ProbeTimeoutRaw)
 		if err != nil {
 			return nil, err
 		}
-		result.ProbeTimeout = dur
+		result.ProfileOverrides.ProbeTimeout = dur
 	}
 
-	if result.ProbeIntervalRaw != "" {
-		dur, err := time.ParseDuration(result.ProbeIntervalRaw)
+	if result.ProfileOverrides.ProbeIntervalRaw != "" {
+		dur, err := time.ParseDuration(result.ProfileOverrides.ProbeIntervalRaw)
 		if err != nil {
 			return nil, err
 		}
-		result.ProbeInterval = dur
+		result.ProfileOverrides.ProbeInterval = dur
 	}
 
-	if result.GossipIntervalRaw != "" {
-		dur, err := time.ParseDuration(result.GossipIntervalRaw)
+	if result.ProfileOverrides.GossipIntervalRaw != "" {
+		dur, err := time.ParseDuration(result.ProfileOverrides.GossipIntervalRaw)
 		if err != nil {
 			return nil, err
 		}
-		result.GossipInterval = dur
+		result.ProfileOverrides.GossipInterval = dur
 	}
 
-	if result.GossipToTheDeadTimeRaw != "" {
-		dur, err := time.ParseDuration(result.GossipToTheDeadTimeRaw)
+	if result.ProfileOverrides.GossipToTheDeadTimeRaw != "" {
+		dur, err := time.ParseDuration(result.ProfileOverrides.GossipToTheDeadTimeRaw)
 		if err != nil {
 			return nil, err
 		}
-		result.GossipToTheDeadTime = dur
+		result.ProfileOverrides.GossipToTheDeadTime = dur
 	}
 
 	return &result, nil
@@ -509,8 +483,47 @@ func MergeConfig(a, b *Config) *Config {
 	if b.Profile != "" {
 		result.Profile = b.Profile
 	}
-	if b.ProfilePath != "" {
-		result.ProfilePath = b.ProfilePath
+	if b.ProfileOverrides.AwarenessMaxMult != 0 {
+		result.ProfileOverrides.AwarenessMaxMult = b.ProfileOverrides.AwarenessMaxMult
+	}
+	if b.ProfileOverrides.GossipInterval != 0 {
+		result.ProfileOverrides.GossipIntervalRaw = b.ProfileOverrides.GossipIntervalRaw
+		result.ProfileOverrides.GossipInterval = b.ProfileOverrides.GossipInterval
+	}
+	if b.ProfileOverrides.GossipNodes != 0 {
+		result.ProfileOverrides.GossipNodes = b.ProfileOverrides.GossipNodes
+	}
+	if b.ProfileOverrides.GossipToTheDeadTime != 0 {
+		result.ProfileOverrides.GossipToTheDeadTimeRaw = b.ProfileOverrides.GossipToTheDeadTimeRaw
+		result.ProfileOverrides.GossipToTheDeadTime = b.ProfileOverrides.GossipToTheDeadTime
+	}
+	if b.ProfileOverrides.IndirectChecks != 0 {
+		result.ProfileOverrides.IndirectChecks = b.ProfileOverrides.IndirectChecks
+	}
+	if b.ProfileOverrides.PushPullInterval != 0 {
+		result.ProfileOverrides.PushPullIntervalRaw = b.ProfileOverrides.PushPullIntervalRaw
+		result.ProfileOverrides.PushPullInterval = b.ProfileOverrides.PushPullInterval
+	}
+	if b.ProfileOverrides.ProbeTimeout != 0 {
+		result.ProfileOverrides.ProbeTimeoutRaw = b.ProfileOverrides.ProbeTimeoutRaw
+		result.ProfileOverrides.ProbeTimeout = b.ProfileOverrides.ProbeTimeout
+	}
+	if b.ProfileOverrides.ProbeInterval != 0 {
+		result.ProfileOverrides.ProbeIntervalRaw = b.ProfileOverrides.ProbeIntervalRaw
+		result.ProfileOverrides.ProbeInterval = b.ProfileOverrides.ProbeInterval
+	}
+	if b.ProfileOverrides.RetransmitMult != 0 {
+		result.ProfileOverrides.RetransmitMult = b.ProfileOverrides.RetransmitMult
+	}
+	if b.ProfileOverrides.StreamTimeout != 0 {
+		result.ProfileOverrides.StreamTimeoutRaw = b.ProfileOverrides.StreamTimeoutRaw
+		result.ProfileOverrides.StreamTimeout = b.ProfileOverrides.StreamTimeout
+	}
+	if b.ProfileOverrides.SuspicionMult != 0 {
+		result.ProfileOverrides.SuspicionMult = b.ProfileOverrides.SuspicionMult
+	}
+	if b.ProfileOverrides.SuspicionMaxTimeoutMult != 0 {
+		result.ProfileOverrides.SuspicionMaxTimeoutMult = b.ProfileOverrides.SuspicionMaxTimeoutMult
 	}
 	if b.SnapshotPath != "" {
 		result.SnapshotPath = b.SnapshotPath

@@ -302,56 +302,41 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 		return nil
 	}
 
-	if config.ProfilePath != "" {
-		path := config.ProfilePath
-		f, err := os.Open(path)
-		if err != nil {
-			c.Ui.Error(fmt.Sprintf("Error reading %q: %s", path, err))
-			return nil
-		}
-		defer f.Close()
-		profileconfig, err := DecodeProfile(f)
-		if err != nil {
-			c.Ui.Error(fmt.Sprintf("Error reading %q: %s", path, err))
-			return nil
-		}
-
-		if profileconfig.StreamTimeout != 0 {
-			serfConfig.MemberlistConfig.TCPTimeout = profileconfig.StreamTimeout
-		}
-		if profileconfig.IndirectChecks != 0 {
-			serfConfig.MemberlistConfig.IndirectChecks = profileconfig.IndirectChecks
-		}
-		if profileconfig.RetransmitMult != 0 {
-			serfConfig.MemberlistConfig.RetransmitMult = profileconfig.RetransmitMult
-		}
-		if profileconfig.SuspicionMult != 0 {
-			serfConfig.MemberlistConfig.SuspicionMult = profileconfig.SuspicionMult
-		}
-		if profileconfig.SuspicionMaxTimeoutMult != 0 {
-			serfConfig.MemberlistConfig.SuspicionMaxTimeoutMult = profileconfig.SuspicionMaxTimeoutMult
-		}
-		if profileconfig.PushPullInterval != 0 {
-			serfConfig.MemberlistConfig.PushPullInterval = profileconfig.PushPullInterval
-		}
-		if profileconfig.ProbeTimeout != 0 {
-			serfConfig.MemberlistConfig.ProbeTimeout = profileconfig.ProbeTimeout
-		}
-		if profileconfig.ProbeInterval != 0 {
-			serfConfig.MemberlistConfig.ProbeInterval = profileconfig.ProbeInterval
-		}
-		if profileconfig.AwarenessMaxMult != 0 {
-			serfConfig.MemberlistConfig.AwarenessMaxMultiplier = profileconfig.AwarenessMaxMult
-		}
-		if profileconfig.GossipNodes != 0 {
-			serfConfig.MemberlistConfig.GossipNodes = profileconfig.GossipNodes
-		}
-		if profileconfig.GossipInterval != 0 {
-			serfConfig.MemberlistConfig.GossipInterval = profileconfig.GossipInterval
-		}
-		if profileconfig.GossipToTheDeadTime != 0 {
-			serfConfig.MemberlistConfig.GossipToTheDeadTime = profileconfig.GossipToTheDeadTime
-		}
+	if config.ProfileOverrides.StreamTimeout != 0 {
+		serfConfig.MemberlistConfig.TCPTimeout = config.ProfileOverrides.StreamTimeout
+	}
+	if config.ProfileOverrides.IndirectChecks != 0 {
+		serfConfig.MemberlistConfig.IndirectChecks = config.ProfileOverrides.IndirectChecks
+	}
+	if config.ProfileOverrides.RetransmitMult != 0 {
+		serfConfig.MemberlistConfig.RetransmitMult = config.ProfileOverrides.RetransmitMult
+	}
+	if config.ProfileOverrides.SuspicionMult != 0 {
+		serfConfig.MemberlistConfig.SuspicionMult = config.ProfileOverrides.SuspicionMult
+	}
+	if config.ProfileOverrides.SuspicionMaxTimeoutMult != 0 {
+		serfConfig.MemberlistConfig.SuspicionMaxTimeoutMult = config.ProfileOverrides.SuspicionMaxTimeoutMult
+	}
+	if config.ProfileOverrides.PushPullInterval != 0 {
+		serfConfig.MemberlistConfig.PushPullInterval = config.ProfileOverrides.PushPullInterval
+	}
+	if config.ProfileOverrides.ProbeTimeout != 0 {
+		serfConfig.MemberlistConfig.ProbeTimeout = config.ProfileOverrides.ProbeTimeout
+	}
+	if config.ProfileOverrides.ProbeInterval != 0 {
+		serfConfig.MemberlistConfig.ProbeInterval = config.ProfileOverrides.ProbeInterval
+	}
+	if config.ProfileOverrides.AwarenessMaxMult != 0 {
+		serfConfig.MemberlistConfig.AwarenessMaxMultiplier = config.ProfileOverrides.AwarenessMaxMult
+	}
+	if config.ProfileOverrides.GossipNodes != 0 {
+		serfConfig.MemberlistConfig.GossipNodes = config.ProfileOverrides.GossipNodes
+	}
+	if config.ProfileOverrides.GossipInterval != 0 {
+		serfConfig.MemberlistConfig.GossipInterval = config.ProfileOverrides.GossipInterval
+	}
+	if config.ProfileOverrides.GossipToTheDeadTime != 0 {
+		serfConfig.MemberlistConfig.GossipToTheDeadTime = config.ProfileOverrides.GossipToTheDeadTime
 	}
 
 	serfConfig.MemberlistConfig.BindAddr = bindIP
