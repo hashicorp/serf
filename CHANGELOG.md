@@ -7,7 +7,7 @@ IMRPOVEMENTS:
 * agent: Fixed a missing case where gossip would stop flowing to dead nodes for a short while. [GH-451]
 * agent: Uses the go-sockaddr library to look for private IP addresses, which prefers non-loopback private addresses over loopback ones when trying to automatically determine the advertise address. [GH-451]
 * agent: Properly seeds Go's random number generator using the seed library. [GH-451]
-* agent: Serf is now built with Go 1.8. [GH-455]
+* agent: Serf is now built with Go 1.10.x. [GH-520]
 * agent: Improved address comparison during conflict resolution. [GH-433]
 * agent: Updated memberlist to latest to pull several cleanups and fixes. [GH-491]
 * agent: Improved handling of leave intent messages to make sure they propagate and are processed correctly. [GH-510]
