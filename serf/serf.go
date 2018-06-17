@@ -267,6 +267,7 @@ func Create(conf *Config) (*Serf, error) {
 
 	// Check that the meta data length is okay
 	if len(serf.encodeTags(conf.Tags)) > memberlist.MetaMaxSize {
+		close(serf.shutdownCh)
 		return nil, fmt.Errorf("Encoded length of tags exceeds limit of %d bytes", memberlist.MetaMaxSize)
 	}
 
@@ -296,6 +297,7 @@ func Create(conf *Config) (*Serf, error) {
 	// the queries
 	outCh, err := newSerfQueries(serf, serf.logger, conf.EventCh, serf.shutdownCh)
 	if err != nil {
+		close(serf.shutdownCh)
 		return nil, fmt.Errorf("Failed to setup serf query handler: %v", err)
 	}
 	conf.EventCh = outCh
@@ -304,6 +306,7 @@ func Create(conf *Config) (*Serf, error) {
 	if !conf.DisableCoordinates {
 		serf.coordClient, err = coordinate.NewClient(coordinate.DefaultConfig())
 		if err != nil {
+			close(serf.shutdownCh)
 			return nil, fmt.Errorf("Failed to create coordinate client: %v", err)
 		}
 	}
@@ -321,6 +324,7 @@ func Create(conf *Config) (*Serf, error) {
 			conf.EventCh,
 			serf.shutdownCh)
 		if err != nil {
+			close(serf.shutdownCh)
 			return nil, fmt.Errorf("Failed to setup snapshot: %v", err)
 		}
 		serf.snapshotter = snap
@@ -397,6 +401,7 @@ func Create(conf *Config) (*Serf, error) {
 	// and failure detection for the Serf instance.
 	memberlist, err := memberlist.Create(conf.MemberlistConfig)
 	if err != nil {
+		close(serf.shutdownCh)
 		return nil, fmt.Errorf("Failed to create memberlist: %v", err)
 	}
 
