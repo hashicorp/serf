@@ -486,7 +486,7 @@ func MergeConfig(a, b *Config) *Config {
 	if b.ProfileOverrides.AwarenessMaxMult != 0 {
 		result.ProfileOverrides.AwarenessMaxMult = b.ProfileOverrides.AwarenessMaxMult
 	}
-	if b.ProfileOverrides.GossipInterval != 0 {
+	if b.ProfileOverrides.GossipIntervalRaw != "" {
 		result.ProfileOverrides.GossipIntervalRaw = b.ProfileOverrides.GossipIntervalRaw
 		result.ProfileOverrides.GossipInterval = b.ProfileOverrides.GossipInterval
 	}
@@ -500,7 +500,7 @@ func MergeConfig(a, b *Config) *Config {
 	if b.ProfileOverrides.IndirectChecks != 0 {
 		result.ProfileOverrides.IndirectChecks = b.ProfileOverrides.IndirectChecks
 	}
-	if b.ProfileOverrides.PushPullInterval != 0 {
+	if b.ProfileOverrides.PushPullIntervalRaw != "" {
 		result.ProfileOverrides.PushPullIntervalRaw = b.ProfileOverrides.PushPullIntervalRaw
 		result.ProfileOverrides.PushPullInterval = b.ProfileOverrides.PushPullInterval
 	}

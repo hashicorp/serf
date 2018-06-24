@@ -317,7 +317,7 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	if config.ProfileOverrides.SuspicionMaxTimeoutMult != 0 {
 		serfConfig.MemberlistConfig.SuspicionMaxTimeoutMult = config.ProfileOverrides.SuspicionMaxTimeoutMult
 	}
-	if config.ProfileOverrides.PushPullInterval != 0 {
+	if config.ProfileOverrides.PushPullIntervalRaw != "" {
 		serfConfig.MemberlistConfig.PushPullInterval = config.ProfileOverrides.PushPullInterval
 	}
 	if config.ProfileOverrides.ProbeTimeout != 0 {
@@ -332,7 +332,7 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	if config.ProfileOverrides.GossipNodes != 0 {
 		serfConfig.MemberlistConfig.GossipNodes = config.ProfileOverrides.GossipNodes
 	}
-	if config.ProfileOverrides.GossipInterval != 0 {
+	if config.ProfileOverrides.GossipIntervalRaw != "" {
 		serfConfig.MemberlistConfig.GossipInterval = config.ProfileOverrides.GossipInterval
 	}
 	if config.ProfileOverrides.GossipToTheDeadTime != 0 {
