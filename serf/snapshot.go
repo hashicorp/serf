@@ -45,6 +45,13 @@ const (
 
 	// shutdownFlushTimeout is the time limit to write pending events to the snapshot during a shutdown
 	shutdownFlushTimeout = 250 * time.Millisecond
+
+	// snapshotBytesPerNode is an estimated bytes per node to snapshot
+	snapshotBytesPerNode = 128
+
+	// snapshotCompactionThreshold is the threshold we apply to
+	// the snapshot size estimate (nodes * bytes per node) before compacting.
+	snapshotCompactionThreshold = 3
 )
 
 // Snapshotter is responsible for ingesting events and persisting
@@ -63,7 +70,7 @@ type Snapshotter struct {
 	leaveCh                 chan struct{}
 	leaving                 bool
 	logger                  *log.Logger
-	maxSize                 int64
+	minCompactSize          int64
 	path                    string
 	offset                  int64
 	outCh                   chan<- Event
@@ -90,7 +97,7 @@ func (p PreviousNode) String() string {
 // Setting rejoinAfterLeave makes leave not clear the state, and can be used
 // if you intend to rejoin the same cluster after a leave.
 func NewSnapshotter(path string,
-	maxSize int,
+	minCompactSize int,
 	rejoinAfterLeave bool,
 	logger *log.Logger,
 	clock *LamportClock,
@@ -126,7 +133,7 @@ func NewSnapshotter(path string,
 		lastQueryClock:   0,
 		leaveCh:          make(chan struct{}),
 		logger:           logger,
-		maxSize:          int64(maxSize),
+		minCompactSize:   int64(minCompactSize),
 		path:             path,
 		offset:           offset,
 		outCh:            outCh,
@@ -401,10 +408,23 @@ func (s *Snapshotter) appendLine(l string) error {
 
 	// Check if a compaction is necessary
 	s.offset += int64(n)
-	if s.offset > s.maxSize {
+	if s.offset > s.snapshotMaxSize() {
 		return s.compact()
 	}
 	return nil
+}
+
+// snapshotMaxSize computes the maximum size and is used to force periodic compaction.
+func (s *Snapshotter) snapshotMaxSize() int64 {
+	nodes := int64(len(s.aliveNodes))
+	estSize := nodes * snapshotBytesPerNode
+	threshold := estSize * snapshotCompactionThreshold
+
+	// Apply a minimum threshold to avoid frequent compaction
+	if threshold < s.minCompactSize {
+		threshold = s.minCompactSize
+	}
+	return threshold
 }
 
 // Compact is used to compact the snapshot once it is too large
