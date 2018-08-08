@@ -51,7 +51,7 @@ const (
 
 	// snapshotCompactionThreshold is the threshold we apply to
 	// the snapshot size estimate (nodes * bytes per node) before compacting.
-	snapshotCompactionThreshold = 3
+	snapshotCompactionThreshold = 2
 )
 
 // Snapshotter is responsible for ingesting events and persisting
