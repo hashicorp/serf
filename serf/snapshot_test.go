@@ -521,6 +521,10 @@ func TestSnapshotter_blockedUpstreamNotBlockingMemberlist(t *testing.T) {
 		default:
 			t.Fatalf("inCh should never block")
 		}
+		// Allow just the tiniest time so that the runtime can schedule the
+		// goroutine that's reading this even if they are both on the same physical
+		// core (like in CI).
+		time.Sleep(1 * time.Microsecond)
 	}
 
 	// Close the snapshoter
