@@ -13,6 +13,7 @@ IMRPOVEMENTS:
 * agent: Improved handling of leave intent messages to make sure they propagate and are processed correctly. [GH-510]
 * library: Moved close of shutdown channel until after network resorces are released. [GH-453]
 * library: Fixed several race conditions with QueryResponse [GH-460]
+* library: Made snapshot writing asyncronous and will less aggressive compaction on large clusters to avoid blocking message handler on disk IO [GH-524][GH-525]
 
 BUG FIXES:
 
