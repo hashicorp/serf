@@ -432,7 +432,7 @@ func TestSnapshotter_slowDiskNotBlockingEventCh(t *testing.T) {
 				},
 			}
 			if i%10 == 0 {
-				// send a leave for every 10 joins
+				// 1/10 events is a leave
 				e.Type = EventMemberLeave
 			}
 			inCh <- e
@@ -513,7 +513,7 @@ func TestSnapshotter_blockedUpstreamNotBlockingMemberlist(t *testing.T) {
 			},
 		}
 		if i%10 == 0 {
-			// send a leave for every 10 joins
+			// 1/10 events is a leave
 			e.Type = EventMemberLeave
 		}
 		select {
