@@ -205,6 +205,10 @@ type Config struct {
 	// only has an affect if the snapshot file is enabled.
 	RejoinAfterLeave bool `mapstructure:"rejoin_after_leave"`
 
+	// EnableCompression specifies whether message compression is enabled
+	// by `github.com/hashicorp/memberlist` when broadcasting events.
+	EnableCompression bool `mapstructure:"enable_compression"`
+
 	// StatsiteAddr is the address of a statsite instance. If provided,
 	// metrics will be streamed to that instance.
 	StatsiteAddr string `mapstructure:"statsite_addr"`
@@ -462,6 +466,7 @@ func MergeConfig(a, b *Config) *Config {
 	if b.BroadcastTimeout != 0 {
 		result.BroadcastTimeout = b.BroadcastTimeout
 	}
+	result.EnableCompression = b.EnableCompression
 
 	// Copy the event handlers
 	result.EventHandlers = make([]string, 0, len(a.EventHandlers)+len(b.EventHandlers))
