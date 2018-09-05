@@ -322,7 +322,7 @@ func TestSerf_eventsUser_sizeLimit(t *testing.T) {
 	defer s1.Shutdown()
 
 	name := "this is too large an event"
-	payload := make([]byte, UserEventSizeLimit)
+	payload := make([]byte, s1Config.UserEventSizeLimit)
 	err = s1.UserEvent(name, payload, false)
 	if err == nil {
 		t.Fatalf("expect error")
