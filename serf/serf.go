@@ -223,8 +223,7 @@ type queries struct {
 }
 
 const (
-	UserEventSizeLimit = 512        // Maximum byte size for event name and payload
-	snapshotSizeLimit  = 128 * 1024 // Maximum 128 KB snapshot
+	snapshotSizeLimit = 128 * 1024 // Maximum 128 KB snapshot
 )
 
 // Create creates a new Serf instance, starting all the background tasks
@@ -437,14 +436,13 @@ func (s *Serf) KeyManager() *KeyManager {
 }
 
 // UserEvent is used to broadcast a custom user event with a given
-// name and payload. The events must be fairly small, and if the
-// size limit is exceeded and error will be returned. If coalesce is enabled,
-// nodes are allowed to coalesce this event. Coalescing is only available
-// starting in v0.2
+// name and payload. If the configured size limit is exceeded and error will be returned.
+// If coalesce is enabled, nodes are allowed to coalesce this event.
+// Coalescing is only available starting in v0.2
 func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
 	// Check the size limit
-	if len(name)+len(payload) > UserEventSizeLimit {
-		return fmt.Errorf("user event exceeds limit of %d bytes", UserEventSizeLimit)
+	if len(name)+len(payload) > s.config.UserEventSizeLimit {
+		return fmt.Errorf("user event exceeds limit of %d bytes", s.config.UserEventSizeLimit)
 	}
 
 	// Create a message
