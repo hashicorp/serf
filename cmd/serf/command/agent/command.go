@@ -451,8 +451,8 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	ipc := NewAgentIPC(agent, config.RPCAuthKey, rpcListener, logOutput, logWriter)
 
 	c.Ui.Output("Serf agent running!")
-	c.Ui.Info(fmt.Sprintf("     Node name: '%s'", config.NodeName))
-	c.Ui.Info(fmt.Sprintf("     Bind addr: '%s'", bindAddr.String()))
+	c.Ui.Info(fmt.Sprintf("                  Node name: '%s'", config.NodeName))
+	c.Ui.Info(fmt.Sprintf("                  Bind addr: '%s'", bindAddr.String()))
 
 	if config.AdvertiseAddr != "" {
 		advertiseIP, advertisePort, _ := config.AddrParts(config.AdvertiseAddr)
