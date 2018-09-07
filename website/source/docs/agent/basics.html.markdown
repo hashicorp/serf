@@ -22,13 +22,15 @@ running `serf agent`, you should see output similar to that below:
 ```
 $ serf agent
 ==> Starting Serf agent...
+==> Starting Serf agent RPC...
 ==> Serf agent running!
-    Node name: 'mitchellh.local'
-    Bind addr: '0.0.0.0:7946'
-     RPC addr: '127.0.0.1:7373'
-    Encrypted: false
-     Snapshot: false
-      Profile: lan
+                    Node name: 'mitchellh.local'
+                    Bind addr: '0.0.0.0:7946'
+                     RPC addr: '127.0.0.1:7373'
+                    Encrypted: false
+                     Snapshot: false
+                      Profile: lan
+  Message Compression Enabled: true
 
 ==> Log data will now stream in as it occurs:
 
