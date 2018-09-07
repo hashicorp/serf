@@ -2,6 +2,7 @@ package serf
 
 import (
 	"fmt"
+	"github.com/hashicorp/memberlist"
 	"net"
 	"sync"
 	"time"
@@ -158,11 +159,12 @@ func (q *Query) Respond(buf []byte) error {
 	}
 
 	// Send the response directly to the originator
-	addr := net.UDPAddr{IP: q.addr, Port: int(q.port)}
-	if err := q.serf.memberlist.SendTo(&addr, raw); err != nil {
+	node := &memberlist.Node{Addr: q.addr, Port: q.port}
+	if err := q.serf.memberlist.SendBestEffort(node, raw); err != nil {
 		return err
 	}
 
+	addr := net.UDPAddr{IP: q.addr, Port: int(q.port)}
 	// Relay the response through up to relayFactor other nodes
 	if err := q.serf.relayResponse(q.relayFactor, addr, &resp); err != nil {
 		return err

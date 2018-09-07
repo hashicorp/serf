@@ -1248,10 +1248,12 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 		if err != nil {
 			s.logger.Printf("[ERR] serf: failed to format ack: %v", err)
 		} else {
-			addr := net.UDPAddr{IP: query.Addr, Port: int(query.Port)}
-			if err := s.memberlist.SendTo(&addr, raw); err != nil {
+			node := &memberlist.Node{Addr: query.Addr, Port: query.Port}
+			if err := s.memberlist.SendBestEffort(node, raw); err != nil {
 				s.logger.Printf("[ERR] serf: failed to send ack: %v", err)
 			}
+
+			addr := net.UDPAddr{IP: query.Addr, Port: int(query.Port)}
 			if err := s.relayResponse(query.RelayFactor, addr, &ack); err != nil {
 				s.logger.Printf("[ERR] serf: failed to relay ack: %v", err)
 			}

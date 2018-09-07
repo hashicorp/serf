@@ -102,7 +102,9 @@ func (d *delegate) NotifyMsg(buf []byte) {
 		raw := make([]byte, reader.Len())
 		reader.Read(raw)
 		d.serf.logger.Printf("[DEBUG] serf: Relaying response to addr: %s", header.DestAddr.String())
-		if err := d.serf.memberlist.SendTo(&header.DestAddr, raw); err != nil {
+
+		node := &memberlist.Node{Addr: header.DestAddr.IP, Port: uint16(header.DestAddr.Port)}
+		if err := d.serf.memberlist.SendBestEffort(node, raw); err != nil {
 			d.serf.logger.Printf("[ERR] serf: Error forwarding message to %s: %s", header.DestAddr.String(), err)
 			break
 		}
