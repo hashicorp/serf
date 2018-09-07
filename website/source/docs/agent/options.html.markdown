@@ -141,6 +141,8 @@ The options below are all specified on the command-line.
 * `-retry-max` - Provides a limit on how many attempts to join the cluster
   can be made by `-retry-join`. If 0, there is no limit, and the agent will
   retry forever. Defaults to 0.
+  
+* `-disable-compression` - Disable message compression for broadcasting events. Enabled by default. **Useful for debugging message payloads**.
 
 * `-role` - **Deprecated** The role of this node, if any. By default this is blank or empty.
   The role can be used by events in order to differentiate members of a

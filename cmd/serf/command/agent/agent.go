@@ -54,6 +54,7 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 
 	// Setup the underlying loggers
 	conf.MemberlistConfig.LogOutput = logOutput
+	conf.MemberlistConfig.EnableCompression = agentConf.EnableCompression
 	conf.LogOutput = logOutput
 
 	// Create a channel to listen for events from Serf
