@@ -1,5 +1,3 @@
-VERSION?="0.3.28"
-
 build:
 	@echo "==> Starting build in Docker..."
 	@docker run \
@@ -7,8 +5,9 @@ build:
 		--rm \
 		--tty \
 		--volume "$(shell pwd):/website" \
-		hashicorp/middleman-hashicorp:${VERSION} \
-		bundle exec middleman build --verbose --clean
+		-e "ENV=production" \
+		netlify/build \
+		build cd website && middleman build --verbose
 
 website:
 	@echo "==> Starting website in Docker..."
@@ -16,9 +15,11 @@ website:
 		--interactive \
 		--rm \
 		--tty \
+		--volume "$(shell pwd):/website" \
 		--publish "4567:4567" \
 		--publish "35729:35729" \
-		--volume "$(shell pwd):/website" \
-		hashicorp/middleman-hashicorp:${VERSION}
+		-e "ENV=production" \
+		netlify/build \
+		build cd website && middleman
 
 .PHONY: build website
