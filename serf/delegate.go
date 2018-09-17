@@ -5,8 +5,9 @@ import (
 	"fmt"
 
 	"github.com/armon/go-metrics"
-	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/memberlist"
+
+	"github.com/ugorji/go/codec"
 )
 
 // delegate is the memberlist.Delegate implementation that Serf uses.

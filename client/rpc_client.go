@@ -9,9 +9,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/coordinate"
+
+	"github.com/ugorji/go/codec"
 )
 
 const (

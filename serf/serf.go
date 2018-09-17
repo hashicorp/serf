@@ -17,9 +17,10 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
-	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/coordinate"
+
+	"github.com/ugorji/go/codec"
 )
 
 // These are the protocol versions that Serf can _understand_. These are

@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/ugorji/go/codec"
 )
 
 // messageType are the types of gossip messages Serf will send along
