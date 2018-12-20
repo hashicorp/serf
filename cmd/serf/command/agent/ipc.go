@@ -1062,7 +1062,7 @@ func (i *AgentIPC) handleGetCoordinate(client *IPCClient, seq uint64) error {
 	return client.Send(&header, &resp)
 }
 
-// Used to convert an error to a string representation
+// errToString; Used to convert an error to a string representation
 func errToString(err error) string {
 	if err == nil {
 		return ""

@@ -51,7 +51,7 @@ func TestDelegate_NodeMeta_New(t *testing.T) {
 	d.NodeMeta(1)
 }
 
-// internals
+// TestDelegate_LocalState checks a case when internals
 func TestDelegate_LocalState(t *testing.T) {
 	c1 := testConfig()
 	s1, err := Create(c1)
@@ -130,7 +130,7 @@ func TestDelegate_LocalState(t *testing.T) {
 	}
 }
 
-// internals
+// TestDelegate_MergeRemoteState checks a case when internals
 func TestDelegate_MergeRemoteState(t *testing.T) {
 	c1 := testConfig()
 	s1, err := Create(c1)

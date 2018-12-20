@@ -294,7 +294,7 @@ func (c *RPCClient) Respond(id uint64, buf []byte) error {
 	return c.genericRPC(&header, &req, nil)
 }
 
-// IntallKey installs a new encryption key onto the keyring
+// InstallKey installs a new encryption key onto the keyring
 func (c *RPCClient) InstallKey(key string) (map[string]string, error) {
 	header := requestHeader{
 		Command: installKeyCommand,
