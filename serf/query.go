@@ -47,7 +47,7 @@ func (s *Serf) DefaultQueryTimeout() time.Duration {
 	return timeout
 }
 
-// DefaultQueryParam is used to return the default query parameters
+// DefaultQueryParams is used to return the default query parameters
 func (s *Serf) DefaultQueryParams() *QueryParam {
 	return &QueryParam{
 		FilterNodes: nil,

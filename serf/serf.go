@@ -1274,7 +1274,7 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 	return rebroadcast
 }
 
-// handleResponse is called when a query response is
+// handleQueryResponse is called when a query response is
 // received.
 func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 	// Look for a corresponding QueryResponse
