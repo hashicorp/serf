@@ -89,7 +89,7 @@ func TestSerfQueries_Conflict_SameName(t *testing.T) {
 }
 
 func TestSerfQueries_keyListResponseWithCorrectSize(t *testing.T) {
-	s := serfQueries{}
+	s := serfQueries{logger: log.New(os.Stderr, "", log.LstdFlags)}
 	q := Query{id: 1136243741, serf: &Serf{config: &Config{NodeName: "foo.dc1", QueryResponseSizeLimit: 160}}}
 	cases := []struct {
 		resp     nodeKeyResponse
