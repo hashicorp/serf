@@ -87,3 +87,27 @@ func TestSerfQueries_Conflict_SameName(t *testing.T) {
 	case <-time.After(50 * time.Millisecond):
 	}
 }
+
+func TestSerfQueries_keyListResponseWithCorrectSize(t *testing.T) {
+	s := serfQueries{}
+	q := Query{id: 1136243741, serf: &Serf{config: &Config{NodeName: "foo.dc1", QueryResponseSizeLimit: 160}}}
+	cases := []struct {
+		resp     nodeKeyResponse
+		expected int
+	}{
+		{expected: 0, resp: nodeKeyResponse{}},
+		{expected: 1, resp: nodeKeyResponse{Keys: []string{"LeJcrRIZsZ9tPYJZW7Xllg=="}}},
+		// has 5 keys which makes the response bigger than 160 bytes.
+		{expected: 3, resp: nodeKeyResponse{Keys: []string{"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg=="}}},
+	}
+	for _, c := range cases {
+		r := c.resp
+		_, _, err := s.keyListResponseWithCorrectSize(&q, &r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(r.Keys) != c.expected {
+			t.Fatalf("Expected %d vs %d", c.expected, len(r.Keys))
+		}
+	}
+}

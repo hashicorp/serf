@@ -2,6 +2,7 @@ package serf
 
 import (
 	"encoding/base64"
+	"fmt"
 	"log"
 	"strings"
 )
@@ -149,17 +150,60 @@ func (s *serfQueries) handleConflict(q *Query) {
 	}
 }
 
+func (s *serfQueries) keyListResponseWithCorrectSize(q *Query, resp *nodeKeyResponse) ([]byte, messageQueryResponse, error) {
+	warned := false
+	for i := len(resp.Keys); i >= 0; i-- {
+		buf, err := encodeMessage(messageKeyResponseType, resp)
+		if err != nil {
+			return nil, messageQueryResponse{}, err
+		}
+
+		// Create response
+		qresp := q.createResponse(buf)
+
+		// Encode response
+		raw, err := encodeMessage(messageQueryResponseType, qresp)
+		if err != nil {
+			return nil, messageQueryResponse{}, err
+		}
+
+		// Check the size limit
+		if err = q.checkResponseSize(raw); err != nil {
+			resp.Keys = resp.Keys[0:i]
+			if !warned {
+				s.logger.Printf("[WARN] serf: truncated key list list response so that it fits into message")
+				warned = true
+			}
+			continue
+		}
+		return raw, qresp, nil
+	}
+	return nil, messageQueryResponse{}, fmt.Errorf("Failed to truncate response so that it fits response size.")
+}
+
 // sendKeyResponse handles responding to key-related queries.
 func (s *serfQueries) sendKeyResponse(q *Query, resp *nodeKeyResponse) {
-	buf, err := encodeMessage(messageKeyResponseType, resp)
-	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to encode key response: %v", err)
-		return
-	}
-
-	if err := q.Respond(buf); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to respond to key query: %v", err)
-		return
+	switch q.Name {
+	case internalQueryName(listKeysQuery):
+		raw, qresp, err := s.keyListResponseWithCorrectSize(q, resp)
+		if err != nil {
+			s.logger.Printf("[ERR] serf: %v", err)
+			return
+		}
+		if err := q.respondWithMessageAndResponse(raw, qresp); err != nil {
+			s.logger.Printf("[ERR] serf: Failed to respond to key query: %v", err)
+			return
+		}
+	default:
+		buf, err := encodeMessage(messageKeyResponseType, resp)
+		if err != nil {
+			s.logger.Printf("[ERR] serf: Failed to encode key response: %v", err)
+			return
+		}
+		if err := q.Respond(buf); err != nil {
+			s.logger.Printf("[ERR] serf: Failed to respond to key query: %v", err)
+			return
+		}
 	}
 }
 
