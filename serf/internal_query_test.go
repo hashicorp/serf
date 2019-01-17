@@ -3,6 +3,7 @@ package serf
 import (
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -125,11 +126,12 @@ func TestSerfQueries_keyListResponseWithCorrectSize(t *testing.T) {
 	cases := []struct {
 		resp     nodeKeyResponse
 		expected int
+		hasMsg   bool
 	}{
-		{expected: 0, resp: nodeKeyResponse{}},
-		{expected: 1, resp: nodeKeyResponse{Keys: []string{"LeJcrRIZsZ9tPYJZW7Xllg=="}}},
+		{expected: 0, hasMsg: false, resp: nodeKeyResponse{}},
+		{expected: 1, hasMsg: false, resp: nodeKeyResponse{Keys: []string{"LeJcrRIZsZ9tPYJZW7Xllg=="}}},
 		// has 50 keys which makes the response bigger than 1024 bytes.
-		{expected: 38, resp: nodeKeyResponse{Keys: []string{
+		{expected: 37, hasMsg: true, resp: nodeKeyResponse{Keys: []string{
 			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
 			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
 			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
@@ -146,10 +148,14 @@ func TestSerfQueries_keyListResponseWithCorrectSize(t *testing.T) {
 		r := c.resp
 		_, _, err := s.keyListResponseWithCorrectSize(&q, &r)
 		if err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			continue
 		}
 		if len(r.Keys) != c.expected {
-			t.Fatalf("Expected %d vs %d", c.expected, len(r.Keys))
+			t.Errorf("Expected %d vs %d", c.expected, len(r.Keys))
+		}
+		if c.hasMsg && !strings.Contains(r.Message, "truncated") {
+			t.Error("truncation message should be set")
 		}
 	}
 }
