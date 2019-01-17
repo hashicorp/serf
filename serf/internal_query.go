@@ -31,7 +31,7 @@ const (
 	listKeysQuery = "list-keys"
 
 	// maxListKeyFactor is used to compute the max number of keys in a list key
-	// response. eg 1024/25 = 40. a message of with max size of 1024 bytes cannot
+	// response. eg 1024/25 = 40. a message with max size of 1024 bytes cannot
 	// contain more than 40 keys. There is a test
 	// (TestSerfQueries_estimateMaxKeysInListKeyResponse) which does the
 	// computation and in case of changes, the value can be adjusted.
