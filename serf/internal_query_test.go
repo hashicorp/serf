@@ -88,17 +88,59 @@ func TestSerfQueries_Conflict_SameName(t *testing.T) {
 	}
 }
 
+func TestSerfQueries_estimateMaxKeysInListKeyResponseFactor(t *testing.T) {
+	q := Query{id: 0, serf: &Serf{config: &Config{NodeName: "", QueryResponseSizeLimit: DefaultConfig().QueryResponseSizeLimit * 10}}}
+	resp := nodeKeyResponse{Keys: []string{}}
+	for i := 0; i <= q.serf.config.QueryResponseSizeLimit; i++ {
+		resp.Keys = append(resp.Keys, "LeJcrRIZsZ9tPYJZW7Xllg==")
+	}
+	found := 0
+	for i := len(resp.Keys); i >= 0; i-- {
+		buf, err := encodeMessage(messageKeyResponseType, resp)
+		if err != nil {
+			t.Fatal(err)
+		}
+		qresp := q.createResponse(buf)
+		raw, err := encodeMessage(messageQueryResponseType, qresp)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err = q.checkResponseSize(raw); err != nil {
+			resp.Keys = resp.Keys[0:i]
+			continue
+		}
+		found = i
+		break
+	}
+	if found == 0 {
+		t.Fatal("Didn't find anything!")
+	}
+	t.Logf("max keys in response with %d bytes: %d", q.serf.config.QueryResponseSizeLimit, len(resp.Keys))
+	t.Logf("factor: %d", q.serf.config.QueryResponseSizeLimit/len(resp.Keys))
+}
+
 func TestSerfQueries_keyListResponseWithCorrectSize(t *testing.T) {
 	s := serfQueries{logger: log.New(os.Stderr, "", log.LstdFlags)}
-	q := Query{id: 1136243741, serf: &Serf{config: &Config{NodeName: "foo.dc1", QueryResponseSizeLimit: 160}}}
+	q := Query{id: 0, serf: &Serf{config: &Config{NodeName: "", QueryResponseSizeLimit: 1024}}}
 	cases := []struct {
 		resp     nodeKeyResponse
 		expected int
 	}{
 		{expected: 0, resp: nodeKeyResponse{}},
 		{expected: 1, resp: nodeKeyResponse{Keys: []string{"LeJcrRIZsZ9tPYJZW7Xllg=="}}},
-		// has 5 keys which makes the response bigger than 160 bytes.
-		{expected: 3, resp: nodeKeyResponse{Keys: []string{"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg=="}}},
+		// has 50 keys which makes the response bigger than 1024 bytes.
+		{expected: 38, resp: nodeKeyResponse{Keys: []string{
+			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
+			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
+			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
+			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
+			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
+			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
+			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
+			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
+			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
+			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
+		}}},
 	}
 	for _, c := range cases {
 		r := c.resp
