@@ -6,8 +6,6 @@ import (
 	"sync"
 )
 
-const MagicTruncationNumber = 50
-
 // KeyManager encapsulates all functionality within Serf for handling
 // encryption keyring changes across a cluster.
 type KeyManager struct {
@@ -70,8 +68,8 @@ func (k *KeyManager) streamKeyResp(resp *KeyResponse, ch <-chan NodeResponse) {
 			resp.NumErr++
 		}
 
-		if len(r.Payload)+MagicTruncationNumber > k.serf.config.QueryResponseSizeLimit {
-			k.serf.logger.Println("[WARN] serf: the response is close to the QueryResponseSizeLimit and might have been truncated")
+		if nodeResponse.Result && len(nodeResponse.Message) > 0 {
+			k.serf.logger.Println("[WARN] serf:", nodeResponse.Message)
 		}
 
 		// Currently only used for key list queries, this adds keys to a counter

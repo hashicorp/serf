@@ -159,7 +159,8 @@ func (s *serfQueries) handleConflict(q *Query) {
 
 func (s *serfQueries) keyListResponseWithCorrectSize(q *Query, resp *nodeKeyResponse) ([]byte, messageQueryResponse, error) {
 	warned := false
-	for i := q.serf.config.QueryResponseSizeLimit / maxListKeyFactor; i >= 0; i-- {
+	maxListKeys := q.serf.config.QueryResponseSizeLimit / maxListKeyFactor
+	for i := maxListKeys; i >= 0; i-- {
 		buf, err := encodeMessage(messageKeyResponseType, resp)
 		if err != nil {
 			return nil, messageQueryResponse{}, err
@@ -178,14 +179,16 @@ func (s *serfQueries) keyListResponseWithCorrectSize(q *Query, resp *nodeKeyResp
 		if err = q.checkResponseSize(raw); err != nil {
 			resp.Keys = resp.Keys[0:i]
 			if !warned {
-				s.logger.Printf("[WARN] serf: truncated key list list response so that it fits into message")
+				msg := "truncated key list response"
+				resp.Message = msg
+				s.logger.Printf("[WARN] serf: %s", msg)
 				warned = true
 			}
 			continue
 		}
 		return raw, qresp, nil
 	}
-	return nil, messageQueryResponse{}, fmt.Errorf("Failed to truncate response so that it fits response size.")
+	return nil, messageQueryResponse{}, fmt.Errorf("Failed to truncate response so that it fits into message")
 }
 
 // sendKeyResponse handles responding to key-related queries.
