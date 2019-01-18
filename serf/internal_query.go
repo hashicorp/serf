@@ -158,8 +158,8 @@ func (s *serfQueries) handleConflict(q *Query) {
 }
 
 func (s *serfQueries) keyListResponseWithCorrectSize(q *Query, resp *nodeKeyResponse) ([]byte, messageQueryResponse, error) {
-	warned := false
 	maxListKeys := q.serf.config.QueryResponseSizeLimit / maxListKeyFactor
+	actual := len(resp.Keys)
 	for i := maxListKeys; i >= 0; i-- {
 		buf, err := encodeMessage(messageKeyResponseType, resp)
 		if err != nil {
@@ -178,13 +178,12 @@ func (s *serfQueries) keyListResponseWithCorrectSize(q *Query, resp *nodeKeyResp
 		// Check the size limit
 		if err = q.checkResponseSize(raw); err != nil {
 			resp.Keys = resp.Keys[0:i]
-			if !warned {
-				msg := "truncated key list response"
-				resp.Message = msg
-				s.logger.Printf("[WARN] serf: %s", msg)
-				warned = true
-			}
+			resp.Message = fmt.Sprintf("truncated key list response, showing first %d of %d keys", i, actual)
 			continue
+		}
+
+		if actual > i {
+			s.logger.Printf("[WARN] serf: %s", resp.Message)
 		}
 		return raw, qresp, nil
 	}
