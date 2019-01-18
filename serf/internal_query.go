@@ -30,12 +30,12 @@ const (
 	// listKeysQuery is used to list all known keys in the cluster
 	listKeysQuery = "list-keys"
 
-	// maxListKeyFactor is used to compute the max number of keys in a list key
+	// minEncodedKeyLength is used to compute the max number of keys in a list key
 	// response. eg 1024/25 = 40. a message with max size of 1024 bytes cannot
 	// contain more than 40 keys. There is a test
 	// (TestSerfQueries_estimateMaxKeysInListKeyResponse) which does the
 	// computation and in case of changes, the value can be adjusted.
-	maxListKeyFactor = 25
+	minEncodedKeyLength = 25
 )
 
 // internalQueryName is used to generate a query name for an internal query
@@ -158,7 +158,7 @@ func (s *serfQueries) handleConflict(q *Query) {
 }
 
 func (s *serfQueries) keyListResponseWithCorrectSize(q *Query, resp *nodeKeyResponse) ([]byte, messageQueryResponse, error) {
-	maxListKeys := q.serf.config.QueryResponseSizeLimit / maxListKeyFactor
+	maxListKeys := q.serf.config.QueryResponseSizeLimit / minEncodedKeyLength
 	actual := len(resp.Keys)
 	for i := maxListKeys; i >= 0; i-- {
 		buf, err := encodeMessage(messageKeyResponseType, resp)
