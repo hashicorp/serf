@@ -131,7 +131,7 @@ func TestSerfQueries_keyListResponseWithCorrectSize(t *testing.T) {
 		{expected: 0, hasMsg: false, resp: nodeKeyResponse{}},
 		{expected: 1, hasMsg: false, resp: nodeKeyResponse{Keys: []string{"LeJcrRIZsZ9tPYJZW7Xllg=="}}},
 		// has 50 keys which makes the response bigger than 1024 bytes.
-		{expected: 37, hasMsg: true, resp: nodeKeyResponse{Keys: []string{
+		{expected: 36, hasMsg: true, resp: nodeKeyResponse{Keys: []string{
 			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
 			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
 			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
