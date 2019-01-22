@@ -15,6 +15,7 @@ IMPROVEMENTS:
 * library: Moved close of shutdown channel until after network resorces are released. [GH-453]
 * library: Fixed several race conditions with QueryResponse [GH-460]
 * library: Made snapshot writing asyncronous and will less aggressive compaction on large clusters to avoid blocking message handler on disk IO [GH-524][GH-525]
+* query: truncate key list response so that it fits into one message instead of failing to answer [GH-546]
 
 
 BUG FIXES:
