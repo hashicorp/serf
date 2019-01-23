@@ -48,6 +48,7 @@ tools::
 updatedeps:: tools
 	go get -u
 	go mod tidy
+	go mod vendor
 
 vet:: tools
 	@echo "--> Running go tool vet $(VETARGS) ."
