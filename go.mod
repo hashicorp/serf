@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/go-syslog v1.0.0
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/hashicorp/go.net v0.0.0-20151006203346-104dcad90073 // indirect
-	github.com/hashicorp/logutils v0.0.0-20150609070431-0dc08b1671f3
+	github.com/hashicorp/logutils v1.0.0
 	github.com/hashicorp/mdns v0.0.0-20151206042412-9d85cf22f9f8
 	github.com/hashicorp/memberlist v0.1.3
 	github.com/mattn/go-isatty v0.0.0-20160806122752-66b8e73f3f5c // indirect
