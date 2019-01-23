@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/go-multierror v0.0.0-20150916205742-d30f09973e19 // indirect
 	github.com/hashicorp/go-retryablehttp v0.5.1 // indirect
 	github.com/hashicorp/go-sockaddr v0.0.0-20180320115054-6d291a969b86 // indirect
-	github.com/hashicorp/go-syslog v0.0.0-20150218181946-42a2b573b664
+	github.com/hashicorp/go-syslog v1.0.0
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/hashicorp/go.net v0.0.0-20151006203346-104dcad90073 // indirect
 	github.com/hashicorp/logutils v0.0.0-20150609070431-0dc08b1671f3
