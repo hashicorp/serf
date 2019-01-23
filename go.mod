@@ -10,7 +10,7 @@ require (
 	github.com/circonus-labs/circonusllhist v0.1.3 // indirect
 	github.com/hashicorp/consul v1.4.0 // indirect
 	github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce // indirect
-	github.com/hashicorp/go-msgpack v0.0.0-20150518234257-fa3f63826f7c
+	github.com/hashicorp/go-msgpack v0.5.3
 	github.com/hashicorp/go-multierror v0.0.0-20150916205742-d30f09973e19 // indirect
 	github.com/hashicorp/go-retryablehttp v0.5.1 // indirect
 	github.com/hashicorp/go-sockaddr v0.0.0-20180320115054-6d291a969b86 // indirect
@@ -21,7 +21,6 @@ require (
 	github.com/hashicorp/mdns v0.0.0-20151206042412-9d85cf22f9f8
 	github.com/hashicorp/memberlist v0.0.0-20171201184301-3d8438da9589
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
-	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-isatty v0.0.0-20160806122752-66b8e73f3f5c // indirect
 	github.com/miekg/dns v0.0.0-20160726032027-db96a2b759cd // indirect
 	github.com/mitchellh/cli v0.0.0-20160323170700-168daae10d6f
@@ -34,9 +33,4 @@ require (
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926 // indirect
 	golang.org/x/sys v0.0.0-20160303154559-7a56174f0086 // indirect
-	google.golang.org/appengine v1.4.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
-	gopkg.in/vmihailenco/msgpack.v2 v2.9.1 // indirect
-	labix.org/v2/mgo v0.0.0-20140701140051-000000000287 // indirect
-	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
 )
