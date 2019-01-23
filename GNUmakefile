@@ -37,7 +37,7 @@ test:: subnet tools
 
 # testrace runs the race checker
 testrace:: subnet
-	go test -race $(TESTARGS)
+	go test -race ./... $(TESTARGS)
 
 tools::
 	@which gox 2>/dev/null ; if [ $$? -eq 1 ]; then \
