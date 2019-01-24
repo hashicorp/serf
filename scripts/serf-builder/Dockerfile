@@ -19,7 +19,7 @@ RUN mkdir /goroot && \
 # switch that off at the highest level.
 ENV CGO_ENABLED 0
 ENV GOROOT /goroot
-ENV PATH $GOROOT/bin:$GOPATH/bin:$PATH
+ENV PATH $GOROOT/bin:/root/go/bin:$PATH
 
 RUN mkdir -p /serf
 WORKDIR /serf
