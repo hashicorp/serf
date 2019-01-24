@@ -37,6 +37,10 @@ type Config struct {
 	// interface. If not provided, the system default multicase interface
 	// is used.
 	Iface *net.Interface
+
+	// LogEmptyResponses indicates the server should print an informative message
+	// when there is an mDNS query for which the server has no response.
+	LogEmptyResponses bool
 }
 
 // mDNS server is used to listen for mDNS queries and respond if we
@@ -216,7 +220,7 @@ func (s *Server) handleQuery(query *dns.Msg, from net.Addr) error {
 		}
 	}
 
-	if len(multicastAnswer) == 0 && len(unicastAnswer) == 0 {
+	if s.config.LogEmptyResponses && len(multicastAnswer) == 0 && len(unicastAnswer) == 0 {
 		questions := make([]string, len(query.Question))
 		for i, q := range query.Question {
 			questions[i] = q.Name
