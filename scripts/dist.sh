@@ -46,4 +46,17 @@ if [ -z $NOSIGN ]; then
 fi
 popd
 
+
+# Upload
+if [ ! -z $HC_RELEASE ]; then
+  hc-releases upload $DIR/pkg/dist
+  hc-releases publish
+
+  curl -X PURGE https://releases.hashicorp.com/serf/${VERSION}
+  for FILENAME in $(find $DIR/pkg/dist -type f); do
+    FILENAME=$(basename $FILENAME)
+    curl -X PURGE https://releases.hashicorp.com/serf/${VERSION}/${FILENAME}
+  done
+fi
+
 exit 0

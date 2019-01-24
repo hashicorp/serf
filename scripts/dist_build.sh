@@ -13,7 +13,6 @@ cd $DIR
 make -f GNUmakefile tools
 
 # Now we are ready to do a clean build of everything.
-rm -rf pkg
 make -f GNUmakefile bin
 
 exit 0
