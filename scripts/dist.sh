@@ -26,7 +26,7 @@ fi
 # Do a hermetic build inside a Docker container.
 if [ -z $NOBUILD ]; then
     docker build -t hashicorp/serf-builder scripts/serf-builder/
-    docker run --rm -v "$(pwd)":/gopath/src/github.com/hashicorp/serf hashicorp/serf-builder
+    docker run --rm -v "$(pwd)":/serf hashicorp/serf-builder
 fi
 
 # Zip all the files.
