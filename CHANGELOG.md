@@ -2,6 +2,8 @@
 
 FEATURES:
 
+* Go Module Support: Serf now fully supports Go modules for incorporation into other projects [GH-548]
+
 IMPROVEMENTS:
 
 * agent: Fixed a missing case where gossip would stop flowing to dead nodes for a short while. [GH-451]
@@ -16,7 +18,6 @@ IMPROVEMENTS:
 * library: Fixed several race conditions with QueryResponse [GH-460]
 * library: Made snapshot writing asyncronous and will less aggressive compaction on large clusters to avoid blocking message handler on disk IO [GH-524][GH-525]
 * query: truncate key list response so that it fits into one message instead of failing to answer [GH-546]
-
 
 BUG FIXES:
 
