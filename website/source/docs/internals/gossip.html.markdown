@@ -85,7 +85,7 @@ The changes from SWIM are noted here:
 SWIM makes the assumption that the local node is healthy in the sense
 that soft real-time processing of packets is possible. However, in cases
 where the local node is experiencing CPU or network exhaustion this assumption
-can be violated. The result is that the node health can occassionally flap,
+can be violated. The result is that the node health can occasionally flap,
 resulting in false monitoring alarms, adding noise to telemetry, and simply
 causing the overall cluster to waste CPU and network resources diagnosing a
 failure that may not truly exist.
@@ -135,5 +135,10 @@ it can be ordered properly in case a leave comes out of order.
 
 For custom events and queries, Serf sends either a _user event_,
 or _user query_ message. This message contains a Lamport time, event name, and event payload.
-Because user events are sent along the gossip layer, which uses UDP, the payload and entire message framing
-must fit within a single UDP packet.
+Because user events are sent along the gossip layer, which uses UDP, 
+the payload and entire message framing must fit within a single UDP packet.
+
+`UserEventSizeLimit` can be configured, but a hard limit of `9KB` is applied.
+It's up to the user to make sure that the "user event"'s network transmission "path" fits their MTU and/or other packet constraints.
+ 
+ 

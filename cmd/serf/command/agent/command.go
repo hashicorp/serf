@@ -327,6 +327,7 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	serfConfig.QuiescentPeriod = time.Second
 	serfConfig.QueryResponseSizeLimit = config.QueryResponseSizeLimit
 	serfConfig.QuerySizeLimit = config.QuerySizeLimit
+	serfConfig.UserEventSizeLimit = config.UserEventSizeLimit
 	serfConfig.UserCoalescePeriod = 3 * time.Second
 	serfConfig.UserQuiescentPeriod = time.Second
 	if config.ReconnectInterval != 0 {
@@ -451,8 +452,8 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	ipc := NewAgentIPC(agent, config.RPCAuthKey, rpcListener, logOutput, logWriter)
 
 	c.Ui.Output("Serf agent running!")
-	c.Ui.Info(fmt.Sprintf("     Node name: '%s'", config.NodeName))
-	c.Ui.Info(fmt.Sprintf("     Bind addr: '%s'", bindAddr.String()))
+	c.Ui.Info(fmt.Sprintf("                  Node name: '%s'", config.NodeName))
+	c.Ui.Info(fmt.Sprintf("                  Bind addr: '%s'", bindAddr.String()))
 
 	if config.AdvertiseAddr != "" {
 		advertiseIP, advertisePort, _ := config.AddrParts(config.AdvertiseAddr)
