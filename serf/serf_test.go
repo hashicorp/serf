@@ -327,7 +327,7 @@ func TestSerf_eventsUser_sizeLimit(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expect error")
 	}
-	if !strings.HasPrefix(err.Error(), "user event exceeds limit of ") {
+	if !strings.HasPrefix(err.Error(), "user event exceeds") {
 		t.Fatalf("should get size limit error")
 	}
 }
