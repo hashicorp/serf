@@ -35,10 +35,10 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
-	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/coordinate"
 	"github.com/hashicorp/serf/serf"
+	"github.com/ugorji/go/codec"
 )
 
 const (
@@ -386,9 +386,13 @@ func (i *AgentIPC) listen() {
 			pendingQueries: make(map[uint64]*serf.Query),
 		}
 		client.dec = codec.NewDecoder(client.reader,
-			&codec.MsgpackHandle{RawToString: true, WriteExt: true})
+			&codec.MsgpackHandle{
+				BasicHandle: codec.BasicHandle{DecodeOptions: codec.DecodeOptions{RawToString: true}},
+				WriteExt:    true})
 		client.enc = codec.NewEncoder(client.writer,
-			&codec.MsgpackHandle{RawToString: true, WriteExt: true})
+			&codec.MsgpackHandle{
+				BasicHandle: codec.BasicHandle{DecodeOptions: codec.DecodeOptions{RawToString: true}},
+				WriteExt:    true})
 
 		// Register the client
 		i.Lock()

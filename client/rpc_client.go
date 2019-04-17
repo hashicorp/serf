@@ -9,9 +9,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/coordinate"
+	"github.com/ugorji/go/codec"
 )
 
 const (
@@ -142,9 +142,13 @@ func ClientFromConfig(c *Config) (*RPCClient, error) {
 		shutdownCh: make(chan struct{}),
 	}
 	client.dec = codec.NewDecoder(client.reader,
-		&codec.MsgpackHandle{RawToString: true, WriteExt: true})
+		&codec.MsgpackHandle{
+			BasicHandle: codec.BasicHandle{DecodeOptions: codec.DecodeOptions{RawToString: true}},
+			WriteExt:    true})
 	client.enc = codec.NewEncoder(client.writer,
-		&codec.MsgpackHandle{RawToString: true, WriteExt: true})
+		&codec.MsgpackHandle{
+			BasicHandle: codec.BasicHandle{DecodeOptions: codec.DecodeOptions{RawToString: true}},
+			WriteExt:    true})
 	go client.listen()
 
 	// Do the initial handshake

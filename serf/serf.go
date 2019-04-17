@@ -17,9 +17,9 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
-	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/coordinate"
+	"github.com/ugorji/go/codec"
 )
 
 // These are the protocol versions that Serf can _understand_. These are
@@ -223,8 +223,8 @@ type queries struct {
 }
 
 const (
-	snapshotSizeLimit = 128 * 1024 // Maximum 128 KB snapshot
-	UserEventSizeLimit = 9 * 1024  // Maximum 9KB for event name and payload
+	snapshotSizeLimit  = 128 * 1024 // Maximum 128 KB snapshot
+	UserEventSizeLimit = 9 * 1024   // Maximum 9KB for event name and payload
 )
 
 // Create creates a new Serf instance, starting all the background tasks
@@ -445,7 +445,7 @@ func (s *Serf) KeyManager() *KeyManager {
 // If coalesce is enabled, nodes are allowed to coalesce this event.
 // Coalescing is only available starting in v0.2
 func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
-	payloadSizeBeforeEncoding := len(name)+len(payload)
+	payloadSizeBeforeEncoding := len(name) + len(payload)
 
 	// Check size before encoding to prevent needless encoding and return early if it's over the specified limit.
 	if payloadSizeBeforeEncoding > s.config.UserEventSizeLimit {
