@@ -28,13 +28,15 @@ func (c *memberEventCoalescer) Handle(e Event) bool {
 }
 
 func (c *memberEventCoalescer) Coalesce(raw Event) {
-	e := raw.(MemberEvent)
-	for _, m := range e.Members {
-		c.latestEvents[m.Name] = coalesceEvent{
-			Type:   e.Type,
-			Member: &m,
+	if e, ok := raw.(MemberEvent); ok {
+		for _, m := range e.Members {
+			c.latestEvents[m.Name] = coalesceEvent{
+				Type:   e.Type,
+				Member: &m,
+			}
 		}
 	}
+
 }
 
 func (c *memberEventCoalescer) Flush(outCh chan<- Event) {
