@@ -55,6 +55,8 @@ func (c *Command) readConfig() *Config {
 	var tags []string
 	var retryInterval string
 	var broadcastTimeout string
+	var disableCompression bool
+
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 	cmdFlags.StringVar(&cmdConfig.BindAddr, "bind", "", "address to bind listeners to")
@@ -92,10 +94,20 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.StringVar(&retryInterval, "retry-interval", "", "retry join interval")
 	cmdFlags.BoolVar(&cmdConfig.RejoinAfterLeave, "rejoin", false,
 		"enable re-joining after a previous leave")
+
+	cmdFlags.BoolVar(
+		&disableCompression,
+		"disable-compression",
+		false,
+		"disable message compression for broadcasting events",
+	)
+
 	cmdFlags.StringVar(&broadcastTimeout, "broadcast-timeout", "", "timeout for broadcast messages")
 	if err := cmdFlags.Parse(c.args); err != nil {
 		return nil
 	}
+
+	cmdConfig.EnableCompression = !disableCompression
 
 	// Parse any command line tag values
 	tagValues, err := UnmarshalTags(tags)
@@ -315,6 +327,7 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	serfConfig.QuiescentPeriod = time.Second
 	serfConfig.QueryResponseSizeLimit = config.QueryResponseSizeLimit
 	serfConfig.QuerySizeLimit = config.QuerySizeLimit
+	serfConfig.UserEventSizeLimit = config.UserEventSizeLimit
 	serfConfig.UserCoalescePeriod = 3 * time.Second
 	serfConfig.UserQuiescentPeriod = time.Second
 	if config.ReconnectInterval != 0 {
@@ -439,8 +452,8 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	ipc := NewAgentIPC(agent, config.RPCAuthKey, rpcListener, logOutput, logWriter)
 
 	c.Ui.Output("Serf agent running!")
-	c.Ui.Info(fmt.Sprintf("     Node name: '%s'", config.NodeName))
-	c.Ui.Info(fmt.Sprintf("     Bind addr: '%s'", bindAddr.String()))
+	c.Ui.Info(fmt.Sprintf("                  Node name: '%s'", config.NodeName))
+	c.Ui.Info(fmt.Sprintf("                  Bind addr: '%s'", bindAddr.String()))
 
 	if config.AdvertiseAddr != "" {
 		advertiseIP, advertisePort, _ := config.AddrParts(config.AdvertiseAddr)
@@ -448,13 +461,14 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 		c.Ui.Info(fmt.Sprintf("Advertise addr: '%s'", advertiseAddr))
 	}
 
-	c.Ui.Info(fmt.Sprintf("      RPC addr: '%s'", config.RPCAddr))
-	c.Ui.Info(fmt.Sprintf("     Encrypted: %#v", agent.serf.EncryptionEnabled()))
-	c.Ui.Info(fmt.Sprintf("      Snapshot: %v", config.SnapshotPath != ""))
-	c.Ui.Info(fmt.Sprintf("       Profile: %s", config.Profile))
+	c.Ui.Info(fmt.Sprintf("                   RPC addr: '%s'", config.RPCAddr))
+	c.Ui.Info(fmt.Sprintf("                  Encrypted: %#v", agent.serf.EncryptionEnabled()))
+	c.Ui.Info(fmt.Sprintf("                   Snapshot: %v", config.SnapshotPath != ""))
+	c.Ui.Info(fmt.Sprintf("                    Profile: %s", config.Profile))
+	c.Ui.Info(fmt.Sprintf("Message Compression Enabled: %v", config.EnableCompression))
 
 	if config.Discover != "" {
-		c.Ui.Info(fmt.Sprintf("  mDNS cluster: %s", config.Discover))
+		c.Ui.Info(fmt.Sprintf("               mDNS cluster: %s", config.Discover))
 	}
 	return ipc
 }
@@ -752,6 +766,7 @@ Options:
   -retry-interval=30s      Sets the interval on which a node will attempt to retry joining
                            nodes provided by -retry-join. Defaults to 30s.
   -retry-max=0             Limits the number of retry events. Defaults to 0 for unlimited.
+  -disable-compression     Disable message compression for broadcasting events. Enabled by default.
   -role=foo                The role of this node, if any. This can be used
                            by event scripts to differentiate different types
                            of nodes that may be part of the same cluster.

@@ -10,10 +10,9 @@ DIR="$( cd -P "$( dirname "$SOURCE" )/.." && pwd )"
 cd $DIR
 
 # Make sure build tools are abailable.
-make -f GNUMakefile tools
+make -f GNUmakefile tools
 
 # Now we are ready to do a clean build of everything.
-rm -rf pkg
-make -f GNUMakefile bin
+make -f GNUmakefile bin
 
 exit 0

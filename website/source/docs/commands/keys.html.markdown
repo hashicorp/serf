@@ -50,7 +50,10 @@ All operations are idempotent. The list of available flags are:
   installed. After gathering keys from all members, the results will be returned
   in a summary showing each key and the number of members which have that key
   installed. This is useful to operators to ensure that a given key has been
-  installed on or removed from all members.
+  installed on or removed from all members. It is possible that there are too
+  many keys to fit into one message. In that case the reporting member truncates
+  the list until the message can be sent. This is done to avoid not being able
+  to list the keys in case there are too many keys.
 
 * `-rpc-addr` - Address to the RPC server of the agent you want to contact
   to send this command. If this isn't specified, the command will contact

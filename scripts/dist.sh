@@ -26,7 +26,7 @@ fi
 # Do a hermetic build inside a Docker container.
 if [ -z $NOBUILD ]; then
     docker build -t hashicorp/serf-builder scripts/serf-builder/
-    docker run --rm -v "$(pwd)":/gopath/src/github.com/hashicorp/serf hashicorp/serf-builder
+    docker run --rm -v "$(pwd)":/serf hashicorp/serf-builder
 fi
 
 # Zip all the files.
@@ -45,5 +45,18 @@ if [ -z $NOSIGN ]; then
   gpg --default-key 348FFC4C --detach-sig ./serf_${VERSION}_SHA256SUMS
 fi
 popd
+
+
+# Upload
+if [ ! -z $HC_RELEASE ]; then
+  hc-releases upload $DIR/pkg/dist
+  hc-releases publish
+
+  curl -X PURGE https://releases.hashicorp.com/serf/${VERSION}
+  for FILENAME in $(find $DIR/pkg/dist -type f); do
+    FILENAME=$(basename $FILENAME)
+    curl -X PURGE https://releases.hashicorp.com/serf/${VERSION}/${FILENAME}
+  done
+fi
 
 exit 0

@@ -1,6 +1,6 @@
-FROM ubuntu:trusty
+FROM debian:stable
 
-ENV GOVERSION 1.8
+ENV GOVERSION 1.11.4
 
 RUN apt-get update -y && \
     apt-get install --no-install-recommends -y -q \
@@ -18,10 +18,9 @@ RUN mkdir /goroot && \
 # We want to ensure that release builds never have any cgo dependencies so we
 # switch that off at the highest level.
 ENV CGO_ENABLED 0
-ENV GOPATH /gopath
 ENV GOROOT /goroot
-ENV PATH $GOROOT/bin:$GOPATH/bin:$PATH
+ENV PATH $GOROOT/bin:/root/go/bin:$PATH
 
-RUN mkdir -p $GOPATH/src/github.com/hashicorp/serf
-WORKDIR $GOPATH/src/github.com/hashicorp/serf
+RUN mkdir -p /serf
+WORKDIR /serf
 CMD ./scripts/dist_build.sh

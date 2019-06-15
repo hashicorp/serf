@@ -35,6 +35,7 @@ func DefaultConfig() *Config {
 		SyslogFacility:         "LOCAL0",
 		QueryResponseSizeLimit: 1024,
 		QuerySizeLimit:         1024,
+		UserEventSizeLimit:     512,
 		BroadcastTimeout:       5 * time.Second,
 	}
 }
@@ -113,6 +114,10 @@ type Config struct {
 	// configuration.
 	QueryResponseSizeLimit int `mapstructure:"query_response_size_limit"`
 	QuerySizeLimit         int `mapstructure:"query_size_limit"`
+
+	// UserEventSizeLimit is maximum byte size limit of user event `name` + `payload` in bytes.
+	// It's optimal to be relatively small, since it's going to be gossiped through the cluster.
+	UserEventSizeLimit int `mapstructure:"user_event_size_limit"`
 
 	// StartJoin is a list of addresses to attempt to join when the
 	// agent starts. If Serf is unable to communicate with any of these
@@ -204,6 +209,10 @@ type Config struct {
 	// true, we ignore the leave, and rejoin the cluster on start. This
 	// only has an affect if the snapshot file is enabled.
 	RejoinAfterLeave bool `mapstructure:"rejoin_after_leave"`
+
+	// EnableCompression specifies whether message compression is enabled
+	// by `github.com/hashicorp/memberlist` when broadcasting events.
+	EnableCompression bool `mapstructure:"enable_compression"`
 
 	// StatsiteAddr is the address of a statsite instance. If provided,
 	// metrics will be streamed to that instance.
@@ -459,9 +468,13 @@ func MergeConfig(a, b *Config) *Config {
 	if b.QuerySizeLimit != 0 {
 		result.QuerySizeLimit = b.QuerySizeLimit
 	}
+	if b.UserEventSizeLimit != 0 {
+		result.UserEventSizeLimit = b.UserEventSizeLimit
+	}
 	if b.BroadcastTimeout != 0 {
 		result.BroadcastTimeout = b.BroadcastTimeout
 	}
+	result.EnableCompression = b.EnableCompression
 
 	// Copy the event handlers
 	result.EventHandlers = make([]string, 0, len(a.EventHandlers)+len(b.EventHandlers))
