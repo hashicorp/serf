@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
-	"github.com/hashicorp/go-syslog"
+	gsyslog "github.com/hashicorp/go-syslog"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/serf"
@@ -743,7 +743,7 @@ Options:
                            networks that support multicast, this can be used to have
                            peers join each other without an explicit join.
   -encrypt=foo             Key for encrypting network traffic within Serf.
-                           Must be a base64-encoded 16-byte key.
+                           Must be a base64-encoded 32-byte key.
   -keyring-file            The keyring file is used to store encryption keys used
                            by Serf. As encryption keys are changed, the content of
                            this file is updated so that the same keys may be used
