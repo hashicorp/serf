@@ -413,7 +413,7 @@ The request looks like:
 ```
 
 The `Key` must be 32 bytes of base64-encoded data. This value can be generated
-easily using the [keygen command](/docs/commands/keygen.html).
+using the [keygen command](/docs/commands/keygen.html).
 
 Once invoked, this method will begin broadcasting the new key to all members in
 the cluster via the gossip protocol. Once the query has completed, a response
