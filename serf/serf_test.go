@@ -1803,8 +1803,8 @@ func TestSerf_LocalMember(t *testing.T) {
 }
 
 func TestSerf_WriteKeyringFile(t *testing.T) {
-	existing := "jbuQMI4gMUeh1PPmKOtiBg=="
-	newKey := "eodFZZjm7pPwIZ0Miy7boQ=="
+	existing := "T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s="
+	newKey := "HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8="
 
 	td, err := ioutil.TempDir("", "serf")
 	if err != nil {

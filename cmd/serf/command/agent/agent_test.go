@@ -222,9 +222,9 @@ func TestAgent_UnmarshalTagsError(t *testing.T) {
 
 func TestAgentKeyringFile(t *testing.T) {
 	keys := []string{
-		"enjTwAFRe4IE71bOFhirzQ==",
-		"csT9mxI7aTf9ap3HLBbdmA==",
-		"noha2tVc0OyD/2LtCBoAOQ==",
+		"HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8=",
+		"T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s=",
+		"5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4=",
 	}
 
 	td, err := ioutil.TempDir("", "serf")
@@ -266,7 +266,7 @@ func TestAgentKeyringFile(t *testing.T) {
 func TestAgentKeyringFile_BadOptions(t *testing.T) {
 	agentConfig := DefaultConfig()
 	agentConfig.KeyringFile = "/some/path"
-	agentConfig.EncryptKey = "pL4owv4IE1x+ZXCyd5vLLg=="
+	agentConfig.EncryptKey = "5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4="
 
 	_, err := Create(agentConfig, serf.DefaultConfig(), nil)
 	if err == nil || !strings.Contains(err.Error(), "not allowed") {

@@ -27,7 +27,7 @@ All members of the Serf cluster must be provided the shared secret ahead of time
 This places the burden of key distribution on the user.
 
 To support confidentiality, all messages are encrypted using the
-[AES-128 standard](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard). The
+[AES-256 standard](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard). The
 AES standard is considered one of the most secure and modern encryption standards.
 Additionally, it is a fast algorithm, and modern CPUs provide hardware instructions to
 make encryption and decryption very lightweight.
