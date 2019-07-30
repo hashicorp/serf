@@ -24,14 +24,14 @@ obtain a cryptographically suitable key is by using `serf keygen`.
 
 ```
 $ serf keygen
-cg8StVXbQJ0gPvMd9o7yrg==
+pUqJrVyVRj5jsiYEkM/tFQYfWyJIv4s3XkvDwy7Cu5s=
 ```
 
 With that key, you can enable encryption on the agent. You can verify
 encryption is enabled because the output will include "Encrypted: true".
 
 ```
-$ serf agent -encrypt=cg8StVXbQJ0gPvMd9o7yrg==
+$ serf agent -encrypt=pUqJrVyVRj5jsiYEkM/tFQYfWyJIv4s3XkvDwy7Cu5s=
 ==> Starting Serf agent...
 ==> Serf agent running!
     Node name: 'mitchellh.local'
