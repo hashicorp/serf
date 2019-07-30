@@ -412,7 +412,7 @@ The request looks like:
     {"Key": "5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4="}
 ```
 
-The `Key` must be 32 bytes of base64-encoded data. This value can be generated
+The `Key` should be 32 bytes of base64-encoded data. `24` and `16` bytes are also accepted, but 32 bytes are recommended for improved security. This value can be generated
 using the [keygen command](/docs/commands/keygen.html).
 
 Once invoked, this method will begin broadcasting the new key to all members in
