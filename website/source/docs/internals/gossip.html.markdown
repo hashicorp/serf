@@ -51,7 +51,7 @@ to the cluster.
 
 This is a brief and incomplete description of the protocol. For a better idea,
 please read the
-[SWIM paper](https://www.cs.cornell.edu/~asdas/research/dsn02-swim.pdf)
+[SWIM paper](https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf)
 in its entirety, along with the Serf source code.
 
 ## SWIM Modifications
