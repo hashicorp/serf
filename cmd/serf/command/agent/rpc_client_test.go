@@ -830,7 +830,7 @@ func TestRPCClient_Keys_EncryptionDisabledError(t *testing.T) {
 	}
 
 	// Failed installing key
-	failures, err := client.InstallKey("El/H8lEqX2WiUa36SxcpZw==")
+	failures, err := client.InstallKey("5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4=")
 	if err == nil {
 		t.Fatalf("expected encryption disabled error")
 	}
@@ -839,7 +839,7 @@ func TestRPCClient_Keys_EncryptionDisabledError(t *testing.T) {
 	}
 
 	// Failed using key
-	failures, err = client.UseKey("El/H8lEqX2WiUa36SxcpZw==")
+	failures, err = client.UseKey("5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4=")
 	if err == nil {
 		t.Fatalf("expected encryption disabled error")
 	}
@@ -848,7 +848,7 @@ func TestRPCClient_Keys_EncryptionDisabledError(t *testing.T) {
 	}
 
 	// Failed removing key
-	failures, err = client.RemoveKey("El/H8lEqX2WiUa36SxcpZw==")
+	failures, err = client.RemoveKey("5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4=")
 	if err == nil {
 		t.Fatalf("expected encryption disabled error")
 	}
@@ -867,8 +867,8 @@ func TestRPCClient_Keys_EncryptionDisabledError(t *testing.T) {
 }
 
 func TestRPCClient_Keys(t *testing.T) {
-	newKey := "El/H8lEqX2WiUa36SxcpZw=="
-	existing := "A2xzjs0eq9PxSV2+dPi3sg=="
+	newKey := "5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4="
+	existing := "T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s="
 	existingBytes, err := base64.StdEncoding.DecodeString(existing)
 	if err != nil {
 		t.Fatalf("err: %s", err)
