@@ -1079,7 +1079,7 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 
 	// Refute us leaving if we are in the alive state
 	// Must be done in another goroutine since we have the memberLock
-	if leaveMsg.Node == s.config.NodeName && s.state == SerfAlive {
+	if leaveMsg.Node == s.config.NodeName && s.State() == SerfAlive {
 		s.logger.Printf("[DEBUG] serf: Refuting an older leave intent")
 		go s.broadcastJoin(s.clock.Time())
 		return false
