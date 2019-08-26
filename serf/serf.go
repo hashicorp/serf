@@ -223,8 +223,8 @@ type queries struct {
 }
 
 const (
-	snapshotSizeLimit = 128 * 1024 // Maximum 128 KB snapshot
-	UserEventSizeLimit = 9 * 1024  // Maximum 9KB for event name and payload
+	snapshotSizeLimit  = 128 * 1024 // Maximum 128 KB snapshot
+	UserEventSizeLimit = 9 * 1024   // Maximum 9KB for event name and payload
 )
 
 // Create creates a new Serf instance, starting all the background tasks
@@ -445,7 +445,7 @@ func (s *Serf) KeyManager() *KeyManager {
 // If coalesce is enabled, nodes are allowed to coalesce this event.
 // Coalescing is only available starting in v0.2
 func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
-	payloadSizeBeforeEncoding := len(name)+len(payload)
+	payloadSizeBeforeEncoding := len(name) + len(payload)
 
 	// Check size before encoding to prevent needless encoding and return early if it's over the specified limit.
 	if payloadSizeBeforeEncoding > s.config.UserEventSizeLimit {
@@ -1713,14 +1713,14 @@ func (s *Serf) Stats() map[string]string {
 	members := toString(uint64(len(s.members)))
 	failed := toString(uint64(len(s.failedMembers)))
 	left := toString(uint64(len(s.leftMembers)))
-	health_score := toString(uint64(s.memberlist.GetHealthScore()))
+	healthScore := toString(uint64(s.memberlist.GetHealthScore()))
 
 	s.memberLock.RUnlock()
 	stats := map[string]string{
 		"members":      members,
 		"failed":       failed,
 		"left":         left,
-		"health_score": health_score,
+		"health_score": healthScore,
 		"member_time":  toString(uint64(s.clock.Time())),
 		"event_time":   toString(uint64(s.eventClock.Time())),
 		"query_time":   toString(uint64(s.queryClock.Time())),

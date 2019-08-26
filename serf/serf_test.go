@@ -500,7 +500,7 @@ func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
 		t.Fatalf("s1 members: %d", len(s1.Members()))
 	}
 
-	var member *Member = nil
+	var member *Member
 	for _, m := range members {
 		if m.Name == s3Config.NodeName {
 			member = &m
@@ -672,7 +672,7 @@ func TestSerf_update(t *testing.T) {
 
 	// Add a tag to force an update event, and add a version downgrade as
 	// well (that alone won't trigger an update).
-	s2Config.ProtocolVersion -= 1
+	s2Config.ProtocolVersion--
 	s2Config.Tags["foo"] = "bar"
 
 	// We try for a little while to wait for s2 to fully shutdown since the
@@ -1414,31 +1414,31 @@ func TestSerf_SetTags(t *testing.T) {
 
 	// Verify the new tags
 	m1m := s1.Members()
-	m1m_tags := make(map[string]map[string]string)
+	m1mTags := make(map[string]map[string]string)
 	for _, m := range m1m {
-		m1m_tags[m.Name] = m.Tags
+		m1mTags[m.Name] = m.Tags
 	}
 
-	if m := m1m_tags[s1.config.NodeName]; m["port"] != "8000" {
-		t.Fatalf("bad: %v", m1m_tags)
+	if m := m1mTags[s1.config.NodeName]; m["port"] != "8000" {
+		t.Fatalf("bad: %v", m1mTags)
 	}
 
-	if m := m1m_tags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
-		t.Fatalf("bad: %v", m1m_tags)
+	if m := m1mTags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
+		t.Fatalf("bad: %v", m1mTags)
 	}
 
 	m2m := s2.Members()
-	m2m_tags := make(map[string]map[string]string)
+	m2mTags := make(map[string]map[string]string)
 	for _, m := range m2m {
-		m2m_tags[m.Name] = m.Tags
+		m2mTags[m.Name] = m.Tags
 	}
 
-	if m := m2m_tags[s1.config.NodeName]; m["port"] != "8000" {
-		t.Fatalf("bad: %v", m1m_tags)
+	if m := m2mTags[s1.config.NodeName]; m["port"] != "8000" {
+		t.Fatalf("bad: %v", m1mTags)
 	}
 
-	if m := m2m_tags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
-		t.Fatalf("bad: %v", m1m_tags)
+	if m := m2mTags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
+		t.Fatalf("bad: %v", m1mTags)
 	}
 }
 
