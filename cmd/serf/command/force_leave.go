@@ -17,8 +17,11 @@ type ForceLeaveCommand struct {
 var _ cli.Command = &ForceLeaveCommand{}
 
 func (c *ForceLeaveCommand) Run(args []string) int {
+	var prune bool
+
 	cmdFlags := flag.NewFlagSet("join", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
+	cmdFlags.BoolVar(&prune, "prune", false, "Remove agent forcibly from list of members")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	rpcAuth := RPCAuthFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
@@ -40,7 +43,7 @@ func (c *ForceLeaveCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
-	err = client.ForceLeave(nodes[0])
+	err = client.ForceLeave(nodes[0], prune)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error force leaving: %s", err))
 		return 1
@@ -68,6 +71,7 @@ Options:
 
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
   -rpc-auth=""              RPC auth token of the Serf agent.
+  -prune					Remove agent forcibly from list of members
 `
 	return strings.TrimSpace(helpText)
 }

@@ -223,8 +223,8 @@ type queries struct {
 }
 
 const (
-	snapshotSizeLimit = 128 * 1024 // Maximum 128 KB snapshot
-	UserEventSizeLimit = 9 * 1024  // Maximum 9KB for event name and payload
+	snapshotSizeLimit  = 128 * 1024 // Maximum 128 KB snapshot
+	UserEventSizeLimit = 9 * 1024   // Maximum 9KB for event name and payload
 )
 
 // Create creates a new Serf instance, starting all the background tasks
@@ -445,7 +445,7 @@ func (s *Serf) KeyManager() *KeyManager {
 // If coalesce is enabled, nodes are allowed to coalesce this event.
 // Coalescing is only available starting in v0.2
 func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
-	payloadSizeBeforeEncoding := len(name)+len(payload)
+	payloadSizeBeforeEncoding := len(name) + len(payload)
 
 	// Check size before encoding to prevent needless encoding and return early if it's over the specified limit.
 	if payloadSizeBeforeEncoding > s.config.UserEventSizeLimit {
@@ -785,11 +785,12 @@ func (s *Serf) Members() []Member {
 // immediately, instead of waiting for the reaper to eventually reclaim it.
 // This also has the effect that Serf will no longer attempt to reconnect
 // to this node.
-func (s *Serf) RemoveFailedNode(node string) error {
+func (s *Serf) RemoveFailedNode(node string, prune bool) error {
 	// Construct the message to broadcast
 	msg := messageLeave{
 		LTime: s.clock.Time(),
 		Node:  node,
+		Prune: prune,
 	}
 	s.clock.Increment()
 
@@ -1060,6 +1061,7 @@ func (s *Serf) handleNodeUpdate(n *memberlist.Node) {
 
 // handleNodeLeaveIntent is called when an intent to leave is received.
 func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
+
 	// Witness a potentially newer time
 	s.clock.Witness(leaveMsg.LTime)
 
@@ -1098,6 +1100,7 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		// Remove from the failed list and add to the left list. We add
 		// to the left list so that when we do a sync, other nodes will
 		// remove it from their failed list.
+
 		s.failedMembers = removeOldMember(s.failedMembers, member.Name)
 		s.leftMembers = append(s.leftMembers, member)
 
@@ -1112,6 +1115,11 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 				Members: []Member{member.Member},
 			}
 		}
+
+		if leaveMsg.Prune {
+			s.handlePrune(s.leftMembers, member)
+		}
+
 		return true
 	default:
 		return false
@@ -1436,6 +1444,33 @@ func (s *Serf) resolveNodeConflict() {
 	if err := s.Shutdown(); err != nil {
 		s.logger.Printf("[ERR] serf: Failed to shutdown: %v", err)
 	}
+}
+
+//handlePrune is a simplified version of Reap() which only runs when the prune
+//flag is set
+func (s *Serf) handlePrune(old []*memberState, m *memberState) []*memberState {
+	// Delete from members
+	delete(s.members, m.Name)
+
+	// Tell the coordinate client the node has gone away and delete
+	// its cached coordinates.
+	if !s.config.DisableCoordinates {
+		s.coordClient.ForgetNode(m.Name)
+
+		s.coordCacheLock.Lock()
+		delete(s.coordCache, m.Name)
+		s.coordCacheLock.Unlock()
+	}
+
+	// Send an event along
+	s.logger.Printf("[INFO] serf: EventMemberReap: %s", m.Name)
+	if s.config.EventCh != nil {
+		s.config.EventCh <- MemberEvent{
+			Type:    EventMemberReap,
+			Members: []Member{m.Member},
+		}
+	}
+	return old
 }
 
 // handleReap periodically reaps the list of failed and left members, as well

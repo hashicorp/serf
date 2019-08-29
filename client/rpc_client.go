@@ -187,13 +187,14 @@ func (c *RPCClient) Close() error {
 
 // ForceLeave is used to ask the agent to issue a leave command for
 // a given node
-func (c *RPCClient) ForceLeave(node string) error {
+func (c *RPCClient) ForceLeave(node string, prune bool) error {
 	header := requestHeader{
 		Command: forceLeaveCommand,
 		Seq:     c.getSeq(),
 	}
 	req := forceLeaveRequest{
-		Node: node,
+		Node:  node,
+		Prune: prune,
 	}
 	return c.genericRPC(&header, &req, nil)
 }

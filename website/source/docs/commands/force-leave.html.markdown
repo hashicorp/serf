@@ -38,4 +38,7 @@ Every option is optional:
   command. This option can also be controlled using the `SERF_RPC_AUTH`
   environment variable.
 
+* `-prune` -  Forcibly removes a member of the Serf cluster from the member
+list completely
+
 
