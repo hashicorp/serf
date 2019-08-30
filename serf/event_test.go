@@ -159,7 +159,7 @@ func TestMemberEvent(t *testing.T) {
 		}
 	}()
 	me.Type = EventUser
-	me.String()
+	t.Fatal(me.String())
 }
 
 func TestUserEvent(t *testing.T) {
@@ -207,5 +207,5 @@ func TestEventType_String(t *testing.T) {
 			t.Fatalf("expected panic")
 		}
 	}()
-	other.String()
+	t.Fatal(other.String())
 }
