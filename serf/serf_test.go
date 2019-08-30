@@ -1072,7 +1072,7 @@ func TestMemberStatus_String(t *testing.T) {
 			t.Fatalf("expected panic")
 		}
 	}()
-	t.Fatal(other.String())
+	_ = other.String()
 }
 
 func TestSerf_joinLeaveJoin(t *testing.T) {
