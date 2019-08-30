@@ -71,7 +71,7 @@ Options:
 
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
   -rpc-auth=""              RPC auth token of the Serf agent.
-  -prune					Remove agent forcibly from list of members
+  -prune                    Remove agent forcibly from list of members
 `
 	return strings.TrimSpace(helpText)
 }
