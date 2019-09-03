@@ -1470,7 +1470,7 @@ func (s *Serf) handlePrune(old []*memberState, m *memberState) []*memberState {
 	}
 
 	// Send an event along
-	s.logger.Printf("[INFO] serf: EventMemberReap: %s", m.Name)
+	s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s", m.Name)
 	if s.config.EventCh != nil {
 		s.config.EventCh <- MemberEvent{
 			Type:    EventMemberReap,
