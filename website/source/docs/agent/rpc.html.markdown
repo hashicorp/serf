@@ -205,6 +205,8 @@ tags, or delete tags. The request body looks like:
     {"Tags": {"tag1": "val1"}, "DeleteTags": ["tag2"]}
 ```
 
+There is no special response body.
+
 ### stream
 
 The stream command is used to subscribe to a stream of all events
