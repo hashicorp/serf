@@ -93,7 +93,7 @@ https://www.serf.io/docs
 ## Developing Serf
 
 If you wish to work on Serf itself, you'll first need [Go](https://golang.org)
-installed (version 1.8+ is _required_). Make sure you have Go properly
+installed (version 1.10+ is _required_). Make sure you have Go properly
 [installed](https://golang.org/doc/install),
 including setting up your [GOPATH](https://golang.org/doc/code.html#GOPATH).
 
