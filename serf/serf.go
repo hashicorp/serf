@@ -781,11 +781,28 @@ func (s *Serf) Members() []Member {
 	return members
 }
 
-// RemoveFailedNode forcibly removes a failed node from the cluster
+//RemoveFailedNode is a backwards compatabile form
+// of ForceLeave
+func (s *Serf) RemoveFailedNode(node string) error {
+	if err := s.ForceLeave(node, false); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Serf) RemoveFailedNodePrune(node string) error {
+	if err := s.ForceLeave(node, true); err != nil {
+		return err
+	}
+	return nil
+
+}
+
+// ForceLeave forcibly removes a failed node from the cluster
 // immediately, instead of waiting for the reaper to eventually reclaim it.
 // This also has the effect that Serf will no longer attempt to reconnect
 // to this node.
-func (s *Serf) RemoveFailedNode(node string, prune bool) error {
+func (s *Serf) ForceLeave(node string, prune bool) error {
 	// Construct the message to broadcast
 	msg := messageLeave{
 		LTime: s.clock.Time(),

@@ -606,7 +606,18 @@ func (i *AgentIPC) handleForceLeave(client *IPCClient, seq uint64) error {
 	}
 
 	// Attempt leave
-	err := i.agent.ForceLeave(req.Node, req.Prune)
+	if req.Prune {
+		err := i.agent.ForceLeavePrune(req.Node)
+
+		// Respond
+		resp := responseHeader{
+			Seq:   seq,
+			Error: errToString(err),
+		}
+		return client.Send(&resp, nil)
+	}
+
+	err := i.agent.ForceLeave(req.Node)
 
 	// Respond
 	resp := responseHeader{

@@ -96,7 +96,7 @@ WAIT:
 		goto WAIT
 	}
 
-	if err := client.ForceLeave(a2.conf.NodeName, false); err != nil {
+	if err := client.ForceLeave(a2.conf.NodeName); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
@@ -152,7 +152,7 @@ WAIT:
 		goto WAIT
 	}
 
-	if err := client.ForceLeave(a2.conf.NodeName, true); err != nil {
+	if err := client.ForceLeavePrune(a2.conf.NodeName); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
@@ -164,7 +164,6 @@ WAIT:
 	}
 
 }
-
 
 func TestRPCClientJoin(t *testing.T) {
 	client, a1, ipc := testRPCClient(t)
@@ -330,7 +329,7 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 	}
 
 	// Make sure that filters work on member status
-	if err := client.ForceLeave(a2.conf.NodeName, false); err != nil {
+	if err := client.ForceLeave(a2.conf.NodeName); err != nil {
 		t.Fatalf("bad: %s", err)
 	}
 

@@ -250,7 +250,7 @@ func TestSerf_RemoveFailed_eventsLeave(t *testing.T) {
 
 	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 3)
 
-	if err := s1.RemoveFailedNode(s2Config.NodeName, false); err != nil {
+	if err := s1.RemoveFailedNode(s2Config.NodeName); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
@@ -827,7 +827,7 @@ func TestSerfRemoveFailedNode(t *testing.T) {
 	testMember(t, s1.Members(), s2Config.NodeName, StatusFailed)
 
 	// Now remove the failed node
-	if err := s1.RemoveFailedNode(s2Config.NodeName, false); err != nil {
+	if err := s1.RemoveFailedNode(s2Config.NodeName); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
@@ -845,19 +845,18 @@ func TestSerfRemoveFailedNode_prune(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
+	defer s2.Shutdown()
 
 	s3, err := Create(s3Config)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-
-	defer s1.Shutdown()
-	defer s2.Shutdown()
 	defer s3.Shutdown()
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
@@ -883,7 +882,7 @@ func TestSerfRemoveFailedNode_prune(t *testing.T) {
 	testMember(t, s1.Members(), s2Config.NodeName, StatusFailed)
 
 	// Now remove the failed node
-	if err := s1.RemoveFailedNode(s2Config.NodeName, true); err != nil {
+	if err := s1.RemoveFailedNodePrune(s2Config.NodeName); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
@@ -908,7 +907,7 @@ func TestSerfRemoveFailedNode_ourself(t *testing.T) {
 
 	testutil.Yield()
 
-	if err := s1.RemoveFailedNode("somebody", false); err != nil {
+	if err := s1.RemoveFailedNode("somebody"); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 }
@@ -1337,7 +1336,7 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 	testMember(t, s1.Members(), s2Config.NodeName, StatusFailed)
 
 	// Now remove the failed node
-	if err := s1.RemoveFailedNode(s2Config.NodeName, false); err != nil {
+	if err := s1.RemoveFailedNode(s2Config.NodeName); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
