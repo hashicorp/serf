@@ -1471,7 +1471,7 @@ func (s *Serf) resolveNodeConflict() {
 }
 
 // handlePrune is a simplified version of Reap() which only runs when the prune
-//flag is set
+// flag is set
 func (s *Serf) handlePrune(old []*memberState, m *memberState) []*memberState {
 	// Delete from members
 	delete(s.members, m.Name)
