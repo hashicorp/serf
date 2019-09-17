@@ -183,7 +183,7 @@ func (a *Agent) ForceLeave(node string) error {
 }
 
 // ForceLeavePrune completely removes a failed node from the
-//member list entirely
+// member list entirely
 func (a *Agent) ForceLeavePrune(node string) error {
 	a.logger.Printf("[INFO] agent: Force leaving node: %s", node)
 	err := a.serf.RemoveFailedNodePrune(node)
