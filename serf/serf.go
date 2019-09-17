@@ -781,7 +781,7 @@ func (s *Serf) Members() []Member {
 	return members
 }
 
-//RemoveFailedNode is a backwards compatabile form
+// RemoveFailedNode is a backwards compatible form
 // of ForceLeave
 func (s *Serf) RemoveFailedNode(node string) error {
 	if err := s.ForceLeave(node, false); err != nil {
