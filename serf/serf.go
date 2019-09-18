@@ -1127,14 +1127,18 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		}
 
 		if leaveMsg.Prune {
-			s.leftMembers = s.eraseNode(s.leftMembers, member)
+			s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s %s", member.Name, member.Member.Addr)
+			s.leftMembers = removeOldMember(s.leftMembers, member.Name)
+			s.eraseNode(member)
 		}
 
 		return true
 
 	case StatusLeft:
 		if leaveMsg.Prune {
-			s.leftMembers = s.eraseNode(s.leftMembers, member)
+			s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s %s", member.Name, member.Member.Addr)
+			s.leftMembers = removeOldMember(s.leftMembers, member.Name)
+			s.eraseNode(member)
 		}
 		return true
 
@@ -1464,18 +1468,7 @@ func (s *Serf) resolveNodeConflict() {
 }
 
 //eraseNode takes a node completely out of the member list
-func (s *Serf) eraseNode(old []*memberState, m *memberState) []*memberState {
-	// Delete from the given list
-	n := len(old)
-	for i, v := range old {
-		if v == m {
-			old[i], old[i-1] = old[i-1], nil
-			old = old[:i-1]
-			n--
-			i--
-		}
-	}
-
+func (s *Serf) eraseNode(m *memberState) {
 	// Delete from members
 	delete(s.members, m.Name)
 
@@ -1490,14 +1483,12 @@ func (s *Serf) eraseNode(old []*memberState, m *memberState) []*memberState {
 	}
 
 	// Send an event along
-	s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s", m.Name)
 	if s.config.EventCh != nil {
 		s.config.EventCh <- MemberEvent{
 			Type:    EventMemberReap,
 			Members: []Member{m.Member},
 		}
 	}
-	return old
 }
 
 // handleReap periodically reaps the list of failed and left members, as well
@@ -1544,8 +1535,15 @@ func (s *Serf) reap(old []*memberState, now time.Time, timeout time.Duration) []
 			continue
 		}
 
+		// Delete from the list
+		old[i], old[n-1] = old[n-1], nil
+		old = old[:n-1]
+		n--
+		i--
+
 		// Delete from members and send out event
-		old = s.eraseNode(old, m)
+		s.logger.Printf("[INFO] serf: EventMemberReap: %s", m.Name)
+		s.eraseNode(m)
 
 	}
 
