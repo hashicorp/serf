@@ -836,6 +836,67 @@ func TestSerfRemoveFailedNode(t *testing.T) {
 	testMember(t, s3.Members(), s2Config.NodeName, StatusLeft)
 }
 
+func TestSerfRemoveFailedNode_prune(t *testing.T) {
+	s1Config := testConfig()
+	s2Config := testConfig()
+	s3Config := testConfig()
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+
+	s3, err := Create(s3Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s3.Shutdown()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Now force the shutdown of s2 so it appears to fail.
+	if err := s2.Shutdown(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 5)
+
+	// Verify that s2 is "failed"
+	testMember(t, s1.Members(), s2Config.NodeName, StatusFailed)
+
+	// Now remove the failed node
+	if err := s1.RemoveFailedNodePrune(s2Config.NodeName); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Check to make sure it's gone
+	if len(s1.Members()) != 2 {
+		t.Fatalf("err: numbers of members should be two, found %v", len(s1.Members()))
+	}
+
+	if len(s3.Members()) != 2 {
+		t.Fatalf("err: numbers of members should be two, found %v", len(s3.Members()))
+	}
+
+}
+
 func TestSerfRemoveFailedNode_ourself(t *testing.T) {
 	s1Config := testConfig()
 	s1, err := Create(s1Config)

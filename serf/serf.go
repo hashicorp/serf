@@ -781,15 +781,26 @@ func (s *Serf) Members() []Member {
 	return members
 }
 
-// RemoveFailedNode forcibly removes a failed node from the cluster
+// RemoveFailedNode is a backwards compatible form
+// of forceleave
+func (s *Serf) RemoveFailedNode(node string) error {
+	return s.forceLeave(node, false)
+}
+
+func (s *Serf) RemoveFailedNodePrune(node string) error {
+	return s.forceLeave(node, true)
+}
+
+// ForceLeave forcibly removes a failed node from the cluster
 // immediately, instead of waiting for the reaper to eventually reclaim it.
 // This also has the effect that Serf will no longer attempt to reconnect
 // to this node.
-func (s *Serf) RemoveFailedNode(node string) error {
+func (s *Serf) forceLeave(node string, prune bool) error {
 	// Construct the message to broadcast
 	msg := messageLeave{
 		LTime: s.clock.Time(),
 		Node:  node,
+		Prune: prune,
 	}
 	s.clock.Increment()
 
@@ -1060,6 +1071,7 @@ func (s *Serf) handleNodeUpdate(n *memberlist.Node) {
 
 // handleNodeLeaveIntent is called when an intent to leave is received.
 func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
+
 	// Witness a potentially newer time
 	s.clock.Witness(leaveMsg.LTime)
 
@@ -1098,6 +1110,7 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		// Remove from the failed list and add to the left list. We add
 		// to the left list so that when we do a sync, other nodes will
 		// remove it from their failed list.
+
 		s.failedMembers = removeOldMember(s.failedMembers, member.Name)
 		s.leftMembers = append(s.leftMembers, member)
 
@@ -1112,7 +1125,23 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 				Members: []Member{member.Member},
 			}
 		}
+
+		if leaveMsg.Prune {
+			s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s %s", member.Name, member.Member.Addr)
+			s.leftMembers = removeOldMember(s.leftMembers, member.Name)
+			s.eraseNode(member)
+		}
+
 		return true
+
+	case StatusLeft:
+		if leaveMsg.Prune {
+			s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s %s", member.Name, member.Member.Addr)
+			s.leftMembers = removeOldMember(s.leftMembers, member.Name)
+			s.eraseNode(member)
+		}
+		return true
+
 	default:
 		return false
 	}
@@ -1438,6 +1467,30 @@ func (s *Serf) resolveNodeConflict() {
 	}
 }
 
+//eraseNode takes a node completely out of the member list
+func (s *Serf) eraseNode(m *memberState) {
+	// Delete from members
+	delete(s.members, m.Name)
+
+	// Tell the coordinate client the node has gone away and delete
+	// its cached coordinates.
+	if !s.config.DisableCoordinates {
+		s.coordClient.ForgetNode(m.Name)
+
+		s.coordCacheLock.Lock()
+		delete(s.coordCache, m.Name)
+		s.coordCacheLock.Unlock()
+	}
+
+	// Send an event along
+	if s.config.EventCh != nil {
+		s.config.EventCh <- MemberEvent{
+			Type:    EventMemberReap,
+			Members: []Member{m.Member},
+		}
+	}
+}
+
 // handleReap periodically reaps the list of failed and left members, as well
 // as old buffered intents.
 func (s *Serf) handleReap() {
@@ -1488,27 +1541,10 @@ func (s *Serf) reap(old []*memberState, now time.Time, timeout time.Duration) []
 		n--
 		i--
 
-		// Delete from members
-		delete(s.members, m.Name)
-
-		// Tell the coordinate client the node has gone away and delete
-		// its cached coordinates.
-		if !s.config.DisableCoordinates {
-			s.coordClient.ForgetNode(m.Name)
-
-			s.coordCacheLock.Lock()
-			delete(s.coordCache, m.Name)
-			s.coordCacheLock.Unlock()
-		}
-
-		// Send an event along
+		// Delete from members and send out event
 		s.logger.Printf("[INFO] serf: EventMemberReap: %s", m.Name)
-		if s.config.EventCh != nil {
-			s.config.EventCh <- MemberEvent{
-				Type:    EventMemberReap,
-				Members: []Member{m.Member},
-			}
-		}
+		s.eraseNode(m)
+
 	}
 
 	return old

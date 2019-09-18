@@ -124,7 +124,8 @@ type eventRequest struct {
 }
 
 type forceLeaveRequest struct {
-	Node string
+	Node  string
+	Prune bool
 }
 
 type joinRequest struct {
@@ -605,7 +606,12 @@ func (i *AgentIPC) handleForceLeave(client *IPCClient, seq uint64) error {
 	}
 
 	// Attempt leave
-	err := i.agent.ForceLeave(req.Node)
+	var err error
+	if req.Prune {
+		err = i.agent.ForceLeavePrune(req.Node)
+	} else {
+		err = i.agent.ForceLeave(req.Node)
+	}
 
 	// Respond
 	resp := responseHeader{

@@ -112,6 +112,59 @@ WAIT:
 	}
 }
 
+func TestRPCClientForceLeave_prune(t *testing.T) {
+	client, a1, ipc := testRPCClient(t)
+	a2 := testAgent(nil)
+	defer ipc.Shutdown()
+	defer client.Close()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer a1.Shutdown()
+
+	if err := a2.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer a2.Shutdown()
+
+	testutil.Yield()
+
+	s2Addr := a2.conf.MemberlistConfig.BindAddr
+	if _, err := a1.Join([]string{s2Addr}, false); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	if err := a2.Shutdown(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	start := time.Now()
+WAIT:
+	time.Sleep(a1.conf.MemberlistConfig.ProbeInterval * 3)
+	m := a1.Serf().Members()
+	if len(m) != 2 {
+		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
+	}
+	if findMember(t, m, a2.conf.NodeName).Status != serf.StatusFailed && time.Now().Sub(start) < 3*time.Second {
+		goto WAIT
+	}
+
+	if err := client.ForceLeavePrune(a2.conf.NodeName); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	m = a1.Serf().Members()
+	if len(m) != 1 {
+		t.Fatalf("should have 1 members: %#v", a1.Serf().Members())
+	}
+
+}
+
 func TestRPCClientJoin(t *testing.T) {
 	client, a1, ipc := testRPCClient(t)
 	a2 := testAgent(nil)
