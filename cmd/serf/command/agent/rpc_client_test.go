@@ -117,16 +117,16 @@ func TestRPCClientForceLeave_prune(t *testing.T) {
 	a2 := testAgent(nil)
 	defer ipc.Shutdown()
 	defer client.Close()
-	defer a1.Shutdown()
-	defer a2.Shutdown()
 
 	if err := a1.Start(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
+	defer a1.Shutdown()
 
 	if err := a2.Start(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
+	defer a2.Shutdown()
 
 	testutil.Yield()
 

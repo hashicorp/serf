@@ -199,7 +199,8 @@ func (c *RPCClient) ForceLeave(node string) error {
 	return c.genericRPC(&header, &req, nil)
 }
 
-// If the prune flag is set, remove the node entirely
+//ForceLeavePrune uses ForceLeave but is used to reap the
+//node entirely
 func (c *RPCClient) ForceLeavePrune(node string) error {
 	header := requestHeader{
 		Command: forceLeaveCommand,

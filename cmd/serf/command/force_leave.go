@@ -36,15 +36,15 @@ func (c *ForceLeaveCommand) Run(args []string) int {
 		return 1
 	}
 
-	RPCClient, err := RPCClient(*rpcAddr, *rpcAuth)
+	client, err := RPCClient(*rpcAddr, *rpcAuth)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error connecting to Serf agent: %s", err))
 		return 1
 	}
-	defer RPCClient.Close()
+	defer client.Close()
 
 	if prune {
-		err = RPCClient.ForceLeavePrune(nodes[0])
+		err = client.ForceLeavePrune(nodes[0])
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error force leaving: %s", err))
 			return 1
@@ -53,7 +53,7 @@ func (c *ForceLeaveCommand) Run(args []string) int {
 
 	}
 
-	err = RPCClient.ForceLeave(nodes[0])
+	err = client.ForceLeave(nodes[0])
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error force leaving: %s", err))
 		return 1

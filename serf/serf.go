@@ -782,27 +782,20 @@ func (s *Serf) Members() []Member {
 }
 
 // RemoveFailedNode is a backwards compatible form
-// of ForceLeave
+// of forceleave
 func (s *Serf) RemoveFailedNode(node string) error {
-	if err := s.ForceLeave(node, false); err != nil {
-		return err
-	}
-	return nil
+	return s.forceLeave(node, false)
 }
 
 func (s *Serf) RemoveFailedNodePrune(node string) error {
-	if err := s.ForceLeave(node, true); err != nil {
-		return err
-	}
-	return nil
-
+	return s.forceLeave(node, true)
 }
 
 // ForceLeave forcibly removes a failed node from the cluster
 // immediately, instead of waiting for the reaper to eventually reclaim it.
 // This also has the effect that Serf will no longer attempt to reconnect
 // to this node.
-func (s *Serf) ForceLeave(node string, prune bool) error {
+func (s *Serf) forceLeave(node string, prune bool) error {
 	// Construct the message to broadcast
 	msg := messageLeave{
 		LTime: s.clock.Time(),
@@ -1134,14 +1127,14 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		}
 
 		if leaveMsg.Prune {
-			s.handlePrune(s.leftMembers, member)
+			s.leftMembers = s.eraseNode(s.leftMembers, member)
 		}
 
 		return true
 
 	case StatusLeft:
 		if leaveMsg.Prune {
-			s.handlePrune(s.leftMembers, member)
+			s.leftMembers = s.eraseNode(s.leftMembers, member)
 		}
 		return true
 
@@ -1470,9 +1463,19 @@ func (s *Serf) resolveNodeConflict() {
 	}
 }
 
-// handlePrune is a simplified version of Reap() which only runs when the prune
-// flag is set
-func (s *Serf) handlePrune(old []*memberState, m *memberState) []*memberState {
+//eraseNode takes a node completely out of the member list
+func (s *Serf) eraseNode(old []*memberState, m *memberState) []*memberState {
+	// Delete from the given list
+	n := len(old)
+	for i, v := range old {
+		if v == m {
+			old[i], old[i-1] = old[i-1], nil
+			old = old[:i-1]
+			n--
+			i--
+		}
+	}
+
 	// Delete from members
 	delete(s.members, m.Name)
 
@@ -1541,33 +1544,9 @@ func (s *Serf) reap(old []*memberState, now time.Time, timeout time.Duration) []
 			continue
 		}
 
-		// Delete from the list
-		old[i], old[n-1] = old[n-1], nil
-		old = old[:n-1]
-		n--
-		i--
+		// Delete from members and send out event
+		old = s.eraseNode(old, m)
 
-		// Delete from members
-		delete(s.members, m.Name)
-
-		// Tell the coordinate client the node has gone away and delete
-		// its cached coordinates.
-		if !s.config.DisableCoordinates {
-			s.coordClient.ForgetNode(m.Name)
-
-			s.coordCacheLock.Lock()
-			delete(s.coordCache, m.Name)
-			s.coordCacheLock.Unlock()
-		}
-
-		// Send an event along
-		s.logger.Printf("[INFO] serf: EventMemberReap: %s", m.Name)
-		if s.config.EventCh != nil {
-			s.config.EventCh <- MemberEvent{
-				Type:    EventMemberReap,
-				Members: []Member{m.Member},
-			}
-		}
 	}
 
 	return old
