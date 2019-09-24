@@ -1102,6 +1102,10 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 	case StatusAlive:
 		member.Status = StatusLeaving
 		member.statusLTime = leaveMsg.LTime
+
+		if leaveMsg.Prune {
+			s.handlePrune(member)
+		}
 		return true
 	case StatusFailed:
 		member.Status = StatusLeft
@@ -1127,24 +1131,27 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		}
 
 		if leaveMsg.Prune {
-			s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s %s", member.Name, member.Member.Addr)
-			s.leftMembers = removeOldMember(s.leftMembers, member.Name)
-			s.eraseNode(member)
+			s.handlePrune(member)
 		}
 
-		return true
-
-	case StatusLeft:
-		if leaveMsg.Prune {
-			s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s %s", member.Name, member.Member.Addr)
-			s.leftMembers = removeOldMember(s.leftMembers, member.Name)
-			s.eraseNode(member)
-		}
 		return true
 
 	default:
 		return false
 	}
+}
+
+// handlePrune waits for nodes that are leaving and then forcibly
+// erases a member from the list of members
+func (s *Serf) handlePrune(member *memberState) {
+	if member.Status == StatusLeaving {
+		time.Sleep(s.config.BroadcastTimeout + s.config.LeavePropagateDelay)
+	}
+
+	s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s %s", member.Name, member.Member.Addr)
+	s.leftMembers = removeOldMember(s.leftMembers, member.Name)
+	s.eraseNode(member)
+
 }
 
 // handleNodeJoinIntent is called when a node broadcasts a
