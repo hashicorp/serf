@@ -1135,6 +1135,13 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		}
 
 		return true
+
+	case StatusLeaving:
+		if leaveMsg.Prune {
+			s.handlePrune(member)
+		}
+		return true
+
 	case StatusLeft:
 		if leaveMsg.Prune {
 			s.handlePrune(member)
@@ -1153,7 +1160,11 @@ func (s *Serf) handlePrune(member *memberState) {
 	}
 
 	s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s %s", member.Name, member.Member.Addr)
-	s.leftMembers = removeOldMember(s.leftMembers, member.Name)
+
+	//If we are leaving or left we may be in that list of members
+	if member.Status == StatusLeaving || member.Status == StatusLeft {
+		s.leftMembers = removeOldMember(s.leftMembers, member.Name)
+	}
 	s.eraseNode(member)
 
 }
