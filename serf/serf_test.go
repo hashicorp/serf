@@ -539,50 +539,10 @@ func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
 	}
 }
 
-func TestSerf_forceLeaveAlive(t *testing.T) {
-	s1Config := testConfig()
-	s2Config := testConfig()
-
-	s1, err := Create(s1Config)
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-	defer s1.Shutdown()
-
-	s2, err := Create(s2Config)
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-	defer s2.Shutdown()
-
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
-	// s1 should be alive when we call the force leave
-	// but not refute it
-	s2.forceLeave(s1.config.NodeName, true)
-
-	//double check we are alive
-	retry.Run(t, func(r *retry.R) {
-
-		if err := testMemberStatus(s1.Members(), s1Config.NodeName, StatusAlive); err != nil {
-			r.Fatal(err)
-		}
-	})
-	s1.Leave()
-
-	memberlen := len(s2.Members())
-	if memberlen != 1 {
-		t.Fatalf("wanted 1, got %v", s2.Members())
-	}
-
-}
-
 func TestSerf_forceLeaveFailed(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()
+	s3Config := testConfig()
 
 	s1, err := Create(s1Config)
 	if err != nil {
@@ -596,7 +556,20 @@ func TestSerf_forceLeaveFailed(t *testing.T) {
 	}
 
 	defer s2.Shutdown()
+
+	s3, err := Create(s3Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	defer s3.Shutdown()
+
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -612,8 +585,8 @@ func TestSerf_forceLeaveFailed(t *testing.T) {
 	s1.forceLeave(s2.config.NodeName, true)
 
 	memberlen := len(s1.Members())
-	if memberlen != 1 {
-		t.Fatalf("wanted 1 alive member, got %v", s1.Members())
+	if memberlen != 2 {
+		t.Fatalf("wanted 2 alive members, got %v", s1.Members())
 	}
 
 }
@@ -621,6 +594,7 @@ func TestSerf_forceLeaveFailed(t *testing.T) {
 func TestSerf_forceLeaveLeaving(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()
+	s3Config := testConfig()
 
 	//make it so it doesn't get reaped
 	// allow for us to see the leaving state
@@ -629,6 +603,9 @@ func TestSerf_forceLeaveLeaving(t *testing.T) {
 
 	s2Config.TombstoneTimeout = 1 * time.Hour
 	s2Config.LeavePropagateDelay = 5 * time.Second
+
+	s3Config.TombstoneTimeout = 1 * time.Hour
+	s3Config.LeavePropagateDelay = 5 * time.Second
 
 	s1, err := Create(s1Config)
 	if err != nil {
@@ -643,7 +620,19 @@ func TestSerf_forceLeaveLeaving(t *testing.T) {
 	}
 	defer s2.Shutdown()
 
+	s3, err := Create(s3Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s3.Shutdown()
+
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, true)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, true)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -662,18 +651,20 @@ func TestSerf_forceLeaveLeaving(t *testing.T) {
 	s1.forceLeave(s2.config.NodeName, true)
 
 	memberlen := len(s1.Members())
-	if memberlen != 1 {
-		t.Fatalf("wanted 1 alive member, got %v", s1.Members())
+	if memberlen != 2 {
+		t.Fatalf("wanted 2 alive members, got %v", s1.Members())
 	}
 }
 
 func TestSerf_forceLeaveLeft(t *testing.T) {
 	s1Config := testConfig()
 	s2Config := testConfig()
+	s3Config := testConfig()
 
 	//make it so it doesn't get reaped
 	s1Config.TombstoneTimeout = 1 * time.Hour
 	s2Config.TombstoneTimeout = 1 * time.Hour
+	s3Config.TombstoneTimeout = 1 * time.Hour
 
 	s1, err := Create(s1Config)
 	if err != nil {
@@ -687,7 +678,19 @@ func TestSerf_forceLeaveLeft(t *testing.T) {
 	}
 	defer s2.Shutdown()
 
+	s3, err := Create(s3Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s3.Shutdown()
+
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, true)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, true)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -706,8 +709,8 @@ func TestSerf_forceLeaveLeft(t *testing.T) {
 	s1.forceLeave(s2.config.NodeName, true)
 
 	memberlen := len(s1.Members())
-	if memberlen != 1 {
-		t.Fatalf("wanted 1 alive member, got %v", s1.Members())
+	if memberlen != 2 {
+		t.Fatalf("wanted 2 alive members, got %v", s1.Members())
 	}
 
 }

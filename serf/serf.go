@@ -1136,13 +1136,7 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 
 		return true
 
-	case StatusLeaving:
-		if leaveMsg.Prune {
-			s.handlePrune(member)
-		}
-		return true
-
-	case StatusLeft:
+	case StatusLeaving, StatusLeft:
 		if leaveMsg.Prune {
 			s.handlePrune(member)
 		}
