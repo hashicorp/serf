@@ -1765,14 +1765,14 @@ func (s *Serf) Stats() map[string]string {
 	members := toString(uint64(len(s.members)))
 	failed := toString(uint64(len(s.failedMembers)))
 	left := toString(uint64(len(s.leftMembers)))
-	health_score := toString(uint64(s.memberlist.GetHealthScore()))
+	healthScore := toString(uint64(s.memberlist.GetHealthScore()))
 
 	s.memberLock.RUnlock()
 	stats := map[string]string{
 		"members":      members,
 		"failed":       failed,
 		"left":         left,
-		"health_score": health_score,
+		"health_score": healthScore,
 		"member_time":  toString(uint64(s.clock.Time())),
 		"event_time":   toString(uint64(s.eventClock.Time())),
 		"query_time":   toString(uint64(s.queryClock.Time())),
