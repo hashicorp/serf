@@ -44,7 +44,7 @@ const (
 // with incompatible dimensions.
 type DimensionalityConflictError struct{}
 
-// Adds the error interface.
+// Error adds the error interface.
 func (e DimensionalityConflictError) Error() string {
 	return "coordinate dimensionality does not match"
 }

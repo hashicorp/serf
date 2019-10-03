@@ -22,7 +22,7 @@ func testRPCClient(t *testing.T) (*client.RPCClient, *Agent, *AgentIPC) {
 	return testRPCClientWithConfig(t, agentConf, serfConf)
 }
 
-// testRPCClient returns an RPCClient connected to an RPC server that
+// testRPCClientWithConfig checks a case when returns an RPCClient connected to an RPC server that
 // serves only this connection.
 func testRPCClientWithConfig(t *testing.T, agentConf *Config,
 	serfConf *serf.Config) (*client.RPCClient, *Agent, *AgentIPC) {

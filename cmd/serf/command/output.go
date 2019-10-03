@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Format some raw data for output. For better or worse, this currently forces
+// formatOutput; Format some raw data for output. For better or worse, this currently forces
 // the passed data object to implement fmt.Stringer, since it's pretty hard to
 // implement a canonical *-to-string function.
 func formatOutput(data interface{}, format string) ([]byte, error) {
@@ -31,7 +31,7 @@ func formatOutput(data interface{}, format string) ([]byte, error) {
 	return []byte(prepareOutput(out)), nil
 }
 
-// Apply some final formatting to make sure we don't end up with extra newlines
+// prepareOutput; Apply some final formatting to make sure we don't end up with extra newlines
 func prepareOutput(in string) string {
 	return strings.TrimSpace(string(in))
 }

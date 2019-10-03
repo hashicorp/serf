@@ -148,12 +148,12 @@ func (a *Agent) ShutdownCh() <-chan struct{} {
 	return a.shutdownCh
 }
 
-// Returns the Serf agent of the running Agent.
+// Serf returns the Serf agent of the running Agent.
 func (a *Agent) Serf() *serf.Serf {
 	return a.serf
 }
 
-// Returns the Serf config of the running Agent.
+// SerfConfig returns the Serf config of the running Agent.
 func (a *Agent) SerfConfig() *serf.Config {
 	return a.conf
 }

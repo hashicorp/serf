@@ -229,7 +229,7 @@ type Config struct {
 	BroadcastTimeout    time.Duration `mapstructure:"-"`
 }
 
-// BindAddrParts returns the parts of the BindAddr that should be
+// AddrParts returns the parts of the BindAddr that should be
 // used to configure Serf.
 func (c *Config) AddrParts(address string) (string, int, error) {
 	checkAddr := address
@@ -564,7 +564,7 @@ func ReadConfigPaths(paths []string) (*Config, error) {
 	return result, nil
 }
 
-// Implement the sort interface for dirEnts
+// Len; Implement the sort interface for dirEnts
 func (d dirEnts) Len() int {
 	return len(d)
 }

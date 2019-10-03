@@ -135,7 +135,7 @@ func eventClean(v string) string {
 	return v
 }
 
-// Sends data on stdin for a member event.
+// memberEventStdin sends data on stdin for a member event.
 //
 // The format for the data is unix tool friendly, separated by whitespace
 // and newlines. The structure of each line for any member event is:
@@ -165,7 +165,7 @@ func memberEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.MemberEv
 	}
 }
 
-// Sends data on stdin for an event. The stdin simply contains the
+// streamPayload sends data on stdin for an event. The stdin simply contains the
 // payload (if any).
 // Most shells read implementations need a newline, force it to be there
 func streamPayload(logger *log.Logger, stdin io.WriteCloser, buf []byte) {

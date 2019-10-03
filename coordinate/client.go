@@ -140,7 +140,7 @@ func (c *Client) latencyFilter(node string, rttSeconds float64) float64 {
 	return sorted[len(sorted)/2]
 }
 
-// updateVivialdi updates the Vivaldi portion of the client's coordinate. This
+// updateVivaldi updates the Vivaldi portion of the client's coordinate. This
 // assumes that the mutex has been locked already.
 func (c *Client) updateVivaldi(other *Coordinate, rttSeconds float64) {
 	const zeroThreshold = 1.0e-6
