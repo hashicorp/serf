@@ -50,24 +50,24 @@ done
 func testEventScript(t *testing.T, script string) (string, string) {
 	scriptFile, err := ioutil.TempFile("", "serf")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer scriptFile.Close()
 
 	if err := scriptFile.Chmod(0755); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	resultFile, err := ioutil.TempFile("", "serf-result")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer resultFile.Close()
 
 	_, err = scriptFile.Write([]byte(
 		fmt.Sprintf(script, resultFile.Name())))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	return scriptFile.Name(), resultFile.Name()
@@ -110,7 +110,7 @@ func TestScriptEventHandler(t *testing.T) {
 
 	result, err := ioutil.ReadFile(results)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	expected1 := "ourname ourrole\neast-aws\nbad\nmember-join\nos-env-foo\nfoo\t1.2.3.4\tbar\trole=bar,foo=bar\n"
@@ -151,7 +151,7 @@ func TestScriptUserEventHandler(t *testing.T) {
 
 	result, err := ioutil.ReadFile(results)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	expected := "ourname ourrole\neast-aws\nuser baz\nuser 1\nfoobar\n"
@@ -190,7 +190,7 @@ func TestScriptQueryEventHandler(t *testing.T) {
 
 	result, err := ioutil.ReadFile(results)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	expected := "ourname ourrole\neast-aws\nquery uptime\nquery 42\nload average\n"

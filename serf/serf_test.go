@@ -2,13 +2,16 @@ package serf
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,16 +22,16 @@ import (
 	"github.com/hashicorp/serf/testutil/retry"
 )
 
-func testConfig() *Config {
+func testConfig(t *testing.T, ip net.IP) *Config {
 	config := DefaultConfig()
 	config.Init()
-	config.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
+	config.MemberlistConfig.BindAddr = ip.String()
 
 	// Set probe intervals that are aggressive for finding bad nodes
 	config.MemberlistConfig.GossipInterval = 5 * time.Millisecond
 	config.MemberlistConfig.ProbeInterval = 50 * time.Millisecond
 	config.MemberlistConfig.ProbeTimeout = 25 * time.Millisecond
-	config.MemberlistConfig.TCPTimeout = 1 * time.Millisecond
+	config.MemberlistConfig.TCPTimeout = 100 * time.Millisecond
 	config.MemberlistConfig.SuspicionMult = 1
 
 	config.NodeName = fmt.Sprintf("Node %s", config.MemberlistConfig.BindAddr)
@@ -44,15 +47,25 @@ func testConfig() *Config {
 	config.ReconnectTimeout = 1 * time.Microsecond
 	config.TombstoneTimeout = 1 * time.Microsecond
 
+	if t != nil {
+		config.Logger = testutil.TestLoggerWithName(t, config.NodeName)
+		config.MemberlistConfig.Logger = config.Logger
+	}
+
 	return config
 }
 
+// compatible with testing.TB and *retry.R
+type testFailer interface {
+	Fatalf(format string, args ...interface{})
+}
+
 // testMember tests that a member in a list is in a given state.
-func testMember(t *testing.T, members []Member, name string, status MemberStatus) {
+func testMember(tf testFailer, members []Member, name string, status MemberStatus) {
 	for _, m := range members {
 		if m.Name == name {
 			if m.Status != status {
-				panic(fmt.Sprintf("bad state for %s: %d", name, m.Status))
+				tf.Fatalf("bad state for %s: %d", name, m.Status)
 			}
 			return
 		}
@@ -63,28 +76,27 @@ func testMember(t *testing.T, members []Member, name string, status MemberStatus
 		return
 	}
 
-	panic(fmt.Sprintf("node not found: %s", name))
+	tf.Fatalf("node not found: %s", name)
 }
 
 // testMemberStatus is testMember but returns an error
 // instead of failing the test
-func testMemberStatus(members []Member, name string, status MemberStatus) error {
+func testMemberStatus(tf testFailer, members []Member, name string, status MemberStatus) {
 	for _, m := range members {
 		if m.Name == name {
 			if m.Status != status {
-				return fmt.Errorf("bad state for %s: %d", name, m.Status)
+				tf.Fatalf("bad state for %s: %d", name, m.Status)
 			}
-			return nil
+			return
 		}
 	}
 
 	if status == StatusNone {
 		// We didn't expect to find it
-		return nil
+		return
 	}
 
-	return fmt.Errorf("node not found: %s", name)
-
+	tf.Fatalf("node not found: %s", name)
 }
 
 func TestCreate_badProtocolVersion(t *testing.T) {
@@ -100,57 +112,69 @@ func TestCreate_badProtocolVersion(t *testing.T) {
 		{ProtocolVersionMax - 1, false},
 	}
 
-	for _, tc := range cases {
-		c := testConfig()
-		c.ProtocolVersion = tc.version
-		s, err := Create(c)
-		if tc.err && err == nil {
-			t.Errorf("Should've failed with version: %d", tc.version)
-		} else if !tc.err && err != nil {
-			t.Errorf("Version '%d' error: %s", tc.version, err)
-		}
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
 
-		if err == nil {
-			s.Shutdown()
-		}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(fmt.Sprintf("version-%d", tc.version), func(t *testing.T) {
+			c := testConfig(t, ip1)
+			c.ProtocolVersion = tc.version
+			s, err := Create(c)
+			if tc.err && err == nil {
+				t.Errorf("Should've failed with version: %d", tc.version)
+			} else if !tc.err && err != nil {
+				t.Errorf("Version '%d' error: %s", tc.version, err)
+			}
+
+			if err == nil {
+				s.Shutdown()
+			}
+		})
 	}
 }
 
 func TestSerf_eventsFailed(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
 	// Create the s1 config with an event channel so we can listen
 	eventCh := make(chan Event, 4)
-	s1Config := testConfig()
+	s1Config := testConfig(t, ip1)
 	s1Config.EventCh = eventCh
 
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
-	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
-	if err := s2.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+	err = s2.Shutdown()
+	if err != nil {
+		t.Fatalf("err: %v", err)
 	}
 
-	time.Sleep(1 * time.Second)
+	waitUntilNumNodes(t, 1, s1)
 
 	// Since s2 shutdown, we check the events to make sure we got failures.
 	testEvents(t, eventCh, s2Config.NodeName,
@@ -158,77 +182,89 @@ func TestSerf_eventsFailed(t *testing.T) {
 }
 
 func TestSerf_eventsJoin(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
 	// Create the s1 config with an event channel so we can listen
 	eventCh := make(chan Event, 4)
-	s1Config := testConfig()
+	s1Config := testConfig(t, ip1)
 	s1Config.EventCh = eventCh
 
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
-	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	testEvents(t, eventCh, s2Config.NodeName,
 		[]EventType{EventMemberJoin})
 }
 
 func TestSerf_eventsLeave(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
 	// Create the s1 config with an event channel so we can listen
 	eventCh := make(chan Event, 4)
-	s1Config := testConfig()
+	s1Config := testConfig(t, ip1)
 	s1Config.EventCh = eventCh
 	// Make the reap interval longer in this test
 	// so that the leave does not also cause a reap
 	s1Config.ReapInterval = 30 * time.Second
 
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
-	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	if err := s2.Leave(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	retry.Run(t, func(r *retry.R) {
+		testMemberStatus(r, s1.Members(), s2Config.NodeName, StatusLeft)
+	})
 
 	// Now that s2 has left, we check the events to make sure we got
 	// a leave event in s1 about the leave.
@@ -237,46 +273,53 @@ func TestSerf_eventsLeave(t *testing.T) {
 }
 
 func TestSerf_RemoveFailed_eventsLeave(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
 	// Create the s1 config with an event channel so we can listen
 	eventCh := make(chan Event, 4)
-	s1Config := testConfig()
+	s1Config := testConfig(t, ip1)
 	s1Config.EventCh = eventCh
 
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
-	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	if err := s2.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 3)
 
 	if err := s1.RemoveFailedNode(s2Config.NodeName); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	retry.Run(t, func(r *retry.R) {
+		testMemberStatus(r, s1.Members(), s2Config.NodeName, StatusLeft)
+	})
 
 	// Now that s2 has failed and been marked as left, we check the
 	// events to make sure we got a leave event in s1 about the leave.
@@ -285,47 +328,52 @@ func TestSerf_RemoveFailed_eventsLeave(t *testing.T) {
 }
 
 func TestSerf_eventsUser(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
 	// Create the s1 config with an event channel so we can listen
 	eventCh := make(chan Event, 4)
-	s1Config := testConfig()
-	s2Config := testConfig()
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
 	s2Config.EventCh = eventCh
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
 	defer s2.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	// Fire a user event
 	if err := s1.UserEvent("event!", []byte("test"), false); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	// testutil.Yield()
 
 	// Fire a user event
 	if err := s1.UserEvent("second", []byte("foobar"), false); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	// testutil.Yield()
 
 	// check the events to make sure we got
 	// a leave event in s1 about the leave.
@@ -335,13 +383,18 @@ func TestSerf_eventsUser(t *testing.T) {
 }
 
 func TestSerf_eventsUser_sizeLimit(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
 	// Create the s1 config with an event channel so we can listen
-	s1Config := testConfig()
+	s1Config := testConfig(t, ip1)
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
+
+	waitUntilNumNodes(t, 1, s1)
 
 	name := "this is too large an event"
 	payload := make([]byte, s1Config.UserEventSizeLimit)
@@ -401,200 +454,200 @@ func TestSerf_getQueueMax(t *testing.T) {
 }
 
 func TestSerf_joinLeave(t *testing.T) {
-	s1Config := testConfig()
-	s2Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
-	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	testutil.Yield()
-
-	if len(s1.Members()) != 1 || s1.NumNodes() != 1 {
-		t.Fatalf("s1 members: %d && %d", len(s1.Members()), s1.NumNodes())
-	}
-
-	if len(s2.Members()) != 1 || s2.NumNodes() != 1 {
-		t.Fatalf("s2 members: %d && %d", len(s2.Members()), s2.NumNodes())
-	}
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
-	if len(s1.Members()) != 2 || s1.NumNodes() != 2 {
-		t.Fatalf("s1 members: %d && %d", len(s1.Members()), s1.NumNodes())
-	}
-
-	if len(s2.Members()) != 2 || s2.NumNodes() != 2 {
-		t.Fatalf("s2 members: %d && %d", len(s2.Members()), s2.NumNodes())
-	}
-
-	err = s1.Leave()
-	if err != nil {
-		t.Fatalf("err: %s", err)
+	if err := s1.Leave(); err != nil {
+		t.Fatalf("err: %v", err)
 	}
 
 	// Give the reaper time to reap nodes
 	time.Sleep(s1Config.ReapInterval * 2)
 
-	if len(s1.Members()) != 1 || s1.NumNodes() != 1 {
-		t.Fatalf("s1 members: %d && %d", len(s1.Members()), s1.NumNodes())
-	}
-
-	if len(s2.Members()) != 1 || s2.NumNodes() != 1 {
-		t.Fatalf("s2 members: %d && %d", len(s2.Members()), s2.NumNodes())
-	}
+	waitUntilNumNodes(t, 1, s1, s2)
 }
 
 // Bug: GH-58
 func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
-	s1Config := testConfig()
-	s2Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
 	s2Config.Tags["role"] = "foo"
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
-	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
-	err = s2.Leave()
-	if err != nil {
-		t.Fatalf("err: %s", err)
+	if err := s2.Leave(); err != nil {
+		t.Fatalf("err: %v", err)
 	}
-
 	if err := s2.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	// Make s3 look just like s2, but create a new node with a new role
-	s3Config := testConfig()
+	s3Config := testConfig(t, ip2)
 	s3Config.MemberlistConfig.BindAddr = s2Config.MemberlistConfig.BindAddr
 	s3Config.NodeName = s2Config.NodeName
 	s3Config.Tags["role"] = "bar"
 
 	s3, err := Create(s3Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s3.Shutdown()
 
 	_, err = s3.Join([]string{s1Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s3)
 
-	members := s1.Members()
-	if len(members) != 2 {
-		t.Fatalf("s1 members: %d", len(s1.Members()))
-	}
-
-	var member *Member
-	for _, m := range members {
-		if m.Name == s3Config.NodeName {
-			member = &m
-			break
+	retry.Run(t, func(r *retry.R) {
+		var member *Member
+		for _, m := range s1.Members() {
+			if m.Name == s3Config.NodeName {
+				member = &m
+				break
+			}
 		}
-	}
 
-	if member == nil {
-		t.Fatalf("couldn't find member")
-	}
+		if member == nil {
+			r.Fatalf("couldn't find member")
+		}
 
-	if member.Tags["role"] != s3Config.Tags["role"] {
-		t.Fatalf("bad role: %s", member.Tags["role"])
-	}
+		if member.Tags["role"] != s3Config.Tags["role"] {
+			r.Fatalf("bad role: %s", member.Tags["role"])
+		}
+	})
 }
 
 func TestSerf_forceLeaveFailed(t *testing.T) {
-	s1Config := testConfig()
-	s2Config := testConfig()
-	s3Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	ip3, returnFn3 := testutil.TakeIP()
+	defer returnFn3()
+
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
+	s3Config := testConfig(t, ip3)
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
 	defer s2.Shutdown()
 
 	s3, err := Create(s3Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
 	defer s3.Shutdown()
+
+	waitUntilNumNodes(t, 1, s1, s2, s3)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+
+	waitUntilNumNodes(t, 3, s1, s2, s3)
 
 	//Put s2 in failed state
-	s2.Shutdown()
-
-	retry.Run(t, func(r *retry.R) {
-		if err := testMemberStatus(s1.Members(), s2Config.NodeName, StatusFailed); err != nil {
-			r.Fatal(err)
-		}
-	})
-	s1.forceLeave(s2.config.NodeName, true)
-
-	memberlen := len(s1.Members())
-	if memberlen != 2 {
-		t.Fatalf("wanted 2 alive members, got %v", s1.Members())
+	if err := s2.Shutdown(); err != nil {
+		t.Fatalf("err: %v", err)
 	}
 
+	retry.Run(t, func(r *retry.R) {
+		testMemberStatus(r, s1.Members(), s2Config.NodeName, StatusFailed)
+	})
+	if err := s1.forceLeave(s2.config.NodeName, true); err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	waitUntilNumNodes(t, 2, s1, s3)
 }
 
 func TestSerf_forceLeaveLeaving(t *testing.T) {
-	s1Config := testConfig()
-	s2Config := testConfig()
-	s3Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	ip3, returnFn3 := testutil.TakeIP()
+	defer returnFn3()
+
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
+	s3Config := testConfig(t, ip3)
 
 	//make it so it doesn't get reaped
 	// allow for us to see the leaving state
@@ -609,57 +662,65 @@ func TestSerf_forceLeaveLeaving(t *testing.T) {
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
 	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
 	s3, err := Create(s3Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s3.Shutdown()
 
+	waitUntilNumNodes(t, 1, s1, s2, s3)
+
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, true)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-	testutil.Yield()
 
 	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, true)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-	testutil.Yield()
+
+	waitUntilNumNodes(t, 3, s1, s2, s3)
 
 	//Put s2 in left state
 	if err := s2.Leave(); err != nil {
-		t.Fatal(err)
+		t.Fatalf("err: %v", err)
 	}
 
 	retry.Run(t, func(r *retry.R) {
-		if err := testMemberStatus(s1.Members(), s2Config.NodeName, 3); err != nil {
-			r.Fatal(err)
-		}
+		testMemberStatus(r, s1.Members(), s2Config.NodeName, StatusLeft)
 	})
-	s1.forceLeave(s2.config.NodeName, true)
 
-	memberlen := len(s1.Members())
-	if memberlen != 2 {
-		t.Fatalf("wanted 2 alive members, got %v", s1.Members())
+	if err := s1.forceLeave(s2.config.NodeName, true); err != nil {
+		t.Fatalf("err: %v", err)
 	}
+
+	waitUntilNumNodes(t, 2, s1, s3)
 }
 
 func TestSerf_forceLeaveLeft(t *testing.T) {
-	s1Config := testConfig()
-	s2Config := testConfig()
-	s3Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	ip3, returnFn3 := testutil.TakeIP()
+	defer returnFn3()
+
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
+	s3Config := testConfig(t, ip3)
 
 	//make it so it doesn't get reaped
 	s1Config.TombstoneTimeout = 1 * time.Hour
@@ -668,112 +729,123 @@ func TestSerf_forceLeaveLeft(t *testing.T) {
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
 	s3, err := Create(s3Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s3.Shutdown()
 
+	waitUntilNumNodes(t, 1, s1, s2, s3)
+
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, true)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-	testutil.Yield()
 
 	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, true)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-	testutil.Yield()
+
+	waitUntilNumNodes(t, 3, s1, s2, s3)
 
 	//Put s2 in left state
 	if err := s2.Leave(); err != nil {
-		t.Fatal(err)
+		t.Fatalf("err: %v", err)
 	}
 
 	retry.Run(t, func(r *retry.R) {
-		if err := testMemberStatus(s1.Members(), s2Config.NodeName, StatusLeft); err != nil {
-			r.Fatal(err)
-		}
+		testMemberStatus(r, s1.Members(), s2Config.NodeName, StatusLeft)
 	})
-	s1.forceLeave(s2.config.NodeName, true)
 
-	memberlen := len(s1.Members())
-	if memberlen != 2 {
-		t.Fatalf("wanted 2 alive members, got %v", s1.Members())
+	if err := s1.forceLeave(s2.config.NodeName, true); err != nil {
+		t.Fatalf("err: %v", err)
 	}
 
+	waitUntilNumNodes(t, 2, s1, s3)
 }
 
 func TestSerf_reconnect(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
 	eventCh := make(chan Event, 64)
-	s1Config := testConfig()
+	s1Config := testConfig(t, ip1)
 	s1Config.EventCh = eventCh
 
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 	s2Addr := s2Config.MemberlistConfig.BindAddr
 	s2Name := s2Config.NodeName
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
-	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	// Now force the shutdown of s2 so it appears to fail.
 	if err := s2.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 5)
 
 	// Bring back s2 by mimicking its name and address
-	s2Config = testConfig()
+	s2Config = testConfig(t, ip2)
 	s2Config.MemberlistConfig.BindAddr = s2Addr
 	s2Config.NodeName = s2Name
 	s2, err = Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	time.Sleep(s1Config.ReconnectInterval * 5)
+	waitUntilNumNodes(t, 2, s1, s2)
+	// time.Sleep(s1Config.ReconnectInterval * 5)
 
 	testEvents(t, eventCh, s2Name,
 		[]EventType{EventMemberJoin, EventMemberFailed, EventMemberJoin})
 }
 
 func TestSerf_reconnect_sameIP(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
 	eventCh := make(chan Event, 64)
-	s1Config := testConfig()
+	s1Config := testConfig(t, ip1)
 	s1Config.EventCh = eventCh
 
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 	s2Config.MemberlistConfig.BindAddr = s1Config.MemberlistConfig.BindAddr
 	s2Config.MemberlistConfig.BindPort = s1Config.MemberlistConfig.BindPort + 1
 
@@ -784,87 +856,93 @@ func TestSerf_reconnect_sameIP(t *testing.T) {
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
-	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Addr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	// Now force the shutdown of s2 so it appears to fail.
 	if err := s2.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 5)
 
 	// Bring back s2 by mimicking its name and address
-	s2Config = testConfig()
+	s2Config = testConfig(t, ip2)
 	s2Config.MemberlistConfig.BindAddr = s1Config.MemberlistConfig.BindAddr
 	s2Config.MemberlistConfig.BindPort = s1Config.MemberlistConfig.BindPort + 1
 	s2Config.NodeName = s2Name
 	s2, err = Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	time.Sleep(s1Config.ReconnectInterval * 5)
+	// time.Sleep(s1Config.ReconnectInterval * 5)
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	testEvents(t, eventCh, s2Name,
 		[]EventType{EventMemberJoin, EventMemberFailed, EventMemberJoin})
 }
 
 func TestSerf_update(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
 	eventCh := make(chan Event, 64)
-	s1Config := testConfig()
+	s1Config := testConfig(t, ip1)
 	s1Config.EventCh = eventCh
 
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 	s2Addr := s2Config.MemberlistConfig.BindAddr
 	s2Name := s2Config.NodeName
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s2.Shutdown()
 
-	defer s1.Shutdown()
-
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	// Now force the shutdown of s2 so it appears to fail.
 	if err := s2.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	// Don't wait for a failure to be detected. Bring back s2 immediately
 	// by mimicking its name and address.
-	s2Config = testConfig()
+	s2Config = testConfig(t, ip2)
 	s2Config.MemberlistConfig.BindAddr = s2Addr
 	s2Config.NodeName = s2Name
 
@@ -882,7 +960,7 @@ func TestSerf_update(t *testing.T) {
 			defer s2.Shutdown()
 			break
 		} else if !strings.Contains(err.Error(), "address already in use") {
-			t.Fatalf("err: %s", err)
+			t.Fatalf("err: %v", err)
 		}
 
 		if time.Now().Sub(start) > 2*time.Second {
@@ -892,10 +970,10 @@ func TestSerf_update(t *testing.T) {
 
 	_, err = s2.Join([]string{s1Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	testEvents(t, eventCh, s2Name,
 		[]EventType{EventMemberJoin, EventMemberUpdate})
@@ -917,58 +995,65 @@ func TestSerf_update(t *testing.T) {
 }
 
 func TestSerf_role(t *testing.T) {
-	s1Config := testConfig()
-	s2Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
 
 	s1Config.Tags["role"] = "web"
 	s2Config.Tags["role"] = "lb"
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
-	defer s1.Shutdown()
 	defer s2.Shutdown()
+
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
-	members := s1.Members()
-	if len(members) != 2 {
-		t.Fatalf("should have 2 members")
-	}
+	retry.Run(t, func(r *retry.R) {
+		roles := make(map[string]string)
+		for _, m := range s1.Members() {
+			roles[m.Name] = m.Tags["role"]
+		}
 
-	roles := make(map[string]string)
-	for _, m := range members {
-		roles[m.Name] = m.Tags["role"]
-	}
+		if roles[s1Config.NodeName] != "web" {
+			r.Fatalf("bad role for web: %s", roles[s1Config.NodeName])
+		}
 
-	if roles[s1Config.NodeName] != "web" {
-		t.Fatalf("bad role for web: %s", roles[s1Config.NodeName])
-	}
-
-	if roles[s2Config.NodeName] != "lb" {
-		t.Fatalf("bad role for lb: %s", roles[s2Config.NodeName])
-	}
+		if roles[s2Config.NodeName] != "lb" {
+			r.Fatalf("bad role for lb: %s", roles[s2Config.NodeName])
+		}
+	})
 }
 
 func TestSerfProtocolVersion(t *testing.T) {
-	config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	config := testConfig(t, ip1)
 	config.ProtocolVersion = ProtocolVersionMax
 
 	s1, err := Create(config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
@@ -979,141 +1064,168 @@ func TestSerfProtocolVersion(t *testing.T) {
 }
 
 func TestSerfRemoveFailedNode(t *testing.T) {
-	s1Config := testConfig()
-	s2Config := testConfig()
-	s3Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	ip3, returnFn3 := testutil.TakeIP()
+	defer returnFn3()
+
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
+	s3Config := testConfig(t, ip3)
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s2.Shutdown()
 
 	s3, err := Create(s3Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
-	defer s1.Shutdown()
-	defer s2.Shutdown()
 	defer s3.Shutdown()
+
+	waitUntilNumNodes(t, 1, s1, s2, s3)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 3, s1, s2, s3)
 
 	// Now force the shutdown of s2 so it appears to fail.
 	if err := s2.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 5)
 
-	// Verify that s2 is "failed"
-	testMember(t, s1.Members(), s2Config.NodeName, StatusFailed)
+	retry.Run(t, func(r *retry.R) {
+		// Verify that s2 is "failed"
+		testMember(r, s1.Members(), s2Config.NodeName, StatusFailed)
+	})
 
 	// Now remove the failed node
 	if err := s1.RemoveFailedNode(s2Config.NodeName); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	// Verify that s2 is gone
-	testMember(t, s1.Members(), s2Config.NodeName, StatusLeft)
-	testMember(t, s3.Members(), s2Config.NodeName, StatusLeft)
+	retry.Run(t, func(r *retry.R) {
+		// Verify that s2 is gone
+		testMember(r, s1.Members(), s2Config.NodeName, StatusLeft)
+		testMember(r, s3.Members(), s2Config.NodeName, StatusLeft)
+	})
 }
 
 func TestSerfRemoveFailedNode_prune(t *testing.T) {
-	s1Config := testConfig()
-	s2Config := testConfig()
-	s3Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	ip3, returnFn3 := testutil.TakeIP()
+	defer returnFn3()
+
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
+	s3Config := testConfig(t, ip3)
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
 	s3, err := Create(s3Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s3.Shutdown()
 
+	waitUntilNumNodes(t, 1, s1, s2, s3)
+
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 3, s1, s2, s3)
 
 	// Now force the shutdown of s2 so it appears to fail.
 	if err := s2.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 5)
 
 	// Verify that s2 is "failed"
-	testMember(t, s1.Members(), s2Config.NodeName, StatusFailed)
+	retry.Run(t, func(r *retry.R) {
+		testMember(r, s1.Members(), s2Config.NodeName, StatusFailed)
+	})
 
 	// Now remove the failed node
 	if err := s1.RemoveFailedNodePrune(s2Config.NodeName); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	// Check to make sure it's gone
-	if len(s1.Members()) != 2 {
-		t.Fatalf("err: numbers of members should be two, found %v", len(s1.Members()))
-	}
-
-	if len(s3.Members()) != 2 {
-		t.Fatalf("err: numbers of members should be two, found %v", len(s3.Members()))
-	}
-
+	waitUntilNumNodes(t, 2, s1, s3)
 }
 
 func TestSerfRemoveFailedNode_ourself(t *testing.T) {
-	s1Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	s1Config := testConfig(t, ip1)
+
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1)
 
 	if err := s1.RemoveFailedNode("somebody"); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 }
 
 func TestSerfState(t *testing.T) {
-	s1, err := Create(testConfig())
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	s1, err := Create(testConfig(t, ip1))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
@@ -1122,7 +1234,7 @@ func TestSerfState(t *testing.T) {
 	}
 
 	if err := s1.Leave(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if s1.State() != SerfLeft {
@@ -1130,7 +1242,7 @@ func TestSerfState(t *testing.T) {
 	}
 
 	if err := s1.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if s1.State() != SerfShutdown {
@@ -1139,9 +1251,12 @@ func TestSerfState(t *testing.T) {
 }
 
 func TestSerf_ReapHandler_Shutdown(t *testing.T) {
-	s, err := Create(testConfig())
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	s, err := Create(testConfig(t, ip1))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	// Make sure the reap handler exits on shutdown.
@@ -1160,13 +1275,16 @@ func TestSerf_ReapHandler_Shutdown(t *testing.T) {
 }
 
 func TestSerf_ReapHandler(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	c.ReapInterval = time.Nanosecond
 	c.TombstoneTimeout = time.Second * 6
 	c.RecentIntentTimeout = time.Second * 7
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -1211,9 +1329,12 @@ func TestSerf_ReapHandler(t *testing.T) {
 }
 
 func TestSerf_Reap(t *testing.T) {
-	s, err := Create(testConfig())
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	s, err := Create(testConfig(t, ip1))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -1335,142 +1456,141 @@ func TestMemberStatus_String(t *testing.T) {
 }
 
 func TestSerf_joinLeaveJoin(t *testing.T) {
-	s1Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	s1Config := testConfig(t, ip1)
 	s1Config.ReapInterval = 10 * time.Second
-	s2Config := testConfig()
-	s2Config.ReapInterval = 10 * time.Second
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
+	s2Config := testConfig(t, ip2)
+	s2Config.ReapInterval = 10 * time.Second
+
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s2.Shutdown()
 
-	testutil.Yield()
-
-	if s1.NumNodes() != 1 {
-		t.Fatalf("s1 members: %d", s1.NumNodes())
-	}
-
-	if s2.NumNodes() != 1 {
-		t.Fatalf("s2 members: %d", s2.NumNodes())
-	}
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
-
-	if s1.NumNodes() != 2 {
-		t.Fatalf("s1 members: %d", s1.NumNodes())
-	}
-
-	if s2.NumNodes() != 2 {
-		t.Fatalf("s2 members: %d", s2.NumNodes())
-	}
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	// Leave and shutdown
-	err = s2.Leave()
-	if err != nil {
-		t.Fatalf("err: %s", err)
+	if err := s2.Leave(); err != nil {
+		t.Fatalf("err: %v", err)
 	}
-	s2.Shutdown()
+	if err := s2.Shutdown(); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
 	// Give the reaper time to reap nodes
 	time.Sleep(s1Config.MemberlistConfig.ProbeInterval * 5)
 
 	// s1 should see the node as having left
-	mems := s1.Members()
-	anyLeft := false
-	for _, m := range mems {
-		if m.Status == StatusLeft {
-			anyLeft = true
-			break
+	retry.Run(t, func(r *retry.R) {
+		mems := s1.Members()
+		anyLeft := false
+		for _, m := range mems {
+			if m.Status == StatusLeft {
+				anyLeft = true
+				break
+			}
 		}
-	}
-	if !anyLeft {
-		t.Fatalf("node should have left!")
-	}
+		if !anyLeft {
+			r.Fatalf("node should have left!")
+		}
+	})
 
 	// Bring node 2 back
 	s2, err = Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s2)
 
 	// Re-attempt the join
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
-
-	// Should be back to both members
-	if s1.NumNodes() != 2 {
-		t.Fatalf("s1 members: %d", s1.NumNodes())
-	}
-
-	if s2.NumNodes() != 2 {
-		t.Fatalf("s2 members: %d", s2.NumNodes())
-	}
-
-	// s1 should see the node as alive
-	mems = s1.Members()
-	anyLeft = false
-	for _, m := range mems {
-		if m.Status == StatusLeft {
-			anyLeft = true
-			break
+	retry.Run(t, func(r *retry.R) {
+		// Should be back to both members
+		if s1.NumNodes() != 2 {
+			r.Fatalf("s1 members: %d", s1.NumNodes())
 		}
-	}
-	if anyLeft {
-		t.Fatalf("all nodes should be alive!")
-	}
+		if s2.NumNodes() != 2 {
+			r.Fatalf("s2 members: %d", s2.NumNodes())
+		}
+
+		// s1 should see the node as alive
+		mems := s1.Members()
+		anyLeft := false
+		for _, m := range mems {
+			if m.Status == StatusLeft {
+				anyLeft = true
+				break
+			}
+		}
+		if anyLeft {
+			r.Fatalf("all nodes should be alive!")
+		}
+	})
 }
 
 func TestSerf_Join_IgnoreOld(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
 	// Create the s1 config with an event channel so we can listen
 	eventCh := make(chan Event, 4)
-	s1Config := testConfig()
-	s2Config := testConfig()
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
 	s2Config.EventCh = eventCh
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
-	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	// Fire a user event
 	if err := s1.UserEvent("event!", []byte("test"), false); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	// Fire a user event
 	if err := s1.UserEvent("second", []byte("foobar"), false); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -1478,10 +1598,10 @@ func TestSerf_Join_IgnoreOld(t *testing.T) {
 	// join with ignoreOld set to true! should not get events
 	_, err = s2.Join([]string{s1Config.MemberlistConfig.BindAddr}, true)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	// check the events to make sure we got nothing
 	testUserEvents(t, eventCh, []string{}, [][]byte{})
@@ -1494,39 +1614,47 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 	}
 	defer os.RemoveAll(td)
 
-	s1Config := testConfig()
-	s2Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
 	s2Config.SnapshotPath = td + "snap"
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
+	waitUntilNumNodes(t, 1, s1, s2)
+
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	// Fire a user event
 	if err := s1.UserEvent("event!", []byte("test"), false); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	// Now force the shutdown of s2 so it appears to fail.
 	if err := s2.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 10)
 
@@ -1535,7 +1663,7 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 
 	// Now remove the failed node
 	if err := s1.RemoveFailedNode(s2Config.NodeName); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	// Verify that s2 is gone
@@ -1548,7 +1676,7 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 	// Restart s2 from the snapshot now!
 	s2, err = Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
@@ -1577,151 +1705,188 @@ func TestSerf_Leave_SnapshotRecovery(t *testing.T) {
 	}
 	defer os.RemoveAll(td)
 
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
 	// Use a longer reap interval to allow the leave intent to propagate before the node is reaped
-	s1Config := testConfig()
+	s1Config := testConfig(t, ip1)
 	s1Config.ReapInterval = 30 * time.Second
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 	s2Config.SnapshotPath = td + "snap"
 	s2Config.ReapInterval = 30 * time.Second
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
+	waitUntilNumNodes(t, 1, s1, s2)
+
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	if err := s2.Leave(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if err := s2.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+
 	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 5)
 
 	// Verify that s2 is "left"
-	testMember(t, s1.Members(), s2Config.NodeName, StatusLeft)
+	retry.Run(t, func(r *retry.R) {
+		testMember(r, s1.Members(), s2Config.NodeName, StatusLeft)
+	})
 
 	// Restart s2 from the snapshot now!
 	s2Config.EventCh = nil
 	s2, err = Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
 	// Wait for the node to auto rejoin
-	testutil.Yield()
 
 	// Verify that s2 is didn't join
-	testMember(t, s1.Members(), s2Config.NodeName, StatusLeft)
-	if s2.NumNodes() != 1 {
-		t.Fatalf("bad members: %#v", s2.Members())
-	}
+	retry.Run(t, func(r *retry.R) {
+		if s2.NumNodes() != 1 {
+			r.Fatalf("bad members: %#v", s2.Members())
+		}
+
+		testMember(r, s1.Members(), s2Config.NodeName, StatusLeft)
+	})
 }
 
 func TestSerf_SetTags(t *testing.T) {
-	eventCh := make(chan Event, 4)
-	s1Config := testConfig()
-	s1Config.EventCh = eventCh
-	s2Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
 
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	eventCh := make(chan Event, 4)
+	s1Config := testConfig(t, ip1)
+	s1Config.EventCh = eventCh
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
+	s2Config := testConfig(t, ip2)
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
-	testutil.Yield()
+
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-	testutil.Yield()
+
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	// Update the tags
 	if err := s1.SetTags(map[string]string{"port": "8000"}); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
 	if err := s2.SetTags(map[string]string{"datacenter": "east-aws"}); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-	testutil.Yield()
 
-	// Since s2 shutdown, we check the events to make sure we got failures.
+	// wait until the tags are updated everywhere before continuing
+	retry.Run(t, func(r *retry.R) {
+		// Verify the new tags
+		m1m := s1.Members()
+		m1mTags := make(map[string]map[string]string)
+		for _, m := range m1m {
+			m1mTags[m.Name] = m.Tags
+		}
+
+		if m := m1mTags[s1.config.NodeName]; m["port"] != "8000" {
+			r.Fatalf("bad: %v", m1mTags)
+		}
+
+		if m := m1mTags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
+			r.Fatalf("bad: %v", m1mTags)
+		}
+
+		m2m := s2.Members()
+		m2mTags := make(map[string]map[string]string)
+		for _, m := range m2m {
+			m2mTags[m.Name] = m.Tags
+		}
+
+		if m := m2mTags[s1.config.NodeName]; m["port"] != "8000" {
+			r.Fatalf("bad: %v", m1mTags)
+		}
+
+		if m := m2mTags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
+			r.Fatalf("bad: %v", m1mTags)
+		}
+	})
+
+	// we check the events to make sure we got failures.
 	testEvents(t, eventCh, s2Config.NodeName,
 		[]EventType{EventMemberJoin, EventMemberUpdate})
-
-	// Verify the new tags
-	m1m := s1.Members()
-	m1mTags := make(map[string]map[string]string)
-	for _, m := range m1m {
-		m1mTags[m.Name] = m.Tags
-	}
-
-	if m := m1mTags[s1.config.NodeName]; m["port"] != "8000" {
-		t.Fatalf("bad: %v", m1mTags)
-	}
-
-	if m := m1mTags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
-		t.Fatalf("bad: %v", m1mTags)
-	}
-
-	m2m := s2.Members()
-	m2mTags := make(map[string]map[string]string)
-	for _, m := range m2m {
-		m2mTags[m.Name] = m.Tags
-	}
-
-	if m := m2mTags[s1.config.NodeName]; m["port"] != "8000" {
-		t.Fatalf("bad: %v", m1mTags)
-	}
-
-	if m := m2mTags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
-		t.Fatalf("bad: %v", m1mTags)
-	}
 }
 
 func TestSerf_Query(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
 	eventCh := make(chan Event, 4)
-	s1Config := testConfig()
+	s1Config := testConfig(t, ip1)
 	s1Config.EventCh = eventCh
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
 	// Listen for the query
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		for {
 			select {
+			case <-ctx.Done():
+				return
 			case e := <-eventCh:
 				if e.EventType() != EventQuery {
 					continue
 				}
 				q := e.(*Query)
 				if err := q.Respond([]byte("test")); err != nil {
-					t.Fatalf("err: %s", err)
+					t.Fatalf("err: %v", err)
 				}
 				return
 			case <-time.After(time.Second):
@@ -1730,26 +1895,28 @@ func TestSerf_Query(t *testing.T) {
 		}
 	}()
 
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
-	testutil.Yield()
+
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-	testutil.Yield()
+
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	// Start a query from s2
 	params := s2.DefaultQueryParams()
 	params.RequestAck = true
 	resp, err := s2.Query("load", []byte("sup girl"), params)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	var acks []string
@@ -1785,26 +1952,45 @@ func TestSerf_Query(t *testing.T) {
 }
 
 func TestSerf_Query_Filter(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	ip3, returnFn3 := testutil.TakeIP()
+	defer returnFn3()
+
 	eventCh := make(chan Event, 4)
-	s1Config := testConfig()
+	s1Config := testConfig(t, ip1)
 	s1Config.EventCh = eventCh
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
 	// Listen for the query
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		for {
 			select {
+			case <-ctx.Done():
+				return
 			case e := <-eventCh:
 				if e.EventType() != EventQuery {
 					continue
 				}
 				q := e.(*Query)
 				if err := q.Respond([]byte("test")); err != nil {
-					t.Fatalf("err: %s", err)
+					t.Fatalf("err: %v", err)
 				}
 				return
 			case <-time.After(time.Second):
@@ -1813,33 +1999,37 @@ func TestSerf_Query_Filter(t *testing.T) {
 		}
 	}()
 
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
-	testutil.Yield()
+
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-	testutil.Yield()
 
-	s3Config := testConfig()
+	waitUntilNumNodes(t, 2, s1, s2)
+
+	s3Config := testConfig(t, ip3)
 	s3, err := Create(s3Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s3.Shutdown()
-	testutil.Yield()
+
+	waitUntilNumNodes(t, 1, s3)
 
 	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-	testutil.Yield()
+
+	waitUntilNumNodes(t, 3, s1, s2, s3)
 
 	// Filter to only s1!
 	params := s2.DefaultQueryParams()
@@ -1850,7 +2040,7 @@ func TestSerf_Query_Filter(t *testing.T) {
 	// Start a query from s2
 	resp, err := s2.Query("load", []byte("sup girl"), params)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	var acks []string
@@ -1937,10 +2127,14 @@ func TestSerf_Query_Deduplicate(t *testing.T) {
 }
 
 func TestSerf_Query_sizeLimit(t *testing.T) {
-	s1Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	s1Config := testConfig(t, ip1)
+
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
@@ -1956,10 +2150,14 @@ func TestSerf_Query_sizeLimit(t *testing.T) {
 }
 
 func TestSerf_Query_sizeLimitIncreased(t *testing.T) {
-	s1Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	s1Config := testConfig(t, ip1)
+
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
@@ -1973,20 +2171,28 @@ func TestSerf_Query_sizeLimitIncreased(t *testing.T) {
 }
 
 func TestSerf_NameResolution(t *testing.T) {
-	// Create the s1 config with an event channel so we can listen
-	s1Config := testConfig()
-	s2Config := testConfig()
-	s3Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	ip3, returnFn3 := testutil.TakeIP()
+	defer returnFn3()
+
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
+	s3Config := testConfig(t, ip3)
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
@@ -1994,45 +2200,52 @@ func TestSerf_NameResolution(t *testing.T) {
 	s3Config.NodeName = s1Config.NodeName
 	s3, err := Create(s3Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s3.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2, s3)
 
 	// Join s1 to s2 first. s2 should vote for s1 in conflict
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+
+	waitUntilNumNodes(t, 2, s1, s2)
+	waitUntilNumNodes(t, 1, s3)
 
 	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
-	testutil.Yield()
 
 	// Wait for the query period to end
 	time.Sleep(s1.DefaultQueryTimeout() * 2)
 
-	// s3 should have shutdown, while s1 is running
-	if s1.State() != SerfAlive {
-		t.Fatalf("bad: %v", s1.State())
-	}
-	if s2.State() != SerfAlive {
-		t.Fatalf("bad: %v", s2.State())
-	}
-	if s3.State() != SerfShutdown {
-		t.Fatalf("bad: %v", s3.State())
-	}
+	retry.Run(t, func(r *retry.R) {
+		// s3 should have shutdown, while s1 is running
+		if s1.State() != SerfAlive {
+			r.Fatalf("bad: %v", s1.State())
+		}
+		if s2.State() != SerfAlive {
+			r.Fatalf("bad: %v", s2.State())
+		}
+		if s3.State() != SerfShutdown {
+			r.Fatalf("bad: %v", s3.State())
+		}
+	})
 }
 
 func TestSerf_LocalMember(t *testing.T) {
-	s1Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	s1Config := testConfig(t, ip1)
+
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
@@ -2052,7 +2265,7 @@ func TestSerf_LocalMember(t *testing.T) {
 		"test": "ing",
 	}
 	if err := s1.SetTags(newTags); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	m = s1.LocalMember()
@@ -2067,7 +2280,7 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 
 	td, err := ioutil.TempDir("", "serf")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer os.RemoveAll(td)
 
@@ -2075,33 +2288,36 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 
 	existingBytes, err := base64.StdEncoding.DecodeString(existing)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	keys := [][]byte{existingBytes}
 	keyring, err := memberlist.NewKeyring(keys, existingBytes)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	s1Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	s1Config := testConfig(t, ip1)
 	s1Config.MemberlistConfig.Keyring = keyring
 	s1Config.KeyringFile = keyringFile
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
 	manager := s1.KeyManager()
 
 	if _, err := manager.InstallKey(newKey); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	content, err := ioutil.ReadFile(keyringFile)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	lines := strings.Split(string(content), "\n")
@@ -2126,12 +2342,12 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 
 	// Swap primary keys
 	if _, err := manager.UseKey(newKey); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	content, err = ioutil.ReadFile(keyringFile)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	lines = strings.Split(string(content), "\n")
@@ -2146,12 +2362,12 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 
 	// Remove the old key
 	if _, err := manager.RemoveKey(existing); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	content, err = ioutil.ReadFile(keyringFile)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	lines = strings.Split(string(content), "\n")
@@ -2169,10 +2385,13 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 }
 
 func TestSerfStats(t *testing.T) {
-	config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	config := testConfig(t, ip1)
 	s1, err := Create(config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
@@ -2213,35 +2432,43 @@ func (c *CancelMergeDelegate) NotifyMerge(members []*Member) error {
 }
 
 func TestSerf_Join_Cancel(t *testing.T) {
-	s1Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	s1Config := testConfig(t, ip1)
 	merge1 := &CancelMergeDelegate{}
 	s1Config.Merge = merge1
 
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 	merge2 := &CancelMergeDelegate{}
 	s2Config.Merge = merge2
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
-
-	defer s1.Shutdown()
 	defer s2.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 0, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err == nil {
+		t.Fatalf("expect error")
+	}
 	if !strings.Contains(err.Error(), "Merge canceled") {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 0, s1, s2)
 
 	if !merge1.invoked {
 		t.Fatalf("should invoke")
@@ -2252,34 +2479,46 @@ func TestSerf_Join_Cancel(t *testing.T) {
 }
 
 func TestSerf_Coordinates(t *testing.T) {
-	s1Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	ip3, returnFn3 := testutil.TakeIP()
+	defer returnFn3()
+
+	s1Config := testConfig(t, ip1)
 	s1Config.DisableCoordinates = false
 	s1Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 	s2Config.DisableCoordinates = false
 	s2Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
+
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	// Make sure both nodes start out the origin so we can prove they did
 	// an update later.
 	c1, err := s1.GetCoordinate()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	c2, err := s2.GetCoordinate()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+
 	const zeroThreshold = 20.0e-6
 	if c1.DistanceTo(c2).Seconds() > zeroThreshold {
 		t.Fatalf("coordinates didn't start at the origin")
@@ -2290,72 +2529,85 @@ func TestSerf_Coordinates(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not join s1 and s2: %s", err)
 	}
-	testutil.Yield()
 
-	// See if they know about each other.
-	if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); !ok {
-		t.Fatalf("s1 didn't get a coordinate for s2: %s", err)
-	}
-	if _, ok := s2.GetCachedCoordinate(s1.config.NodeName); !ok {
-		t.Fatalf("s2 didn't get a coordinate for s1: %s", err)
-	}
+	waitUntilNumNodes(t, 2, s1, s2)
+	retry.Run(t, func(r *retry.R) {
+		// See if they know about each other.
 
-	// With only one ping they won't have a good estimate of the other node's
-	// coordinate, but they should both have updated their own coordinate.
-	c1, err = s1.GetCoordinate()
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-	c2, err = s2.GetCoordinate()
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-	if c1.DistanceTo(c2).Seconds() < zeroThreshold {
-		t.Fatalf("coordinates didn't update after probes")
-	}
+		if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); !ok {
+			r.Fatalf("s1 didn't get a coordinate for s2: %s", err)
+		}
+		if _, ok := s2.GetCachedCoordinate(s1.config.NodeName); !ok {
+			r.Fatalf("s2 didn't get a coordinate for s1: %s", err)
+		}
 
-	// Make sure they cached their own current coordinate after the update.
-	c1c, ok := s1.GetCachedCoordinate(s1.config.NodeName)
-	if !ok {
-		t.Fatalf("s1 didn't cache coordinate for s1")
-	}
-	if !reflect.DeepEqual(c1, c1c) {
-		t.Fatalf("coordinates are not equal: %v != %v", c1, c1c)
-	}
+		// With only one ping they won't have a good estimate of the other node's
+		// coordinate, but they should both have updated their own coordinate.
+		c1, err = s1.GetCoordinate()
+		if err != nil {
+			r.Fatalf("err: %v", err)
+		}
+		c2, err = s2.GetCoordinate()
+		if err != nil {
+			r.Fatalf("err: %v", err)
+		}
+
+		if c1.DistanceTo(c2).Seconds() < zeroThreshold {
+			r.Fatalf("coordinates didn't update after probes")
+		}
+
+		// Make sure they cached their own current coordinate after the update.
+		c1c, ok := s1.GetCachedCoordinate(s1.config.NodeName)
+		if !ok {
+			r.Fatalf("s1 didn't cache coordinate for s1")
+		}
+		if !reflect.DeepEqual(c1, c1c) {
+			r.Fatalf("coordinates are not equal: %v != %v", c1, c1c)
+		}
+	})
 
 	// Break up the cluster and make sure the coordinates get removed by
 	// the reaper.
-	if err = s2.Leave(); err != nil {
+	if err := s2.Leave(); err != nil {
 		t.Fatalf("s2 could not leave: %s", err)
 	}
+
 	time.Sleep(s1Config.ReapInterval * 2)
-	if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); ok {
-		t.Fatalf("s1 should have removed s2's cached coordinate")
-	}
+
+	waitUntilNumNodes(t, 1, s1)
+	retry.Run(t, func(r *retry.R) {
+		if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); ok {
+			r.Fatalf("s1 should have removed s2's cached coordinate")
+		}
+	})
 
 	// Try a setup with coordinates disabled.
-	s3Config := testConfig()
+	s3Config := testConfig(t, ip3)
 	s3Config.DisableCoordinates = true
 	s3Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
 	s3, err := Create(s3Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s3.Shutdown()
+
+	waitUntilNumNodes(t, 1, s1, s3)
 
 	_, err = s3.Join([]string{s1Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("could not join s1 and s3: %s", err)
 	}
-	testutil.Yield()
 
-	_, err = s3.GetCoordinate()
-	if err == nil || !strings.Contains(err.Error(), "Coordinates are disabled") {
-		t.Fatalf("expected coordinate disabled error, got %s", err)
-	}
-	if _, ok := s3.GetCachedCoordinate(s1.config.NodeName); ok {
-		t.Fatalf("should not have been able to get cached coordinate")
-	}
+	waitUntilNumNodes(t, 2, s1, s3)
+	retry.Run(t, func(r *retry.R) {
+		_, err = s3.GetCoordinate()
+		if err == nil || !strings.Contains(err.Error(), "Coordinates are disabled") {
+			r.Fatalf("expected coordinate disabled error, got %s", err)
+		}
+		if _, ok := s3.GetCachedCoordinate(s1.config.NodeName); ok {
+			r.Fatalf("should not have been able to get cached coordinate")
+		}
+	})
 }
 
 // pingVersionMetaDelegate is used to monkey patch a ping delegate so that it
@@ -2379,46 +2631,53 @@ func (p *pingVersionMetaDelegate) AckPayload() []byte {
 }
 
 func TestSerf_PingDelegateVersioning(t *testing.T) {
-	s1Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	s1Config := testConfig(t, ip1)
 	s1Config.DisableCoordinates = false
 	s1Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 	s2Config.DisableCoordinates = false
 	s2Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
 	// Monkey patch s1 to send weird versions of the ping messages.
 	s1.config.MemberlistConfig.Ping = &pingVersionMetaDelegate{pingDelegate{s1}}
 
+	waitUntilNumNodes(t, 1, s1, s2)
+
 	// Join the two nodes together and give them time to probe each other.
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("could not join s1 and s2: %s", err)
 	}
-	testutil.Yield()
 
 	// They both should show 2 members, but only s1 should know about s2
 	// in the cache, since s1 spoke an alien ping protocol.
-	if s1.NumNodes() != 2 || s2.NumNodes() != 2 {
-		t.Fatalf("s1 and s2 didn't probe each other")
-	}
-	if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); !ok {
-		t.Fatalf("s1 didn't get a coordinate for s2: %s", err)
-	}
-	if _, ok := s2.GetCachedCoordinate(s1.config.NodeName); ok {
-		t.Fatalf("s2 got an unexpected coordinate for s1")
-	}
+	waitUntilNumNodes(t, 2, s1, s2)
+	retry.Run(t, func(r *retry.R) {
+		if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); !ok {
+			r.Fatalf("s1 didn't get a coordinate for s2: %s", err)
+		}
+		if _, ok := s2.GetCachedCoordinate(s1.config.NodeName); ok {
+			r.Fatalf("s2 got an unexpected coordinate for s1")
+		}
+	})
 }
 
 // pingDimensionMetaDelegate is used to monkey patch a ping delegate so that it
@@ -2450,55 +2709,68 @@ func (p *pingDimensionMetaDelegate) AckPayload() []byte {
 }
 
 func TestSerf_PingDelegateRogueCoordinate(t *testing.T) {
-	s1Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	s1Config := testConfig(t, ip1)
 	s1Config.DisableCoordinates = false
 	s1Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
-	s2Config := testConfig()
+	s2Config := testConfig(t, ip2)
 	s2Config.DisableCoordinates = false
 	s2Config.MemberlistConfig.ProbeInterval = time.Duration(2) * time.Millisecond
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
 	// Monkey patch s1 to send ping messages with bad coordinates.
 	s1.config.MemberlistConfig.Ping = &pingDimensionMetaDelegate{t, pingDelegate{s1}}
 
+	waitUntilNumNodes(t, 1, s1, s2)
+
 	// Join the two nodes together and give them time to probe each other.
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("could not join s1 and s2: %s", err)
 	}
-	testutil.Yield()
 
 	// They both should show 2 members, but only s1 should know about s2
 	// in the cache, since s1 sent a bad coordinate.
-	if s1.NumNodes() != 2 || s2.NumNodes() != 2 {
-		t.Fatalf("s1 and s2 didn't probe each other")
-	}
-	if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); !ok {
-		t.Fatalf("s1 didn't get a coordinate for s2: %s", err)
-	}
-	if _, ok := s2.GetCachedCoordinate(s1.config.NodeName); ok {
-		t.Fatalf("s2 got an unexpected coordinate for s1")
-	}
+	waitUntilNumNodes(t, 2, s1, s2)
+	retry.Run(t, func(r *retry.R) {
+		if _, ok := s1.GetCachedCoordinate(s2.config.NodeName); !ok {
+			r.Fatalf("s1 didn't get a coordinate for s2: %s", err)
+		}
+		if _, ok := s2.GetCachedCoordinate(s1.config.NodeName); ok {
+			r.Fatalf("s2 got an unexpected coordinate for s1")
+		}
+	})
 }
 
 func TestSerf_NumNodes(t *testing.T) {
-	s1Config := testConfig()
-	s2Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
@@ -2508,24 +2780,28 @@ func TestSerf_NumNodes(t *testing.T) {
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
-	if s2.NumNodes() != 1 {
-		t.Fatalf("Expected 1 members")
-	}
-
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
+}
 
-	if s1.NumNodes() != 2 {
-		t.Fatalf("Expected 2 members")
-	}
+func waitUntilNumNodes(t *testing.T, desiredNodes int, serfs ...*Serf) {
+	t.Helper()
+	retry.Run(t, func(r *retry.R) {
+		t.Helper()
+		for i, s := range serfs {
+			if n := s.NumNodes(); desiredNodes != n {
+				r.Fatalf("s%d got %d expected %d", (i + 1), n, desiredNodes)
+			}
+		}
+	})
 }

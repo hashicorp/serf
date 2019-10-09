@@ -15,32 +15,33 @@ import (
 	"github.com/hashicorp/serf/testutil"
 )
 
-func testRPCClient(t *testing.T) (*client.RPCClient, *Agent, *AgentIPC) {
+func testRPCClient(t *testing.T, ip net.IP) (*client.RPCClient, *Agent, *AgentIPC) {
 	agentConf := DefaultConfig()
 	serfConf := serf.DefaultConfig()
 
-	return testRPCClientWithConfig(t, agentConf, serfConf)
+	return testRPCClientWithConfig(t, ip, agentConf, serfConf)
 }
 
 // testRPCClient returns an RPCClient connected to an RPC server that
 // serves only this connection.
-func testRPCClientWithConfig(t *testing.T, agentConf *Config,
+func testRPCClientWithConfig(t *testing.T, ip net.IP, agentConf *Config,
 	serfConf *serf.Config) (*client.RPCClient, *Agent, *AgentIPC) {
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	lw := NewLogWriter(512)
 	mult := io.MultiWriter(os.Stderr, lw)
 
-	agent := testAgentWithConfig(agentConf, serfConf, mult)
+	agent := testAgentWithConfig(t, ip, agentConf, serfConf, mult)
 	ipc := NewAgentIPC(agent, "", l, mult, lw)
 
 	rpcClient, err := client.NewRPCClient(l.Addr().String())
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		ipc.Shutdown()
+		t.Fatalf("err: %v", err)
 	}
 
 	return rpcClient, agent, ipc
@@ -57,32 +58,39 @@ func findMember(t *testing.T, members []serf.Member, name string) serf.Member {
 }
 
 func TestRPCClientForceLeave(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
-	a2 := testAgent(nil)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
+
+	a2 := testAgent(t, ip2, nil)
 	defer a2.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if err := a2.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	s2Addr := a2.conf.MemberlistConfig.BindAddr
 	if _, err := a1.Join([]string{s2Addr}, false); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	if err := a2.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	start := time.Now()
@@ -97,7 +105,7 @@ WAIT:
 	}
 
 	if err := client.ForceLeave(a2.conf.NodeName); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -113,18 +121,24 @@ WAIT:
 }
 
 func TestRPCClientForceLeave_prune(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
-	a2 := testAgent(nil)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer a1.Shutdown()
 
+	a2 := testAgent(t, ip2, nil)
 	if err := a2.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer a2.Shutdown()
 
@@ -132,13 +146,13 @@ func TestRPCClientForceLeave_prune(t *testing.T) {
 
 	s2Addr := a2.conf.MemberlistConfig.BindAddr
 	if _, err := a1.Join([]string{s2Addr}, false); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	if err := a2.Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	start := time.Now()
@@ -153,7 +167,7 @@ WAIT:
 	}
 
 	if err := client.ForceLeavePrune(a2.conf.NodeName); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -166,26 +180,32 @@ WAIT:
 }
 
 func TestRPCClientJoin(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
-	a2 := testAgent(nil)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
-	defer a2.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
+	a2 := testAgent(t, ip2, nil)
 	if err := a2.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer a2.Shutdown()
 
 	testutil.Yield()
 
 	n, err := client.Join([]string{a2.conf.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if n != 1 {
@@ -194,26 +214,32 @@ func TestRPCClientJoin(t *testing.T) {
 }
 
 func TestRPCClientMembers(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
-	a2 := testAgent(nil)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
-	defer a2.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
+	a2 := testAgent(t, ip2, nil)
 	if err := a2.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer a2.Shutdown()
 
 	testutil.Yield()
 
 	mem, err := client.Members()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if len(mem) != 1 {
@@ -222,14 +248,14 @@ func TestRPCClientMembers(t *testing.T) {
 
 	_, err = client.Join([]string{a2.conf.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	mem, err = client.Members()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if len(mem) != 2 {
@@ -238,26 +264,32 @@ func TestRPCClientMembers(t *testing.T) {
 }
 
 func TestRPCClientMembersFiltered(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
-	a2 := testAgent(nil)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
-	defer a2.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
+	a2 := testAgent(t, ip2, nil)
 	if err := a2.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer a2.Shutdown()
 
 	testutil.Yield()
 
 	_, err := client.Join([]string{a2.conf.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	err = client.UpdateTags(map[string]string{
@@ -335,7 +367,7 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 
 	mem, err = client.MembersFiltered(map[string]string{}, "alive", "")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if len(mem) != 1 {
@@ -344,7 +376,7 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 
 	mem, err = client.MembersFiltered(map[string]string{}, "leaving", "")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if len(mem) != 1 {
@@ -353,7 +385,10 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 }
 
 func TestRPCClientUserEvent(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
@@ -362,13 +397,13 @@ func TestRPCClientUserEvent(t *testing.T) {
 	a1.RegisterEventHandler(handler)
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	if err := client.UserEvent("deploy", []byte("foo"), false); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -395,7 +430,10 @@ func TestRPCClientUserEvent(t *testing.T) {
 }
 
 func TestRPCClientLeave(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
@@ -403,7 +441,7 @@ func TestRPCClientLeave(t *testing.T) {
 	testutil.Yield()
 
 	if err := client.Leave(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -416,18 +454,21 @@ func TestRPCClientLeave(t *testing.T) {
 }
 
 func TestRPCClientMonitor(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	eventCh := make(chan string, 64)
 	if handle, err := client.Monitor("debug", eventCh); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	} else {
 		defer client.Stop(handle)
 	}
@@ -462,18 +503,21 @@ func TestRPCClientMonitor(t *testing.T) {
 }
 
 func TestRPCClientStream_User(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	eventCh := make(chan map[string]interface{}, 64)
 	if handle, err := client.Stream("user", eventCh); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	} else {
 		defer client.Stop(handle)
 	}
@@ -481,7 +525,7 @@ func TestRPCClientStream_User(t *testing.T) {
 	testutil.Yield()
 
 	if err := client.UserEvent("deploy", []byte("foo"), false); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -510,26 +554,32 @@ func TestRPCClientStream_User(t *testing.T) {
 }
 
 func TestRPCClientStream_Member(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
-	a2 := testAgent(nil)
-	defer a2.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
+	a2 := testAgent(t, ip2, nil)
 	if err := a2.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+	defer a2.Shutdown()
 
 	testutil.Yield()
 
 	eventCh := make(chan map[string]interface{}, 64)
 	if handle, err := client.Stream("*", eventCh); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	} else {
 		defer client.Stop(handle)
 	}
@@ -538,7 +588,7 @@ func TestRPCClientStream_Member(t *testing.T) {
 
 	s2Addr := a2.conf.MemberlistConfig.BindAddr
 	if _, err := a1.Join([]string{s2Addr}, false); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -595,20 +645,23 @@ func TestRPCClientStream_Member(t *testing.T) {
 }
 
 func TestRPCClientUpdateTags(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	mem, err := client.Members()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if len(mem) != 1 {
@@ -621,12 +674,12 @@ func TestRPCClientUpdateTags(t *testing.T) {
 	}
 
 	if err := client.UpdateTags(map[string]string{"testing": "1"}, nil); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	mem, err = client.Members()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if len(mem) != 1 {
@@ -640,7 +693,10 @@ func TestRPCClientUpdateTags(t *testing.T) {
 }
 
 func TestRPCClientQuery(t *testing.T) {
-	cl, a1, ipc := testRPCClient(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	cl, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer cl.Close()
 	defer a1.Shutdown()
@@ -650,7 +706,7 @@ func TestRPCClientQuery(t *testing.T) {
 	a1.RegisterEventHandler(handler)
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -666,7 +722,7 @@ func TestRPCClientQuery(t *testing.T) {
 		RespCh:     respCh,
 	}
 	if err := cl.Query(&params); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -710,18 +766,21 @@ func TestRPCClientQuery(t *testing.T) {
 }
 
 func TestRPCClientStream_Query(t *testing.T) {
-	cl, a1, ipc := testRPCClient(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	cl, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer cl.Close()
 	defer a1.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	eventCh := make(chan map[string]interface{}, 64)
 	if handle, err := cl.Stream("query", eventCh); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	} else {
 		defer cl.Stop(handle)
 	}
@@ -734,7 +793,7 @@ func TestRPCClientStream_Query(t *testing.T) {
 		Payload: []byte("foo"),
 	}
 	if err := cl.Query(&params); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -763,18 +822,21 @@ func TestRPCClientStream_Query(t *testing.T) {
 }
 
 func TestRPCClientStream_Query_Respond(t *testing.T) {
-	cl, a1, ipc := testRPCClient(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	cl, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer cl.Close()
 	defer a1.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	eventCh := make(chan map[string]interface{}, 64)
 	if handle, err := cl.Stream("query", eventCh); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	} else {
 		defer cl.Stop(handle)
 	}
@@ -791,7 +853,7 @@ func TestRPCClientStream_Query_Respond(t *testing.T) {
 		RespCh:     respCh,
 	}
 	if err := cl.Query(&params); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -842,7 +904,10 @@ func TestRPCClientStream_Query_Respond(t *testing.T) {
 }
 
 func TestRPCClientAuth(t *testing.T) {
-	cl, a1, ipc := testRPCClient(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	cl, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer cl.Close()
 	defer a1.Shutdown()
@@ -851,35 +916,38 @@ func TestRPCClientAuth(t *testing.T) {
 	ipc.authKey = "foobar"
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	testutil.Yield()
 
 	if err := cl.UserEvent("deploy", nil, false); err.Error() != authRequired {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	testutil.Yield()
 
 	config := client.Config{Addr: ipc.listener.Addr().String(), AuthKey: "foobar"}
 	rpcClient, err := client.ClientFromConfig(&config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer rpcClient.Close()
 
 	if err := rpcClient.UserEvent("deploy", nil, false); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 }
 
 func TestRPCClient_Keys_EncryptionDisabledError(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	// Failed installing key
@@ -924,27 +992,30 @@ func TestRPCClient_Keys(t *testing.T) {
 	existing := "T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s="
 	existingBytes, err := base64.StdEncoding.DecodeString(existing)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	agentConf := DefaultConfig()
 	serfConf := serf.DefaultConfig()
 	serfConf.MemberlistConfig.SecretKey = existingBytes
 
-	client, a1, ipc := testRPCClientWithConfig(t, agentConf, serfConf)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	client, a1, ipc := testRPCClientWithConfig(t, ip1, agentConf, serfConf)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	keys, num, _, err := client.ListKeys()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if _, ok := keys[newKey]; ok {
 		t.Fatalf("have new key: %s", newKey)
@@ -958,7 +1029,7 @@ func TestRPCClient_Keys(t *testing.T) {
 	// Keyring should not contain new key at this point
 	keys, _, _, err = client.ListKeys()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if _, ok := keys[newKey]; ok {
 		t.Fatalf("have new key: %s", newKey)
@@ -971,18 +1042,18 @@ func TestRPCClient_Keys(t *testing.T) {
 
 	// InstallKey should succeed
 	if _, err := client.InstallKey(newKey); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	// InstallKey is idempotent
 	if _, err := client.InstallKey(newKey); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	// New key should now appear in the list of keys
 	keys, num, _, err = client.ListKeys()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if num != 1 {
 		t.Fatalf("expected 1 member total, got %d", num)
@@ -1003,12 +1074,12 @@ func TestRPCClient_Keys(t *testing.T) {
 
 	// UseKey succeeds when given a key that exists
 	if _, err := client.UseKey(newKey); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	// UseKey is idempotent
 	if _, err := client.UseKey(newKey); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	// Removing a non-primary key should succeed
@@ -1018,18 +1089,21 @@ func TestRPCClient_Keys(t *testing.T) {
 
 	// RemoveKey is idempotent
 	if _, err := client.RemoveKey(existing); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 }
 
 func TestRPCClientStats(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -1045,13 +1119,16 @@ func TestRPCClientStats(t *testing.T) {
 }
 
 func TestRPCClientGetCoordinate(t *testing.T) {
-	client, a1, ipc := testRPCClient(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	client, a1, ipc := testRPCClient(t, ip1)
 	defer ipc.Shutdown()
 	defer client.Close()
 	defer a1.Shutdown()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()

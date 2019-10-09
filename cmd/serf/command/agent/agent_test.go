@@ -14,7 +14,10 @@ import (
 )
 
 func TestAgent_eventHandler(t *testing.T) {
-	a1 := testAgent(nil)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	a1 := testAgent(t, ip1, nil)
 	defer a1.Shutdown()
 	defer a1.Leave()
 
@@ -22,7 +25,7 @@ func TestAgent_eventHandler(t *testing.T) {
 	a1.RegisterEventHandler(handler)
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -37,20 +40,26 @@ func TestAgent_eventHandler(t *testing.T) {
 }
 
 func TestAgentShutdown_multiple(t *testing.T) {
-	a := testAgent(nil)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	a := testAgent(t, ip1, nil)
 	if err := a.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	for i := 0; i < 5; i++ {
 		if err := a.Shutdown(); err != nil {
-			t.Fatalf("err: %s", err)
+			t.Fatalf("err: %v", err)
 		}
 	}
 }
 
 func TestAgentUserEvent(t *testing.T) {
-	a1 := testAgent(nil)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	a1 := testAgent(t, ip1, nil)
 	defer a1.Shutdown()
 	defer a1.Leave()
 
@@ -58,13 +67,13 @@ func TestAgentUserEvent(t *testing.T) {
 	a1.RegisterEventHandler(handler)
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	if err := a1.UserEvent("deploy", []byte("foo"), false); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
@@ -91,19 +100,22 @@ func TestAgentUserEvent(t *testing.T) {
 }
 
 func TestAgentQuery_BadPrefix(t *testing.T) {
-	a1 := testAgent(nil)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	a1 := testAgent(t, ip1, nil)
 	defer a1.Shutdown()
 	defer a1.Leave()
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	_, err := a1.Query("_serf_test", nil, nil)
 	if err == nil || !strings.Contains(err.Error(), "cannot contain") {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 }
 
@@ -115,17 +127,23 @@ func TestAgentTagsFile(t *testing.T) {
 
 	td, err := ioutil.TempDir("", "serf")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer os.RemoveAll(td)
+
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
 
 	agentConfig := DefaultConfig()
 	agentConfig.TagsFile = filepath.Join(td, "tags.json")
 
-	a1 := testAgentWithConfig(agentConfig, serf.DefaultConfig(), nil)
+	a1 := testAgentWithConfig(t, ip1, agentConfig, serf.DefaultConfig(), nil)
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer a1.Shutdown()
 	defer a1.Leave()
@@ -135,15 +153,15 @@ func TestAgentTagsFile(t *testing.T) {
 	err = a1.SetTags(tags)
 
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
-	a2 := testAgentWithConfig(agentConfig, serf.DefaultConfig(), nil)
+	a2 := testAgentWithConfig(t, ip2, agentConfig, serf.DefaultConfig(), nil)
 
 	if err := a2.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer a2.Shutdown()
 	defer a2.Leave()
@@ -166,7 +184,7 @@ func TestAgentTagsFile_BadOptions(t *testing.T) {
 
 	_, err := Create(agentConfig, serf.DefaultConfig(), nil)
 	if err == nil || !strings.Contains(err.Error(), "not allowed") {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 }
 
@@ -195,7 +213,7 @@ func TestAgent_UnmarshalTags(t *testing.T) {
 	tags, err := UnmarshalTags(tagPairs)
 
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if v, ok := tags["tag1"]; !ok || v != "val1" {
@@ -229,7 +247,7 @@ func TestAgentKeyringFile(t *testing.T) {
 
 	td, err := ioutil.TempDir("", "serf")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer os.RemoveAll(td)
 
@@ -241,17 +259,20 @@ func TestAgentKeyringFile(t *testing.T) {
 
 	encodedKeys, err := json.Marshal(keys)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if err := ioutil.WriteFile(keyringFile, encodedKeys, 0600); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	a1 := testAgentWithConfig(agentConfig, serfConfig, nil)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	a1 := testAgentWithConfig(t, ip1, agentConfig, serfConfig, nil)
 
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer a1.Shutdown()
 
@@ -270,20 +291,20 @@ func TestAgentKeyringFile_BadOptions(t *testing.T) {
 
 	_, err := Create(agentConfig, serf.DefaultConfig(), nil)
 	if err == nil || !strings.Contains(err.Error(), "not allowed") {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 }
 
 func TestAgentKeyringFile_NoKeys(t *testing.T) {
 	dir, err := ioutil.TempDir("", "serf")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer os.RemoveAll(dir)
 
 	keysFile := filepath.Join(dir, "keyring")
 	if err := ioutil.WriteFile(keysFile, []byte("[]"), 0600); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	agentConfig := DefaultConfig()

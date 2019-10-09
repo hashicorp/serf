@@ -2,6 +2,7 @@ package command
 
 import (
 	"encoding/base64"
+	"net"
 	"strings"
 	"testing"
 
@@ -9,35 +10,43 @@ import (
 	"github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"github.com/hashicorp/serf/serf"
+	"github.com/hashicorp/serf/testutil"
 	"github.com/mitchellh/cli"
 )
 
-func testKeysCommandAgent(t *testing.T) *agent.Agent {
+func testKeysCommandAgent(t *testing.T, ip net.IP) *agent.Agent {
 	key1, err := base64.StdEncoding.DecodeString("ZWTL+bgjHyQPhJRKcFe3ccirc2SFHmc/Nw67l8NQfdk=")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	key2, err := base64.StdEncoding.DecodeString("WbL6oaTPom+7RG7Q/INbJWKy09OLar/Hf2SuOAdoQE4=")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	keyring, err := memberlist.NewKeyring([][]byte{key1, key2}, key1)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	agentConf := agent.DefaultConfig()
 	serfConf := serf.DefaultConfig()
 	serfConf.MemberlistConfig.Keyring = keyring
 
-	a1 := testAgentWithConfig(t, agentConf, serfConf)
+	a1 := testAgentWithConfig(t, ip, agentConf, serfConf)
 	return a1
 }
 
 func TestKeysCommandRun_InstallKey(t *testing.T) {
-	a1 := testKeysCommandAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testKeysCommandAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -45,12 +54,12 @@ func TestKeysCommandRun_InstallKey(t *testing.T) {
 
 	rpcClient, err := client.NewRPCClient(rpcAddr)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	keys, _, _, err := rpcClient.ListKeys()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if _, ok := keys["HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8="]; ok {
 		t.Fatalf("have test key")
@@ -72,7 +81,7 @@ func TestKeysCommandRun_InstallKey(t *testing.T) {
 
 	keys, _, _, err = rpcClient.ListKeys()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if _, ok := keys["HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8="]; !ok {
 		t.Fatalf("new key not found")
@@ -80,9 +89,16 @@ func TestKeysCommandRun_InstallKey(t *testing.T) {
 }
 
 func TestKeysCommandRun_InstallKeyFailure(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -106,9 +122,16 @@ func TestKeysCommandRun_InstallKeyFailure(t *testing.T) {
 }
 
 func TestKeysCommandRun_UseKey(t *testing.T) {
-	a1 := testKeysCommandAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testKeysCommandAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -138,9 +161,16 @@ func TestKeysCommandRun_UseKey(t *testing.T) {
 }
 
 func TestKeysCommandRun_UseKeyFailure(t *testing.T) {
-	a1 := testKeysCommandAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testKeysCommandAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -164,9 +194,16 @@ func TestKeysCommandRun_UseKeyFailure(t *testing.T) {
 }
 
 func TestKeysCommandRun_RemoveKey(t *testing.T) {
-	a1 := testKeysCommandAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testKeysCommandAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -174,12 +211,12 @@ func TestKeysCommandRun_RemoveKey(t *testing.T) {
 
 	rpcClient, err := client.NewRPCClient(rpcAddr)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	keys, _, _, err := rpcClient.ListKeys()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if len(keys) != 2 {
 		t.Fatalf("expected 2 keys: %v", keys)
@@ -199,7 +236,7 @@ func TestKeysCommandRun_RemoveKey(t *testing.T) {
 	// Number of keys unchanged after noop command
 	keys, _, _, err = rpcClient.ListKeys()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if len(keys) != 2 {
 		t.Fatalf("expected 2 keys: %v", keys)
@@ -235,7 +272,7 @@ func TestKeysCommandRun_RemoveKey(t *testing.T) {
 	// Key removed after successful -remove command
 	keys, _, _, err = rpcClient.ListKeys()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if len(keys) != 1 {
 		t.Fatalf("expected 2 keys: %v", keys)
@@ -243,9 +280,16 @@ func TestKeysCommandRun_RemoveKey(t *testing.T) {
 }
 
 func TestKeysCommandRun_RemoveKeyFailure(t *testing.T) {
-	a1 := testKeysCommandAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testKeysCommandAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -269,9 +313,16 @@ func TestKeysCommandRun_RemoveKeyFailure(t *testing.T) {
 }
 
 func TestKeysCommandRun_ListKeys(t *testing.T) {
-	a1 := testKeysCommandAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testKeysCommandAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -297,9 +348,16 @@ func TestKeysCommandRun_ListKeys(t *testing.T) {
 }
 
 func TestKeysCommandRun_ListKeysFailure(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -322,9 +380,16 @@ func TestKeysCommandRun_ListKeysFailure(t *testing.T) {
 }
 
 func TestKeysCommandRun_BadOptions(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)

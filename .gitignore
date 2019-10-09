@@ -32,3 +32,4 @@ website/build/
 website/.bundle
 website/vendor
 .vagrant
+/coverage.out

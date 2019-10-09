@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/serf/testutil"
 	"github.com/mitchellh/cli"
 )
 
@@ -39,9 +40,16 @@ func TestQueryCommandRun_tooMany(t *testing.T) {
 }
 
 func TestQueryCommandRun(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -59,9 +67,16 @@ func TestQueryCommandRun(t *testing.T) {
 }
 
 func TestQueryCommandRun_tagFilter(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -83,9 +98,16 @@ func TestQueryCommandRun_tagFilter(t *testing.T) {
 }
 
 func TestQueryCommandRun_tagFilter_failed(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -107,9 +129,16 @@ func TestQueryCommandRun_tagFilter_failed(t *testing.T) {
 }
 
 func TestQueryCommandRun_nodeFilter(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -131,9 +160,16 @@ func TestQueryCommandRun_nodeFilter(t *testing.T) {
 }
 
 func TestQueryCommandRun_nodeFilter_failed(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -160,9 +196,16 @@ func TestQueryCommandRun_formatJSON(t *testing.T) {
 		Responses map[string]string
 	}
 
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)

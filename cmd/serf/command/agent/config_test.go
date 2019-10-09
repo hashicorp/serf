@@ -51,7 +51,7 @@ func TestConfigEncryptBytes(t *testing.T) {
 
 	result, err := c.EncryptBytes()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if !bytes.Equal(src, result) {
@@ -62,7 +62,7 @@ func TestConfigEncryptBytes(t *testing.T) {
 	c = &Config{}
 	result, err = c.EncryptBytes()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if len(result) > 0 {
@@ -98,7 +98,7 @@ func TestDecodeConfig(t *testing.T) {
 	input := `{"node_name": "foo"}`
 	config, err := DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.NodeName != "foo" {
@@ -121,7 +121,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"node_name": "foo", "protocol": 7}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.NodeName != "foo" {
@@ -136,7 +136,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"bind": "127.0.0.2"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.BindAddr != "127.0.0.2" {
@@ -147,7 +147,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"replay_on_join": true}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.ReplayOnJoin != true {
@@ -158,7 +158,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"leave_on_terminate": true}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.LeaveOnTerm != true {
@@ -169,7 +169,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"skip_leave_on_interrupt": true}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.SkipLeaveOnInt != true {
@@ -180,7 +180,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"tags": {"foo": "bar", "role": "test"}}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.Tags["foo"] != "bar" {
@@ -194,7 +194,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"tags_file": "/some/path"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.TagsFile != "/some/path" {
@@ -205,7 +205,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"discover": "foobar"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.Discover != "foobar" {
@@ -216,7 +216,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"interface": "eth0"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.Interface != "eth0" {
@@ -227,7 +227,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"reconnect_interval": "15s", "reconnect_timeout": "48h"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.ReconnectInterval != 15*time.Second {
@@ -242,7 +242,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"rpc_auth": "foobar"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.RPCAuthKey != "foobar" {
@@ -253,7 +253,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"disable_name_resolution": true}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if !config.DisableNameResolution {
@@ -264,7 +264,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"tombstone_timeout": "48h"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.TombstoneTimeout != 48*time.Hour {
@@ -275,7 +275,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"enable_syslog": true, "syslog_facility": "LOCAL4"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if !config.EnableSyslog {
@@ -289,7 +289,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"retry_max_attempts": 5, "retry_interval": "60s"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.RetryMaxAttempts != 5 {
@@ -304,7 +304,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"broadcast_timeout": "10s"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.BroadcastTimeout != 10*time.Second {
@@ -315,7 +315,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"retry_join": ["127.0.0.1", "127.0.0.2"]}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if len(config.RetryJoin) != 2 {
@@ -334,7 +334,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"rejoin_after_leave": true}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if !config.RejoinAfterLeave {
@@ -345,7 +345,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"statsite_addr": "127.0.0.1:8123", "statsd_addr": "127.0.0.1:8125"}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.StatsiteAddr != "127.0.0.1:8123" {
@@ -360,7 +360,7 @@ func TestDecodeConfig(t *testing.T) {
 	input = `{"query_response_size_limit": 123, "query_size_limit": 456}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.QueryResponseSizeLimit != 123 || config.QuerySizeLimit != 456 {
@@ -534,7 +534,7 @@ func TestReadConfigPaths_badPath(t *testing.T) {
 func TestReadConfigPaths_file(t *testing.T) {
 	tf, err := ioutil.TempFile("", "serf")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	tf.Write([]byte(`{"node_name":"bar"}`))
 	tf.Close()
@@ -542,7 +542,7 @@ func TestReadConfigPaths_file(t *testing.T) {
 
 	config, err := ReadConfigPaths([]string{tf.Name()})
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.NodeName != "bar" {
@@ -553,32 +553,32 @@ func TestReadConfigPaths_file(t *testing.T) {
 func TestReadConfigPaths_dir(t *testing.T) {
 	td, err := ioutil.TempDir("", "serf")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer os.RemoveAll(td)
 
 	err = ioutil.WriteFile(filepath.Join(td, "a.json"),
 		[]byte(`{"node_name": "bar"}`), 0644)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	err = ioutil.WriteFile(filepath.Join(td, "b.json"),
 		[]byte(`{"node_name": "baz"}`), 0644)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	// A non-json file, shouldn't be read
 	err = ioutil.WriteFile(filepath.Join(td, "c"),
 		[]byte(`{"node_name": "bad"}`), 0644)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	config, err := ReadConfigPaths([]string{td})
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if config.NodeName != "baz" {

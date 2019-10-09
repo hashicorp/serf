@@ -18,7 +18,7 @@ func TestKeygenCommand(t *testing.T) {
 	output := ui.OutputWriter.String()
 	result, err := base64.StdEncoding.DecodeString(output)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if len(result) != 32 {

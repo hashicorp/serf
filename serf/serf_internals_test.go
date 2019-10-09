@@ -6,62 +6,73 @@ import (
 
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/testutil"
+	"github.com/hashicorp/serf/testutil/retry"
 )
 
 func TestSerf_joinLeave_ltime(t *testing.T) {
-	s1Config := testConfig()
-	s2Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	s1Config := testConfig(t, ip1)
+	s2Config := testConfig(t, ip2)
 
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
 	s2, err := Create(s2Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 2, s1, s2)
+	retry.Run(t, func(r *retry.R) {
+		if s2.members[s1.config.NodeName].statusLTime != 1 {
+			r.Fatalf("join time is not valid %d",
+				s2.members[s1.config.NodeName].statusLTime)
+		}
 
-	if s2.members[s1.config.NodeName].statusLTime != 1 {
-		t.Fatalf("join time is not valid %d",
-			s2.members[s1.config.NodeName].statusLTime)
-	}
+		if s2.clock.Time() <= s2.members[s1.config.NodeName].statusLTime {
+			r.Fatalf("join should increment")
+		}
+	})
 
-	if s2.clock.Time() <= s2.members[s1.config.NodeName].statusLTime {
-		t.Fatalf("join should increment")
-	}
 	oldClock := s2.clock.Time()
 
-	err = s1.Leave()
-	if err != nil {
-		t.Fatalf("err: %s", err)
+	if err := s1.Leave(); err != nil {
+		t.Fatalf("err: %v", err)
 	}
 
-	testutil.Yield()
-
-	// s1 clock should exceed s2 due to leave
-	if s2.clock.Time() <= oldClock {
-		t.Fatalf("leave should increment (%d / %d)",
-			s2.clock.Time(), oldClock)
-	}
+	retry.Run(t, func(r *retry.R) {
+		// s1 clock should exceed s2 due to leave
+		if s2.clock.Time() <= oldClock {
+			r.Fatalf("leave should increment (%d / %d)",
+				s2.clock.Time(), oldClock)
+		}
+	})
 }
 
 func TestSerf_join_pendingIntent(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -83,10 +94,13 @@ func TestSerf_join_pendingIntent(t *testing.T) {
 }
 
 func TestSerf_join_pendingIntents(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -109,10 +123,13 @@ func TestSerf_join_pendingIntents(t *testing.T) {
 }
 
 func TestSerf_leaveIntent_bufferEarly(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -132,10 +149,13 @@ func TestSerf_leaveIntent_bufferEarly(t *testing.T) {
 }
 
 func TestSerf_leaveIntent_oldMessage(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -157,10 +177,13 @@ func TestSerf_leaveIntent_oldMessage(t *testing.T) {
 }
 
 func TestSerf_leaveIntent_newer(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -190,10 +213,13 @@ func TestSerf_leaveIntent_newer(t *testing.T) {
 }
 
 func TestSerf_joinIntent_bufferEarly(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -213,10 +239,13 @@ func TestSerf_joinIntent_bufferEarly(t *testing.T) {
 }
 
 func TestSerf_joinIntent_oldMessage(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -236,10 +265,13 @@ func TestSerf_joinIntent_oldMessage(t *testing.T) {
 }
 
 func TestSerf_joinIntent_newer(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -267,10 +299,13 @@ func TestSerf_joinIntent_newer(t *testing.T) {
 }
 
 func TestSerf_joinIntent_resetLeaving(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -303,10 +338,13 @@ func TestSerf_joinIntent_resetLeaving(t *testing.T) {
 }
 
 func TestSerf_userEvent_oldMessage(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -324,12 +362,15 @@ func TestSerf_userEvent_oldMessage(t *testing.T) {
 }
 
 func TestSerf_userEvent_sameClock(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
 	eventCh := make(chan Event, 4)
-	c := testConfig()
+	c := testConfig(t, ip1)
 	c.EventCh = eventCh
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -364,10 +405,13 @@ func TestSerf_userEvent_sameClock(t *testing.T) {
 }
 
 func TestSerf_query_oldMessage(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 
@@ -385,12 +429,15 @@ func TestSerf_query_oldMessage(t *testing.T) {
 }
 
 func TestSerf_query_sameClock(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
 	eventCh := make(chan Event, 4)
-	c := testConfig()
+	c := testConfig(t, ip1)
 	c.EventCh = eventCh
 	s, err := Create(c)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s.Shutdown()
 

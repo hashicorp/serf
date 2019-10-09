@@ -5,13 +5,18 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/serf/testutil"
 )
 
 func TestDefaultQuery(t *testing.T) {
-	s1Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	s1Config := testConfig(t, ip1)
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
@@ -46,7 +51,7 @@ func TestQueryParams_EncodeFilters(t *testing.T) {
 
 	filters, err := q.encodeFilters()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if len(filters) != 3 {
 		t.Fatalf("bad: %v", filters)
@@ -69,7 +74,10 @@ func TestQueryParams_EncodeFilters(t *testing.T) {
 }
 
 func TestSerf_ShouldProcess(t *testing.T) {
-	s1Config := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	s1Config := testConfig(t, ip1)
 	s1Config.NodeName = "zip"
 	s1Config.Tags = map[string]string{
 		"role":       "webserver",
@@ -77,7 +85,7 @@ func TestSerf_ShouldProcess(t *testing.T) {
 	}
 	s1, err := Create(s1Config)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
@@ -91,7 +99,7 @@ func TestSerf_ShouldProcess(t *testing.T) {
 	}
 	filters, err := q.encodeFilters()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if !s1.shouldProcessQuery(filters) {
@@ -104,7 +112,7 @@ func TestSerf_ShouldProcess(t *testing.T) {
 	}
 	filters, err = q.encodeFilters()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if s1.shouldProcessQuery(filters) {
 		t.Fatalf("expected false")
@@ -118,7 +126,7 @@ func TestSerf_ShouldProcess(t *testing.T) {
 	}
 	filters, err = q.encodeFilters()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if s1.shouldProcessQuery(filters) {
 		t.Fatalf("expected false")
@@ -132,7 +140,7 @@ func TestSerf_ShouldProcess(t *testing.T) {
 	}
 	filters, err = q.encodeFilters()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if s1.shouldProcessQuery(filters) {
 		t.Fatalf("expected false")

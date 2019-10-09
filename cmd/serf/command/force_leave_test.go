@@ -11,23 +11,34 @@ import (
 )
 
 func TestForceLeaveCommandRun(t *testing.T) {
-	a1 := testAgent(t)
-	a2 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	ip3, returnFn3 := testutil.TakeIP()
+	defer returnFn3()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
+
+	a2 := testAgent(t, ip2)
 	defer a2.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip3, a1)
 	defer ipc.Shutdown()
 
 	_, err := a1.Join([]string{a2.SerfConfig().MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	// Forcibly shutdown a2 so that it appears "failed" in a1
 	if err := a2.Serf().Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	start := time.Now()
@@ -84,23 +95,34 @@ func TestForceLeaveCommandRun_noAddrs(t *testing.T) {
 }
 
 func TestForceLeaveCommandRun_prune(t *testing.T) {
-	a1 := testAgent(t)
-	a2 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	ip3, returnFn3 := testutil.TakeIP()
+	defer returnFn3()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
+
+	a2 := testAgent(t, ip2)
 	defer a2.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip3, a1)
 	defer ipc.Shutdown()
 
 	_, err := a1.Join([]string{a2.SerfConfig().MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	testutil.Yield()
 
 	// Forcibly shutdown a2 so that it appears "failed" in a1
 	if err := a2.Serf().Shutdown(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	start := time.Now()

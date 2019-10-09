@@ -4,13 +4,21 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/serf/testutil"
 	"github.com/mitchellh/cli"
 )
 
 func TestMembersCommandRun(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -28,9 +36,16 @@ func TestMembersCommandRun(t *testing.T) {
 }
 
 func TestMembersCommandRun_statusFilter(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -51,9 +66,16 @@ func TestMembersCommandRun_statusFilter(t *testing.T) {
 }
 
 func TestMembersCommandRun_statusFilter_failed(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -74,9 +96,16 @@ func TestMembersCommandRun_statusFilter_failed(t *testing.T) {
 }
 
 func TestMembersCommandRun_roleFilter(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -97,9 +126,16 @@ func TestMembersCommandRun_roleFilter(t *testing.T) {
 }
 
 func TestMembersCommandRun_roleFilter_failed(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -120,9 +156,16 @@ func TestMembersCommandRun_roleFilter_failed(t *testing.T) {
 }
 
 func TestMembersCommandRun_tagFilter(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -143,9 +186,16 @@ func TestMembersCommandRun_tagFilter(t *testing.T) {
 }
 
 func TestMembersCommandRun_tagFilter_failed(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -165,9 +215,16 @@ func TestMembersCommandRun_tagFilter_failed(t *testing.T) {
 	}
 }
 func TestMembersCommandRun_mutliTagFilter(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)
@@ -189,9 +246,16 @@ func TestMembersCommandRun_mutliTagFilter(t *testing.T) {
 }
 
 func TestMembersCommandRun_multiTagFilter_failed(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)

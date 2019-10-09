@@ -22,7 +22,7 @@ func TestEncodeMessage(t *testing.T) {
 	in := &messageLeave{Node: "foo"}
 	raw, err := encodeMessage(messageLeaveType, in)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if raw[0] != byte(messageLeaveType) {
@@ -31,7 +31,7 @@ func TestEncodeMessage(t *testing.T) {
 
 	var out messageLeave
 	if err := decodeMessage(raw[1:], &out); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if !reflect.DeepEqual(in, &out) {
@@ -44,7 +44,7 @@ func TestEncodeRelayMessage(t *testing.T) {
 	addr := net.UDPAddr{IP: net.IP{127, 0, 0, 1}, Port: 1234}
 	raw, err := encodeRelayMessage(messageLeaveType, addr, in)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if raw[0] != byte(messageRelayType) {
@@ -72,7 +72,7 @@ func TestEncodeRelayMessage(t *testing.T) {
 
 	var message messageLeave
 	if err := decoder.Decode(&message); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if !reflect.DeepEqual(in, &message) {
@@ -85,7 +85,7 @@ func TestEncodeFilter(t *testing.T) {
 
 	raw, err := encodeFilter(filterNodeType, nodes)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if raw[0] != byte(filterNodeType) {
@@ -94,7 +94,7 @@ func TestEncodeFilter(t *testing.T) {
 
 	var out []string
 	if err := decodeMessage(raw[1:], &out); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if !reflect.DeepEqual(nodes, out) {

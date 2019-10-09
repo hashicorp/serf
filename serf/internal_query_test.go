@@ -92,7 +92,7 @@ func TestSerfQueries_Conflict_SameName(t *testing.T) {
 func TestSerfQueries_estimateMaxKeysInListKeyResponseFactor(t *testing.T) {
 	q := Query{id: 0, serf: &Serf{config: &Config{NodeName: "", QueryResponseSizeLimit: DefaultConfig().QueryResponseSizeLimit * 10}}}
 	resp := nodeKeyResponse{Keys: []string{}}
-	for i := 0; i <= q.serf.config.QueryResponseSizeLimit; i++ {
+	for i := 0; i <= q.serf.config.QueryResponseSizeLimit/minEncodedKeyLength; i++ {
 		resp.Keys = append(resp.Keys, "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=")
 	}
 	found := 0
