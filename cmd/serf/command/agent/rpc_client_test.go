@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"io"
 	"net"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -32,8 +31,10 @@ func testRPCClientWithConfig(t *testing.T, ip net.IP, agentConf *Config,
 		t.Fatalf("err: %v", err)
 	}
 
+	tw := testutil.TestWriter(t)
+
 	lw := NewLogWriter(512)
-	mult := io.MultiWriter(os.Stderr, lw)
+	mult := io.MultiWriter(tw, lw)
 
 	agent := testAgentWithConfig(t, ip, agentConf, serfConf, mult)
 	ipc := NewAgentIPC(agent, "", l, mult, lw)
@@ -83,7 +84,7 @@ func TestRPCClientForceLeave(t *testing.T) {
 	testutil.Yield()
 
 	s2Addr := a2.conf.MemberlistConfig.BindAddr
-	if _, err := a1.Join([]string{s2Addr}, false); err != nil {
+	if _, err := a1.Join([]string{a2.conf.NodeName + "/" + s2Addr}, false); err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
@@ -145,7 +146,7 @@ func TestRPCClientForceLeave_prune(t *testing.T) {
 	testutil.Yield()
 
 	s2Addr := a2.conf.MemberlistConfig.BindAddr
-	if _, err := a1.Join([]string{s2Addr}, false); err != nil {
+	if _, err := a1.Join([]string{a2.conf.NodeName + "/" + s2Addr}, false); err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
@@ -203,7 +204,7 @@ func TestRPCClientJoin(t *testing.T) {
 
 	testutil.Yield()
 
-	n, err := client.Join([]string{a2.conf.MemberlistConfig.BindAddr}, false)
+	n, err := client.Join([]string{a2.conf.NodeName + "/" + a2.conf.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -246,7 +247,7 @@ func TestRPCClientMembers(t *testing.T) {
 		t.Fatalf("bad: %#v", mem)
 	}
 
-	_, err = client.Join([]string{a2.conf.MemberlistConfig.BindAddr}, false)
+	_, err = client.Join([]string{a2.conf.NodeName + "/" + a2.conf.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -287,7 +288,7 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 
 	testutil.Yield()
 
-	_, err := client.Join([]string{a2.conf.MemberlistConfig.BindAddr}, false)
+	_, err := client.Join([]string{a2.conf.NodeName + "/" + a2.conf.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -587,7 +588,7 @@ func TestRPCClientStream_Member(t *testing.T) {
 	testutil.Yield()
 
 	s2Addr := a2.conf.MemberlistConfig.BindAddr
-	if _, err := a1.Join([]string{s2Addr}, false); err != nil {
+	if _, err := a1.Join([]string{a2.conf.NodeName + "/" + s2Addr}, false); err != nil {
 		t.Fatalf("err: %v", err)
 	}
 

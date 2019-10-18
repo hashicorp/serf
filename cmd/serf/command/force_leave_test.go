@@ -29,7 +29,7 @@ func TestForceLeaveCommandRun(t *testing.T) {
 	rpcAddr, ipc := testIPC(t, ip3, a1)
 	defer ipc.Shutdown()
 
-	_, err := a1.Join([]string{a2.SerfConfig().MemberlistConfig.BindAddr}, false)
+	_, err := a1.Join([]string{a2.SerfConfig().NodeName + "/" + a2.SerfConfig().MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -113,7 +113,7 @@ func TestForceLeaveCommandRun_prune(t *testing.T) {
 	rpcAddr, ipc := testIPC(t, ip3, a1)
 	defer ipc.Shutdown()
 
-	_, err := a1.Join([]string{a2.SerfConfig().MemberlistConfig.BindAddr}, false)
+	_, err := a1.Join([]string{a2.SerfConfig().NodeName + "/" + a2.SerfConfig().MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}

@@ -4,7 +4,6 @@ import (
 	"io"
 	"math/rand"
 	"net"
-	"os"
 	"testing"
 	"time"
 
@@ -32,6 +31,8 @@ func testAgentWithConfig(t *testing.T, ip net.IP, agentConfig *agent.Config, ser
 	serfConfig.NodeName = serfConfig.MemberlistConfig.BindAddr
 	serfConfig.Tags = map[string]string{"role": "test", "tag1": "foo", "tag2": "bar"}
 
+	serfConfig.MemberlistConfig.RequireNodeNames = true
+
 	agent, err := agent.Create(agentConfig, serfConfig, testutil.TestWriter(t))
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -52,8 +53,10 @@ func testIPC(t *testing.T, ip net.IP, a *agent.Agent) (string, *agent.AgentIPC) 
 		t.Fatalf("err: %v", err)
 	}
 
+	tw := testutil.TestWriter(t)
+
 	lw := agent.NewLogWriter(512)
-	mult := io.MultiWriter(os.Stderr, lw)
+	mult := io.MultiWriter(tw, lw)
 	ipc := agent.NewAgentIPC(a, "", l, mult, lw)
 	return rpcAddr, ipc
 }

@@ -79,7 +79,7 @@ func TestSerf_InstallKey(t *testing.T) {
 	waitUntilNumNodes(t, 1, s1, s2)
 
 	// Join s1 and s2
-	_, err = s1.Join([]string{s2.config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2.config.NodeName + "/" + s2.config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -143,7 +143,7 @@ func TestSerf_UseKey(t *testing.T) {
 	waitUntilNumNodes(t, 1, s1, s2)
 
 	// Join s1 and s2
-	_, err = s1.Join([]string{s2.config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2.config.NodeName + "/" + s2.config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -203,7 +203,7 @@ func TestSerf_RemoveKey(t *testing.T) {
 	waitUntilNumNodes(t, 1, s1, s2)
 
 	// Join s1 and s2
-	_, err = s1.Join([]string{s2.config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2.config.NodeName + "/" + s2.config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -270,7 +270,7 @@ func TestSerf_ListKeys(t *testing.T) {
 	waitUntilNumNodes(t, 1, s1, s2)
 
 	// Join s1 and s2
-	_, err = s1.Join([]string{s2.config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2.config.NodeName + "/" + s2.config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}

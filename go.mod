@@ -2,6 +2,9 @@ module github.com/hashicorp/serf
 
 go 1.12
 
+// NOTE memberlist points to the wan-mgw branch
+// replace github.com/hashicorp/memberlist => ../memberlist
+
 require (
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
 	github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da
@@ -10,7 +13,7 @@ require (
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/hashicorp/logutils v1.0.0
 	github.com/hashicorp/mdns v1.0.1
-	github.com/hashicorp/memberlist v0.1.3
+	github.com/hashicorp/memberlist v0.1.6-0.20200121220421-9993c96ac7b1
 	github.com/mitchellh/cli v1.0.0
 	github.com/mitchellh/mapstructure v0.0.0-20160808181253-ca63d7c062ee
 	github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f
