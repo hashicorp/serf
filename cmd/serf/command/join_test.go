@@ -4,15 +4,27 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/serf/testutil"
 	"github.com/mitchellh/cli"
 )
 
 func TestJoinCommandRun(t *testing.T) {
-	a1 := testAgent(t)
-	a2 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	ip3, returnFn3 := testutil.TakeIP()
+	defer returnFn3()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
+
+	a2 := testAgent(t, ip2)
 	defer a2.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip3, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)

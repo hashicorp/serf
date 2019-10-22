@@ -14,7 +14,7 @@ func TestSyslogFilter(t *testing.T) {
 	}
 	l, err := gsyslog.NewLogger(gsyslog.LOG_NOTICE, "LOCAL0", "serf")
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	filt := LevelFilter()
@@ -23,7 +23,7 @@ func TestSyslogFilter(t *testing.T) {
 	s := &SyslogWrapper{l, filt}
 	n, err := s.Write([]byte("[INFO] test"))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if n == 0 {
 		t.Fatalf("should have logged")
@@ -31,7 +31,7 @@ func TestSyslogFilter(t *testing.T) {
 
 	n, err = s.Write([]byte("[DEBUG] test"))
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	if n != 0 {
 		t.Fatalf("should not have logged")

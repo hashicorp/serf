@@ -8,7 +8,10 @@ import (
 )
 
 func TestDelegate_NodeMeta_Old(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	c.ProtocolVersion = 2
 	c.Tags["role"] = "test"
 	d := &delegate{&Serf{config: c}}
@@ -32,7 +35,10 @@ func TestDelegate_NodeMeta_Old(t *testing.T) {
 }
 
 func TestDelegate_NodeMeta_New(t *testing.T) {
-	c := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
 	c.ProtocolVersion = 3
 	c.Tags["role"] = "test"
 	d := &delegate{&Serf{config: c}}
@@ -53,39 +59,49 @@ func TestDelegate_NodeMeta_New(t *testing.T) {
 
 // internals
 func TestDelegate_LocalState(t *testing.T) {
-	c1 := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	c1 := testConfig(t, ip1)
 	s1, err := Create(c1)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
-	c2 := testConfig()
+	c2 := testConfig(t, ip2)
 	s2, err := Create(c2)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s2.Shutdown()
 
-	testutil.Yield()
+	waitUntilNumNodes(t, 1, s1, s2)
 
 	_, err = s1.Join([]string{c2.MemberlistConfig.BindAddr}, false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
+
+	waitUntilNumNodes(t, 2, s1, s2)
 
 	err = s1.UserEvent("test", []byte("test"), false)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	_, err = s1.Query("foo", nil, nil)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	// s2 can leave now
-	s2.Leave()
+	if err = s2.Leave(); err != nil {
+		t.Fatalf("err: %v", err)
+	}
 
 	// Do a state dump
 	d := c1.MemberlistConfig.Delegate
@@ -132,10 +148,13 @@ func TestDelegate_LocalState(t *testing.T) {
 
 // internals
 func TestDelegate_MergeRemoteState(t *testing.T) {
-	c1 := testConfig()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c1 := testConfig(t, ip1)
 	s1, err := Create(c1)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer s1.Shutdown()
 
@@ -167,7 +186,7 @@ func TestDelegate_MergeRemoteState(t *testing.T) {
 
 	buf, err := encodeMessage(messagePushPullType, &pp)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	// Merge in fake state

@@ -4,13 +4,21 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/serf/testutil"
 	"github.com/mitchellh/cli"
 )
 
 func TestReachabilityCommand_Run(t *testing.T) {
-	a1 := testAgent(t)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
-	rpcAddr, ipc := testIPC(t, a1)
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
 	defer ipc.Shutdown()
 
 	ui := new(cli.MockUi)

@@ -1,11 +1,10 @@
 package agent
 
 import (
-	"fmt"
 	"io"
 	"math/rand"
 	"net"
-	"os"
+	"testing"
 	"time"
 
 	"github.com/hashicorp/serf/serf"
@@ -27,35 +26,22 @@ func drainEventCh(ch <-chan string) {
 	}
 }
 
-func getRPCAddr() string {
-	for i := 0; i < 500; i++ {
-		l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", rand.Int31n(25000)+1024))
-		if err == nil {
-			l.Close()
-			return l.Addr().String()
-		}
-	}
-
-	panic("no listener")
+func testAgent(t *testing.T, ip net.IP, logOutput io.Writer) *Agent {
+	return testAgentWithConfig(t, ip, DefaultConfig(), serf.DefaultConfig(), logOutput)
 }
 
-func testAgent(logOutput io.Writer) *Agent {
-	return testAgentWithConfig(DefaultConfig(), serf.DefaultConfig(), logOutput)
-}
-
-func testAgentWithConfig(agentConfig *Config, serfConfig *serf.Config,
-	logOutput io.Writer) *Agent {
+func testAgentWithConfig(t *testing.T, ip net.IP, agentConfig *Config, serfConfig *serf.Config, logOutput io.Writer) *Agent {
+	serfConfig.MemberlistConfig.ProbeInterval = 100 * time.Millisecond
+	serfConfig.MemberlistConfig.BindAddr = ip.String()
+	serfConfig.NodeName = serfConfig.MemberlistConfig.BindAddr
 
 	if logOutput == nil {
-		logOutput = os.Stderr
+		logOutput = testutil.TestWriter(t)
 	}
-	serfConfig.MemberlistConfig.ProbeInterval = 100 * time.Millisecond
-	serfConfig.MemberlistConfig.BindAddr = testutil.GetBindAddr().String()
-	serfConfig.NodeName = serfConfig.MemberlistConfig.BindAddr
 
 	agent, err := Create(agentConfig, serfConfig, logOutput)
 	if err != nil {
-		panic(err)
+		t.Fatalf("err: %v", err)
 	}
 	return agent
 }

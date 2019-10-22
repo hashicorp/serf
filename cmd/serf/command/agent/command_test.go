@@ -22,9 +22,17 @@ func TestCommandRun(t *testing.T) {
 		Ui:         ui,
 	}
 
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	rpcAddr := ip2.String() + ":11111"
+
 	args := []string{
-		"-bind", testutil.GetBindAddr().String(),
-		"-rpc-addr", getRPCAddr(),
+		"-bind", ip1.String(),
+		"-rpc-addr", rpcAddr,
 	}
 
 	resultCh := make(chan int)
@@ -37,7 +45,7 @@ func TestCommandRun(t *testing.T) {
 	// Verify it runs "forever"
 	select {
 	case <-resultCh:
-		t.Fatalf("ended too soon, err: %s", ui.ErrorWriter.String())
+		t.Fatalf("ended too soon, err: %v", ui.ErrorWriter.String())
 	case <-time.After(50 * time.Millisecond):
 	}
 
@@ -67,9 +75,16 @@ func TestCommandRun_rpc(t *testing.T) {
 		Ui:         new(cli.MockUi),
 	}
 
-	rpcAddr := getRPCAddr()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	rpcAddr := ip2.String() + ":11111"
+
 	args := []string{
-		"-bind", testutil.GetBindAddr().String(),
+		"-bind", ip1.String(),
 		"-rpc-addr", rpcAddr,
 	}
 
@@ -86,13 +101,13 @@ func TestCommandRun_rpc(t *testing.T) {
 
 	client, err := client.NewRPCClient(rpcAddr)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer client.Close()
 
 	members, err := client.Members()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if len(members) != 1 {
@@ -101,9 +116,15 @@ func TestCommandRun_rpc(t *testing.T) {
 }
 
 func TestCommandRun_join(t *testing.T) {
-	a1 := testAgent(nil)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1, nil)
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer a1.Shutdown()
 
@@ -120,7 +141,7 @@ func TestCommandRun_join(t *testing.T) {
 	}
 
 	args := []string{
-		"-bind", testutil.GetBindAddr().String(),
+		"-bind", ip2.String(),
 		"-join", a1.conf.MemberlistConfig.BindAddr,
 		"-replay",
 	}
@@ -142,6 +163,12 @@ func TestCommandRun_join(t *testing.T) {
 }
 
 func TestCommandRun_joinFail(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
 	shutdownCh := make(chan struct{})
 	defer close(shutdownCh)
 
@@ -151,8 +178,8 @@ func TestCommandRun_joinFail(t *testing.T) {
 	}
 
 	args := []string{
-		"-bind", testutil.GetBindAddr().String(),
-		"-join", testutil.GetBindAddr().String(),
+		"-bind", ip1.String(),
+		"-join", ip2.String(),
 	}
 
 	code := c.Run(args)
@@ -174,9 +201,15 @@ func TestCommandRun_advertiseAddr(t *testing.T) {
 		Ui:         new(cli.MockUi),
 	}
 
-	rpcAddr := getRPCAddr()
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	rpcAddr := ip2.String() + ":11111"
 	args := []string{
-		"-bind", testutil.GetBindAddr().String(),
+		"-bind", ip1.String(),
 		"-rpc-addr", rpcAddr,
 		"-advertise", "127.0.0.10:12345",
 	}
@@ -194,13 +227,13 @@ func TestCommandRun_advertiseAddr(t *testing.T) {
 
 	client, err := client.NewRPCClient(rpcAddr)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer client.Close()
 
 	members, err := client.Members()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if len(members) != 1 {
@@ -236,11 +269,26 @@ func TestCommandRun_mDNS(t *testing.T) {
 		Ui:         new(cli.MockUi),
 	}
 
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	ip3, returnFn3 := testutil.TakeIP()
+	defer returnFn3()
+
+	ip4, returnFn4 := testutil.TakeIP()
+	defer returnFn4()
+
+	rpcAddr1 := ip2.String() + ":11111"
+	rpcAddr2 := ip4.String() + ":11111"
+
 	args := []string{
 		"-node", "foo",
-		"-bind", testutil.GetBindAddr().String(),
+		"-bind", ip1.String(),
 		"-discover", "test",
-		"-rpc-addr", getRPCAddr(),
+		"-rpc-addr", rpcAddr1,
 	}
 
 	go func() {
@@ -264,12 +312,11 @@ func TestCommandRun_mDNS(t *testing.T) {
 		Ui:         new(cli.MockUi),
 	}
 
-	addr2 := getRPCAddr()
 	args2 := []string{
 		"-node", "bar",
-		"-bind", testutil.GetBindAddr().String(),
+		"-bind", ip3.String(),
 		"-discover", "test",
-		"-rpc-addr", addr2,
+		"-rpc-addr", rpcAddr2,
 	}
 
 	go func() {
@@ -282,15 +329,15 @@ func TestCommandRun_mDNS(t *testing.T) {
 
 	time.Sleep(150 * time.Millisecond)
 
-	client, err := client.NewRPCClient(addr2)
+	client, err := client.NewRPCClient(rpcAddr2)
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer client.Close()
 
 	members, err := client.Members()
 	if err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 
 	if len(members) != 2 {
@@ -299,9 +346,15 @@ func TestCommandRun_mDNS(t *testing.T) {
 }
 
 func TestCommandRun_retry_join(t *testing.T) {
-	a1 := testAgent(nil)
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1, nil)
 	if err := a1.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+		t.Fatalf("err: %v", err)
 	}
 	defer a1.Shutdown()
 
@@ -318,7 +371,7 @@ func TestCommandRun_retry_join(t *testing.T) {
 	}
 
 	args := []string{
-		"-bind", testutil.GetBindAddr().String(),
+		"-bind", ip2.String(),
 		"-retry-join", a1.conf.MemberlistConfig.BindAddr,
 		"-replay",
 	}
@@ -348,9 +401,15 @@ func TestCommandRun_retry_joinFail(t *testing.T) {
 		Ui:         new(cli.MockUi),
 	}
 
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
 	args := []string{
-		"-bind", testutil.GetBindAddr().String(),
-		"-retry-join", testutil.GetBindAddr().String(),
+		"-bind", ip1.String(),
+		"-retry-join", ip2.String(),
 		"-retry-interval", "1s",
 		"-retry-max", "1",
 	}
