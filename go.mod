@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/go-syslog v1.0.0
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/hashicorp/logutils v1.0.0
-	github.com/hashicorp/mdns v1.0.0
+	github.com/hashicorp/mdns v1.0.1
 	github.com/hashicorp/memberlist v0.1.3
 	github.com/mitchellh/cli v1.0.0
 	github.com/mitchellh/mapstructure v0.0.0-20160808181253-ca63d7c062ee
