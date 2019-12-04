@@ -70,7 +70,7 @@ The options below are all specified on the command-line.
   environment that supports multicasting.
 
 * `-encrypt` - Specifies the secret key to use for encryption of Serf
-  network traffic. This key must be 16-bytes that are base64 encoded. The
+  network traffic. This key must be 32-bytes that are base64 encoded. The
   easiest way to create an encryption key is to use `serf keygen`. All
   nodes within a cluster must share the same encryption key to communicate.
 
@@ -330,9 +330,9 @@ file:
 
 ```javascript
 [
-  "QHOYjmYlxSCBhdfiolhtDQ==",
-  "daZ2wnuw+Ql+2hCm7vQB6A==",
-  "keTZydopxtiTY7HVoqeWGw=="
+  "HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8=",
+  "T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s=",
+  "5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4="
 ]
 ```
 

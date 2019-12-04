@@ -93,7 +93,7 @@ func TestSerfQueries_estimateMaxKeysInListKeyResponseFactor(t *testing.T) {
 	q := Query{id: 0, serf: &Serf{config: &Config{NodeName: "", QueryResponseSizeLimit: DefaultConfig().QueryResponseSizeLimit * 10}}}
 	resp := nodeKeyResponse{Keys: []string{}}
 	for i := 0; i <= q.serf.config.QueryResponseSizeLimit; i++ {
-		resp.Keys = append(resp.Keys, "LeJcrRIZsZ9tPYJZW7Xllg==")
+		resp.Keys = append(resp.Keys, "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=")
 	}
 	found := 0
 	for i := len(resp.Keys); i >= 0; i-- {
@@ -129,19 +129,19 @@ func TestSerfQueries_keyListResponseWithCorrectSize(t *testing.T) {
 		hasMsg   bool
 	}{
 		{expected: 0, hasMsg: false, resp: nodeKeyResponse{}},
-		{expected: 1, hasMsg: false, resp: nodeKeyResponse{Keys: []string{"LeJcrRIZsZ9tPYJZW7Xllg=="}}},
+		{expected: 1, hasMsg: false, resp: nodeKeyResponse{Keys: []string{"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg="}}},
 		// has 50 keys which makes the response bigger than 1024 bytes.
-		{expected: 36, hasMsg: true, resp: nodeKeyResponse{Keys: []string{
-			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
-			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
-			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
-			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
-			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
-			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
-			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
-			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
-			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
-			"LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==", "LeJcrRIZsZ9tPYJZW7Xllg==",
+		{expected: 19, hasMsg: true, resp: nodeKeyResponse{Keys: []string{
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
 		}}},
 	}
 	for _, c := range cases {

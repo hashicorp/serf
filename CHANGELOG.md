@@ -1,3 +1,20 @@
+## UNRELEASED
+
+## 0.8.4 (September 19, 2019)
+
+FEATURES: 
+* Force Leave command can now take `prune` option to completely remove members [GH-574]
+
+IMPROVEMENTS:
+
+* agent: Increased encrpytion byte key size to 32 bytes [GH-570]
+
+## 0.8.3 (April 10, 2019)
+
+IMPROVEMENTS:
+
+* library: `UserSizeLimit` is configurable [GH-530]
+
 ## 0.8.2 (January 24th, 2019)
 
 FEATURES:

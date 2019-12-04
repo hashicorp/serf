@@ -76,9 +76,9 @@ type Config struct {
 	AdvertiseAddr string `mapstructure:"advertise"`
 
 	// EncryptKey is the secret key to use for encrypting communication
-	// traffic for Serf. The secret key must be exactly 16-bytes, base64
+	// traffic for Serf. The secret key must be exactly 32-bytes, base64
 	// encoded. The easiest way to do this on Unix machines is this command:
-	// "head -c16 /dev/urandom | base64". If this is not specified, the
+	// "head -c32 /dev/urandom | base64". If this is not specified, the
 	// traffic will not be encrypted.
 	EncryptKey string `mapstructure:"encrypt_key"`
 

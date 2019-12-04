@@ -193,7 +193,22 @@ func (c *RPCClient) ForceLeave(node string) error {
 		Seq:     c.getSeq(),
 	}
 	req := forceLeaveRequest{
-		Node: node,
+		Node:  node,
+		Prune: false,
+	}
+	return c.genericRPC(&header, &req, nil)
+}
+
+//ForceLeavePrune uses ForceLeave but is used to reap the
+//node entirely
+func (c *RPCClient) ForceLeavePrune(node string) error {
+	header := requestHeader{
+		Command: forceLeaveCommand,
+		Seq:     c.getSeq(),
+	}
+	req := forceLeaveRequest{
+		Node:  node,
+		Prune: true,
 	}
 	return c.genericRPC(&header, &req, nil)
 }

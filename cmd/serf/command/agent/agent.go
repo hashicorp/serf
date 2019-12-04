@@ -182,6 +182,17 @@ func (a *Agent) ForceLeave(node string) error {
 	return err
 }
 
+// ForceLeavePrune completely removes a failed node from the
+// member list entirely
+func (a *Agent) ForceLeavePrune(node string) error {
+	a.logger.Printf("[INFO] agent: Force leaving node (prune): %s", node)
+	err := a.serf.RemoveFailedNodePrune(node)
+	if err != nil {
+		a.logger.Printf("[WARN] agent: failed to remove node (prune): %v", err)
+	}
+	return err
+}
+
 // UserEvent sends a UserEvent on Serf, see Serf.UserEvent.
 func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
 	a.logger.Printf("[DEBUG] agent: Requesting user event send: %s. Coalesced: %#v. Payload: %#v",

@@ -11,7 +11,7 @@ Serf uses a gossip protocol to broadcast messages to the cluster. This page docu
 Serf uses a [gossip protocol](https://en.wikipedia.org/wiki/Gossip_protocol)
 to broadcast messages to the cluster. This page documents the details of
 this internal protocol. The gossip protocol is based on
-["SWIM: Scalable Weakly-consistent Infection-style Process Group Membership Protocol"](http://www.cs.cornell.edu/info/projects/spinglass/public_pdfs/swim.pdf),
+["SWIM: Scalable Weakly-consistent Infection-style Process Group Membership Protocol"](https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf),
 with a few minor adaptations, mostly to increase propagation speed
 and convergence rate.
 
@@ -51,7 +51,7 @@ to the cluster.
 
 This is a brief and incomplete description of the protocol. For a better idea,
 please read the
-[SWIM paper](https://www.cs.cornell.edu/~asdas/research/dsn02-swim.pdf)
+[SWIM paper](https://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf)
 in its entirety, along with the Serf source code.
 
 ## SWIM Modifications

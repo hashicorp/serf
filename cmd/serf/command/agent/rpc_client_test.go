@@ -112,6 +112,59 @@ WAIT:
 	}
 }
 
+func TestRPCClientForceLeave_prune(t *testing.T) {
+	client, a1, ipc := testRPCClient(t)
+	a2 := testAgent(nil)
+	defer ipc.Shutdown()
+	defer client.Close()
+
+	if err := a1.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer a1.Shutdown()
+
+	if err := a2.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer a2.Shutdown()
+
+	testutil.Yield()
+
+	s2Addr := a2.conf.MemberlistConfig.BindAddr
+	if _, err := a1.Join([]string{s2Addr}, false); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	if err := a2.Shutdown(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	start := time.Now()
+WAIT:
+	time.Sleep(a1.conf.MemberlistConfig.ProbeInterval * 3)
+	m := a1.Serf().Members()
+	if len(m) != 2 {
+		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
+	}
+	if findMember(t, m, a2.conf.NodeName).Status != serf.StatusFailed && time.Now().Sub(start) < 3*time.Second {
+		goto WAIT
+	}
+
+	if err := client.ForceLeavePrune(a2.conf.NodeName); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	m = a1.Serf().Members()
+	if len(m) != 1 {
+		t.Fatalf("should have 1 members: %#v", a1.Serf().Members())
+	}
+
+}
+
 func TestRPCClientJoin(t *testing.T) {
 	client, a1, ipc := testRPCClient(t)
 	a2 := testAgent(nil)
@@ -830,7 +883,7 @@ func TestRPCClient_Keys_EncryptionDisabledError(t *testing.T) {
 	}
 
 	// Failed installing key
-	failures, err := client.InstallKey("El/H8lEqX2WiUa36SxcpZw==")
+	failures, err := client.InstallKey("5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4=")
 	if err == nil {
 		t.Fatalf("expected encryption disabled error")
 	}
@@ -839,7 +892,7 @@ func TestRPCClient_Keys_EncryptionDisabledError(t *testing.T) {
 	}
 
 	// Failed using key
-	failures, err = client.UseKey("El/H8lEqX2WiUa36SxcpZw==")
+	failures, err = client.UseKey("5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4=")
 	if err == nil {
 		t.Fatalf("expected encryption disabled error")
 	}
@@ -848,7 +901,7 @@ func TestRPCClient_Keys_EncryptionDisabledError(t *testing.T) {
 	}
 
 	// Failed removing key
-	failures, err = client.RemoveKey("El/H8lEqX2WiUa36SxcpZw==")
+	failures, err = client.RemoveKey("5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4=")
 	if err == nil {
 		t.Fatalf("expected encryption disabled error")
 	}
@@ -867,8 +920,8 @@ func TestRPCClient_Keys_EncryptionDisabledError(t *testing.T) {
 }
 
 func TestRPCClient_Keys(t *testing.T) {
-	newKey := "El/H8lEqX2WiUa36SxcpZw=="
-	existing := "A2xzjs0eq9PxSV2+dPi3sg=="
+	newKey := "5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4="
+	existing := "T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s="
 	existingBytes, err := base64.StdEncoding.DecodeString(existing)
 	if err != nil {
 		t.Fatalf("err: %s", err)

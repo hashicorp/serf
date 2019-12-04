@@ -11,9 +11,9 @@ import (
 
 func testKeyring() (*memberlist.Keyring, error) {
 	keys := []string{
-		"enjTwAFRe4IE71bOFhirzQ==",
-		"csT9mxI7aTf9ap3HLBbdmA==",
-		"noha2tVc0OyD/2LtCBoAOQ==",
+		"ZWTL+bgjHyQPhJRKcFe3ccirc2SFHmc/Nw67l8NQfdk=",
+		"WbL6oaTPom+7RG7Q/INbJWKy09OLar/Hf2SuOAdoQE4=",
+		"HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8=",
 	}
 
 	keysDecoded := make([][]byte, len(keys))
@@ -78,7 +78,7 @@ func TestSerf_InstallKey(t *testing.T) {
 	testutil.Yield()
 
 	// Begin tests
-	newKey := "l4ZkaypGLT8AsB0LBldthw=="
+	newKey := "HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8="
 	newKeyBytes, err := base64.StdEncoding.DecodeString(newKey)
 	if err != nil {
 		t.Fatalf("err: %s", err)
@@ -134,7 +134,7 @@ func TestSerf_UseKey(t *testing.T) {
 	testutil.Yield()
 
 	// Begin tests
-	useKey := "csT9mxI7aTf9ap3HLBbdmA=="
+	useKey := "HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8="
 	useKeyBytes, err := base64.StdEncoding.DecodeString(useKey)
 	if err != nil {
 		t.Fatalf("err: %s", err)
@@ -158,7 +158,7 @@ func TestSerf_UseKey(t *testing.T) {
 	}
 
 	// Make sure an error is thrown if the key doesn't exist
-	_, err = manager.UseKey("aE6AfGEvay+UJbkfxBk4SQ==")
+	_, err = manager.UseKey("T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s=")
 	if err == nil {
 		t.Fatalf("Expected error changing to non-existent primary key")
 	}
@@ -186,7 +186,7 @@ func TestSerf_RemoveKey(t *testing.T) {
 	testutil.Yield()
 
 	// Begin tests
-	removeKey := "noha2tVc0OyD/2LtCBoAOQ=="
+	removeKey := "T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s="
 	removeKeyBytes, err := base64.StdEncoding.DecodeString(removeKey)
 	if err != nil {
 		t.Fatalf("err: %s", err)
@@ -228,7 +228,7 @@ func TestSerf_ListKeys(t *testing.T) {
 	initialKeyringLen := len(s1.config.MemberlistConfig.Keyring.GetKeys())
 
 	// Extra key on s2 to make sure we see it in the list
-	extraKey := "JHAxGU13qDaXhUW6jIpyog=="
+	extraKey := "5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4="
 	extraKeyBytes, err := base64.StdEncoding.DecodeString(extraKey)
 	if err != nil {
 		t.Fatalf("err: %s", err)

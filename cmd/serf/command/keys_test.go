@@ -13,11 +13,11 @@ import (
 )
 
 func testKeysCommandAgent(t *testing.T) *agent.Agent {
-	key1, err := base64.StdEncoding.DecodeString("SNCg1bQSoCdGVlEx+TgfBw==")
+	key1, err := base64.StdEncoding.DecodeString("ZWTL+bgjHyQPhJRKcFe3ccirc2SFHmc/Nw67l8NQfdk=")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	key2, err := base64.StdEncoding.DecodeString("vbitCcJNwNP4aEWHgofjMg==")
+	key2, err := base64.StdEncoding.DecodeString("WbL6oaTPom+7RG7Q/INbJWKy09OLar/Hf2SuOAdoQE4=")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -52,13 +52,13 @@ func TestKeysCommandRun_InstallKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	if _, ok := keys["jbuQMI4gMUeh1PPmKOtiBg=="]; ok {
+	if _, ok := keys["HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8="]; ok {
 		t.Fatalf("have test key")
 	}
 
 	args := []string{
 		"-rpc-addr=" + rpcAddr,
-		"-install", "jbuQMI4gMUeh1PPmKOtiBg==",
+		"-install", "HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8=",
 	}
 
 	code := c.Run(args)
@@ -74,7 +74,7 @@ func TestKeysCommandRun_InstallKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	if _, ok := keys["jbuQMI4gMUeh1PPmKOtiBg=="]; !ok {
+	if _, ok := keys["HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8="]; !ok {
 		t.Fatalf("new key not found")
 	}
 }
@@ -91,7 +91,7 @@ func TestKeysCommandRun_InstallKeyFailure(t *testing.T) {
 	// Trying to install with encryption disabled returns 1
 	args := []string{
 		"-rpc-addr=" + rpcAddr,
-		"-install", "jbuQMI4gMUeh1PPmKOtiBg==",
+		"-install", "HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8=",
 	}
 
 	code := c.Run(args)
@@ -117,7 +117,7 @@ func TestKeysCommandRun_UseKey(t *testing.T) {
 	// Trying to use a non-existent key returns 1
 	args := []string{
 		"-rpc-addr=" + rpcAddr,
-		"-use", "eodFZZjm7pPwIZ0Miy7boQ==",
+		"-use", "T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s=",
 	}
 
 	code := c.Run(args)
@@ -128,7 +128,7 @@ func TestKeysCommandRun_UseKey(t *testing.T) {
 	// Using an existing key returns 0
 	args = []string{
 		"-rpc-addr=" + rpcAddr,
-		"-use", "vbitCcJNwNP4aEWHgofjMg==",
+		"-use", "WbL6oaTPom+7RG7Q/INbJWKy09OLar/Hf2SuOAdoQE4=",
 	}
 
 	code = c.Run(args)
@@ -149,7 +149,7 @@ func TestKeysCommandRun_UseKeyFailure(t *testing.T) {
 	// Trying to use a key that doesn't exist returns 1
 	args := []string{
 		"-rpc-addr=" + rpcAddr,
-		"-use", "jbuQMI4gMUeh1PPmKOtiBg==",
+		"-use", "HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8=",
 	}
 
 	code := c.Run(args)
@@ -188,7 +188,7 @@ func TestKeysCommandRun_RemoveKey(t *testing.T) {
 	// Removing non-existing key still returns 0 (noop)
 	args := []string{
 		"-rpc-addr=" + rpcAddr,
-		"-remove", "eodFZZjm7pPwIZ0Miy7boQ==",
+		"-remove", "T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s=",
 	}
 
 	code := c.Run(args)
@@ -208,7 +208,7 @@ func TestKeysCommandRun_RemoveKey(t *testing.T) {
 	// Removing a primary key returns 1
 	args = []string{
 		"-rpc-addr=" + rpcAddr,
-		"-remove", "SNCg1bQSoCdGVlEx+TgfBw==",
+		"-remove", "ZWTL+bgjHyQPhJRKcFe3ccirc2SFHmc/Nw67l8NQfdk=",
 	}
 
 	ui.ErrorWriter.Reset()
@@ -224,7 +224,7 @@ func TestKeysCommandRun_RemoveKey(t *testing.T) {
 	// Removing a non-primary, existing key returns 0
 	args = []string{
 		"-rpc-addr=" + rpcAddr,
-		"-remove", "vbitCcJNwNP4aEWHgofjMg==",
+		"-remove", "WbL6oaTPom+7RG7Q/INbJWKy09OLar/Hf2SuOAdoQE4=",
 	}
 
 	code = c.Run(args)
@@ -254,7 +254,7 @@ func TestKeysCommandRun_RemoveKeyFailure(t *testing.T) {
 	// Trying to remove the primary key returns 1
 	args := []string{
 		"-rpc-addr=" + rpcAddr,
-		"-remove", "SNCg1bQSoCdGVlEx+TgfBw==",
+		"-remove", "ZWTL+bgjHyQPhJRKcFe3ccirc2SFHmc/Nw67l8NQfdk=",
 	}
 
 	code := c.Run(args)
@@ -287,11 +287,11 @@ func TestKeysCommandRun_ListKeys(t *testing.T) {
 		t.Fatalf("bad: %d. %#v", code, ui.ErrorWriter.String())
 	}
 
-	if !strings.Contains(ui.OutputWriter.String(), "SNCg1bQSoCdGVlEx+TgfBw==") {
+	if !strings.Contains(ui.OutputWriter.String(), "ZWTL+bgjHyQPhJRKcFe3ccirc2SFHmc/Nw67l8NQfdk=") {
 		t.Fatalf("missing expected key")
 	}
 
-	if !strings.Contains(ui.OutputWriter.String(), "vbitCcJNwNP4aEWHgofjMg==") {
+	if !strings.Contains(ui.OutputWriter.String(), "WbL6oaTPom+7RG7Q/INbJWKy09OLar/Hf2SuOAdoQE4=") {
 		t.Fatalf("missing expected key")
 	}
 }
@@ -332,8 +332,8 @@ func TestKeysCommandRun_BadOptions(t *testing.T) {
 
 	args := []string{
 		"-rpc-addr=" + rpcAddr,
-		"-install", "vbitCcJNwNP4aEWHgofjMg==",
-		"-use", "vbitCcJNwNP4aEWHgofjMg==",
+		"-install", "WbL6oaTPom+7RG7Q/INbJWKy09OLar/Hf2SuOAdoQE4=",
+		"-use", "WbL6oaTPom+7RG7Q/INbJWKy09OLar/Hf2SuOAdoQE4=",
 	}
 
 	code := c.Run(args)
@@ -344,7 +344,7 @@ func TestKeysCommandRun_BadOptions(t *testing.T) {
 	args = []string{
 		"-rpc-addr=" + rpcAddr,
 		"-list",
-		"-remove", "SNCg1bQSoCdGVlEx+TgfBw==",
+		"-remove", "ZWTL+bgjHyQPhJRKcFe3ccirc2SFHmc/Nw67l8NQfdk=",
 	}
 
 	code = c.Run(args)

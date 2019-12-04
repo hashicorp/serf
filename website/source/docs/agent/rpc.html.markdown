@@ -205,6 +205,8 @@ tags, or delete tags. The request body looks like:
     {"Tags": {"tag1": "val1"}, "DeleteTags": ["tag2"]}
 ```
 
+There is no special response body.
+
 ### stream
 
 The stream command is used to subscribe to a stream of all events
@@ -409,11 +411,11 @@ cluster's keyring.
 The request looks like:
 
 ```
-    {"Key": "lkuIAePQcb/XGvuLPqwNtw=="}
+    {"Key": "5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4="}
 ```
 
-The `Key` must be 16 bytes of base64-encoded data. This value can be generated
-easily using the [keygen command](/docs/commands/keygen.html).
+The `Key` should be 32 bytes of base64-encoded data. `24` and `16` bytes are also accepted, but 32 bytes are recommended for improved security. This value can be generated
+using the [keygen command](/docs/commands/keygen.html).
 
 Once invoked, this method will begin broadcasting the new key to all members in
 the cluster via the gossip protocol. Once the query has completed, a response
@@ -445,7 +447,7 @@ messages.
 The request looks like:
 
 ```
-    {"Key": "lkuIAePQcb/XGvuLPqwNtw=="}
+    {"Key": "5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4="}
 ```
 
 The key requested must already exist in the keyring of all agents for this
@@ -462,7 +464,7 @@ The remove-key command is used to remove a key from the cluster's keyring.
 The request looks like:
 
 ```
-    {"Key": "lkuIAePQcb/XGvuLPqwNtw=="}
+    {"Key": "5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4="}
 ```
 
 The key requested must already exist in the keyring of each agent for this
@@ -489,8 +491,8 @@ There is no request body, but the response looks like:
             "node2": "message from node2"
         },
         "Keys": {
-            "lkuIAePQcb/XGvuLPqwNtw==": 2,
-            "FhADzydYiGiVz3vW7wpunQ==": 1
+            "5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4=": 2,
+            "T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s=": 1
         },
         "NumErr": 0,
         "NumNodes": 2,

@@ -18,13 +18,13 @@ type KeygenCommand struct {
 var _ cli.Command = &KeygenCommand{}
 
 func (c *KeygenCommand) Run(_ []string) int {
-	key := make([]byte, 16)
+	key := make([]byte, 32)
 	n, err := rand.Reader.Read(key)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading random data: %s", err))
 		return 1
 	}
-	if n != 16 {
+	if n != 32 {
 		c.Ui.Error(fmt.Sprintf("Couldn't read enough entropy. Generate more entropy!"))
 		return 1
 	}

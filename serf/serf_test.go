@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/coordinate"
 	"github.com/hashicorp/serf/testutil"
+	"github.com/hashicorp/serf/testutil/retry"
 )
 
 func testConfig() *Config {
@@ -63,6 +64,27 @@ func testMember(t *testing.T, members []Member, name string, status MemberStatus
 	}
 
 	panic(fmt.Sprintf("node not found: %s", name))
+}
+
+// testMemberStatus is testMember but returns an error
+// instead of failing the test
+func testMemberStatus(members []Member, name string, status MemberStatus) error {
+	for _, m := range members {
+		if m.Name == name {
+			if m.Status != status {
+				return fmt.Errorf("bad state for %s: %d", name, m.Status)
+			}
+			return nil
+		}
+	}
+
+	if status == StatusNone {
+		// We didn't expect to find it
+		return nil
+	}
+
+	return fmt.Errorf("node not found: %s", name)
+
 }
 
 func TestCreate_badProtocolVersion(t *testing.T) {
@@ -500,7 +522,7 @@ func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
 		t.Fatalf("s1 members: %d", len(s1.Members()))
 	}
 
-	var member *Member = nil
+	var member *Member
 	for _, m := range members {
 		if m.Name == s3Config.NodeName {
 			member = &m
@@ -515,6 +537,182 @@ func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
 	if member.Tags["role"] != s3Config.Tags["role"] {
 		t.Fatalf("bad role: %s", member.Tags["role"])
 	}
+}
+
+func TestSerf_forceLeaveFailed(t *testing.T) {
+	s1Config := testConfig()
+	s2Config := testConfig()
+	s3Config := testConfig()
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	defer s2.Shutdown()
+
+	s3, err := Create(s3Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	defer s3.Shutdown()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	//Put s2 in failed state
+	s2.Shutdown()
+
+	retry.Run(t, func(r *retry.R) {
+		if err := testMemberStatus(s1.Members(), s2Config.NodeName, StatusFailed); err != nil {
+			r.Fatal(err)
+		}
+	})
+	s1.forceLeave(s2.config.NodeName, true)
+
+	memberlen := len(s1.Members())
+	if memberlen != 2 {
+		t.Fatalf("wanted 2 alive members, got %v", s1.Members())
+	}
+
+}
+
+func TestSerf_forceLeaveLeaving(t *testing.T) {
+	s1Config := testConfig()
+	s2Config := testConfig()
+	s3Config := testConfig()
+
+	//make it so it doesn't get reaped
+	// allow for us to see the leaving state
+	s1Config.TombstoneTimeout = 1 * time.Hour
+	s1Config.LeavePropagateDelay = 5 * time.Second
+
+	s2Config.TombstoneTimeout = 1 * time.Hour
+	s2Config.LeavePropagateDelay = 5 * time.Second
+
+	s3Config.TombstoneTimeout = 1 * time.Hour
+	s3Config.LeavePropagateDelay = 5 * time.Second
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	defer s1.Shutdown()
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+
+	s3, err := Create(s3Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s3.Shutdown()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, true)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, true)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	testutil.Yield()
+
+	//Put s2 in left state
+	if err := s2.Leave(); err != nil {
+		t.Fatal(err)
+	}
+
+	retry.Run(t, func(r *retry.R) {
+		if err := testMemberStatus(s1.Members(), s2Config.NodeName, 3); err != nil {
+			r.Fatal(err)
+		}
+	})
+	s1.forceLeave(s2.config.NodeName, true)
+
+	memberlen := len(s1.Members())
+	if memberlen != 2 {
+		t.Fatalf("wanted 2 alive members, got %v", s1.Members())
+	}
+}
+
+func TestSerf_forceLeaveLeft(t *testing.T) {
+	s1Config := testConfig()
+	s2Config := testConfig()
+	s3Config := testConfig()
+
+	//make it so it doesn't get reaped
+	s1Config.TombstoneTimeout = 1 * time.Hour
+	s2Config.TombstoneTimeout = 1 * time.Hour
+	s3Config.TombstoneTimeout = 1 * time.Hour
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+
+	s3, err := Create(s3Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s3.Shutdown()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, true)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	testutil.Yield()
+
+	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, true)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	testutil.Yield()
+
+	//Put s2 in left state
+	if err := s2.Leave(); err != nil {
+		t.Fatal(err)
+	}
+
+	retry.Run(t, func(r *retry.R) {
+		if err := testMemberStatus(s1.Members(), s2Config.NodeName, StatusLeft); err != nil {
+			r.Fatal(err)
+		}
+	})
+	s1.forceLeave(s2.config.NodeName, true)
+
+	memberlen := len(s1.Members())
+	if memberlen != 2 {
+		t.Fatalf("wanted 2 alive members, got %v", s1.Members())
+	}
+
 }
 
 func TestSerf_reconnect(t *testing.T) {
@@ -672,7 +870,7 @@ func TestSerf_update(t *testing.T) {
 
 	// Add a tag to force an update event, and add a version downgrade as
 	// well (that alone won't trigger an update).
-	s2Config.ProtocolVersion -= 1
+	s2Config.ProtocolVersion--
 	s2Config.Tags["foo"] = "bar"
 
 	// We try for a little while to wait for s2 to fully shutdown since the
@@ -834,6 +1032,67 @@ func TestSerfRemoveFailedNode(t *testing.T) {
 	// Verify that s2 is gone
 	testMember(t, s1.Members(), s2Config.NodeName, StatusLeft)
 	testMember(t, s3.Members(), s2Config.NodeName, StatusLeft)
+}
+
+func TestSerfRemoveFailedNode_prune(t *testing.T) {
+	s1Config := testConfig()
+	s2Config := testConfig()
+	s3Config := testConfig()
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s2.Shutdown()
+
+	s3, err := Create(s3Config)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer s3.Shutdown()
+
+	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	testutil.Yield()
+
+	// Now force the shutdown of s2 so it appears to fail.
+	if err := s2.Shutdown(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 5)
+
+	// Verify that s2 is "failed"
+	testMember(t, s1.Members(), s2Config.NodeName, StatusFailed)
+
+	// Now remove the failed node
+	if err := s1.RemoveFailedNodePrune(s2Config.NodeName); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Check to make sure it's gone
+	if len(s1.Members()) != 2 {
+		t.Fatalf("err: numbers of members should be two, found %v", len(s1.Members()))
+	}
+
+	if len(s3.Members()) != 2 {
+		t.Fatalf("err: numbers of members should be two, found %v", len(s3.Members()))
+	}
+
 }
 
 func TestSerfRemoveFailedNode_ourself(t *testing.T) {
@@ -1072,7 +1331,7 @@ func TestMemberStatus_String(t *testing.T) {
 			t.Fatalf("expected panic")
 		}
 	}()
-	other.String()
+	_ = other.String()
 }
 
 func TestSerf_joinLeaveJoin(t *testing.T) {
@@ -1414,31 +1673,31 @@ func TestSerf_SetTags(t *testing.T) {
 
 	// Verify the new tags
 	m1m := s1.Members()
-	m1m_tags := make(map[string]map[string]string)
+	m1mTags := make(map[string]map[string]string)
 	for _, m := range m1m {
-		m1m_tags[m.Name] = m.Tags
+		m1mTags[m.Name] = m.Tags
 	}
 
-	if m := m1m_tags[s1.config.NodeName]; m["port"] != "8000" {
-		t.Fatalf("bad: %v", m1m_tags)
+	if m := m1mTags[s1.config.NodeName]; m["port"] != "8000" {
+		t.Fatalf("bad: %v", m1mTags)
 	}
 
-	if m := m1m_tags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
-		t.Fatalf("bad: %v", m1m_tags)
+	if m := m1mTags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
+		t.Fatalf("bad: %v", m1mTags)
 	}
 
 	m2m := s2.Members()
-	m2m_tags := make(map[string]map[string]string)
+	m2mTags := make(map[string]map[string]string)
 	for _, m := range m2m {
-		m2m_tags[m.Name] = m.Tags
+		m2mTags[m.Name] = m.Tags
 	}
 
-	if m := m2m_tags[s1.config.NodeName]; m["port"] != "8000" {
-		t.Fatalf("bad: %v", m1m_tags)
+	if m := m2mTags[s1.config.NodeName]; m["port"] != "8000" {
+		t.Fatalf("bad: %v", m1mTags)
 	}
 
-	if m := m2m_tags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
-		t.Fatalf("bad: %v", m1m_tags)
+	if m := m2mTags[s2.config.NodeName]; m["datacenter"] != "east-aws" {
+		t.Fatalf("bad: %v", m1mTags)
 	}
 }
 
@@ -1803,8 +2062,8 @@ func TestSerf_LocalMember(t *testing.T) {
 }
 
 func TestSerf_WriteKeyringFile(t *testing.T) {
-	existing := "jbuQMI4gMUeh1PPmKOtiBg=="
-	newKey := "eodFZZjm7pPwIZ0Miy7boQ=="
+	existing := "T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s="
+	newKey := "HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8="
 
 	td, err := ioutil.TempDir("", "serf")
 	if err != nil {

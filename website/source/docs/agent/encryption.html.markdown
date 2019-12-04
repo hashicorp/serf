@@ -19,19 +19,19 @@ starting the Serf agent. The key can be set using the `-encrypt` flag
 on `serf agent` or by setting the `encrypt_key` in a configuration file.
 It is advisable to put the key in a configuration file to avoid other users
 from being able to discover it by inspecting running processes.
-The key must be 16-bytes that are base64 encoded. The easiest method to
+The key must be 32-bytes that are base64 encoded. The easiest method to
 obtain a cryptographically suitable key is by using `serf keygen`.
 
 ```
 $ serf keygen
-cg8StVXbQJ0gPvMd9o7yrg==
+pUqJrVyVRj5jsiYEkM/tFQYfWyJIv4s3XkvDwy7Cu5s=
 ```
 
 With that key, you can enable encryption on the agent. You can verify
 encryption is enabled because the output will include "Encrypted: true".
 
 ```
-$ serf agent -encrypt=cg8StVXbQJ0gPvMd9o7yrg==
+$ serf agent -encrypt=pUqJrVyVRj5jsiYEkM/tFQYfWyJIv4s3XkvDwy7Cu5s=
 ==> Starting Serf agent...
 ==> Serf agent running!
     Node name: 'mitchellh.local'
