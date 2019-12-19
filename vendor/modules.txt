@@ -42,8 +42,8 @@ github.com/mitchellh/cli
 github.com/mitchellh/mapstructure
 # github.com/posener/complete v1.1.1
 github.com/posener/complete
-github.com/posener/complete/cmd
 github.com/posener/complete/cmd/install
+github.com/posener/complete/cmd
 github.com/posener/complete/match
 # github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f
 github.com/ryanuber/columnize
@@ -53,10 +53,10 @@ github.com/sean-/seed
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/ed25519/internal/edwards25519
 # golang.org/x/net v0.0.0-20181201002055-351d144fa1fc
+golang.org/x/net/ipv4
+golang.org/x/net/ipv6
 golang.org/x/net/bpf
 golang.org/x/net/internal/iana
 golang.org/x/net/internal/socket
-golang.org/x/net/ipv4
-golang.org/x/net/ipv6
 # golang.org/x/sys v0.0.0-20181026203630-95b1ffbd15a5
 golang.org/x/sys/unix
