@@ -352,7 +352,7 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	c.Ui.Output("Starting Serf agent...")
 	agent, err := Create(config, serfConfig, logOutput)
 	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Failed to start the Serf agent: %v", err))
+		c.Ui.Error(fmt.Sprintf("Failed to setup the Serf agent: %v", err))
 		return nil
 	}
 	return agent
