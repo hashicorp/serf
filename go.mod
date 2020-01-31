@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/hashicorp/logutils v1.0.0
 	github.com/hashicorp/mdns v1.0.1
-	github.com/hashicorp/memberlist v0.1.6-0.20200124172945-d7bbc3182c6b
+	github.com/hashicorp/memberlist v0.1.6-0.20200131220937-931c4e80d24f
 	github.com/mitchellh/cli v1.0.0
 	github.com/mitchellh/mapstructure v0.0.0-20160808181253-ca63d7c062ee
 	github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f
