@@ -3,6 +3,7 @@ package serf
 import (
 	"errors"
 	"fmt"
+	"github.com/hashicorp/memberlist"
 	"math"
 	"math/rand"
 	"net"
@@ -271,8 +272,8 @@ func (s *Serf) relayResponse(relayFactor uint8, addr net.UDPAddr, resp *messageQ
 		return m.Status != StatusAlive || m.ProtocolMax < 5 || m.Name == localName
 	})
 	for _, m := range relayMembers {
-		relayAddr := net.UDPAddr{IP: m.Addr, Port: int(m.Port)}
-		if err := s.memberlist.SendTo(&relayAddr, raw); err != nil {
+		node := &memberlist.Node{Addr: m.Addr, Port: m.Port}
+		if err := s.memberlist.SendBestEffort(node, raw); err != nil {
 			return fmt.Errorf("failed to send relay response: %v", err)
 		}
 	}
