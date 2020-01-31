@@ -45,7 +45,7 @@ type Agent struct {
 	shutdownLock sync.Mutex
 }
 
-// Start creates a new agent, potentially returning an error
+// Create creates a new agent, potentially returning an error
 func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, error) {
 	// Ensure we have a log sink
 	if logOutput == nil {
