@@ -61,6 +61,7 @@ const (
 	useKeyCommand          = "use-key"
 	removeKeyCommand       = "remove-key"
 	listKeysCommand        = "list-keys"
+	getPrimaryKeyCommand   = "get-primary-key"
 	tagsCommand            = "tags"
 	queryCommand           = "query"
 	respondCommand         = "respond"
@@ -518,6 +519,9 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 	case listKeysCommand:
 		return i.handleListKeys(client, seq)
 
+	case getPrimaryKeyCommand:
+		return i.handleGetPrimaryKey(client, seq)
+
 	case tagsCommand:
 		return i.handleTags(client, seq)
 
@@ -804,6 +808,24 @@ func (i *AgentIPC) handleRemoveKey(client *IPCClient, seq uint64) error {
 
 func (i *AgentIPC) handleListKeys(client *IPCClient, seq uint64) error {
 	queryResp, err := i.agent.ListKeys()
+
+	header := responseHeader{
+		Seq:   seq,
+		Error: errToString(err),
+	}
+	resp := keyResponse{
+		Messages: queryResp.Messages,
+		Keys:     queryResp.Keys,
+		NumNodes: queryResp.NumNodes,
+		NumErr:   queryResp.NumErr,
+		NumResp:  queryResp.NumResp,
+	}
+
+	return client.Send(&header, &resp)
+}
+
+func (i *AgentIPC) handleGetPrimaryKey(client *IPCClient, seq uint64) error {
+	queryResp, err := i.agent.GetPrimaryKey()
 
 	header := responseHeader{
 		Seq:   seq,

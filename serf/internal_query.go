@@ -30,6 +30,9 @@ const (
 	// listKeysQuery is used to list all known keys in the cluster
 	listKeysQuery = "list-keys"
 
+	// getPrimaryKeyQuery is used to obtain the current primary key
+	getPrimaryKeyQuery = "get-primary-key"
+
 	// minEncodedKeyLength is used to compute the max number of keys in a list key
 	// response. eg 1024/25 = 40. a message with max size of 1024 bytes cannot
 	// contain more than 40 keys. There is a test
@@ -118,6 +121,8 @@ func (s *serfQueries) handleQuery(q *Query) {
 		s.handleRemoveKey(q)
 	case listKeysQuery:
 		s.handleListKeys(q)
+	case getPrimaryKeyQuery:
+		s.handleGetPrimaryKey(q)
 	default:
 		s.logger.Printf("[WARN] serf: Unhandled internal query '%s'", queryName)
 	}
@@ -360,6 +365,28 @@ func (s *serfQueries) handleListKeys(q *Query) {
 		key := base64.StdEncoding.EncodeToString(keyBytes)
 		response.Keys = append(response.Keys, key)
 	}
+	response.Result = true
+
+SEND:
+	s.sendKeyResponse(q, &response)
+}
+
+// handleGetPrimaryKey is invoked when a query is received to return the current
+// primary key used by the Serf instance in the same fasion as handleListKeys method
+func (s *serfQueries) handleGetPrimaryKey(q *Query) {
+	response := nodeKeyResponse{Result: false}
+	keyring := s.serf.config.MemberlistConfig.Keyring
+
+	if !s.serf.EncryptionEnabled() {
+		response.Message = "Keyring is empty (encryption not enabled)"
+		s.logger.Printf("[ERR] serf: Keyring is empty (encryption not enabled)")
+		goto SEND
+	}
+
+	s.logger.Printf("[INFO] serf: Received get-primary-key query")
+
+	response.Keys = append(response.Keys,
+		base64.StdEncoding.EncodeToString(keyring.GetPrimaryKey()))
 	response.Result = true
 
 SEND:

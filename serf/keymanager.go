@@ -195,3 +195,17 @@ func (k *KeyManager) ListKeysWithOptions(opts *KeyRequestOptions) (*KeyResponse,
 
 	return k.handleKeyRequest("", listKeysQuery, opts)
 }
+
+// GetPrimaryKey is used to obtain the currently used primary key from members in a Serf cluster
+// and returns the response formatted as usual, but containing the single key in the list 
+// for WAN and LAN keyrings
+func (k *KeyManager) GetPrimaryKey() (*KeyResponse, error) {
+	return k.GetPrimaryKeyWithOptions(nil)
+}
+
+func (k *KeyManager) GetPrimaryKeyWithOptions(opts *KeyRequestOptions) (*KeyResponse, error) {
+	k.l.RLock()
+	defer k.l.RUnlock()
+
+	return k.handleKeyRequest("", getPrimaryKeyQuery, opts)
+}
