@@ -34,7 +34,11 @@ func testConfig(t *testing.T, ip net.IP) *Config {
 	config.MemberlistConfig.TCPTimeout = 100 * time.Millisecond
 	config.MemberlistConfig.SuspicionMult = 1
 
-	config.NodeName = fmt.Sprintf("Node %s", config.MemberlistConfig.BindAddr)
+	// Activate the strictest version of memberlist validation to ensure
+	// we properly pass node names through the serf layer.
+	config.MemberlistConfig.RequireNodeNames = true
+
+	config.NodeName = fmt.Sprintf("node-%s", config.MemberlistConfig.BindAddr)
 
 	// Set a short reap interval so that it can run during the test
 	config.ReapInterval = 1 * time.Second
@@ -162,7 +166,7 @@ func TestSerf_eventsFailed(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -209,7 +213,7 @@ func TestSerf_eventsJoin(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -251,7 +255,7 @@ func TestSerf_eventsLeave(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -300,7 +304,7 @@ func TestSerf_RemoveFailed_eventsLeave(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -354,7 +358,7 @@ func TestSerf_eventsUser(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -477,7 +481,7 @@ func TestSerf_joinLeave(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -520,7 +524,7 @@ func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -548,7 +552,7 @@ func TestSerf_leaveRejoinDifferentRole(t *testing.T) {
 	}
 	defer s3.Shutdown()
 
-	_, err = s3.Join([]string{s1Config.MemberlistConfig.BindAddr}, false)
+	_, err = s3.Join([]string{s1Config.NodeName + "/" + s1Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -608,12 +612,12 @@ func TestSerf_forceLeaveFailed(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2, s3)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
-	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s3Config.NodeName + "/" + s3Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -680,12 +684,12 @@ func TestSerf_forceLeaveLeaving(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2, s3)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, true)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, true)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
-	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, true)
+	_, err = s1.Join([]string{s3Config.NodeName + "/" + s3Config.MemberlistConfig.BindAddr}, true)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -747,12 +751,12 @@ func TestSerf_forceLeaveLeft(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2, s3)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, true)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, true)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
-	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, true)
+	_, err = s1.Join([]string{s3Config.NodeName + "/" + s3Config.MemberlistConfig.BindAddr}, true)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -804,7 +808,7 @@ func TestSerf_reconnect(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -868,7 +872,7 @@ func TestSerf_reconnect_sameIP(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Addr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Addr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -928,7 +932,7 @@ func TestSerf_update(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -968,7 +972,7 @@ func TestSerf_update(t *testing.T) {
 		}
 	}
 
-	_, err = s2.Join([]string{s1Config.MemberlistConfig.BindAddr}, false)
+	_, err = s2.Join([]string{s1Config.NodeName + "/" + s1Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1021,7 +1025,7 @@ func TestSerf_role(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1097,12 +1101,12 @@ func TestSerfRemoveFailedNode(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2, s3)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
-	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s3Config.NodeName + "/" + s3Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1167,12 +1171,12 @@ func TestSerfRemoveFailedNode_prune(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2, s3)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
-	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s3Config.NodeName + "/" + s3Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1482,7 +1486,7 @@ func TestSerf_joinLeaveJoin(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1525,7 +1529,7 @@ func TestSerf_joinLeaveJoin(t *testing.T) {
 	waitUntilNumNodes(t, 1, s2)
 
 	// Re-attempt the join
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1596,7 +1600,7 @@ func TestSerf_Join_IgnoreOld(t *testing.T) {
 	testutil.Yield()
 
 	// join with ignoreOld set to true! should not get events
-	_, err = s2.Join([]string{s1Config.MemberlistConfig.BindAddr}, true)
+	_, err = s2.Join([]string{s1Config.NodeName + "/" + s1Config.MemberlistConfig.BindAddr}, true)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1638,7 +1642,7 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1732,7 +1736,7 @@ func TestSerf_Leave_SnapshotRecovery(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1798,7 +1802,7 @@ func TestSerf_SetTags(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1904,7 +1908,7 @@ func TestSerf_Query(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -2008,7 +2012,7 @@ func TestSerf_Query_Filter(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -2024,7 +2028,7 @@ func TestSerf_Query_Filter(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s3)
 
-	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s3Config.NodeName + "/" + s3Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -2207,7 +2211,7 @@ func TestSerf_NameResolution(t *testing.T) {
 	waitUntilNumNodes(t, 1, s1, s2, s3)
 
 	// Join s1 to s2 first. s2 should vote for s1 in conflict
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -2215,7 +2219,7 @@ func TestSerf_NameResolution(t *testing.T) {
 	waitUntilNumNodes(t, 2, s1, s2)
 	waitUntilNumNodes(t, 1, s3)
 
-	_, err = s1.Join([]string{s3Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s3Config.NodeName + "/" + s3Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -2460,7 +2464,7 @@ func TestSerf_Join_Cancel(t *testing.T) {
 
 	waitUntilNumNodes(t, 0, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err == nil {
 		t.Fatalf("expect error")
 	}
@@ -2525,7 +2529,7 @@ func TestSerf_Coordinates(t *testing.T) {
 	}
 
 	// Join the two nodes together and give them time to probe each other.
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("could not join s1 and s2: %s", err)
 	}
@@ -2593,7 +2597,7 @@ func TestSerf_Coordinates(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s3)
 
-	_, err = s3.Join([]string{s1Config.MemberlistConfig.BindAddr}, false)
+	_, err = s3.Join([]string{s1Config.NodeName + "/" + s1Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("could not join s1 and s3: %s", err)
 	}
@@ -2662,7 +2666,7 @@ func TestSerf_PingDelegateVersioning(t *testing.T) {
 	waitUntilNumNodes(t, 1, s1, s2)
 
 	// Join the two nodes together and give them time to probe each other.
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("could not join s1 and s2: %s", err)
 	}
@@ -2740,7 +2744,7 @@ func TestSerf_PingDelegateRogueCoordinate(t *testing.T) {
 	waitUntilNumNodes(t, 1, s1, s2)
 
 	// Join the two nodes together and give them time to probe each other.
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("could not join s1 and s2: %s", err)
 	}
@@ -2786,7 +2790,7 @@ func TestSerf_NumNodes(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}

@@ -42,7 +42,7 @@ func TestEncodeMessage(t *testing.T) {
 func TestEncodeRelayMessage(t *testing.T) {
 	in := &messageLeave{Node: "foo"}
 	addr := net.UDPAddr{IP: net.IP{127, 0, 0, 1}, Port: 1234}
-	raw, err := encodeRelayMessage(messageLeaveType, addr, in)
+	raw, err := encodeRelayMessage(messageLeaveType, addr, "test", in)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}

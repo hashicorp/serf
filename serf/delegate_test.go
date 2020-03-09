@@ -81,7 +81,7 @@ func TestDelegate_LocalState(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{c2.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{c2.NodeName + "/" + c2.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}

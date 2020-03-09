@@ -10,10 +10,9 @@ require (
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/hashicorp/logutils v1.0.0
 	github.com/hashicorp/mdns v1.0.1
-	github.com/hashicorp/memberlist v0.1.3
+	github.com/hashicorp/memberlist v0.2.0
 	github.com/mitchellh/cli v1.0.0
 	github.com/mitchellh/mapstructure v0.0.0-20160808181253-ca63d7c062ee
 	github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f
 	github.com/stretchr/testify v1.3.0 // indirect
-	golang.org/x/net v0.0.0-20181201002055-351d144fa1fc // indirect
 )

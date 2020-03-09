@@ -31,7 +31,7 @@ func TestJoinCommandRun(t *testing.T) {
 	c := &JoinCommand{Ui: ui}
 	args := []string{
 		"-rpc-addr=" + rpcAddr,
-		a2.SerfConfig().MemberlistConfig.BindAddr,
+		a2.SerfConfig().NodeName + "/" + a2.SerfConfig().MemberlistConfig.BindAddr,
 	}
 
 	code := c.Run(args)

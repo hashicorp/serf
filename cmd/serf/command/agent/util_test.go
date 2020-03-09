@@ -35,6 +35,10 @@ func testAgentWithConfig(t *testing.T, ip net.IP, agentConfig *Config, serfConfi
 	serfConfig.MemberlistConfig.BindAddr = ip.String()
 	serfConfig.NodeName = serfConfig.MemberlistConfig.BindAddr
 
+	// Activate the strictest version of memberlist validation to ensure
+	// we properly pass node names through the serf layer.
+	serfConfig.MemberlistConfig.RequireNodeNames = true
+
 	if logOutput == nil {
 		logOutput = testutil.TestWriter(t)
 	}

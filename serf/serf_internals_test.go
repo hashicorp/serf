@@ -33,7 +33,7 @@ func TestSerf_joinLeave_ltime(t *testing.T) {
 
 	waitUntilNumNodes(t, 1, s1, s2)
 
-	_, err = s1.Join([]string{s2Config.MemberlistConfig.BindAddr}, false)
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
