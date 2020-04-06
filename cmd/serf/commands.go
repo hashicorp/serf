@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/serf/cmd/serf/command"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
+	"github.com/hashicorp/serf/version"
 	"github.com/mitchellh/cli"
 )
 
@@ -106,10 +107,8 @@ func init() {
 
 		"version": func() (cli.Command, error) {
 			return &command.VersionCommand{
-				Revision:          GitCommit,
-				Version:           Version,
-				VersionPrerelease: VersionPrerelease,
-				Ui:                ui,
+				UI:      ui,
+				Version: version.GetHumanVersion(),
 			}, nil
 		},
 	}
