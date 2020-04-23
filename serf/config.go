@@ -246,6 +246,9 @@ type Config struct {
 	// UserEventSizeLimit is maximum byte size limit of user event `name` + `payload` in bytes.
 	// It's optimal to be relatively small, since it's going to be gossiped through the cluster.
 	UserEventSizeLimit int
+
+	// MetaMaxSize is the max size of meta data on a memberlist node.
+	MetaMaxSize int
 }
 
 // Init allocates the subdata structures

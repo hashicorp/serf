@@ -265,11 +265,6 @@ func Create(conf *Config) (*Serf, error) {
 	}
 	serf.eventJoinIgnore.Store(false)
 
-	// Check that the meta data length is okay
-	if len(serf.encodeTags(conf.Tags)) > memberlist.MetaMaxSize {
-		return nil, fmt.Errorf("Encoded length of tags exceeds limit of %d bytes", memberlist.MetaMaxSize)
-	}
-
 	// Check if serf member event coalescing is enabled
 	if conf.CoalescePeriod > 0 && conf.QuiescentPeriod > 0 && conf.EventCh != nil {
 		c := &memberEventCoalescer{
@@ -384,6 +379,17 @@ func Create(conf *Config) (*Serf, error) {
 	conf.MemberlistConfig.ProtocolVersion = ProtocolVersionMap[conf.ProtocolVersion]
 	if !conf.DisableCoordinates {
 		conf.MemberlistConfig.Ping = &pingDelegate{serf: serf}
+	}
+
+	if conf.MetaMaxSize != 0 && conf.MetaMaxSize > memberlist.DefaultMetaMaxSize {
+		conf.MemberlistConfig.MetaMaxSize = conf.MetaMaxSize
+	} else {
+		conf.MemberlistConfig.MetaMaxSize = memberlist.DefaultMetaMaxSize
+	}
+
+	// Check that the meta data length is okay
+	if len(serf.encodeTags(conf.Tags)) > conf.MemberlistConfig.MetaMaxSize {
+		return nil, fmt.Errorf("Encoded length of tags exceeds limit of %d bytes", conf.MemberlistConfig.MetaMaxSize)
 	}
 
 	// Setup a merge delegate if necessary
@@ -599,9 +605,9 @@ func (s *Serf) registerQueryResponse(timeout time.Duration, resp *QueryResponse)
 // the cluster. Blocks until a the message is broadcast out.
 func (s *Serf) SetTags(tags map[string]string) error {
 	// Check that the meta data length is okay
-	if len(s.encodeTags(tags)) > memberlist.MetaMaxSize {
+	if len(s.encodeTags(tags)) > s.config.MemberlistConfig.MetaMaxSize {
 		return fmt.Errorf("Encoded length of tags exceeds limit of %d bytes",
-			memberlist.MetaMaxSize)
+			s.config.MemberlistConfig.MetaMaxSize)
 	}
 
 	// Update the config
