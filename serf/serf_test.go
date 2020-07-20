@@ -10,8 +10,10 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -274,6 +276,156 @@ func TestSerf_eventsLeave(t *testing.T) {
 	// a leave event in s1 about the leave.
 	testEvents(t, eventCh, s2Config.NodeName,
 		[]EventType{EventMemberJoin, EventMemberLeave})
+}
+
+func TestSerf_eventsLeave_avoidInfiniteLeaveRebroadcast(t *testing.T) {
+	// This test is a variation of the normal leave test that is crafted
+	// specifically to handle a situation where two unique leave events for the
+	// same node reach two other nodes in the wrong order which causes them to
+	// infinitely rebroadcast the leave event without updating their own
+	// lamport clock for that node.
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	ip3, returnFn3 := testutil.TakeIP()
+	defer returnFn3()
+
+	ip4, returnFn4 := testutil.TakeIP()
+	defer returnFn4()
+
+	testConfigLocal := func(t *testing.T, ip net.IP) *Config {
+		conf := testConfig(t, ip)
+		// Make the reap interval longer in this test
+		// so that the leave does not also cause a reap
+		conf.ReapInterval = 30 * time.Second
+		return conf
+	}
+
+	// Create the s1 config with an event channel so we can listen
+	eventCh := make(chan Event, 4)
+	s1Config := testConfigLocal(t, ip1)
+	s1Config.EventCh = eventCh
+
+	s2Config := testConfigLocal(t, ip2)
+	s2Config.RejoinAfterLeave = true
+	s2Addr := s2Config.MemberlistConfig.BindAddr
+	s2Name := s2Config.NodeName
+
+	s3Config := testConfigLocal(t, ip3)
+	// Allow s3 to drop joins in the future.
+	var s3DropJoins uint32
+	s3Config.MessageDropper = func(t messageType) bool {
+		switch t {
+		case messageJoinType, messagePushPullType:
+			return atomic.LoadUint32(&s3DropJoins) == 1
+		default:
+			return false
+		}
+	}
+
+	s4Config := testConfigLocal(t, ip4)
+	// Allow s4 to drop joins in the future.
+	var s4DropJoins uint32
+	s4Config.MessageDropper = func(t messageType) bool {
+		switch t {
+		case messageJoinType, messagePushPullType:
+			return atomic.LoadUint32(&s4DropJoins) == 1
+		default:
+			return false
+		}
+	}
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	defer s2.Shutdown()
+
+	s3, err := Create(s3Config)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	defer s3.Shutdown()
+
+	s4, err := Create(s4Config)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	defer s4.Shutdown()
+
+	waitUntilNumNodes(t, 1, s1, s2)
+
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	_, err = s3.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	_, err = s4.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	// S2 leaves gracefully
+	if err := s2.Leave(); err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if err := s2.Shutdown(); err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	// Make s3 and s4 drop inbound join messages and push-pulls for a bit so it won't see
+	// s2 rejoin
+	atomic.StoreUint32(&s3DropJoins, 1)
+	atomic.StoreUint32(&s4DropJoins, 1)
+
+	// Bring back s2 by mimicking its name and address
+	s2Config = testConfigLocal(t, ip2)
+	s2Config.RejoinAfterLeave = true
+	s2Config.MemberlistConfig.BindAddr = s2Addr
+	s2Config.NodeName = s2Name
+	s2, err = Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	defer s2.Shutdown()
+
+	_, err = s2.Join([]string{s1Config.NodeName + "/" + s1Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	waitUntilNumNodes(t, 4, s1, s2, s3, s4)
+
+	// Now leave a second time but before s3 saw the rejoin (due to the gate)
+	if err := s2.Leave(); err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	waitUntilIntentQueueLen(t, 0, s1, s3, s4)
+
+	retry.Run(t, func(r *retry.R) {
+		testMemberStatus(r, s1.Members(), s2Config.NodeName, StatusLeft)
+		testMemberStatus(r, s3.Members(), s2Config.NodeName, StatusLeft)
+		testMemberStatus(r, s4.Members(), s2Config.NodeName, StatusLeft)
+	})
+
+	// Now that s2 has left, we check the events to make sure we got
+	// a leave event in s1 about the leave.
+	testEvents(t, eventCh, s2Config.NodeName,
+		[]EventType{EventMemberJoin, EventMemberLeave,
+			EventMemberJoin, EventMemberLeave})
 }
 
 func TestSerf_RemoveFailed_eventsLeave(t *testing.T) {
@@ -2805,6 +2957,24 @@ func waitUntilNumNodes(t *testing.T, desiredNodes int, serfs ...*Serf) {
 		for i, s := range serfs {
 			if n := s.NumNodes(); desiredNodes != n {
 				r.Fatalf("s%d got %d expected %d", (i + 1), n, desiredNodes)
+			}
+		}
+	})
+}
+
+func waitUntilIntentQueueLen(t *testing.T, desiredLen int, serfs ...*Serf) {
+	t.Helper()
+	retry.Run(t, func(r *retry.R) {
+		t.Helper()
+		for i, s := range serfs {
+			stats := s.Stats()
+			iq, err := strconv.Atoi(stats["intent_queue"])
+			if err != nil {
+				r.Fatalf("err: %v", err)
+			}
+
+			if desiredLen != iq {
+				r.Fatalf("s%d got %d expected %d", (i + 1), iq, desiredLen)
 			}
 		}
 	})

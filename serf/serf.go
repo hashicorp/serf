@@ -907,6 +907,10 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 	s.memberLock.Lock()
 	defer s.memberLock.Unlock()
 
+	if s.config.MessageDropper(messageJoinType) {
+		return
+	}
+
 	var oldStatus MemberStatus
 	member, ok := s.members[n.Name]
 	if !ok {
@@ -1097,6 +1101,10 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		go s.broadcastJoin(s.clock.Time())
 		return false
 	}
+
+	// Always set the lamport time so that if we retransmit below it won't echo
+	// around forever!
+	member.statusLTime = leaveMsg.LTime
 
 	// State transition depends on current state
 	switch member.Status {
