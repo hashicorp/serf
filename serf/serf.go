@@ -907,7 +907,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 	s.memberLock.Lock()
 	defer s.memberLock.Unlock()
 
-	if s.config.MessageDropper(messageJoinType) {
+	if s.config.messageDropper(messageJoinType) {
 		return
 	}
 
@@ -1110,7 +1110,6 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 	switch member.Status {
 	case StatusAlive:
 		member.Status = StatusLeaving
-		member.statusLTime = leaveMsg.LTime
 
 		if leaveMsg.Prune {
 			s.handlePrune(member)
@@ -1118,7 +1117,6 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		return true
 	case StatusFailed:
 		member.Status = StatusLeft
-		member.statusLTime = leaveMsg.LTime
 
 		// Remove from the failed list and add to the left list. We add
 		// to the left list so that when we do a sync, other nodes will

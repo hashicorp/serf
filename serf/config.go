@@ -247,10 +247,12 @@ type Config struct {
 	// It's optimal to be relatively small, since it's going to be gossiped through the cluster.
 	UserEventSizeLimit int
 
-	// MessageDropper is a callback used for selectively ignoring inbound
+	// messageDropper is a callback used for selectively ignoring inbound
 	// gossip messages. This should only be used in unit tests needing careful
 	// control over sequencing of gossip arrival
-	MessageDropper func(typ messageType) bool
+	//
+	// WARNING: this should ONLY be used in tests
+	messageDropper func(typ messageType) bool
 }
 
 // Init allocates the subdata structures
@@ -258,8 +260,8 @@ func (c *Config) Init() {
 	if c.Tags == nil {
 		c.Tags = make(map[string]string)
 	}
-	if c.MessageDropper == nil {
-		c.MessageDropper = func(typ messageType) bool {
+	if c.messageDropper == nil {
+		c.messageDropper = func(typ messageType) bool {
 			return false
 		}
 	}

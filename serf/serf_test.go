@@ -317,7 +317,7 @@ func TestSerf_eventsLeave_avoidInfiniteLeaveRebroadcast(t *testing.T) {
 	s3Config := testConfigLocal(t, ip3)
 	// Allow s3 to drop joins in the future.
 	var s3DropJoins uint32
-	s3Config.MessageDropper = func(t messageType) bool {
+	s3Config.messageDropper = func(t messageType) bool {
 		switch t {
 		case messageJoinType, messagePushPullType:
 			return atomic.LoadUint32(&s3DropJoins) == 1
@@ -329,7 +329,7 @@ func TestSerf_eventsLeave_avoidInfiniteLeaveRebroadcast(t *testing.T) {
 	s4Config := testConfigLocal(t, ip4)
 	// Allow s4 to drop joins in the future.
 	var s4DropJoins uint32
-	s4Config.MessageDropper = func(t messageType) bool {
+	s4Config.messageDropper = func(t messageType) bool {
 		switch t {
 		case messageJoinType, messagePushPullType:
 			return atomic.LoadUint32(&s4DropJoins) == 1

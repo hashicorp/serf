@@ -36,7 +36,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 	rebroadcastQueue := d.serf.broadcasts
 	t := messageType(buf[0])
 
-	if d.serf.config.MessageDropper(t) {
+	if d.serf.config.messageDropper(t) {
 		return
 	}
 
@@ -218,7 +218,7 @@ func (d *delegate) MergeRemoteState(buf []byte, isJoin bool) {
 		return
 	}
 
-	if d.serf.config.MessageDropper(messagePushPullType) {
+	if d.serf.config.messageDropper(messagePushPullType) {
 		return
 	}
 
