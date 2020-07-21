@@ -314,29 +314,22 @@ func TestSerf_eventsLeave_avoidInfiniteLeaveRebroadcast(t *testing.T) {
 	s2Addr := s2Config.MemberlistConfig.BindAddr
 	s2Name := s2Config.NodeName
 
-	s3Config := testConfigLocal(t, ip3)
-	// Allow s3 to drop joins in the future.
-	var s3DropJoins uint32
-	s3Config.messageDropper = func(t messageType) bool {
+	// Allow s3 and s4 to drop joins in the future.
+	var dropJoins uint32
+	messageDropper := func(t messageType) bool {
 		switch t {
 		case messageJoinType, messagePushPullType:
-			return atomic.LoadUint32(&s3DropJoins) == 1
+			return atomic.LoadUint32(&dropJoins) == 1
 		default:
 			return false
 		}
 	}
 
+	s3Config := testConfigLocal(t, ip3)
+	s3Config.messageDropper = messageDropper
+
 	s4Config := testConfigLocal(t, ip4)
-	// Allow s4 to drop joins in the future.
-	var s4DropJoins uint32
-	s4Config.messageDropper = func(t messageType) bool {
-		switch t {
-		case messageJoinType, messagePushPullType:
-			return atomic.LoadUint32(&s4DropJoins) == 1
-		default:
-			return false
-		}
-	}
+	s4Config.messageDropper = messageDropper
 
 	s1, err := Create(s1Config)
 	if err != nil {
@@ -387,8 +380,7 @@ func TestSerf_eventsLeave_avoidInfiniteLeaveRebroadcast(t *testing.T) {
 
 	// Make s3 and s4 drop inbound join messages and push-pulls for a bit so it won't see
 	// s2 rejoin
-	atomic.StoreUint32(&s3DropJoins, 1)
-	atomic.StoreUint32(&s4DropJoins, 1)
+	atomic.StoreUint32(&dropJoins, 1)
 
 	// Bring back s2 by mimicking its name and address
 	s2Config = testConfigLocal(t, ip2)
@@ -408,7 +400,7 @@ func TestSerf_eventsLeave_avoidInfiniteLeaveRebroadcast(t *testing.T) {
 
 	waitUntilNumNodes(t, 4, s1, s2, s3, s4)
 
-	// Now leave a second time but before s3 saw the rejoin (due to the gate)
+	// Now leave a second time but before s3 and s4 see the rejoin (due to the gate)
 	if err := s2.Leave(); err != nil {
 		t.Fatalf("err: %v", err)
 	}
