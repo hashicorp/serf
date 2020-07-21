@@ -400,7 +400,7 @@ func TestSerf_eventsLeave_avoidInfiniteLeaveRebroadcast(t *testing.T) {
 
 	waitUntilNumNodes(t, 4, s1, s2, s3, s4)
 
-	// Now leave a second time but before s3 saw the rejoin (due to the gate)
+	// Now leave a second time but before s3 and s4 see the rejoin (due to the gate)
 	if err := s2.Leave(); err != nil {
 		t.Fatalf("err: %v", err)
 	}
