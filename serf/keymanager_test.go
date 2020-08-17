@@ -289,7 +289,7 @@ func TestSerf_ListKeys(t *testing.T) {
 	}
 
 	found := false
-	for key, _ := range resp.Keys {
+	for key := range resp.Keys {
 		if key == extraKey {
 			found = true
 		}
@@ -302,6 +302,18 @@ func TestSerf_ListKeys(t *testing.T) {
 	for key, num := range resp.Keys {
 		if key == extraKey && num != 1 {
 			t.Fatalf("Expected 1 nodes with key %s but have %d", extraKey, num)
+		}
+	}
+
+	// PrimaryKeys should be set
+	if len(resp.PrimaryKeys) != 1 {
+		t.Fatalf("Expected one primary key, but have %v", len(resp.PrimaryKeys))
+	}
+
+	// extraKey is not the primary
+	for key := range resp.PrimaryKeys {
+		if key == extraKey {
+			t.Fatal("extrakey shouldn't be the primary key")
 		}
 	}
 }
