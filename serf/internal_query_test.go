@@ -131,7 +131,7 @@ func TestSerfQueries_keyListResponseWithCorrectSize(t *testing.T) {
 		{expected: 0, hasMsg: false, resp: nodeKeyResponse{}},
 		{expected: 1, hasMsg: false, resp: nodeKeyResponse{Keys: []string{"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg="}}},
 		// has 50 keys which makes the response bigger than 1024 bytes.
-		{expected: 19, hasMsg: true, resp: nodeKeyResponse{Keys: []string{
+		{expected: 18, hasMsg: true, resp: nodeKeyResponse{Keys: []string{
 			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
 			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
 			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
