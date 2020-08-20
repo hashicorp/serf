@@ -63,13 +63,15 @@ func (m *mergeDelegate) nodeToMember(n *memberlist.Node) (*Member, error) {
 func (m *mergeDelegate) validiateMemberInfo(n *memberlist.Node) error {
 	var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\\-]+`)
 
-	if len(n.Name) > 128 {
-		return fmt.Errorf("NodeName length is %v characters. Valid length is between "+
-			"1 and 128 characters.", len(n.Name))
-	}
-	if InvalidNameRe.MatchString(n.Name) {
-		return fmt.Errorf("Nodename contains invalid characters %v , Valid characters include "+
-			"all alpha-numerics and dashes", n.Name)
+	if m.serf.config.ValidateNodeNames {
+		if len(n.Name) > 128 {
+			return fmt.Errorf("NodeName length is %v characters. Valid length is between "+
+				"1 and 128 characters.", len(n.Name))
+		}
+		if InvalidNameRe.MatchString(n.Name) {
+			return fmt.Errorf("Nodename contains invalid characters %v , Valid characters include "+
+				"all alpha-numerics and dashes", n.Name)
+		}
 	}
 
 	if net.ParseIP(string(n.Addr)) == nil {
