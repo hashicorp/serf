@@ -19,6 +19,7 @@ import (
 
 // This is the default port that we use for Serf communication
 const DefaultBindPort int = 7946
+const MaxNodeName int = 128
 
 // DefaultConfig contains the defaults for configurations.
 func DefaultConfig() *Config {
@@ -229,10 +230,9 @@ type Config struct {
 	BroadcastTimeoutRaw string        `mapstructure:"broadcast_timeout"`
 	BroadcastTimeout    time.Duration `mapstructure:"-"`
 
-	//TODO(schristoff): better var name? :grimance:
-	//NodeNameValid specifies whether or not nodenames should
+	//ValidateNodeNames specifies whether or not nodenames should
 	// be alphanumeric and within 128 characters
-	NodeNameValid bool `mapstructure:NodeNamevalid`
+	ValidateNodeNames bool `mapstructure:validate_node_names`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -350,8 +350,7 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 		result.BroadcastTimeout = dur
 	}
 
-	//TODO(schristoff): this will prolly break some stuff, add config flag for this check?
-	if result.NodeName != "" {
+	if result.NodeName != "" && result.ValidateNodeNames {
 		var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\\-]+`)
 		if InvalidNameRe.MatchString(result.NodeName) {
 			err = fmt.Errorf("NodeName contains invalid characters %v , Valid characters include "+
@@ -359,8 +358,7 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 			return nil, err
 		}
 
-		MaxLength := 128
-		if len(result.NodeName) > MaxLength {
+		if len(result.NodeName) > MaxNodeName {
 			err = fmt.Errorf("NodeName is %v characters. "+
 				"Valid length is between 1 and 128 characters", len(result.NodeName))
 			return nil, err

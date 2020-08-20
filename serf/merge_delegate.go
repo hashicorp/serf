@@ -17,9 +17,9 @@ type mergeDelegate struct {
 }
 
 func (m *mergeDelegate) NotifyMerge(nodes []*memberlist.Node) error {
-	var err error
 	members := make([]*Member, len(nodes))
 	for idx, n := range nodes {
+		var err error
 		members[idx], err = m.nodeToMember(n)
 		if err != nil {
 			return err
