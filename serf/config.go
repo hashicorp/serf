@@ -274,8 +274,8 @@ func (c *Config) Init() {
 func DefaultConfig() *Config {
 	hostname, err := os.Hostname()
 	//TODO(schristoff): is it safe to add this here? also should be flag
-	if len(hostname) > 63 {
-		err = fmt.Errorf("Hostname is %v characters. Valid length is between 1 and 63 characters", len(hostname))
+	if len(hostname) > 128 {
+		err = fmt.Errorf("Hostname is %v characters. Valid length is between 1 and 128 characters", len(hostname))
 	}
 
 	var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\\-]+`)

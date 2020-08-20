@@ -228,6 +228,11 @@ type Config struct {
 	// 5 seconds.
 	BroadcastTimeoutRaw string        `mapstructure:"broadcast_timeout"`
 	BroadcastTimeout    time.Duration `mapstructure:"-"`
+
+	//TODO(schristoff): better var name? :grimance:
+	//NodeNameValid specifies whether or not nodenames should
+	// be alphanumeric and within 128 characters
+	NodeNameValid bool `mapstructure:NodeNamevalid`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -354,10 +359,10 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 			return nil, err
 		}
 
-		MaxLength := 63
+		MaxLength := 128
 		if len(result.NodeName) > MaxLength {
 			err = fmt.Errorf("NodeName is %v characters. "+
-				"Valid length is between 1 and 63 characters", len(result.NodeName))
+				"Valid length is between 1 and 128 characters", len(result.NodeName))
 			return nil, err
 		}
 	}
@@ -381,9 +386,9 @@ func containsKey(keys []string, key string) bool {
 func MergeConfig(a, b *Config) *Config {
 	var result Config = *a
 
-	// Copy the strings if they're set
 	//TODO(schristoff): do i need to check nodename
 	//validatity here?
+
 	if b.NodeName != "" {
 		result.NodeName = b.NodeName
 	}
