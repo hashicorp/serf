@@ -1,9 +1,11 @@
 package serf
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/hashicorp/memberlist"
@@ -271,6 +273,16 @@ func (c *Config) Init() {
 // for most of the configurations.
 func DefaultConfig() *Config {
 	hostname, err := os.Hostname()
+	//TODO(schristoff): is it safe to add this here? also should be flag
+	if len(hostname) > 63 {
+		err = fmt.Errorf("Hostname is %v characters. Valid length is between 1 and 63 characters", len(hostname))
+	}
+
+	var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\\-]+`)
+	if InvalidNameRe.MatchString(hostname) {
+		err = fmt.Errorf("Hostname contains invalid characters %v , Valid characters include all "+
+			"all alpha-numerics and dashes.", hostname)
+	}
 	if err != nil {
 		panic(err)
 	}

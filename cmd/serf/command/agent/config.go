@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -344,6 +345,23 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 		result.BroadcastTimeout = dur
 	}
 
+	//TODO(schristoff): this will prolly break some stuff, add config flag for this check?
+	if result.NodeName != "" {
+		var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\\-]+`)
+		if InvalidNameRe.MatchString(result.NodeName) {
+			err = fmt.Errorf("NodeName contains invalid characters %v , Valid characters include "+
+				"all alpha-numerics and dashes.", result.NodeName)
+			return nil, err
+		}
+
+		MaxLength := 63
+		if len(result.NodeName) > MaxLength {
+			err = fmt.Errorf("NodeName is %v characters. "+
+				"Valid length is between 1 and 63 characters", len(result.NodeName))
+			return nil, err
+		}
+	}
+
 	return &result, nil
 }
 
@@ -364,6 +382,8 @@ func MergeConfig(a, b *Config) *Config {
 	var result Config = *a
 
 	// Copy the strings if they're set
+	//TODO(schristoff): do i need to check nodename
+	//validatity here?
 	if b.NodeName != "" {
 		result.NodeName = b.NodeName
 	}
