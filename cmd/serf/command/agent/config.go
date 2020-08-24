@@ -228,8 +228,9 @@ type Config struct {
 	BroadcastTimeoutRaw string        `mapstructure:"broadcast_timeout"`
 	BroadcastTimeout    time.Duration `mapstructure:"-"`
 
-	//ValidateNodeNames specifies whether or not nodenames should
-	// be alphanumeric and within 128 characters
+	// ValidateNodeNames controls whether nodenames only
+	// contain alphanumeric, dashes and '.'characters
+	// and sets maximum length to 128 characters
 	ValidateNodeNames bool `mapstructure:"validate_node_names"`
 }
 
@@ -366,9 +367,6 @@ func containsKey(keys []string, key string) bool {
 // configuration.
 func MergeConfig(a, b *Config) *Config {
 	var result Config = *a
-
-	//TODO(schristoff): do i need to check nodename
-	//validatity here?
 
 	if b.NodeName != "" {
 		result.NodeName = b.NodeName

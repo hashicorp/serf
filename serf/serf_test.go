@@ -2972,7 +2972,7 @@ func waitUntilIntentQueueLen(t *testing.T, desiredLen int, serfs ...*Serf) {
 	})
 }
 
-func TestAgentCreate_ValidateNodeName(t *testing.T) {
+func TestSerf_ValidateNodeName(t *testing.T) {
 	type test struct {
 		nodename string
 		want     string

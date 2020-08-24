@@ -254,8 +254,9 @@ type Config struct {
 	// WARNING: this should ONLY be used in tests
 	messageDropper func(typ messageType) bool
 
-	//ValidateNodeNames specifies whether or not nodenames should
-	// be alphanumeric and within 128 characters
+	// ValidateNodeNames controls whether nodenames only
+	// contain alphanumeric, dashes and '.'characters
+	// and sets maximum length to 128 characters
 	ValidateNodeNames bool
 }
 
