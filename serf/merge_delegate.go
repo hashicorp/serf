@@ -62,7 +62,8 @@ func (m *mergeDelegate) nodeToMember(n *memberlist.Node) (*Member, error) {
 // validateMemberInfo checks that the data we are sending is valid
 func (m *mergeDelegate) validiateMemberInfo(n *memberlist.Node) error {
 	var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\\-]+`)
-
+	var InvalidIPv4Re = regexp.MustCompile(`([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]+`)
+	var InvalidIPv6Re = regexp.MustCompile(`([0-9a-f]{1,4}:){7}[0-9a-f]{1,4}`)
 	if m.serf.config.ValidateNodeNames {
 		if len(n.Name) > 128 {
 			return fmt.Errorf("NodeName length is %v characters. Valid length is between "+
@@ -74,7 +75,7 @@ func (m *mergeDelegate) validiateMemberInfo(n *memberlist.Node) error {
 		}
 	}
 
-	if net.ParseIP(string(n.Addr)) == nil {
+	if InvalidIPv4Re.MatchString(string(n.Addr)) || InvalidIPv6Re.MatchString(string(n.Addr)) {
 		return fmt.Errorf("Address is %v . Must be a valid representation of an IP address. ", n.Addr)
 	}
 	if len(n.Meta) > memberlist.MetaMaxSize {

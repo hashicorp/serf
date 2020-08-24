@@ -19,7 +19,6 @@ import (
 
 // This is the default port that we use for Serf communication
 const DefaultBindPort int = 7946
-const MaxNodeName int = 128
 
 // DefaultConfig contains the defaults for configurations.
 func DefaultConfig() *Config {
@@ -358,7 +357,7 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 			return nil, err
 		}
 
-		if len(result.NodeName) > MaxNodeName {
+		if len(result.NodeName) > serf.MaxNodeNameLength {
 			err = fmt.Errorf("NodeName is %v characters. "+
 				"Valid length is between 1 and 128 characters", len(result.NodeName))
 			return nil, err

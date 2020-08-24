@@ -1,22 +1,20 @@
 package serf
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"os"
-	"regexp"
 	"time"
 
 	"github.com/hashicorp/memberlist"
 )
 
+const MaxNodeNameLength int = 128
+
 // ProtocolVersionMap is the mapping of Serf delegate protocol versions
 // to memberlist protocol versions. We mask the memberlist protocols using
 // our own protocol version.
 var ProtocolVersionMap map[uint8]uint8
-
-const MaxNodeName int = 128
 
 func init() {
 	ProtocolVersionMap = map[uint8]uint8{
@@ -260,7 +258,6 @@ type Config struct {
 
 	//ValidateNodeNames specifies whether or not nodenames should
 	// be alphanumeric and within 128 characters
-	//TODO(schristoff): should this be here?
 	ValidateNodeNames bool
 }
 
@@ -282,18 +279,6 @@ func DefaultConfig() *Config {
 	hostname, err := os.Hostname()
 	if err != nil {
 		panic(err)
-	}
-
-	//Do we need to do this here if it is set to true in the config?
-	if len(hostname) > MaxNodeName {
-		//TODO(schristoff): panic seems a little harsh here?
-		panic(fmt.Errorf("NodeName is %v characters. "+
-			"Valid length is between 1 and 128 characters", len(hostname)))
-	}
-	var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\\-]+`)
-	if InvalidNameRe.MatchString(hostname) {
-		panic(fmt.Errorf("NodeName contains invalid characters %v , Valid characters include "+
-			"all alpha-numerics and dashes.", hostname))
 	}
 
 	return &Config{

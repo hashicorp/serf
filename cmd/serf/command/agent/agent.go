@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -82,6 +83,18 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 	if agentConf.KeyringFile != "" {
 		if err := agent.loadKeyringFile(agentConf.KeyringFile); err != nil {
 			return nil, err
+		}
+	}
+
+	if agentConf.ValidateNodeNames {
+		var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\\-]+`)
+		if InvalidNameRe.MatchString(agentConf.NodeName) {
+			return nil, fmt.Errorf("NodeName contains invalid characters %v , Valid characters include "+
+				"all alpha-numerics and dashes.", agentConf.NodeName)
+		}
+		if len(agentConf.NodeName) > serf.MaxNodeNameLength {
+			return nil, fmt.Errorf("NodeName is %v characters. "+
+				"Valid length is between 1 and 128 characters", len(agentConf.NodeName))
 		}
 	}
 
