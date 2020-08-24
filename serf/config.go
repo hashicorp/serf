@@ -9,8 +9,6 @@ import (
 	"github.com/hashicorp/memberlist"
 )
 
-const MaxNodeNameLength int = 128
-
 // ProtocolVersionMap is the mapping of Serf delegate protocol versions
 // to memberlist protocol versions. We mask the memberlist protocols using
 // our own protocol version.

@@ -585,16 +585,3 @@ func TestReadConfigPaths_dir(t *testing.T) {
 		t.Fatalf("bad: %#v", config)
 	}
 }
-
-func TestBadNodeName(t *testing.T) {
-	input := `{"node_name": "9b07b1d05b25d78a3f55d0ccde714f02
-	96230786636dd72ded4c731746517331
-	394b395a0524b495d40fdd20ad9e536c
-	d15c8a7872ca8617226f02c175dfc0ff
-	dff8012a7c25e608e4775107fd2a3aeb"}`
-	_, err := DecodeConfig(bytes.NewReader([]byte(input)))
-	if err == nil {
-		t.Fatalf("should have err")
-	}
-
-}

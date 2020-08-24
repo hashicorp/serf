@@ -223,3 +223,26 @@ func TestDelegate_MergeRemoteState(t *testing.T) {
 		t.Fatalf("bad query clock")
 	}
 }
+
+func TestDelegate_BadData(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	c := testConfig(t, ip1)
+	c.ProtocolVersion = 3
+	c.Tags["role"] = "test"
+	d := &delegate{&Serf{config: c}}
+	meta := d.NodeMeta(32)
+
+	out := d.serf.decodeTags(meta)
+	if out["role"] != "test" {
+		t.Fatalf("bad meta data: %v", meta)
+	}
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("expected panic")
+		}
+	}()
+	d.NodeMeta(1)
+}

@@ -8,7 +8,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -347,21 +346,6 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 			return nil, err
 		}
 		result.BroadcastTimeout = dur
-	}
-
-	if result.NodeName != "" && result.ValidateNodeNames {
-		var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\\-]+`)
-		if InvalidNameRe.MatchString(result.NodeName) {
-			err = fmt.Errorf("NodeName contains invalid characters %v , Valid characters include "+
-				"all alpha-numerics and dashes.", result.NodeName)
-			return nil, err
-		}
-
-		if len(result.NodeName) > serf.MaxNodeNameLength {
-			err = fmt.Errorf("NodeName is %v characters. "+
-				"Valid length is between 1 and 128 characters", len(result.NodeName))
-			return nil, err
-		}
 	}
 
 	return &result, nil

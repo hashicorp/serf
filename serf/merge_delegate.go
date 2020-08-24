@@ -3,7 +3,7 @@ package serf
 import (
 	"fmt"
 	"net"
-	"regexp"
+	"strconv"
 
 	"github.com/hashicorp/memberlist"
 )
@@ -61,23 +61,28 @@ func (m *mergeDelegate) nodeToMember(n *memberlist.Node) (*Member, error) {
 
 // validateMemberInfo checks that the data we are sending is valid
 func (m *mergeDelegate) validiateMemberInfo(n *memberlist.Node) error {
-	var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\\-]+`)
-	var InvalidIPv4Re = regexp.MustCompile(`([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]+`)
-	var InvalidIPv6Re = regexp.MustCompile(`([0-9a-f]{1,4}:){7}[0-9a-f]{1,4}`)
-	if m.serf.config.ValidateNodeNames {
-		if len(n.Name) > 128 {
-			return fmt.Errorf("NodeName length is %v characters. Valid length is between "+
-				"1 and 128 characters.", len(n.Name))
-		}
-		if InvalidNameRe.MatchString(n.Name) {
-			return fmt.Errorf("Nodename contains invalid characters %v , Valid characters include "+
-				"all alpha-numerics and dashes", n.Name)
-		}
+	if err := m.serf.ValidateNodeNames(); err != nil {
+		return err
 	}
 
-	if InvalidIPv4Re.MatchString(string(n.Addr)) || InvalidIPv6Re.MatchString(string(n.Addr)) {
-		return fmt.Errorf("Address is %v . Must be a valid representation of an IP address. ", n.Addr)
+	host, port, err := net.SplitHostPort(string(n.Addr))
+	if err != nil {
+		return err
 	}
+
+	ip := net.ParseIP(host)
+	if ip == nil || (ip.To4() == nil && ip.To16() == nil) {
+		return fmt.Errorf("%v is not a valid IPv4 or 1Pv6 address\n", ip)
+	}
+
+	p, err := strconv.Atoi(port)
+	if err != nil {
+		return err
+	}
+	if p < 0 || p > 65535 {
+		return fmt.Errorf("invalid port %v , port must be a valid number from 0-65535", p)
+	}
+
 	if len(n.Meta) > memberlist.MetaMaxSize {
 		return fmt.Errorf("Encoded length of tags exceeds limit of %d bytes",
 			memberlist.MetaMaxSize)
