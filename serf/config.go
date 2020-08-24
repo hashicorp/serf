@@ -303,7 +303,7 @@ func DefaultConfig() *Config {
 		QuerySizeLimit:               1024,
 		EnableNameConflictResolution: true,
 		DisableCoordinates:           false,
-		ValidateNodeNames:            true,
+		ValidateNodeNames:            false,
 		UserEventSizeLimit:           512,
 	}
 }
