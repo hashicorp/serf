@@ -227,6 +227,11 @@ type Config struct {
 	// 5 seconds.
 	BroadcastTimeoutRaw string        `mapstructure:"broadcast_timeout"`
 	BroadcastTimeout    time.Duration `mapstructure:"-"`
+
+	// ValidateNodeNames controls whether nodenames only
+	// contain alphanumeric, dashes and '.'characters
+	// and sets maximum length to 128 characters
+	ValidateNodeNames bool `mapstructure:"validate_node_names"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
@@ -363,7 +368,6 @@ func containsKey(keys []string, key string) bool {
 func MergeConfig(a, b *Config) *Config {
 	var result Config = *a
 
-	// Copy the strings if they're set
 	if b.NodeName != "" {
 		result.NodeName = b.NodeName
 	}
