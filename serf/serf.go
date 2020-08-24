@@ -1891,8 +1891,8 @@ func (s *Serf) NumNodes() (numNodes int) {
 	return numNodes
 }
 
-// ValidateNodeNames checks the ValidateNodeNames flag to be true
-// then runs validations
+// ValidateNodeNames checks the similarly named flag and does
+// alphanumeric and length checks on NodeNames
 func (s *Serf) ValidateNodeNames() error {
 	if s.config.ValidateNodeNames {
 		var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\-\.\\]+`)
