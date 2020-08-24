@@ -1891,11 +1891,11 @@ func (s *Serf) NumNodes() (numNodes int) {
 	return numNodes
 }
 
-// ValidateNodeNames checks the ValidateNodeNames config flag to be true
+// ValidateNodeNames checks the ValidateNodeNames flag to be true
 // then runs validations
 func (s *Serf) ValidateNodeNames() error {
 	if s.config.ValidateNodeNames {
-		var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\\-]+`)
+		var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\-\.\\]+`)
 		if InvalidNameRe.MatchString(s.config.NodeName) {
 			return fmt.Errorf("NodeName contains invalid characters %v , Valid characters include "+
 				"all alpha-numerics and dashes.", s.config.NodeName)

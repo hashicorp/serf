@@ -2971,3 +2971,31 @@ func waitUntilIntentQueueLen(t *testing.T, desiredLen int, serfs ...*Serf) {
 		}
 	})
 }
+
+func TestAgentCreate_ValidateNodeName(t *testing.T) {
+	type test struct {
+		nodename string
+		want     string
+	}
+
+	tests := []test{
+		{
+			nodename: "!BadChars&^*",
+			want:     "invalid characters",
+		},
+		{
+			nodename: "thisisonehundredandtwentyeightcharacterslongnodenametestaswehavetotesteachcaseeventheoonesonehundredandtwentyeightcharacterslong1",
+			want:     "Valid length",
+		},
+	}
+	for _, tc := range tests {
+		agentConfig := DefaultConfig()
+		agentConfig.NodeName = tc.nodename
+		agentConfig.ValidateNodeNames = true
+		_, err := Create(agentConfig)
+		if !strings.Contains(err.Error(), tc.want) {
+			t.Fatalf("expected: %v, got: %v", tc.want, err)
+		}
+	}
+
+}
