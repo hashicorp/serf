@@ -231,7 +231,7 @@ type Config struct {
 
 	//ValidateNodeNames specifies whether or not nodenames should
 	// be alphanumeric and within 128 characters
-	ValidateNodeNames bool `mapstructure:validate_node_names`
+	ValidateNodeNames bool `mapstructure:"validate_node_names"`
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be
