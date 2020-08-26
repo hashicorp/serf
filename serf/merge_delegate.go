@@ -72,7 +72,7 @@ func (m *mergeDelegate) validiateMemberInfo(n *memberlist.Node) error {
 
 	ip := net.ParseIP(host)
 	if ip == nil || (ip.To4() == nil && ip.To16() == nil) {
-		return fmt.Errorf("%v is not a valid IPv4 or 1Pv6 address\n", ip)
+		return fmt.Errorf("%v is not a valid IPv4 or IPv6 address\n", ip)
 	}
 
 	p, err := strconv.Atoi(port)
