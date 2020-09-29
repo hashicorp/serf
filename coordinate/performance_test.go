@@ -75,7 +75,7 @@ func TestPerformance_Height(t *testing.T) {
 
 	// Make sure the height looks reasonable with the regular nodes all in a
 	// plane, and the center node up above.
-	for i, _ := range clients {
+	for i := range clients {
 		coord := clients[i].GetCoordinate()
 		if i == 0 {
 			if coord.Height < 0.97*radius.Seconds() {
@@ -146,7 +146,7 @@ func TestPerformance_Drift(t *testing.T) {
 		}
 
 		mid := make([]float64, config.Dimensionality)
-		for i, _ := range mid {
+		for i := range mid {
 			mid[i] = min.Vec[i] + (max.Vec[i]-min.Vec[i])/2
 		}
 		return magnitude(mid)
