@@ -50,6 +50,12 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+// ReconnectTimeoutOverrider is an interface that can be implemented to allow overriding
+// the reconnect timeout for individual members.
+type ReconnectTimeoutOverrider interface {
+	ReconnectTimeout(member *Member, timeout time.Duration) time.Duration
+}
+
 // Serf is a single node that is part of a single cluster that gets
 // events about joins/leaves/failures/etc. It is created with the Create
 // method.
@@ -1577,8 +1583,13 @@ func (s *Serf) reap(old []*memberState, now time.Time, timeout time.Duration) []
 	for i := 0; i < n; i++ {
 		m := old[i]
 
+		memberTimeout := timeout
+		if s.config.ReconnectTimeoutOverride != nil {
+			memberTimeout = s.config.ReconnectTimeoutOverride.ReconnectTimeout(&m.Member, memberTimeout)
+		}
+
 		// Skip if the timeout is not yet reached
-		if now.Sub(m.leaveTime) <= timeout {
+		if now.Sub(m.leaveTime) <= memberTimeout {
 			continue
 		}
 
