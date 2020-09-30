@@ -3,7 +3,6 @@ package serf
 import (
 	"fmt"
 	"net"
-	"strconv"
 
 	"github.com/hashicorp/memberlist"
 )
@@ -61,26 +60,12 @@ func (m *mergeDelegate) nodeToMember(n *memberlist.Node) (*Member, error) {
 
 // validateMemberInfo checks that the data we are sending is valid
 func (m *mergeDelegate) validateMemberInfo(n *memberlist.Node) error {
-	if err := m.serf.ValidateNodeNames(); err != nil {
+	if err := m.serf.validateNodeName(n.Name); err != nil {
 		return err
 	}
 
-	host, port, err := net.SplitHostPort(string(n.Addr))
-	if err != nil {
-		return err
-	}
-
-	ip := net.ParseIP(host)
-	if ip == nil || (ip.To4() == nil && ip.To16() == nil) {
-		return fmt.Errorf("%v is not a valid IPv4 or IPv6 address\n", ip)
-	}
-
-	p, err := strconv.Atoi(port)
-	if err != nil {
-		return err
-	}
-	if p < 0 || p > 65535 {
-		return fmt.Errorf("invalid port %v , port must be a valid number from 0-65535", p)
+	if len(n.Addr) != 4 && len(n.Addr) != 16 {
+		return fmt.Errorf("IP byte length is invalid: %d bytes is not either 4 or 16", len(n.Addr))
 	}
 
 	if len(n.Meta) > memberlist.MetaMaxSize {
