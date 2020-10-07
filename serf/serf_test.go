@@ -2999,3 +2999,68 @@ func TestSerf_ValidateNodeName(t *testing.T) {
 	}
 
 }
+
+type reconnectOverride struct {
+	timeout time.Duration
+	called  bool
+}
+
+func (r *reconnectOverride) ReconnectTimeout(_ *Member, _ time.Duration) time.Duration {
+	r.called = true
+	return r.timeout
+}
+
+func TestSerf_perNodeReconnectTimeout(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	override := reconnectOverride{timeout: 1 * time.Microsecond}
+
+	// Create the s1 config with an event channel so we can listen
+	eventCh := make(chan Event, 4)
+	s1Config := testConfig(t, ip1)
+	s1Config.ReconnectTimeout = 30 * time.Second
+	s1Config.ReconnectTimeoutOverride = &override
+	s1Config.EventCh = eventCh
+
+	s2Config := testConfig(t, ip2)
+
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	defer s1.Shutdown()
+
+	s2, err := Create(s2Config)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	defer s2.Shutdown()
+
+	waitUntilNumNodes(t, 1, s1, s2)
+
+	_, err = s1.Join([]string{s2Config.NodeName + "/" + s2Config.MemberlistConfig.BindAddr}, false)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	waitUntilNumNodes(t, 2, s1, s2)
+
+	err = s2.Shutdown()
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	waitUntilNumNodes(t, 1, s1)
+
+	// Since s2 shutdown, we check the events to make sure we got failures.
+	testEvents(t, eventCh, s2Config.NodeName,
+		[]EventType{EventMemberJoin, EventMemberFailed, EventMemberReap})
+
+	if !override.called {
+		t.Fatalf("The reconnect override was not used")
+	}
+}

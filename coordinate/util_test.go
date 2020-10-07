@@ -21,7 +21,7 @@ func verifyEqualVectors(t *testing.T, vec1 []float64, vec2 []float64) {
 		t.Fatalf("vector length mismatch, %d != %d", len(vec1), len(vec2))
 	}
 
-	for i, _ := range vec1 {
+	for i := range vec1 {
 		verifyEqualFloats(t, vec1[i], vec2[i])
 	}
 }

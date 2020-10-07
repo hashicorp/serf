@@ -50,6 +50,12 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+// ReconnectTimeoutOverrider is an interface that can be implemented to allow overriding
+// the reconnect timeout for individual members.
+type ReconnectTimeoutOverrider interface {
+	ReconnectTimeout(member *Member, timeout time.Duration) time.Duration
+}
+
 // Serf is a single node that is part of a single cluster that gets
 // events about joins/leaves/failures/etc. It is created with the Create
 // method.
@@ -1577,8 +1583,13 @@ func (s *Serf) reap(old []*memberState, now time.Time, timeout time.Duration) []
 	for i := 0; i < n; i++ {
 		m := old[i]
 
+		memberTimeout := timeout
+		if s.config.ReconnectTimeoutOverride != nil {
+			memberTimeout = s.config.ReconnectTimeoutOverride.ReconnectTimeout(&m.Member, memberTimeout)
+		}
+
 		// Skip if the timeout is not yet reached
-		if now.Sub(m.leaveTime) <= timeout {
+		if now.Sub(m.leaveTime) <= memberTimeout {
 			continue
 		}
 
@@ -1894,15 +1905,19 @@ func (s *Serf) NumNodes() (numNodes int) {
 // ValidateNodeNames verifies the NodeName contains
 // only alphanumeric, -, or . and is under 128 chracters
 func (s *Serf) ValidateNodeNames() error {
+	return s.validateNodeName(s.config.NodeName)
+}
+
+func (s *Serf) validateNodeName(name string) error {
 	if s.config.ValidateNodeNames {
 		var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\-\.]+`)
-		if InvalidNameRe.MatchString(s.config.NodeName) {
-			return fmt.Errorf("NodeName contains invalid characters %v , Valid characters include "+
-				"all alpha-numerics and dashes and '.' ", s.config.NodeName)
+		if InvalidNameRe.MatchString(name) {
+			return fmt.Errorf("Node name contains invalid characters %v , Valid characters include "+
+				"all alpha-numerics and dashes and '.' ", name)
 		}
-		if len(s.config.NodeName) > MaxNodeNameLength {
-			return fmt.Errorf("NodeName is %v characters. "+
-				"Valid length is between 1 and 128 characters", len(s.config.NodeName))
+		if len(name) > MaxNodeNameLength {
+			return fmt.Errorf("Node name is %v characters. "+
+				"Valid length is between 1 and 128 characters", len(name))
 		}
 	}
 	return nil
