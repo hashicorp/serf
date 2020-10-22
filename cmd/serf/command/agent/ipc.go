@@ -243,7 +243,7 @@ type AgentIPC struct {
 	clients   map[string]*IPCClient
 	listener  net.Listener
 	logger    *log.Logger
-	logWriter *logWriter
+	logWriter *LogWriter
 	stop      bool
 	stopCh    chan struct{}
 }
@@ -327,7 +327,7 @@ func (c *IPCClient) RegisterQuery(q *serf.Query) uint64 {
 
 // NewAgentIPC is used to create a new Agent IPC handler
 func NewAgentIPC(agent *Agent, authKey string, listener net.Listener,
-	logOutput io.Writer, logWriter *logWriter) *AgentIPC {
+	logOutput io.Writer, logWriter *LogWriter) *AgentIPC {
 	if logOutput == nil {
 		logOutput = os.Stderr
 	}

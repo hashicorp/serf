@@ -358,8 +358,8 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	return agent
 }
 
-// setupLoggers is used to setup the logGate, logWriter, and our logOutput
-func (c *Command) setupLoggers(config *Config) (*GatedWriter, *logWriter, io.Writer) {
+// setupLoggers is used to setup the logGate, LogWriter, and our logOutput
+func (c *Command) setupLoggers(config *Config) (*GatedWriter, *LogWriter, io.Writer) {
 	// Setup logging. First create the gated log writer, which will
 	// store logs until we're ready to show them. Then create the level
 	// filter, filtering logs of the specified level.
@@ -404,7 +404,7 @@ func (c *Command) setupLoggers(config *Config) (*GatedWriter, *logWriter, io.Wri
 
 // startAgent is used to start the agent and IPC
 func (c *Command) startAgent(config *Config, agent *Agent,
-	logWriter *logWriter, logOutput io.Writer) *AgentIPC {
+	logWriter *LogWriter, logOutput io.Writer) *AgentIPC {
 	// Add the script event handlers
 	c.scriptHandler = &ScriptEventHandler{
 		SelfFunc: func() serf.Member { return agent.Serf().LocalMember() },
