@@ -1,4 +1,4 @@
-FROM debian:stable
+FROM docker.mirror.hashicorp.services/debian:stable
 
 ENV GOVERSION 1.11.4
 
