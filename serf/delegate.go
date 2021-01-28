@@ -135,8 +135,8 @@ func (d *delegate) NotifyMsg(buf []byte) {
 	}
 
 	if d.serf.config.EmergencyStopBroadcasts {
+		d.serf.logger.Printf("[DEBUG] serf: refusing to rebroadcast type because emergency stop is enabled: %d, would rebroadcast: %v", t, rebroadcast)
 		rebroadcast = false
-		d.serf.logger.Printf("[DEBUG] serf: refusing to rebroadcast type because emergency stop is enabled: %d", t)
 	}
 
 	if rebroadcast {
