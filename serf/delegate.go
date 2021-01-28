@@ -51,6 +51,12 @@ func (d *delegate) NotifyMsg(buf []byte) {
 		d.serf.logger.Printf("[DEBUG] serf: messageLeaveType: %s", leave.Node)
 		rebroadcast = d.serf.handleNodeLeaveIntent(&leave)
 
+		if _, ok := d.serf.config.NodeDenyList[leave.Node]; ok {
+			// Never rebroadcast deny-listed nodes
+			rebroadcast = false
+			d.serf.logger.Printf("[DEBUG] serf: refusing to rebroadcast Leave for %s", leave.Node)
+		}
+
 	case messageJoinType:
 		var join messageJoin
 		if err := decodeMessage(buf[1:], &join); err != nil {
@@ -60,6 +66,12 @@ func (d *delegate) NotifyMsg(buf []byte) {
 
 		d.serf.logger.Printf("[DEBUG] serf: messageJoinType: %s", join.Node)
 		rebroadcast = d.serf.handleNodeJoinIntent(&join)
+
+		if _, ok := d.serf.config.NodeDenyList[join.Node]; ok {
+			// Never rebroadcast deny-listed nodes
+			rebroadcast = false
+			d.serf.logger.Printf("[DEBUG] serf: refusing to rebroadcast Join for %s", join.Node)
+		}
 
 	case messageUserEventType:
 		var event messageUserEvent
