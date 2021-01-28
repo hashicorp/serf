@@ -258,6 +258,11 @@ type Config struct {
 	// able to drop messages about certain nodes that are poisoning gossip. We
 	// might refine this later but won't merge it as is into a release.
 	NodeDenyList map[string]struct{}
+
+	// EmergencyStopBroadcasts is a quick hack for an incident response where we
+	// need to be able to drop messages about certain nodes that are poisoning
+	// gossip. We might refine this later but won't merge it as is into a release.
+	EmergencyStopBroadcasts bool
 }
 
 // Init allocates the subdata structures

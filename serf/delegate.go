@@ -128,7 +128,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 		d.serf.logger.Printf("[WARN] serf: Received message of unknown type: %d", t)
 	}
 
-	if rebroadcast {
+	if rebroadcast && !d.serf.config.EmergencyStopBroadcasts {
 		// Copy the buffer since it we cannot rely on the slice not changing
 		newBuf := make([]byte, len(buf))
 		copy(newBuf, buf)
