@@ -47,6 +47,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			d.serf.logger.Printf("[ERR] serf: Error decoding leave message: %s", err)
 			break
 		}
+		d.serf.logger.Printf("[DEBUG] serf: handling leave %#v", leave)
 
 		d.serf.logger.Printf("[DEBUG] serf: messageLeaveType: %s", leave.Node)
 		rebroadcast = d.serf.handleNodeLeaveIntent(&leave)
@@ -63,6 +64,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			d.serf.logger.Printf("[ERR] serf: Error decoding join message: %s", err)
 			break
 		}
+		d.serf.logger.Printf("[DEBUG] serf: handling join %#v", join)
 
 		d.serf.logger.Printf("[DEBUG] serf: messageJoinType: %s", join.Node)
 		rebroadcast = d.serf.handleNodeJoinIntent(&join)
@@ -79,6 +81,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			d.serf.logger.Printf("[ERR] serf: Error decoding user event message: %s", err)
 			break
 		}
+		d.serf.logger.Printf("[DEBUG] serf: handling event %#v", event)
 
 		d.serf.logger.Printf("[DEBUG] serf: messageUserEventType: %s", event.Name)
 		rebroadcast = d.serf.handleUserEvent(&event)
@@ -90,6 +93,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			d.serf.logger.Printf("[ERR] serf: Error decoding query message: %s", err)
 			break
 		}
+		d.serf.logger.Printf("[DEBUG] serf: handling query request %#v", query)
 
 		d.serf.logger.Printf("[DEBUG] serf: messageQueryType: %s", query.Name)
 		rebroadcast = d.serf.handleQuery(&query)
@@ -101,6 +105,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			d.serf.logger.Printf("[ERR] serf: Error decoding query response message: %s", err)
 			break
 		}
+		d.serf.logger.Printf("[DEBUG] serf: handling query response %#v", resp)
 
 		d.serf.logger.Printf("[DEBUG] serf: messageQueryResponseType: %v", resp.From)
 		d.serf.handleQueryResponse(&resp)
@@ -114,6 +119,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			d.serf.logger.Printf("[ERR] serf: Error decoding relay header: %s", err)
 			break
 		}
+		d.serf.logger.Printf("[DEBUG] serf: handling relay %v", header)
 
 		// The remaining contents are the message itself, so forward that
 		raw := make([]byte, reader.Len())
