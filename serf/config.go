@@ -263,12 +263,6 @@ type Config struct {
 	// need to be able to drop messages about certain nodes that are poisoning
 	// gossip. We might refine this later but won't merge it as is into a release.
 	EmergencyStopBroadcasts bool
-
-	// DowngradePruneLeaves is a quick hack for an incident resposne where we
-	// need to be able to convert force leave prunes back to standard leave
-	// events. We might refine this later but won't merge it as is into a
-	// release.
-	DowngradePruneLeaves bool
 }
 
 // Init allocates the subdata structures

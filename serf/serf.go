@@ -1075,6 +1075,7 @@ func (s *Serf) handleNodeUpdate(n *memberlist.Node) {
 
 // handleNodeLeaveIntent is called when an intent to leave is received.
 func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
+
 	// Witness a potentially newer time
 	s.clock.Witness(leaveMsg.LTime)
 
@@ -1103,12 +1104,6 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 	// Always set the lamport time so that if we retransmit below it won't echo
 	// around forever!
 	member.statusLTime = leaveMsg.LTime
-
-	if leaveMsg.Prune && s.config.DowngradePruneLeaves {
-		s.logger.Printf("[DEBUG] serf: downgrading forced EventMemberReap to standard: %s %s",
-			member.Member.Name, member.Member.Addr)
-		leaveMsg.Prune = false
-	}
 
 	// State transition depends on current state
 	switch member.Status {
