@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-syslog v1.0.0
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/hashicorp/logutils v1.0.0
-	github.com/hashicorp/mdns v1.0.1
+	github.com/hashicorp/mdns v1.0.4
 	github.com/hashicorp/memberlist v0.2.4
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mitchellh/cli v1.1.0
