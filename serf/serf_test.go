@@ -2034,11 +2034,12 @@ func TestSerf_Query(t *testing.T) {
 				}
 				q := e.(*Query)
 				if err := q.Respond([]byte("test")); err != nil {
-					t.Fatalf("err: %v", err)
+					t.Errorf("err: %v", err)
 				}
 				return
 			case <-time.After(time.Second):
-				t.Fatalf("timeout")
+				t.Errorf("timeout")
+				return
 			}
 		}
 	}()
@@ -2138,11 +2139,12 @@ func TestSerf_Query_Filter(t *testing.T) {
 				}
 				q := e.(*Query)
 				if err := q.Respond([]byte("test")); err != nil {
-					t.Fatalf("err: %v", err)
+					t.Errorf("err: %v", err)
 				}
 				return
 			case <-time.After(time.Second):
-				t.Fatalf("timeout")
+				t.Errorf("timeout")
+				return
 			}
 		}
 	}()
