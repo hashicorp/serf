@@ -9,6 +9,7 @@ import (
 // testEvents tests that the given node had the given sequence of events
 // on the event channel.
 func testEvents(t *testing.T, ch <-chan Event, node string, expected []EventType) {
+	t.Helper()
 	actual := make([]EventType, 0, len(expected))
 
 TESTEVENTLOOP:
