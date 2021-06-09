@@ -4,7 +4,7 @@ version: 2.1
 executors:
   go:
     docker:
-      - image: circleci/golang:1.14.1
+      - image: docker.mirror.hashicorp.services/circleci/golang:1.14.1
     environment:
       - TEST_RESULTS: /tmp/test-results # path to where test results are saved
 
@@ -67,7 +67,7 @@ jobs:
     # to cd into the website/ directory for commands
     working_directory: ~/project/website
     docker:
-      - image: hashicorp/middleman-hashicorp:0.3.35
+      - image: docker.mirror.hashicorp.services/hashicorp/middleman-hashicorp:0.3.35
     steps:
       - checkout:
           path: ~/project
