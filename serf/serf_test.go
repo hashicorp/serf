@@ -459,7 +459,7 @@ func TestSerf_RemoveFailed_eventsLeave(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 3)
+	time.Sleep(s2Config.MemberlistConfig.ProbeInterval * 5)
 
 	if err := s1.RemoveFailedNode(s2Config.NodeName); err != nil {
 		t.Fatalf("err: %v", err)
@@ -2034,11 +2034,12 @@ func TestSerf_Query(t *testing.T) {
 				}
 				q := e.(*Query)
 				if err := q.Respond([]byte("test")); err != nil {
-					t.Fatalf("err: %v", err)
+					t.Errorf("err: %v", err)
 				}
 				return
 			case <-time.After(time.Second):
-				t.Fatalf("timeout")
+				t.Errorf("timeout")
+				return
 			}
 		}
 	}()
@@ -2138,11 +2139,12 @@ func TestSerf_Query_Filter(t *testing.T) {
 				}
 				q := e.(*Query)
 				if err := q.Respond([]byte("test")); err != nil {
-					t.Fatalf("err: %v", err)
+					t.Errorf("err: %v", err)
 				}
 				return
 			case <-time.After(time.Second):
-				t.Fatalf("timeout")
+				t.Errorf("timeout")
+				return
 			}
 		}
 	}()
@@ -2948,7 +2950,7 @@ func waitUntilNumNodes(t *testing.T, desiredNodes int, serfs ...*Serf) {
 		t.Helper()
 		for i, s := range serfs {
 			if n := s.NumNodes(); desiredNodes != n {
-				r.Fatalf("s%d got %d expected %d", (i + 1), n, desiredNodes)
+				r.Fatalf("s%d got %d expected %d", i+1, n, desiredNodes)
 			}
 		}
 	})
