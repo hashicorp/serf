@@ -244,7 +244,7 @@ type AgentIPC struct {
 	listener  net.Listener
 	logger    *log.Logger
 	logWriter *logWriter
-	stop      bool
+	stop      uint32
 	stopCh    chan struct{}
 }
 
@@ -349,11 +349,11 @@ func (i *AgentIPC) Shutdown() {
 	i.Lock()
 	defer i.Unlock()
 
-	if i.stop {
+	if i.isStopped() {
 		return
 	}
 
-	i.stop = true
+	atomic.StoreUint32(&i.stop, 1)
 	close(i.stopCh)
 	i.listener.Close()
 
@@ -363,12 +363,16 @@ func (i *AgentIPC) Shutdown() {
 	}
 }
 
+func (i *AgentIPC) isStopped() bool {
+	return atomic.LoadUint32(&i.stop) == 1
+}
+
 // listen is a long running routine that listens for new clients
 func (i *AgentIPC) listen() {
 	for {
 		conn, err := i.listener.Accept()
 		if err != nil {
-			if i.stop {
+			if i.isStopped() {
 				return
 			}
 			i.logger.Printf("[ERR] agent.ipc: Failed to accept client: %v", err)
@@ -393,7 +397,7 @@ func (i *AgentIPC) listen() {
 
 		// Register the client
 		i.Lock()
-		if !i.stop {
+		if !i.isStopped() {
 			i.clients[client.name] = client
 			go i.handleClient(client)
 		} else {
@@ -433,7 +437,7 @@ func (i *AgentIPC) handleClient(client *IPCClient) {
 	for {
 		// Decode the header
 		if err := client.dec.Decode(&reqHeader); err != nil {
-			if !i.stop {
+			if !i.isStopped() {
 				// The second part of this if is to block socket
 				// errors from Windows which appear to happen every
 				// time there is an EOF.

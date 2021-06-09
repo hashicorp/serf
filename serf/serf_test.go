@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -20,6 +21,7 @@ import (
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/coordinate"
+	"github.com/hashicorp/serf/serf/internal/race"
 	"github.com/hashicorp/serf/testutil"
 	"github.com/hashicorp/serf/testutil/retry"
 )
@@ -54,7 +56,7 @@ func testConfig(t *testing.T, ip net.IP) *Config {
 	config.TombstoneTimeout = 1 * time.Microsecond
 
 	if t != nil {
-		config.Logger = testutil.TestLoggerWithName(t, config.NodeName)
+		config.Logger = log.New(os.Stderr, "test["+t.Name()+"]: ", log.LstdFlags)
 		config.MemberlistConfig.Logger = config.Logger
 	}
 
@@ -1423,6 +1425,10 @@ func TestSerf_ReapHandler_Shutdown(t *testing.T) {
 }
 
 func TestSerf_ReapHandler(t *testing.T) {
+	if race.Enabled {
+		t.Skip("test contains a data race")
+	}
+
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
 
@@ -1438,9 +1444,9 @@ func TestSerf_ReapHandler(t *testing.T) {
 
 	m := Member{}
 	s.leftMembers = []*memberState{
-		&memberState{m, 0, time.Now()},
-		&memberState{m, 0, time.Now().Add(-5 * time.Second)},
-		&memberState{m, 0, time.Now().Add(-10 * time.Second)},
+		{m, 0, time.Now()},
+		{m, 0, time.Now().Add(-5 * time.Second)},
+		{m, 0, time.Now().Add(-10 * time.Second)},
 	}
 
 	upsertIntent(s.recentIntents, "alice", messageJoinType, 1, time.Now)
@@ -1664,6 +1670,8 @@ func TestSerf_joinLeaveJoin(t *testing.T) {
 	})
 
 	// Bring node 2 back
+	s2Config = testConfig(t, ip2)
+	s2Config.ReapInterval = 10 * time.Second
 	s2, err = Create(s2Config)
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -1819,6 +1827,8 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 
 	// Listen for events
 	eventCh := make(chan Event, 4)
+	s2Config = testConfig(t, ip2)
+	s2Config.SnapshotPath = td + "snap"
 	s2Config.EventCh = eventCh
 
 	// Restart s2 from the snapshot now!
@@ -1847,6 +1857,10 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 }
 
 func TestSerf_Leave_SnapshotRecovery(t *testing.T) {
+	if race.Enabled {
+		t.Skip("test contains a data race")
+	}
+
 	td, err := ioutil.TempDir("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -2781,6 +2795,10 @@ func (p *pingVersionMetaDelegate) AckPayload() []byte {
 }
 
 func TestSerf_PingDelegateVersioning(t *testing.T) {
+	if race.Enabled {
+		t.Skip("test contains a data race")
+	}
+
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
 
@@ -2859,6 +2877,10 @@ func (p *pingDimensionMetaDelegate) AckPayload() []byte {
 }
 
 func TestSerf_PingDelegateRogueCoordinate(t *testing.T) {
+	if race.Enabled {
+		t.Skip("test contains a data race")
+	}
+
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
 
