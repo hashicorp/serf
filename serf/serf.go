@@ -1088,6 +1088,7 @@ func (s *Serf) handleNodeUpdate(n *memberlist.Node) {
 
 // handleNodeLeaveIntent is called when an intent to leave is received.
 func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
+	state := s.State()
 
 	// Witness a potentially newer time
 	s.clock.Witness(leaveMsg.LTime)
@@ -1108,7 +1109,7 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 
 	// Refute us leaving if we are in the alive state
 	// Must be done in another goroutine since we have the memberLock
-	if leaveMsg.Node == s.config.NodeName && s.state == SerfAlive {
+	if leaveMsg.Node == s.config.NodeName && state == SerfAlive {
 		s.logger.Printf("[DEBUG] serf: Refuting an older leave intent")
 		go s.broadcastJoin(s.clock.Time())
 		return false
