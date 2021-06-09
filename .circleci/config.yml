@@ -4,7 +4,7 @@ version: 2.1
 executors:
   go:
     docker:
-      - image: circleci/golang:1.14.1
+      - image: circleci/golang:1.16
     environment:
       - TEST_RESULTS: /tmp/test-results # path to where test results are saved
 
@@ -13,19 +13,7 @@ jobs:
     executor: go
     steps:
       - checkout
-
-      # Restore go module cache if there is one
-      - restore_cache:
-          keys:
-            - serf-modcache-v1-{{ checksum "go.mod" }}
-
       - run: go mod download
-
-      # Save go module cache if the go.mod file has changed
-      - save_cache:
-          key: serf-modcache-v1-{{ checksum "go.mod" }}
-          paths:
-            - "/go/pkg/mod"
 
       # check go fmt output because it does not report non-zero when there are fmt changes
       - run:
@@ -45,18 +33,12 @@ jobs:
       - checkout
       - run: mkdir -p $TEST_RESULTS
       - run: make bin
-
-      # Restore go module cache if there is one
-      - restore_cache:
-          keys:
-            - serf-modcache-v1-{{ checksum "go.mod" }}
-
       - run: sudo apt-get update && sudo apt-get install -y rsyslog
       - run: sudo service rsyslog start
       # run go tests with gotestsum
       - run: |
           PACKAGE_NAMES=$(go list ./...)
-          gotestsum --format=short-verbose --junitfile $TEST_RESULTS/gotestsum-report.xml -- $PACKAGE_NAMES
+          gotestsum --format=short-verbose --junitfile $TEST_RESULTS/gotestsum-report.xml -- -race $PACKAGE_NAMES
       - store_test_results:
           path: /tmp/test-results
       - store_artifacts:
