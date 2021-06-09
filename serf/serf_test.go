@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -55,7 +56,7 @@ func testConfig(t *testing.T, ip net.IP) *Config {
 	config.TombstoneTimeout = 1 * time.Microsecond
 
 	if t != nil {
-		config.Logger = testutil.TestLoggerWithName(t, config.NodeName)
+		config.Logger = log.New(os.Stderr, "test["+t.Name()+"]: ", log.LstdFlags)
 		config.MemberlistConfig.Logger = config.Logger
 	}
 
@@ -1826,6 +1827,8 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 
 	// Listen for events
 	eventCh := make(chan Event, 4)
+	s2Config = testConfig(t, ip2)
+	s2Config.SnapshotPath = td + "snap"
 	s2Config.EventCh = eventCh
 
 	// Restart s2 from the snapshot now!
