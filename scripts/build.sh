@@ -36,7 +36,7 @@ fi
 echo "==> Building..."
 gox \
     -os="${XC_OS}" \
-    -osarch="!darwin/arm" \
+    -osarch="!darwin/arm !darwin/386" \
     -arch="${XC_ARCH}" \
     -ldflags "-X ${GIT_IMPORT}.GitCommit='${GIT_COMMIT}${GIT_DIRTY}'" \
     -output "pkg/{{.OS}}_{{.Arch}}/serf" \
