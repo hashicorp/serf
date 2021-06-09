@@ -5,7 +5,7 @@ VERSION := $(shell awk -F\" '/^const Version/ { print $$2; exit }' cmd/serf/vers
 GITSHA:=$(shell git rev-parse HEAD)
 GITBRANCH:=$(shell git symbolic-ref --short HEAD 2>/dev/null)
 
-GOFILES ?= $(shell go list ./... | grep -v /vendor/)
+GOFILES ?= $(shell go list ./...)
 
 default: test
 
