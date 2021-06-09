@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/coordinate"
+	"github.com/hashicorp/serf/serf/internal/race"
 	"github.com/hashicorp/serf/testutil"
 	"github.com/hashicorp/serf/testutil/retry"
 )
@@ -1423,6 +1424,10 @@ func TestSerf_ReapHandler_Shutdown(t *testing.T) {
 }
 
 func TestSerf_ReapHandler(t *testing.T) {
+	if race.Enabled {
+		t.Skip("test contains a data race")
+	}
+
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
 
@@ -1438,9 +1443,9 @@ func TestSerf_ReapHandler(t *testing.T) {
 
 	m := Member{}
 	s.leftMembers = []*memberState{
-		&memberState{m, 0, time.Now()},
-		&memberState{m, 0, time.Now().Add(-5 * time.Second)},
-		&memberState{m, 0, time.Now().Add(-10 * time.Second)},
+		{m, 0, time.Now()},
+		{m, 0, time.Now().Add(-5 * time.Second)},
+		{m, 0, time.Now().Add(-10 * time.Second)},
 	}
 
 	upsertIntent(s.recentIntents, "alice", messageJoinType, 1, time.Now)
@@ -1664,6 +1669,8 @@ func TestSerf_joinLeaveJoin(t *testing.T) {
 	})
 
 	// Bring node 2 back
+	s2Config = testConfig(t, ip2)
+	s2Config.ReapInterval = 10 * time.Second
 	s2, err = Create(s2Config)
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -1847,6 +1854,10 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 }
 
 func TestSerf_Leave_SnapshotRecovery(t *testing.T) {
+	if race.Enabled {
+		t.Skip("test contains a data race")
+	}
+
 	td, err := ioutil.TempDir("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -2781,6 +2792,10 @@ func (p *pingVersionMetaDelegate) AckPayload() []byte {
 }
 
 func TestSerf_PingDelegateVersioning(t *testing.T) {
+	if race.Enabled {
+		t.Skip("test contains a data race")
+	}
+
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
 
@@ -2859,6 +2874,10 @@ func (p *pingDimensionMetaDelegate) AckPayload() []byte {
 }
 
 func TestSerf_PingDelegateRogueCoordinate(t *testing.T) {
+	if race.Enabled {
+		t.Skip("test contains a data race")
+	}
+
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
 
