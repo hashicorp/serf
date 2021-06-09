@@ -5,11 +5,16 @@ import (
 	"time"
 
 	"github.com/hashicorp/memberlist"
+	"github.com/hashicorp/serf/serf/internal/race"
 	"github.com/hashicorp/serf/testutil"
 	"github.com/hashicorp/serf/testutil/retry"
 )
 
 func TestSerf_joinLeave_ltime(t *testing.T) {
+	if race.Enabled {
+		t.Skip("test contains a data race")
+	}
+
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
 
