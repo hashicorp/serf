@@ -36,9 +36,14 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y rsyslog
       - run: sudo service rsyslog start
       # run go tests with gotestsum
-      - run: |
-          PACKAGE_NAMES=$(go list ./...)
-          gotestsum --format=short-verbose --junitfile $TEST_RESULTS/gotestsum-report.xml -- -race $PACKAGE_NAMES
+      - run:
+          name: go test
+          command: |
+            gotestsum --format=short-verbose --junitfile $TEST_RESULTS/gotestsum-report.xml -- ./...
+      - run:
+          name: go test -race
+          command: |
+              gotestsum --format=short-verbose --junitfile $TEST_RESULTS/gotestsum-report-race.xml -- -race ./serf/...
       - store_test_results:
           path: /tmp/test-results
       - store_artifacts:
