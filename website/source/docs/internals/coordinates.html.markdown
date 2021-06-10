@@ -155,8 +155,6 @@ func dist(a *coordinate.Coordinate, b *coordinate.Coordinate) time.Duration {
         rtt = adjusted
     }
 
-    // Go's times are natively nanoseconds, so we convert from seconds.
-    const secondsToNanoseconds = 1.0e9
-    return time.Duration(rtt * secondsToNanoseconds)
+    return time.Duration(rtt) * time.Second
 }
 ```
