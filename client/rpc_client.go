@@ -370,6 +370,19 @@ func (c *RPCClient) ListKeys() (map[string]int, int, map[string]string, error) {
 	return resp.Keys, resp.NumNodes, resp.Messages, err
 }
 
+// GetPrimaryKey returns the current encyption key used in cluster
+func (c *RPCClient) GetPrimaryKey() (map[string]int, int, map[string]string, error) {
+	header := requestHeader{
+		Command: getPrimaryKeyCommand,
+		Seq:     c.getSeq(),
+	}
+
+	resp := keyResponse{}
+	err := c.genericRPC(&header, nil, &resp)
+
+	return resp.Keys, resp.NumNodes, resp.Messages, err
+}
+
 // Stats is used to get debugging state information
 func (c *RPCClient) Stats() (map[string]map[string]string, error) {
 	header := requestHeader{

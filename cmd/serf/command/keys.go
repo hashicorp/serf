@@ -49,6 +49,7 @@ Options:
                             will ask all nodes in the cluster for a list of keys
                             and dump a summary containing each key and the
                             number of members it is installed on to the console.
+  -getPrimaryKey            Obtain the primary key used for encrypting messages.
   -rpc-addr=127.0.0.1:7373  RPC address of the Serf agent.
   -rpc-auth=""              RPC auth token of the Serf agent.
 `
@@ -58,7 +59,7 @@ Options:
 func (c *KeysCommand) Run(args []string) int {
 	var installKey, useKey, removeKey string
 	var lines []string
-	var listKeys bool
+	var listKeys, getPrimaryKey bool
 
 	cmdFlags := flag.NewFlagSet("key", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
@@ -66,6 +67,7 @@ func (c *KeysCommand) Run(args []string) int {
 	cmdFlags.StringVar(&useKey, "use", "", "change primary encryption key")
 	cmdFlags.StringVar(&removeKey, "remove", "", "remove a key")
 	cmdFlags.BoolVar(&listKeys, "list", false, "list cluster keys")
+	cmdFlags.BoolVar(&getPrimaryKey, "getPrimaryKey", false, "get primary encryption key")
 	rpcAddr := RPCAddrFlag(cmdFlags)
 	rpcAuth := RPCAuthFlag(cmdFlags)
 	if err := cmdFlags.Parse(args); err != nil {
@@ -80,10 +82,14 @@ func (c *KeysCommand) Run(args []string) int {
 	}
 
 	// Make sure that we only have one actionable argument to avoid ambiguity
-	found := listKeys
+	found := listKeys || getPrimaryKey
+	if listKeys && getPrimaryKey {
+		c.Ui.Error("Only one of -getPrimaryKey or -list allowed")
+		return 1
+	}
 	for _, arg := range []string{installKey, useKey, removeKey} {
 		if found && len(arg) > 0 {
-			c.Ui.Error("Only one of -install, -use, -remove, or -list allowed")
+			c.Ui.Error("Only one of -install, -use, -remove, -getPrimaryKey, or -list allowed")
 			return 1
 		}
 		found = found || len(arg) > 0
@@ -128,6 +134,34 @@ func (c *KeysCommand) Run(args []string) int {
 		}
 		out := columnize.SimpleFormat(lines)
 		c.Ui.Output(out)
+
+		return 0
+	}
+
+	if getPrimaryKey {
+		c.Ui.Info("Getting the primary encryption key")
+		keys, _, failures, err := client.GetPrimaryKey()
+
+		if err != nil {
+			if len(failures) > 0 {
+				for node, message := range failures {
+					lines = append(lines, fmt.Sprintf("failed: | %s | %s", node, message))
+				}
+				out := columnize.SimpleFormat(lines)
+				c.Ui.Error(out)
+			}
+
+			c.Ui.Error("")
+			c.Ui.Error(fmt.Sprintf("Failed to gather member keys: %s", err))
+			return 1
+		}
+
+		c.Ui.Info("Key obtained")
+		c.Ui.Output("")
+
+		for key := range keys {
+			c.Ui.Output(key)
+		}
 
 		return 0
 	}

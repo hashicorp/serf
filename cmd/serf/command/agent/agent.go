@@ -299,6 +299,14 @@ func (a *Agent) ListKeys() (*serf.KeyResponse, error) {
 	return manager.ListKeys()
 }
 
+// GetPrimaryKey sends a query to all members to return a list containing
+// the primary encryption key
+func (a *Agent) GetPrimaryKey() (*serf.KeyResponse, error) {
+	a.logger.Print("[INFO] agent: Initiating primary key retrieval")
+	manager := a.serf.KeyManager()
+	return manager.GetPrimaryKey()
+}
+
 // SetTags is used to update the tags. The agent will make sure to
 // persist tags if necessary before gossiping to the cluster.
 func (a *Agent) SetTags(tags map[string]string) error {

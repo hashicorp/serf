@@ -27,6 +27,7 @@ const (
 	useKeyCommand          = "use-key"
 	removeKeyCommand       = "remove-key"
 	listKeysCommand        = "list-keys"
+	getPrimaryKeyCommand   = "get-primary-key"
 	tagsCommand            = "tags"
 	queryCommand           = "query"
 	respondCommand         = "respond"
