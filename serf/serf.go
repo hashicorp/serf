@@ -499,7 +499,7 @@ func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
 
 	if len(raw) > UserEventSizeLimit {
 		return fmt.Errorf(
-			"encoded user event exceeds sane limit of %d bytes before encoding",
+			"encoded user event exceeds reasonable limit of %d bytes after encoding",
 			UserEventSizeLimit,
 		)
 	}
