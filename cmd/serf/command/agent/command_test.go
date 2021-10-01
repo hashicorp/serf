@@ -251,9 +251,8 @@ func TestCommandRun_advertiseAddr(t *testing.T) {
 }
 
 func TestCommandRun_mDNS(t *testing.T) {
-	// mDNS does not work in travis
-	if os.Getenv("TRAVIS") != "" {
-		t.SkipNow()
+	if os.Getenv("CI") != "" {
+		t.Skip("This test requires IPv6 unicast, which does not work in CircleCI environment")
 	}
 
 	// Start an agent
