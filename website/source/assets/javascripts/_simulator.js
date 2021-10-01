@@ -95,7 +95,7 @@ var SerfSimulator = {
 
     this.$nodes.on("change", function() {
       var nodes = Number(this.value);
-      if (isNaN(nodes) || nodes <= 1) {
+      if (isNaN(nodes) || nodes < 1) {
         alert("Must have at least one node!");
         return;
       }
