@@ -121,6 +121,11 @@ func (q *Query) String() string {
 	return fmt.Sprintf("query: %s", q.Name)
 }
 
+// SourceNode returns the name of the node initiating the query
+func (q *Query) SourceNode() string {
+	return q.sourceNode
+}
+
 // Deadline returns the time by which a response must be sent
 func (q *Query) Deadline() time.Time {
 	return q.deadline
