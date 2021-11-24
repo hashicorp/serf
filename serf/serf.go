@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -727,7 +726,7 @@ func (s *Serf) Leave() error {
 		select {
 		case <-notifyCh:
 		case <-time.After(s.config.BroadcastTimeout):
-			return errors.New("timeout while waiting for graceful leave")
+			s.logger.Printf("[WARN] serf: timeout while waiting for graceful leave")
 		}
 	}
 
