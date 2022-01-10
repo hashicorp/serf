@@ -684,6 +684,7 @@ func (s *Serf) broadcastJoin(ltime LamportTime) error {
 
 // Leave gracefully exits the cluster. It is safe to call this multiple
 // times.
+// If the Leave broadcast timeout, Leave() will try to finish the sequence as best effort.
 func (s *Serf) Leave() error {
 	// Check the current state
 	s.stateLock.Lock()
@@ -733,7 +734,7 @@ func (s *Serf) Leave() error {
 	// Attempt the memberlist leave
 	err := s.memberlist.Leave(s.config.BroadcastTimeout)
 	if err != nil {
-		return err
+		s.logger.Printf("[WARN] serf: timeout waiting for leave broadcast: %s", err.Error())
 	}
 
 	// Wait for the leave to propagate through the cluster. The broadcast
