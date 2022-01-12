@@ -134,7 +134,7 @@ func TestMemberEventCoalesce_TagUpdate(t *testing.T) {
 		Members: []Member{Member{Name: "foo", Tags: map[string]string{"role": "foo"}}},
 	}
 
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(30 * time.Millisecond)
 
 	select {
 	case e := <-outCh:
