@@ -37,6 +37,7 @@ func DefaultConfig() *Config {
 		QuerySizeLimit:         1024,
 		UserEventSizeLimit:     512,
 		BroadcastTimeout:       5 * time.Second,
+		MaxLeaveTimeout:        10 * time.Second,
 	}
 }
 
@@ -222,6 +223,12 @@ type Config struct {
 	// metrics will be sent to that instance.
 	StatsdAddr string `mapstructure:"statsd_addr"`
 
+	// MaxLeaveTimeout is the amount of time to wait for leaving serf and
+	// memberlist. If serf and memberlist complete earlier than MaxLeaveTimeout,
+	// leaving will wait for LeavePropagateDelay before completing.
+	MaxLeaveTimeoutRaw string        `mapstructure:"max_leave_time"`
+	MaxLeaveTimeout    time.Duration `mapstructure:"-"`
+
 	// BroadcastTimeoutRaw is the string retry interval. This interval
 	// controls the timeout for broadcast events. This defaults to
 	// 5 seconds.
@@ -347,6 +354,14 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 			return nil, err
 		}
 		result.BroadcastTimeout = dur
+	}
+
+	if result.MaxLeaveTimeoutRaw != "" {
+		dur, err := time.ParseDuration(result.MaxLeaveTimeoutRaw)
+		if err != nil {
+			return nil, err
+		}
+		result.MaxLeaveTimeout = dur
 	}
 
 	return &result, nil
@@ -477,6 +492,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.BroadcastTimeout != 0 {
 		result.BroadcastTimeout = b.BroadcastTimeout
+	}
+	if b.MaxLeaveTimeout != 0 {
+		result.MaxLeaveTimeout = b.MaxLeaveTimeout
 	}
 	result.EnableCompression = b.EnableCompression
 

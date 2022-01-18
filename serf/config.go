@@ -49,6 +49,11 @@ type Config struct {
 	// ProtocolVersionMin and ProtocolVersionMax.
 	ProtocolVersion uint8
 
+	// MaxLeaveTimeout is the amount of time to wait for leaving serf and
+	// memberlist. If serf and memberlist complete earlier than MaxLeaveTimeout,
+	// leaving will wait for LeavePropagateDelay before completing.
+	MaxLeaveTimeout time.Duration
+
 	// BroadcastTimeout is the amount of time to wait for a broadcast
 	// message to be sent to the cluster. Broadcast messages are used for
 	// things like leave messages and force remove messages. If this is not
@@ -285,7 +290,9 @@ func DefaultConfig() *Config {
 	}
 
 	return &Config{
-		NodeName:                     hostname,
+		NodeName: hostname,
+		// Double BroadcastTimeout so this won't be a breaking change.
+		MaxLeaveTimeout:              10 * time.Second,
 		BroadcastTimeout:             5 * time.Second,
 		LeavePropagateDelay:          1 * time.Second,
 		EventBuffer:                  512,

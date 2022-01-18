@@ -716,23 +716,31 @@ func (s *Serf) Leave() error {
 	// Process the leave locally
 	s.handleNodeLeaveIntent(&msg)
 
+	// One BroadcastTimeout for the serf leave and another for the memberlist leave plus
+	// LeavePropagateDelay.
+	startTime := time.Now()
+
 	// Only broadcast the leave message if there is at least one
 	// other node alive.
 	if s.hasAliveMembers() {
-		notifyCh := make(chan struct{})
-		if err := s.broadcast(messageLeaveType, &msg, notifyCh); err != nil {
+		serfLeaveCh := make(chan struct{})
+		if err := s.broadcast(messageLeaveType, &msg, serfLeaveCh); err != nil {
 			return err
 		}
 
 		select {
-		case <-notifyCh:
-		case <-time.After(s.config.BroadcastTimeout):
+		case <-serfLeaveCh:
+		// The timeout needs to be split between memberlist and serf leaving.
+		case <-time.After(s.config.MaxLeaveTimeout/2 - s.config.LeavePropagateDelay):
 			s.logger.Printf("[WARN] serf: timeout while waiting for graceful leave")
 		}
 	}
 
+	time.Sleep(s.config.LeavePropagateDelay)
+
+	remainingTime := s.config.MaxLeaveTimeout - time.Now().Sub(startTime)
 	// Attempt the memberlist leave
-	err := s.memberlist.Leave(s.config.BroadcastTimeout)
+	err := s.memberlist.Leave(remainingTime)
 	if err != nil {
 		s.logger.Printf("[WARN] serf: timeout waiting for leave broadcast: %s", err.Error())
 	}

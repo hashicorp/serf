@@ -55,6 +55,7 @@ func (c *Command) readConfig() *Config {
 	var tags []string
 	var retryInterval string
 	var broadcastTimeout string
+	var maxLeaveTime string
 	var disableCompression bool
 
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
@@ -103,6 +104,7 @@ func (c *Command) readConfig() *Config {
 	)
 
 	cmdFlags.StringVar(&broadcastTimeout, "broadcast-timeout", "", "timeout for broadcast messages")
+	cmdFlags.StringVar(&maxLeaveTime, "max-leave-timeout", "", "max leave timeout for leaving serf and memberlist.")
 	if err := cmdFlags.Parse(c.args); err != nil {
 		return nil
 	}
@@ -135,6 +137,16 @@ func (c *Command) readConfig() *Config {
 			return nil
 		}
 		cmdConfig.BroadcastTimeout = dur
+	}
+
+	// Decode the max leave time if given
+	if maxLeaveTime != "" {
+		dur, err := time.ParseDuration(maxLeaveTime)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error: %s", err))
+			return nil
+		}
+		cmdConfig.MaxLeaveTimeout = dur
 	}
 
 	config := DefaultConfig()
@@ -190,6 +202,13 @@ func (c *Command) readConfig() *Config {
 		config.BroadcastTimeout = minBroadcastTimeout
 		c.Ui.Output(fmt.Sprintf("Warning: 'BroadcastTimeout' is too low. Setting to %v",
 			config.BroadcastTimeout))
+	}
+
+	// Check for sane broadcast timeout
+	if config.MaxLeaveTimeout < config.BroadcastTimeout*2 {
+		config.MaxLeaveTimeout = config.BroadcastTimeout * 2
+		c.Ui.Output(fmt.Sprintf("Warning: 'MaxLeaveTimeout' is too low. Setting to %v",
+			config.MaxLeaveTimeout))
 	}
 
 	// Check snapshot file is provided if we have RejoinAfterLeave

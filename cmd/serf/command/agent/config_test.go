@@ -311,6 +311,17 @@ func TestDecodeConfig(t *testing.T) {
 		t.Fatalf("bad: %#v", config)
 	}
 
+	// Max Leave Time
+	input = `{"max_leave_time": "30s"}`
+	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	if config.MaxLeaveTimeout != 30*time.Second {
+		t.Fatalf("bad: %#v", config)
+	}
+
 	// Retry configs
 	input = `{"retry_join": ["127.0.0.1", "127.0.0.2"]}`
 	config, err = DecodeConfig(bytes.NewReader([]byte(input)))
@@ -412,6 +423,7 @@ func TestMergeConfig(t *testing.T) {
 		QueryResponseSizeLimit: 123,
 		QuerySizeLimit:         456,
 		BroadcastTimeout:       20 * time.Second,
+		MaxLeaveTimeout:        50 * time.Second,
 		EnableCompression:      true,
 	}
 
@@ -516,6 +528,10 @@ func TestMergeConfig(t *testing.T) {
 	}
 
 	if c.BroadcastTimeout != 20*time.Second {
+		t.Fatalf("bad: %#v", c)
+	}
+
+	if c.MaxLeaveTimeout != 50*time.Second {
 		t.Fatalf("bad: %#v", c)
 	}
 
