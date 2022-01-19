@@ -716,6 +716,8 @@ func (s *Serf) Leave() error {
 	// Process the leave locally
 	s.handleNodeLeaveIntent(&msg)
 
+	broadcastTimeout := 10 * time.Second
+
 	// Only broadcast the leave message if there is at least one
 	// other node alive.
 	if s.hasAliveMembers() {
@@ -726,13 +728,16 @@ func (s *Serf) Leave() error {
 
 		select {
 		case <-notifyCh:
-		case <-time.After(s.config.BroadcastTimeout):
+		case <-time.After(broadcastTimeout):
 			s.logger.Printf("[WARN] serf: timeout while waiting for graceful leave")
 		}
 	}
 
+	s.logger.Printf("[WARN] serf: sleeping for %s to propogate", s.config.LeavePropagateDelay)
+	time.Sleep(s.config.LeavePropagateDelay)
+
 	// Attempt the memberlist leave
-	err := s.memberlist.Leave(s.config.BroadcastTimeout)
+	err := s.memberlist.Leave(broadcastTimeout)
 	if err != nil {
 		s.logger.Printf("[WARN] serf: timeout waiting for leave broadcast: %s", err.Error())
 	}
@@ -742,6 +747,7 @@ func (s *Serf) Leave() error {
 	// queue, but this wait is for that message to propagate through the
 	// cluster. In particular, we want to stay up long enough to service
 	// any probes from other nodes before they learn about us leaving.
+	s.logger.Printf("[WARN] serf: sleeping for %s to propogate", s.config.LeavePropagateDelay)
 	time.Sleep(s.config.LeavePropagateDelay)
 
 	// Transition to Left only if we not already shutdown
