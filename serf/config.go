@@ -55,6 +55,10 @@ type Config struct {
 	// set, a timeout of 5 seconds will be set.
 	BroadcastTimeout time.Duration
 
+	// MaxLeaveTimeout is the BroadcastTimeout that applies to leaving serf and
+	// memberlist.
+	LeaveBroadcastTimeout time.Duration
+
 	// LeavePropagateDelay is for our leave (node dead) message to propagate
 	// through the cluster. In particular, we want to stay up long enough to
 	// service any probes from other nodes before they learn about us
@@ -287,6 +291,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		NodeName:                     hostname,
 		BroadcastTimeout:             5 * time.Second,
+		LeaveBroadcastTimeout:        5 * time.Second,
 		LeavePropagateDelay:          1 * time.Second,
 		EventBuffer:                  512,
 		QueryBuffer:                  512,

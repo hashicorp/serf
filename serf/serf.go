@@ -67,13 +67,14 @@ type Serf struct {
 	eventClock LamportClock
 	queryClock LamportClock
 
-	broadcasts    *memberlist.TransmitLimitedQueue
-	config        *Config
-	failedMembers []*memberState
-	leftMembers   []*memberState
-	memberlist    *memberlist.Memberlist
-	memberLock    sync.RWMutex
-	members       map[string]*memberState
+	broadcasts      *memberlist.TransmitLimitedQueue
+	leaveBroadcasts *memberlist.TransmitLimitedQueue
+	config          *Config
+	failedMembers   []*memberState
+	leftMembers     []*memberState
+	memberlist      *memberlist.Memberlist
+	memberLock      sync.RWMutex
+	members         map[string]*memberState
 
 	// recentIntents the lamport time and type of intent for a given node in
 	// case we get an intent before the relevant memberlist event. This is
@@ -355,8 +356,9 @@ func Create(conf *Config) (*Serf, error) {
 	// custom broadcasts along the gossip channel.
 	serf.broadcasts = &memberlist.TransmitLimitedQueue{
 		NumNodes:       serf.NumNodes,
-		RetransmitMult: conf.MemberlistConfig.RetransmitMult,
+		RetransmitMult: conf.MemberlistConfig.RetransmitMult * 10,
 	}
+
 	serf.eventBroadcasts = &memberlist.TransmitLimitedQueue{
 		NumNodes:       serf.NumNodes,
 		RetransmitMult: conf.MemberlistConfig.RetransmitMult,
@@ -726,13 +728,15 @@ func (s *Serf) Leave() error {
 
 		select {
 		case <-notifyCh:
-		case <-time.After(s.config.BroadcastTimeout):
+		case <-time.After(s.config.LeaveBroadcastTimeout):
 			s.logger.Printf("[WARN] serf: timeout while waiting for graceful leave")
 		}
 	}
 
+	time.Sleep(s.config.LeavePropagateDelay)
+
 	// Attempt the memberlist leave
-	err := s.memberlist.Leave(s.config.BroadcastTimeout)
+	err := s.memberlist.Leave(s.config.LeaveBroadcastTimeout)
 	if err != nil {
 		s.logger.Printf("[WARN] serf: timeout waiting for leave broadcast: %s", err.Error())
 	}

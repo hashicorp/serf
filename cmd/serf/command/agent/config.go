@@ -37,6 +37,7 @@ func DefaultConfig() *Config {
 		QuerySizeLimit:         1024,
 		UserEventSizeLimit:     512,
 		BroadcastTimeout:       5 * time.Second,
+		LeaveBroadcastTimeout:  5 * time.Second,
 	}
 }
 
@@ -228,6 +229,11 @@ type Config struct {
 	BroadcastTimeoutRaw string        `mapstructure:"broadcast_timeout"`
 	BroadcastTimeout    time.Duration `mapstructure:"-"`
 
+	// LeaveBroadcastTimeout is the amount of time to wait for serf and
+	// memberlist to leave the cluster.
+	LeaveBroadcastTimeoutRaw string        `mapstructure:"leave_broadcast_timeout"`
+	LeaveBroadcastTimeout    time.Duration `mapstructure:"-"`
+
 	// ValidateNodeNames controls whether nodenames only
 	// contain alphanumeric, dashes and '.'characters
 	// and sets maximum length to 128 characters
@@ -347,6 +353,14 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 			return nil, err
 		}
 		result.BroadcastTimeout = dur
+	}
+
+	if result.LeaveBroadcastTimeoutRaw != "" {
+		dur, err := time.ParseDuration(result.LeaveBroadcastTimeoutRaw)
+		if err != nil {
+			return nil, err
+		}
+		result.LeaveBroadcastTimeout = dur
 	}
 
 	return &result, nil
@@ -477,6 +491,9 @@ func MergeConfig(a, b *Config) *Config {
 	}
 	if b.BroadcastTimeout != 0 {
 		result.BroadcastTimeout = b.BroadcastTimeout
+	}
+	if b.LeaveBroadcastTimeout != 0 {
+		result.LeaveBroadcastTimeout = b.LeaveBroadcastTimeout
 	}
 	result.EnableCompression = b.EnableCompression
 

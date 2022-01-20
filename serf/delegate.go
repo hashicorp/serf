@@ -32,9 +32,9 @@ func (d *delegate) NotifyMsg(buf []byte) {
 	}
 	metrics.AddSample([]string{"serf", "msgs", "received"}, float32(len(buf)))
 
+	t := messageType(buf[0])
 	rebroadcast := false
 	rebroadcastQueue := d.serf.broadcasts
-	t := messageType(buf[0])
 
 	if d.serf.config.messageDropper(t) {
 		return
@@ -143,6 +143,16 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 		lm := len(msg)
 		bytesUsed += lm + overhead
 		metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(lm))
+	}
+
+	leaveMsgs := d.serf.leaveBroadcasts.GetBroadcasts(overhead, limit-bytesUsed)
+	if leaveMsgs != nil {
+		for _, m := range leaveMsgs {
+			lm := len(m)
+			bytesUsed += lm + overhead
+			metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(lm))
+		}
+		msgs = append(msgs, leaveMsgs...)
 	}
 
 	// Get any additional query broadcasts

@@ -55,6 +55,7 @@ func (c *Command) readConfig() *Config {
 	var tags []string
 	var retryInterval string
 	var broadcastTimeout string
+	var leaveBroadcastTimeout string
 	var disableCompression bool
 
 	cmdFlags := flag.NewFlagSet("agent", flag.ContinueOnError)
@@ -103,6 +104,7 @@ func (c *Command) readConfig() *Config {
 	)
 
 	cmdFlags.StringVar(&broadcastTimeout, "broadcast-timeout", "", "timeout for broadcast messages")
+	cmdFlags.StringVar(&leaveBroadcastTimeout, "leave-broadcast-timeout", "", "the broadcast timeout used when leaving")
 	if err := cmdFlags.Parse(c.args); err != nil {
 		return nil
 	}
@@ -135,6 +137,16 @@ func (c *Command) readConfig() *Config {
 			return nil
 		}
 		cmdConfig.BroadcastTimeout = dur
+	}
+
+	// Decode the leave broadcast timeout if given
+	if leaveBroadcastTimeout != "" {
+		dur, err := time.ParseDuration(leaveBroadcastTimeout)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error: %s", err))
+			return nil
+		}
+		cmdConfig.LeaveBroadcastTimeout = dur
 	}
 
 	config := DefaultConfig()
@@ -185,11 +197,17 @@ func (c *Command) readConfig() *Config {
 		c.Ui.Output(fmt.Sprintf("Warning: 'RetryInterval' is too low. Setting to %v", config.RetryInterval))
 	}
 
-	// Check for sane broadcast timeout
+	// Check for sane broadcast timeouts
 	if config.BroadcastTimeout < minBroadcastTimeout {
 		config.BroadcastTimeout = minBroadcastTimeout
 		c.Ui.Output(fmt.Sprintf("Warning: 'BroadcastTimeout' is too low. Setting to %v",
 			config.BroadcastTimeout))
+	}
+
+	if config.LeaveBroadcastTimeout < minBroadcastTimeout {
+		config.LeaveBroadcastTimeout = minBroadcastTimeout
+		c.Ui.Output(fmt.Sprintf("Warning: 'LeaveBroadcastTimeout' is too low. Setting to %v",
+			config.LeaveBroadcastTimeout))
 	}
 
 	// Check snapshot file is provided if we have RejoinAfterLeave
