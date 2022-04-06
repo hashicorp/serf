@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -44,16 +45,36 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 	output, _ := circbuf.NewBuffer(maxBufSize)
 
 	// Determine the shell invocation based on OS
-	var shell, flag string
+	var bin, flag, args string
+
 	if runtime.GOOS == windows {
-		shell = "cmd"
+		bin = "cmd"
 		flag = "/C"
+		args = script
 	} else {
-		shell = "/bin/sh"
-		flag = "-c"
+		// If the script has a shebang, honor it.
+		// Otherwise, run with /bin/sh
+		bin = script
+
+		f, err := os.Open(script)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		r := bufio.NewReader(bufio.NewReader(f))
+		for _, i := range []rune{'#', '!'}{
+			if r, _, _ := r.ReadRune(); r != i {
+				bin = "/bin/sh"
+				flag = "-c"
+				args = script
+			}
+		}
+
+		_ = f.Close()
 	}
 
-	cmd := exec.Command(shell, flag, script)
+	cmd := exec.Command(bin, flag, args)
 	cmd.Env = append(os.Environ(),
 		"SERF_EVENT="+event.EventType().String(),
 		"SERF_SELF_NAME="+self.Name,
