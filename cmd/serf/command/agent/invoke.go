@@ -56,22 +56,20 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 		// Otherwise, run with /bin/sh
 		bin = script
 
-		f, err := os.Open(script)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		r := bufio.NewReader(bufio.NewReader(f))
-		for _, i := range []rune{'#', '!'}{
-			if r, _, _ := r.ReadRune(); r != i {
-				bin = "/bin/sh"
-				flag = "-c"
-				args = script
+		if f, err := os.Open(script); err == nil {
+			r := bufio.NewReader(bufio.NewReader(f))
+			for _, i := range []rune{'#', '!'} {
+				if r, _, _ := r.ReadRune(); r != i {
+					bin = "/bin/sh"
+					flag = "-c"
+					args = script
+				}
 			}
+			_ = f.Close()
+		} else {
+			logger.Printf("[DEBUG] agent: Event '%s' script could not be read. Assuming no shebang present.",
+				event.EventType().String())
 		}
-
-		_ = f.Close()
 	}
 
 	cmd := exec.Command(bin, flag, args)
