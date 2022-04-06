@@ -69,6 +69,9 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 		} else {
 			logger.Printf("[DEBUG] agent: Event '%s' script could not be read. Assuming no shebang present.",
 				event.EventType().String())
+			bin = "/bin/sh"
+			flag = "-c"
+			args = script
 		}
 	}
 
