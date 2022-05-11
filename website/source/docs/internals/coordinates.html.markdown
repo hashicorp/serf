@@ -74,7 +74,7 @@ a way that direct pings between all possible pairs of nodes never would.
 Guided by the follow-on papers cited above, there were several enhancements
 added to Serf's implementation on top of the core Vivaldi algorithm:
 
-* A non-Euclidean "height" term was added to the network coordinates in order to
+* A non-Euclidean "height" term was added to the network coordinates in order
   to help model real-world situations. In particular, height helps model access
   links that nodes have to the rest of the network, such as the fixed latency
   overhead of a virtual machine through a hypervisor to a network card.
