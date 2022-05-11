@@ -37,7 +37,10 @@ jobs:
             go-mod-
       - name: "Unit tests"
         run: |
-          go test -race ./...
+          go test ./...
+      - name: "Unit tests (race)"
+          run: |
+            go test -race ./serf/...
   consistency-checks:
     name: "Code Consistency Checks"
     runs-on: ubuntu-latest
