@@ -73,5 +73,5 @@ jobs:
             exit 1
           fi
       - name: "go vet"
-          run: |
-            go vet ./...
+        run: |
+          go vet ./...
