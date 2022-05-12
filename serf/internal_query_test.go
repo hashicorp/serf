@@ -143,6 +143,35 @@ func TestSerfQueries_keyListResponseWithCorrectSize(t *testing.T) {
 			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
 			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
 		}}},
+		// this test when the list of keys length is less than the max allowed, in this test case 1024/25 = 40
+		{expected: 18, hasMsg: true, resp: nodeKeyResponse{Keys: []string{
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+		}}},
+		// this test when the list of keys length is equal the max allowed, in this test case 1024/25 = 40
+		{expected: 18, hasMsg: true, resp: nodeKeyResponse{Keys: []string{
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+		}}},
+		// this test when the list of keys length is equal the max allowed, in this test case 1024/25 = 40
+		{expected: 18, hasMsg: false, resp: nodeKeyResponse{Keys: []string{
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+			"KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=", "KfCPZAKdgHUOdb202afZfE8EbdZqj4+ReTbfJUkfKsg=",
+		}}},
 	}
 	for _, c := range cases {
 		r := c.resp
