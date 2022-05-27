@@ -185,6 +185,22 @@ func (r *QueryResponse) sendResponse(nr NodeResponse) error {
 	return nil
 }
 
+// sendResponse sends a response on the response channel ensuring the channel is not closed.
+func (r *QueryResponse) sendAck(nr *messageQueryResponse) error {
+	r.closeLock.Lock()
+	defer r.closeLock.Unlock()
+	if r.closed {
+		return nil
+	}
+	select {
+	case r.ackCh <- nr.From:
+		r.acks[nr.From] = struct{}{}
+	default:
+		return errors.New("serf: Failed to deliver query response, dropping")
+	}
+	return nil
+}
+
 // NodeResponse is used to represent a single response from a node
 type NodeResponse struct {
 	From    string
