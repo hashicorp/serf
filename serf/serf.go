@@ -937,7 +937,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 		member = &memberState{
 			Member: Member{
 				Name:   n.Name,
-				Addr:   net.IP(n.Addr),
+				Addr:   n.Addr,
 				Port:   n.Port,
 				Tags:   s.decodeTags(n.Meta),
 				Status: StatusAlive,
@@ -1063,7 +1063,7 @@ func (s *Serf) handleNodeUpdate(n *memberlist.Node) {
 	}
 
 	// Update the member attributes
-	member.Addr = net.IP(n.Addr)
+	member.Addr = n.Addr
 	member.Port = n.Port
 	member.Tags = s.decodeTags(n.Meta)
 
@@ -1430,11 +1430,9 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 		}
 
 		metrics.IncrCounterWithLabels([]string{"serf", "query_acks"}, 1, s.metricLabels)
-		select {
-		case query.ackCh <- resp.From:
-			query.acks[resp.From] = struct{}{}
-		default:
-			s.logger.Printf("[WARN] serf: Failed to deliver query ack, dropping")
+		err := query.sendAck(resp)
+		if err != nil {
+			s.logger.Printf("[WARN] %v", err)
 		}
 	} else {
 		// Exit early if this is a duplicate response
