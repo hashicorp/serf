@@ -3,9 +3,6 @@ name: Checks
 on:
   pull_request:
 
-env:
-  GO_VERSION: "1.18.1"
-
 # This workflow runs for not-yet-reviewed external contributions and so it
 # intentionally has no write access and only limited read access to the
 # repository.
@@ -16,6 +13,9 @@ jobs:
   unit-tests:
     name: "Unit Tests"
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        GOVERSION: [ "1.16","1.17","1.18" ]
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@v2
@@ -23,7 +23,7 @@ jobs:
       - name: Install Go toolchain
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: ${{ matrix.GO_VERSION }}
 
       # NOTE: This cache is shared so the following step must always be
       # identical across the unit-tests, e2e-tests, and consistency-checks
@@ -75,3 +75,11 @@ jobs:
       - name: "go vet"
         run: |
           go vet ./...
+      - name: "go fmt check"
+        run: |
+          files=$(go fmt ./...)
+          if [ -n "$files" ]; then
+            echo "The following file(s) do not conform to go fmt:"
+            echo "$files"
+            exit 1
+          fi
