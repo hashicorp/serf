@@ -38,6 +38,32 @@ jobs:
       - name: "Unit tests"
         run: |
           go test ./...
+
+  unit-tests-race:
+    name: "Unit Tests Race"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        GO_VERSION: [ "1.16","1.17","1.18" ]
+    steps:
+      - name: "Fetch source code"
+        uses: actions/checkout@v2
+
+      - name: Install Go toolchain
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.GO_VERSION }}
+
+      # NOTE: This cache is shared so the following step must always be
+      # identical across the unit-tests, e2e-tests, and consistency-checks
+      # jobs, or else weird things could happen.
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: "~/go/pkg"
+          key: go-mod-${{ hashFiles('go.sum') }}
+          restore-keys: |
+            go-mod-
       - name: "Race Unit tests"
         run: |
           go test -race ./serf/...
