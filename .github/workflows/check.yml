@@ -31,10 +31,12 @@ jobs:
       - name: Cache Go modules
         uses: actions/cache@v3
         with:
-          path: "~/go/pkg"
-          key: go-mod-${{ hashFiles('go.sum') }}
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-mod-
+            go-mod-${{ matrix.GO_VERSION }}
       - name: "Unit tests"
         run: |
           go test ./...
@@ -60,10 +62,12 @@ jobs:
       - name: Cache Go modules
         uses: actions/cache@v3
         with:
-          path: "~/go/pkg"
-          key: go-mod-${{ hashFiles('go.sum') }}
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-mod-
+            go-mod-${{ matrix.GO_VERSION }}
       - name: "Race Unit tests"
         run: |
           go test -race ./serf/...
@@ -89,10 +93,12 @@ jobs:
       - name: Cache Go modules
         uses: actions/cache@v3
         with:
-          path: "~/go/pkg"
-          key: go-mod-${{ hashFiles('go.sum') }}
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-mod-
+            go-mod-${{ matrix.GO_VERSION }}
       - name: "go.mod and go.sum consistency check"
         run: |
           go mod tidy
