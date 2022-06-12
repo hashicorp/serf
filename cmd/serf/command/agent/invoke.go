@@ -45,24 +45,23 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 	output, _ := circbuf.NewBuffer(maxBufSize)
 
 	// Determine the shell invocation based on OS
-	var bin, flag, args string
+	var bin string
+	var args []string
 
 	if runtime.GOOS == windows {
 		bin = "cmd"
-		flag = "/C"
-		args = script
+		args = []string{"/C", script}
 	} else {
 		// If the script has a shebang, honor it.
 		// Otherwise, run with /bin/sh
 		bin = script
 
 		if f, err := os.Open(script); err == nil {
-			r := bufio.NewReader(bufio.NewReader(f))
+			r := bufio.NewReader(f)
 			for _, i := range []rune{'#', '!'} {
 				if r, _, _ := r.ReadRune(); r != i {
 					bin = "/bin/sh"
-					flag = "-c"
-					args = script
+					args = []string{"-c", script}
 				}
 			}
 			_ = f.Close()
@@ -70,12 +69,11 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 			logger.Printf("[DEBUG] agent: Event '%s' script could not be read. Assuming no shebang present.",
 				event.EventType().String())
 			bin = "/bin/sh"
-			flag = "-c"
-			args = script
+			args = []string{"-c", script}
 		}
 	}
 
-	cmd := exec.Command(bin, flag, args)
+	cmd := exec.Command(bin, args...)
 	cmd.Env = append(os.Environ(),
 		"SERF_EVENT="+event.EventType().String(),
 		"SERF_SELF_NAME="+self.Name,
