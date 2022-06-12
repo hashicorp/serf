@@ -163,6 +163,13 @@ func (s *serfQueries) handleConflict(q *Query) {
 func (s *serfQueries) keyListResponseWithCorrectSize(q *Query, resp *nodeKeyResponse) ([]byte, messageQueryResponse, error) {
 	maxListKeys := q.serf.config.QueryResponseSizeLimit / minEncodedKeyLength
 	actual := len(resp.Keys)
+
+	// if the provided list of keys is smaller then the max allowed, just iterate over it
+	// to avoid an out of bound access when truncating
+	if maxListKeys > actual {
+		maxListKeys = actual
+	}
+
 	for i := maxListKeys; i >= 0; i-- {
 		buf, err := encodeMessage(messageKeyResponseType, resp)
 		if err != nil {
