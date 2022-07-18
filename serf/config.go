@@ -262,6 +262,9 @@ type Config struct {
 	// contain alphanumeric, dashes and '.'characters
 	// and sets maximum length to 128 characters
 	ValidateNodeNames bool
+
+	// MetricLabels is a map of optional labels to apply to all metrics emitted.
+	MetricLabels map[string]string
 }
 
 // Init allocates the subdata structures
