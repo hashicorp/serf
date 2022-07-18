@@ -20,6 +20,7 @@ import (
 	"github.com/armon/go-metrics"
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/memberlist"
+
 	"github.com/hashicorp/serf/coordinate"
 )
 
@@ -106,6 +107,9 @@ type Serf struct {
 	coordClient    *coordinate.Client
 	coordCache     map[string]*coordinate.Coordinate
 	coordCacheLock sync.RWMutex
+
+	// metricLabels is the slice of labels to put on all emitted metrics
+	metricLabels []metrics.Label
 }
 
 // SerfState is the state of the Serf instance.
@@ -264,6 +268,8 @@ func Create(conf *Config) (*Serf, error) {
 		logger = log.New(logOutput, "", log.LstdFlags)
 	}
 
+	metricLabels := mapToLabels(conf.MetricLabels)
+
 	serf := &Serf{
 		config:        conf,
 		logger:        logger,
@@ -271,6 +277,7 @@ func Create(conf *Config) (*Serf, error) {
 		queryResponse: make(map[LamportTime]*QueryResponse),
 		shutdownCh:    make(chan struct{}),
 		state:         SerfAlive,
+		metricLabels:  metricLabels,
 	}
 	serf.eventJoinIgnore.Store(false)
 
@@ -953,7 +960,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 		oldStatus = member.Status
 		deadTime := time.Now().Sub(member.leaveTime)
 		if oldStatus == StatusFailed && deadTime < s.config.FlapTimeout {
-			metrics.IncrCounter([]string{"serf", "member", "flap"}, 1)
+			metrics.IncrCounterWithLabels([]string{"serf", "member", "flap"}, 1, s.metricLabels)
 		}
 
 		member.Status = StatusAlive
@@ -980,7 +987,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 	}
 
 	// Update some metrics
-	metrics.IncrCounter([]string{"serf", "member", "join"}, 1)
+	metrics.IncrCounterWithLabels([]string{"serf", "member", "join"}, 1, s.metricLabels)
 
 	// Send an event along
 	s.logger.Printf("[INFO] serf: EventMemberJoin: %s %s",
@@ -1030,7 +1037,7 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 	}
 
 	// Update some metrics
-	metrics.IncrCounter([]string{"serf", "member", member.Status.String()}, 1)
+	metrics.IncrCounterWithLabels([]string{"serf", "member", member.Status.String()}, 1, s.metricLabels)
 
 	s.logger.Printf("[INFO] serf: %s: %s %s",
 		eventStr, member.Member.Name, member.Member.Addr)
@@ -1074,7 +1081,7 @@ func (s *Serf) handleNodeUpdate(n *memberlist.Node) {
 	member.DelegateCur = n.DCur
 
 	// Update some metrics
-	metrics.IncrCounter([]string{"serf", "member", "update"}, 1)
+	metrics.IncrCounterWithLabels([]string{"serf", "member", "update"}, 1, s.metricLabels)
 
 	// Send an event along
 	s.logger.Printf("[INFO] serf: EventMemberUpdate: %s", member.Member.Name)
@@ -1271,8 +1278,8 @@ func (s *Serf) handleUserEvent(eventMsg *messageUserEvent) bool {
 	seen.Events = append(seen.Events, userEvent)
 
 	// Update some metrics
-	metrics.IncrCounter([]string{"serf", "events"}, 1)
-	metrics.IncrCounter([]string{"serf", "events", eventMsg.Name}, 1)
+	metrics.IncrCounterWithLabels([]string{"serf", "events"}, 1, s.metricLabels)
+	metrics.IncrCounterWithLabels([]string{"serf", "events", eventMsg.Name}, 1, s.metricLabels)
 
 	if s.config.EventCh != nil {
 		s.config.EventCh <- UserEvent{
@@ -1330,8 +1337,8 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 	seen.QueryIDs = append(seen.QueryIDs, query.ID)
 
 	// Update some metrics
-	metrics.IncrCounter([]string{"serf", "queries"}, 1)
-	metrics.IncrCounter([]string{"serf", "queries", query.Name}, 1)
+	metrics.IncrCounterWithLabels([]string{"serf", "queries"}, 1, s.metricLabels)
+	metrics.IncrCounterWithLabels([]string{"serf", "queries", query.Name}, 1, s.metricLabels)
 
 	// Check if we should rebroadcast, this may be disabled by a flag
 	rebroadcast := true
@@ -1418,11 +1425,11 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 	if resp.Ack() {
 		// Exit early if this is a duplicate ack
 		if _, ok := query.acks[resp.From]; ok {
-			metrics.IncrCounter([]string{"serf", "query_duplicate_acks"}, 1)
+			metrics.IncrCounterWithLabels([]string{"serf", "query_duplicate_acks"}, 1, s.metricLabels)
 			return
 		}
 
-		metrics.IncrCounter([]string{"serf", "query_acks"}, 1)
+		metrics.IncrCounterWithLabels([]string{"serf", "query_acks"}, 1, s.metricLabels)
 		select {
 		case query.ackCh <- resp.From:
 			query.acks[resp.From] = struct{}{}
@@ -1432,11 +1439,11 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 	} else {
 		// Exit early if this is a duplicate response
 		if _, ok := query.responses[resp.From]; ok {
-			metrics.IncrCounter([]string{"serf", "query_duplicate_responses"}, 1)
+			metrics.IncrCounterWithLabels([]string{"serf", "query_duplicate_responses"}, 1, s.metricLabels)
 			return
 		}
 
-		metrics.IncrCounter([]string{"serf", "query_responses"}, 1)
+		metrics.IncrCounterWithLabels([]string{"serf", "query_responses"}, 1, s.metricLabels)
 		err := query.sendResponse(NodeResponse{From: resp.From, Payload: resp.Payload})
 		if err != nil {
 			s.logger.Printf("[WARN] %v", err)
@@ -1677,7 +1684,7 @@ func (s *Serf) checkQueueDepth(name string, queue *memberlist.TransmitLimitedQue
 		select {
 		case <-time.After(s.config.QueueCheckInterval):
 			numq := queue.NumQueued()
-			metrics.AddSample([]string{"serf", "queue", name}, float32(numq))
+			metrics.AddSampleWithLabels([]string{"serf", "queue", name}, float32(numq), s.metricLabels)
 			if numq >= s.config.QueueDepthWarning {
 				s.logger.Printf("[WARN] serf: %s queue depth: %d", name, numq)
 			}
@@ -1921,4 +1928,18 @@ func (s *Serf) validateNodeName(name string) error {
 		}
 	}
 	return nil
+}
+
+func mapToLabels(m map[string]string) []metrics.Label {
+	if len(m) == 0 {
+		return nil
+	}
+	out := make([]metrics.Label, 0, len(m))
+	for k, v := range m {
+		out = append(out, metrics.Label{
+			Name:  k,
+			Value: v,
+		})
+	}
+	return out
 }
