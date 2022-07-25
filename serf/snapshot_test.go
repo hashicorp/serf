@@ -46,7 +46,7 @@ func TestSnapshotter(t *testing.T) {
 	meJoin := MemberEvent{
 		Type: EventMemberJoin,
 		Members: []Member{
-			Member{
+			{
 				Name: "foo",
 				Addr: []byte{127, 0, 0, 1},
 				Port: 5000,
@@ -56,7 +56,7 @@ func TestSnapshotter(t *testing.T) {
 	meFail := MemberEvent{
 		Type: EventMemberFailed,
 		Members: []Member{
-			Member{
+			{
 				Name: "foo",
 				Addr: []byte{127, 0, 0, 1},
 				Port: 5000,
@@ -263,7 +263,7 @@ func TestSnapshotter_leave(t *testing.T) {
 	meJoin := MemberEvent{
 		Type: EventMemberJoin,
 		Members: []Member{
-			Member{
+			{
 				Name: "foo",
 				Addr: []byte{127, 0, 0, 1},
 				Port: 5000,
@@ -344,7 +344,7 @@ func TestSnapshotter_leave_rejoin(t *testing.T) {
 	meJoin := MemberEvent{
 		Type: EventMemberJoin,
 		Members: []Member{
-			Member{
+			{
 				Name: "foo",
 				Addr: []byte{127, 0, 0, 1},
 				Port: 5000,
@@ -391,6 +391,7 @@ func TestSnapshotter_leave_rejoin(t *testing.T) {
 }
 
 func TestSnapshotter_slowDiskNotBlockingEventCh(t *testing.T) {
+	t.Skip("Flaky test")
 	td, err := ioutil.TempDir("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -424,7 +425,7 @@ func TestSnapshotter_slowDiskNotBlockingEventCh(t *testing.T) {
 			e := MemberEvent{
 				Type: EventMemberJoin,
 				Members: []Member{
-					Member{
+					{
 						Name: fmt.Sprintf("foo%d", i),
 						Addr: []byte{127, 0, byte((i / 256) % 256), byte(i % 256)},
 						Port: 5000,
@@ -505,7 +506,7 @@ func TestSnapshotter_blockedUpstreamNotBlockingMemberlist(t *testing.T) {
 		e := MemberEvent{
 			Type: EventMemberJoin,
 			Members: []Member{
-				Member{
+				{
 					Name: fmt.Sprintf("foo%d", i),
 					Addr: []byte{127, 0, byte((i / 256) % 256), byte(i % 256)},
 					Port: 5000,
