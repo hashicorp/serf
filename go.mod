@@ -22,4 +22,5 @@ require (
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/posener/complete v1.2.3 // indirect
+	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
 )
