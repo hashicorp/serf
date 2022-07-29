@@ -412,6 +412,8 @@ func Create(conf *Config) (*Serf, error) {
 		conf.MemberlistConfig.Alive = md
 	}
 
+	conf.MemberlistConfig.MetricLabels = conf.MetricLabels
+
 	// Create the underlying memberlist that will manage membership
 	// and failure detection for the Serf instance.
 	memberlist, err := memberlist.Create(conf.MemberlistConfig)
