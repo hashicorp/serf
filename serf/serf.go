@@ -1115,11 +1115,14 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 
 	// Refute us leaving if we are in the alive state
 	// Must be done in another goroutine since we have the memberLock
+	s.stateLock.Lock()
 	if leaveMsg.Node == s.config.NodeName && s.state == SerfAlive {
+		s.stateLock.Unlock()
 		s.logger.Printf("[DEBUG] serf: Refuting an older leave intent")
 		go s.broadcastJoin(s.clock.Time())
 		return false
 	}
+	s.stateLock.Unlock()
 
 	// Always update the lamport time even when the status does not change
 	// (despite the variable naming implying otherwise).
