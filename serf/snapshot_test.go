@@ -22,7 +22,7 @@ func TestSnapshotter(t *testing.T) {
 	stopCh := make(chan struct{})
 	logger := log.New(os.Stderr, "", log.LstdFlags)
 	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit, false,
-		logger, clock, outCh, stopCh)
+		logger, clock, outCh, stopCh, nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -120,7 +120,7 @@ func TestSnapshotter(t *testing.T) {
 	// Open the snapshoter
 	stopCh = make(chan struct{})
 	_, snap, err = NewSnapshotter(td+"snap", snapshotSizeLimit, false,
-		logger, clock, outCh, stopCh)
+		logger, clock, outCh, stopCh, nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -155,7 +155,7 @@ func TestSnapshotter(t *testing.T) {
 	// disabled.
 	stopCh = make(chan struct{})
 	_, snap, err = NewSnapshotter(td+"snap", snapshotSizeLimit, false,
-		logger, clock, outCh, stopCh)
+		logger, clock, outCh, stopCh, nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -177,7 +177,7 @@ func TestSnapshotter_forceCompact(t *testing.T) {
 
 	// Create a very low limit
 	inCh, snap, err := NewSnapshotter(td+"snap", 1024, false,
-		logger, clock, nil, stopCh)
+		logger, clock, nil, stopCh, nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -210,7 +210,7 @@ func TestSnapshotter_forceCompact(t *testing.T) {
 	// Open the snapshoter
 	stopCh = make(chan struct{})
 	_, snap, err = NewSnapshotter(td+"snap", snapshotSizeLimit, false,
-		logger, clock, nil, stopCh)
+		logger, clock, nil, stopCh, nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -239,7 +239,7 @@ func TestSnapshotter_leave(t *testing.T) {
 	stopCh := make(chan struct{})
 	logger := log.New(os.Stderr, "", log.LstdFlags)
 	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit, false,
-		logger, clock, nil, stopCh)
+		logger, clock, nil, stopCh, nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -287,7 +287,7 @@ func TestSnapshotter_leave(t *testing.T) {
 	// Open the snapshoter
 	stopCh = make(chan struct{})
 	_, snap, err = NewSnapshotter(td+"snap", snapshotSizeLimit, false,
-		logger, clock, nil, stopCh)
+		logger, clock, nil, stopCh, nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -320,7 +320,7 @@ func TestSnapshotter_leave_rejoin(t *testing.T) {
 	stopCh := make(chan struct{})
 	logger := log.New(os.Stderr, "", log.LstdFlags)
 	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit, true,
-		logger, clock, nil, stopCh)
+		logger, clock, nil, stopCh, nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -368,7 +368,7 @@ func TestSnapshotter_leave_rejoin(t *testing.T) {
 	// Open the snapshoter
 	stopCh = make(chan struct{})
 	_, snap, err = NewSnapshotter(td+"snap", snapshotSizeLimit, true,
-		logger, clock, nil, stopCh)
+		logger, clock, nil, stopCh, nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -404,7 +404,7 @@ func TestSnapshotter_slowDiskNotBlockingEventCh(t *testing.T) {
 
 	outCh := make(chan Event, 1024)
 	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit, true,
-		logger, clock, outCh, stopCh)
+		logger, clock, outCh, stopCh, nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -492,7 +492,7 @@ func TestSnapshotter_blockedUpstreamNotBlockingMemberlist(t *testing.T) {
 	outCh := make(chan Event)
 
 	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit, true,
-		logger, clock, outCh, stopCh)
+		logger, clock, outCh, stopCh, nil)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 func TestClient_NewClient(t *testing.T) {
-	config := DefaultConfig()
+	config := DefaultConfig(nil)
 
 	config.Dimensionality = 0
 	client, err := NewClient(config)
@@ -31,7 +31,7 @@ func TestClient_NewClient(t *testing.T) {
 }
 
 func TestClient_Update(t *testing.T) {
-	config := DefaultConfig()
+	config := DefaultConfig(nil)
 	config.Dimensionality = 3
 
 	client, err := NewClient(config)
@@ -66,7 +66,7 @@ func TestClient_Update(t *testing.T) {
 }
 
 func TestClient_InvalidInPingValues(t *testing.T) {
-	config := DefaultConfig()
+	config := DefaultConfig(nil)
 	config.Dimensionality = 3
 
 	client, err := NewClient(config)
@@ -98,7 +98,7 @@ func TestClient_InvalidInPingValues(t *testing.T) {
 }
 
 func TestClient_DistanceTo(t *testing.T) {
-	config := DefaultConfig()
+	config := DefaultConfig(nil)
 	config.Dimensionality = 3
 	config.HeightMin = 0
 
@@ -118,7 +118,7 @@ func TestClient_DistanceTo(t *testing.T) {
 }
 
 func TestClient_latencyFilter(t *testing.T) {
-	config := DefaultConfig()
+	config := DefaultConfig(nil)
 	config.LatencyFilterSize = 3
 
 	client, err := NewClient(config)
@@ -146,7 +146,7 @@ func TestClient_latencyFilter(t *testing.T) {
 }
 
 func TestClient_NaN_Defense(t *testing.T) {
-	config := DefaultConfig()
+	config := DefaultConfig(nil)
 	config.Dimensionality = 3
 
 	client, err := NewClient(config)
