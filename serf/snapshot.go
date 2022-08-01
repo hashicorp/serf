@@ -78,6 +78,7 @@ type Snapshotter struct {
 	shutdownCh              <-chan struct{}
 	waitCh                  chan struct{}
 	lastAttemptedCompaction time.Time
+	metricLabels            []metrics.Label
 }
 
 // PreviousNode is used to represent the previously known alive nodes
@@ -102,7 +103,7 @@ func NewSnapshotter(path string,
 	logger *log.Logger,
 	clock *LamportClock,
 	outCh chan<- Event,
-	shutdownCh <-chan struct{}) (chan<- Event, *Snapshotter, error) {
+	shutdownCh <-chan struct{}, metricLabels []metrics.Label) (chan<- Event, *Snapshotter, error) {
 	inCh := make(chan Event, eventChSize)
 	streamCh := make(chan Event, eventChSize)
 
@@ -140,6 +141,7 @@ func NewSnapshotter(path string,
 		rejoinAfterLeave: rejoinAfterLeave,
 		shutdownCh:       shutdownCh,
 		waitCh:           make(chan struct{}),
+		metricLabels:     metricLabels,
 	}
 
 	// Recover the last known state
@@ -390,7 +392,7 @@ func (s *Snapshotter) tryAppend(l string) {
 
 // appendLine is used to append a line to the existing log
 func (s *Snapshotter) appendLine(l string) error {
-	defer metrics.MeasureSince([]string{"serf", "snapshot", "appendLine"}, time.Now())
+	defer metrics.MeasureSinceWithLabels([]string{"serf", "snapshot", "appendLine"}, time.Now(), s.metricLabels)
 
 	n, err := s.buffered.WriteString(l)
 	if err != nil {
@@ -429,7 +431,7 @@ func (s *Snapshotter) snapshotMaxSize() int64 {
 
 // Compact is used to compact the snapshot once it is too large
 func (s *Snapshotter) compact() error {
-	defer metrics.MeasureSince([]string{"serf", "snapshot", "compact"}, time.Now())
+	defer metrics.MeasureSinceWithLabels([]string{"serf", "snapshot", "compact"}, time.Now(), s.metricLabels)
 
 	// Try to open the file to new fiel
 	newPath := s.path + tmpExt

@@ -1,5 +1,9 @@
 package coordinate
 
+import (
+	"github.com/armon/go-metrics"
+)
+
 // Config is used to set the parameters of the Vivaldi-based coordinate mapping
 // algorithm.
 //
@@ -52,11 +56,14 @@ type Config struct {
 	// GravityRho is a tuning factor that sets how much gravity has an effect
 	// to try to re-center coordinates. See [2] for more details.
 	GravityRho float64
+
+	// metricLabels is the slice of labels to put on all emitted metrics
+	MetricLabels []metrics.Label
 }
 
 // DefaultConfig returns a Config that has some default values suitable for
 // basic testing of the algorithm, but not tuned to any particular type of cluster.
-func DefaultConfig() *Config {
+func DefaultConfig(metricLabels []metrics.Label) *Config {
 	return &Config{
 		Dimensionality:       8,
 		VivaldiErrorMax:      1.5,
@@ -66,5 +73,6 @@ func DefaultConfig() *Config {
 		HeightMin:            10.0e-6,
 		LatencyFilterSize:    3,
 		GravityRho:           150.0,
+		MetricLabels:         metricLabels,
 	}
 }

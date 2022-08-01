@@ -321,7 +321,7 @@ func Create(conf *Config) (*Serf, error) {
 
 	// Set up network coordinate client.
 	if !conf.DisableCoordinates {
-		serf.coordClient, err = coordinate.NewClient(coordinate.DefaultConfig())
+		serf.coordClient, err = coordinate.NewClient(coordinate.DefaultConfig(serf.metricLabels))
 		if err != nil {
 			return nil, fmt.Errorf("Failed to create coordinate client: %v", err)
 		}
@@ -338,7 +338,7 @@ func Create(conf *Config) (*Serf, error) {
 			serf.logger,
 			&serf.clock,
 			conf.EventCh,
-			serf.shutdownCh)
+			serf.shutdownCh, serf.metricLabels)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to setup snapshot: %v", err)
 		}
