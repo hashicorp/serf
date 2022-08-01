@@ -1,0 +1,87 @@
+name: Checks
+
+on:
+  pull_request:
+
+# This workflow runs for not-yet-reviewed external contributions and so it
+# intentionally has no write access and only limited read access to the
+# repository.
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    name: "Unit Tests"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        GO_VERSION: [ "1.16","1.17","1.18" ]
+    steps:
+      - name: "Fetch source code"
+        uses: actions/checkout@v2
+
+      - name: Install Go toolchain
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.GO_VERSION }}
+
+      # NOTE: This cache is shared so the following step must always be
+      # identical across the unit-tests, e2e-tests, and consistency-checks
+      # jobs, or else weird things could happen.
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
+          restore-keys: |
+            go-mod-${{ matrix.GO_VERSION }}
+      - name: "Unit tests"
+        run: |
+          go test ./...
+  consistency-checks:
+    name: "Code Consistency Checks"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        GO_VERSION: [ "1.16","1.17","1.18" ]
+    steps:
+      - name: "Fetch source code"
+        uses: actions/checkout@v2
+
+      - name: Install Go toolchain
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.GO_VERSION }}
+
+      # NOTE: This cache is shared so the following step must always be
+      # identical across the unit-tests and consistency-checks
+      # jobs, or else weird things could happen.
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
+          restore-keys: |
+            go-mod-${{ matrix.GO_VERSION }}
+      - name: "go.mod and go.sum consistency check"
+        run: |
+          go mod tidy
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo >&2 "ERROR: go.mod/go.sum are not up-to-date. Run 'go mod tidy' and then commit the updated files."
+            exit 1
+          fi
+      - name: "go vet"
+        run: |
+          go vet ./...
+      - name: "go fmt check"
+        run: |
+          files=$(go fmt ./...)
+          if [ -n "$files" ]; then
+            echo "The following file(s) do not conform to go fmt:"
+            echo "$files"
+            exit 1
+          fi 
