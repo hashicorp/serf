@@ -74,9 +74,9 @@ jobs:
             echo >&2 "ERROR: go.mod/go.sum are not up-to-date. Run 'go mod tidy' and then commit the updated files."
             exit 1
           fi
-      - name: "go vet"
-        run: |
-          go vet ./...
+      # - name: "go vet"
+      #   run: |
+      #     go vet ./...
       - name: "go fmt check"
         run: |
           files=$(go fmt ./...)
