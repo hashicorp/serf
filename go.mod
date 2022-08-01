@@ -2,7 +2,7 @@ module github.com/hashicorp/serf
 
 go 1.12
 
-// replace github.com/hashicorp/memberlist => ../memberlist
+replace github.com/hashicorp/memberlist => github.com/hashicorp/memberlist v0.3.2-0.20220801164105-62e12a6f0768
 
 require (
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
