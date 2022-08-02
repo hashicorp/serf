@@ -19,5 +19,7 @@ require (
 	github.com/mitchellh/mapstructure v0.0.0-20160808181253-ca63d7c062ee
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f
+	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/sys v0.0.0-20220731174439-a90be440212d // indirect
+	gopkg.in/yaml.v2 v2.2.8 // indirect
 )

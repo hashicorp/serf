@@ -321,7 +321,9 @@ func Create(conf *Config) (*Serf, error) {
 
 	// Set up network coordinate client.
 	if !conf.DisableCoordinates {
-		serf.coordClient, err = coordinate.NewClient(coordinate.DefaultConfig())
+		coordinateConfig := coordinate.DefaultConfig()
+		coordinateConfig.MetricLabels = serf.metricLabels
+		serf.coordClient, err = coordinate.NewClient(coordinateConfig)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to create coordinate client: %v", err)
 		}
@@ -342,6 +344,7 @@ func Create(conf *Config) (*Serf, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Failed to setup snapshot: %v", err)
 		}
+		snap.metricLabels = serf.metricLabels
 		serf.snapshotter = snap
 		conf.EventCh = eventCh
 		prev = snap.AliveNodes()
@@ -411,6 +414,8 @@ func Create(conf *Config) (*Serf, error) {
 		conf.MemberlistConfig.Merge = md
 		conf.MemberlistConfig.Alive = md
 	}
+
+	conf.MemberlistConfig.MetricLabels = conf.MetricLabels
 
 	// Create the underlying memberlist that will manage membership
 	// and failure detection for the Serf instance.

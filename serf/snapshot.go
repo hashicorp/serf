@@ -78,6 +78,7 @@ type Snapshotter struct {
 	shutdownCh              <-chan struct{}
 	waitCh                  chan struct{}
 	lastAttemptedCompaction time.Time
+	metricLabels            []metrics.Label
 }
 
 // PreviousNode is used to represent the previously known alive nodes
@@ -390,7 +391,7 @@ func (s *Snapshotter) tryAppend(l string) {
 
 // appendLine is used to append a line to the existing log
 func (s *Snapshotter) appendLine(l string) error {
-	defer metrics.MeasureSince([]string{"serf", "snapshot", "appendLine"}, time.Now())
+	defer metrics.MeasureSinceWithLabels([]string{"serf", "snapshot", "appendLine"}, time.Now(), s.metricLabels)
 
 	n, err := s.buffered.WriteString(l)
 	if err != nil {
@@ -429,7 +430,7 @@ func (s *Snapshotter) snapshotMaxSize() int64 {
 
 // Compact is used to compact the snapshot once it is too large
 func (s *Snapshotter) compact() error {
-	defer metrics.MeasureSince([]string{"serf", "snapshot", "compact"}, time.Now())
+	defer metrics.MeasureSinceWithLabels([]string{"serf", "snapshot", "compact"}, time.Now(), s.metricLabels)
 
 	// Try to open the file to new fiel
 	newPath := s.path + tmpExt
