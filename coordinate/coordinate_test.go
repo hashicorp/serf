@@ -23,7 +23,7 @@ func verifyDimensionPanic(t *testing.T, f func()) {
 }
 
 func TestCoordinate_NewCoordinate(t *testing.T) {
-	config := DefaultConfig(nil)
+	config := DefaultConfig()
 	c := NewCoordinate(config)
 	if uint(len(c.Vec)) != config.Dimensionality {
 		t.Fatalf("dimensionality not set correctly %d != %d",
@@ -32,7 +32,7 @@ func TestCoordinate_NewCoordinate(t *testing.T) {
 }
 
 func TestCoordinate_Clone(t *testing.T) {
-	c := NewCoordinate(DefaultConfig(nil))
+	c := NewCoordinate(DefaultConfig())
 	c.Vec[0], c.Vec[1], c.Vec[2] = 1.0, 2.0, 3.0
 	c.Error = 5.0
 	c.Adjustment = 10.0
@@ -50,7 +50,7 @@ func TestCoordinate_Clone(t *testing.T) {
 }
 
 func TestCoordinate_IsValid(t *testing.T) {
-	c := NewCoordinate(DefaultConfig(nil))
+	c := NewCoordinate(DefaultConfig())
 
 	var fields []*float64
 	for i := range c.Vec {
@@ -88,7 +88,7 @@ func TestCoordinate_IsValid(t *testing.T) {
 }
 
 func TestCoordinate_IsCompatibleWith(t *testing.T) {
-	config := DefaultConfig(nil)
+	config := DefaultConfig()
 
 	config.Dimensionality = 3
 	c1 := NewCoordinate(config)
@@ -113,7 +113,7 @@ func TestCoordinate_IsCompatibleWith(t *testing.T) {
 }
 
 func TestCoordinate_ApplyForce(t *testing.T) {
-	config := DefaultConfig(nil)
+	config := DefaultConfig()
 	config.Dimensionality = 3
 	config.HeightMin = 0
 
@@ -158,7 +158,7 @@ func TestCoordinate_ApplyForce(t *testing.T) {
 }
 
 func TestCoordinate_DistanceTo(t *testing.T) {
-	config := DefaultConfig(nil)
+	config := DefaultConfig()
 	config.Dimensionality = 3
 	config.HeightMin = 0
 
@@ -218,7 +218,7 @@ func dist(a *Coordinate, b *Coordinate) time.Duration {
 }
 
 func TestCoordinate_dist_Example(t *testing.T) {
-	config := DefaultConfig(nil)
+	config := DefaultConfig()
 	c1, c2 := NewCoordinate(config), NewCoordinate(config)
 	c1.Vec = []float64{-0.5, 1.3, 2.4}
 	c2.Vec = []float64{1.2, -2.3, 3.4}
@@ -230,7 +230,7 @@ func TestCoordinate_dist_Example(t *testing.T) {
 }
 
 func TestCoordinate_rawDistanceTo(t *testing.T) {
-	config := DefaultConfig(nil)
+	config := DefaultConfig()
 	config.Dimensionality = 3
 	config.HeightMin = 0
 

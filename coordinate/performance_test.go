@@ -9,7 +9,7 @@ import (
 func TestPerformance_Line(t *testing.T) {
 	const spacing = 10 * time.Millisecond
 	const nodes, cycles = 10, 1000
-	config := DefaultConfig(nil)
+	config := DefaultConfig()
 	clients, err := GenerateClients(nodes, config)
 	if err != nil {
 		t.Fatal(err)
@@ -25,7 +25,7 @@ func TestPerformance_Line(t *testing.T) {
 func TestPerformance_Grid(t *testing.T) {
 	const spacing = 10 * time.Millisecond
 	const nodes, cycles = 25, 1000
-	config := DefaultConfig(nil)
+	config := DefaultConfig()
 	clients, err := GenerateClients(nodes, config)
 	if err != nil {
 		t.Fatal(err)
@@ -41,7 +41,7 @@ func TestPerformance_Grid(t *testing.T) {
 func TestPerformance_Split(t *testing.T) {
 	const lan, wan = 1 * time.Millisecond, 10 * time.Millisecond
 	const nodes, cycles = 25, 1000
-	config := DefaultConfig(nil)
+	config := DefaultConfig()
 	clients, err := GenerateClients(nodes, config)
 	if err != nil {
 		t.Fatal(err)
@@ -60,7 +60,7 @@ func TestPerformance_Height(t *testing.T) {
 
 	// Constrain us to two dimensions so that we can just exactly represent
 	// the circle.
-	config := DefaultConfig(nil)
+	config := DefaultConfig()
 	config.Dimensionality = 2
 	clients, err := GenerateClients(nodes, config)
 	if err != nil {
@@ -96,7 +96,7 @@ func TestPerformance_Height(t *testing.T) {
 func TestPerformance_Drift(t *testing.T) {
 	const dist = 500 * time.Millisecond
 	const nodes = 4
-	config := DefaultConfig(nil)
+	config := DefaultConfig()
 	config.Dimensionality = 2
 	clients, err := GenerateClients(nodes, config)
 	if err != nil {
@@ -168,7 +168,7 @@ func TestPerformance_Drift(t *testing.T) {
 func TestPerformance_Random(t *testing.T) {
 	const mean, deviation = 100 * time.Millisecond, 10 * time.Millisecond
 	const nodes, cycles = 25, 1000
-	config := DefaultConfig(nil)
+	config := DefaultConfig()
 	clients, err := GenerateClients(nodes, config)
 	if err != nil {
 		t.Fatal(err)

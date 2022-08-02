@@ -103,7 +103,7 @@ func NewSnapshotter(path string,
 	logger *log.Logger,
 	clock *LamportClock,
 	outCh chan<- Event,
-	shutdownCh <-chan struct{}, metricLabels []metrics.Label) (chan<- Event, *Snapshotter, error) {
+	shutdownCh <-chan struct{}) (chan<- Event, *Snapshotter, error) {
 	inCh := make(chan Event, eventChSize)
 	streamCh := make(chan Event, eventChSize)
 
@@ -141,7 +141,6 @@ func NewSnapshotter(path string,
 		rejoinAfterLeave: rejoinAfterLeave,
 		shutdownCh:       shutdownCh,
 		waitCh:           make(chan struct{}),
-		metricLabels:     metricLabels,
 	}
 
 	// Recover the last known state

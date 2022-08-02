@@ -63,7 +63,7 @@ type Config struct {
 
 // DefaultConfig returns a Config that has some default values suitable for
 // basic testing of the algorithm, but not tuned to any particular type of cluster.
-func DefaultConfig(metricLabels []metrics.Label) *Config {
+func DefaultConfig() *Config {
 	return &Config{
 		Dimensionality:       8,
 		VivaldiErrorMax:      1.5,
@@ -73,6 +73,5 @@ func DefaultConfig(metricLabels []metrics.Label) *Config {
 		HeightMin:            10.0e-6,
 		LatencyFilterSize:    3,
 		GravityRho:           150.0,
-		MetricLabels:         metricLabels,
 	}
 }

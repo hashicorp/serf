@@ -2845,7 +2845,7 @@ func (p *pingDimensionMetaDelegate) AckPayload() []byte {
 	buf.Write(version)
 
 	// Make a bad coordinate with the wrong number of dimensions.
-	coord := coordinate.NewCoordinate(coordinate.DefaultConfig(nil))
+	coord := coordinate.NewCoordinate(coordinate.DefaultConfig())
 	coord.Vec = make([]float64, 2*len(coord.Vec))
 
 	// The rest of the message is the serialized coordinate.
