@@ -68,7 +68,7 @@ func (p *pingDelegate) NotifyPingComplete(other *memberlist.Node, rtt time.Durat
 	before := p.serf.coordClient.GetCoordinate()
 	after, err := p.serf.coordClient.Update(other.Name, &coord, rtt)
 	if err != nil {
-		metrics.IncrCounter([]string{"serf", "coordinate", "rejected"}, 1)
+		metrics.IncrCounterWithLabels([]string{"serf", "coordinate", "rejected"}, 1, p.serf.metricLabels)
 		p.serf.logger.Printf("[TRACE] serf: Rejected coordinate from %s: %v\n",
 			other.Name, err)
 		return
@@ -77,7 +77,7 @@ func (p *pingDelegate) NotifyPingComplete(other *memberlist.Node, rtt time.Durat
 	// Publish some metrics to give us an idea of how much we are
 	// adjusting each time we update.
 	d := float32(before.DistanceTo(after).Seconds() * 1.0e3)
-	metrics.AddSample([]string{"serf", "coordinate", "adjustment-ms"}, d)
+	metrics.AddSampleWithLabels([]string{"serf", "coordinate", "adjustment-ms"}, d, p.serf.metricLabels)
 
 	// Cache the coordinate for the other node, and add our own
 	// to the cache as well since it just got updated. This lets
