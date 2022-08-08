@@ -30,7 +30,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 	if len(buf) == 0 {
 		return
 	}
-	metrics.AddSample([]string{"serf", "msgs", "received"}, float32(len(buf)))
+	metrics.AddSampleWithLabels([]string{"serf", "msgs", "received"}, float32(len(buf)), d.serf.metricLabels)
 
 	rebroadcast := false
 	rebroadcastQueue := d.serf.broadcasts
@@ -142,7 +142,7 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 	for _, msg := range msgs {
 		lm := len(msg)
 		bytesUsed += lm + overhead
-		metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(lm))
+		metrics.AddSampleWithLabels([]string{"serf", "msgs", "sent"}, float32(lm), d.serf.metricLabels)
 	}
 
 	// Get any additional query broadcasts
@@ -151,7 +151,7 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 		for _, m := range queryMsgs {
 			lm := len(m)
 			bytesUsed += lm + overhead
-			metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(lm))
+			metrics.AddSampleWithLabels([]string{"serf", "msgs", "sent"}, float32(lm), d.serf.metricLabels)
 		}
 		msgs = append(msgs, queryMsgs...)
 	}
@@ -162,7 +162,7 @@ func (d *delegate) GetBroadcasts(overhead, limit int) [][]byte {
 		for _, m := range eventMsgs {
 			lm := len(m)
 			bytesUsed += lm + overhead
-			metrics.AddSample([]string{"serf", "msgs", "sent"}, float32(lm))
+			metrics.AddSampleWithLabels([]string{"serf", "msgs", "sent"}, float32(lm), d.serf.keyManager.serf.metricLabels)
 		}
 		msgs = append(msgs, eventMsgs...)
 	}
