@@ -2,8 +2,6 @@ module github.com/hashicorp/serf
 
 go 1.12
 
-replace github.com/hashicorp/memberlist => ../memberlist
-
 require (
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
 	github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da

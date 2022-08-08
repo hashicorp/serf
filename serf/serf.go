@@ -267,8 +267,6 @@ func Create(conf *Config) (*Serf, error) {
 		logger = log.New(logOutput, "", log.LstdFlags)
 	}
 
-	metricLabels := mapToLabels(conf.MetricLabels)
-
 	serf := &Serf{
 		config:        conf,
 		logger:        logger,
@@ -276,7 +274,7 @@ func Create(conf *Config) (*Serf, error) {
 		queryResponse: make(map[LamportTime]*QueryResponse),
 		shutdownCh:    make(chan struct{}),
 		state:         SerfAlive,
-		metricLabels:  metricLabels,
+		metricLabels:  conf.MetricLabels,
 	}
 	serf.eventJoinIgnore.Store(false)
 
@@ -1932,18 +1930,4 @@ func (s *Serf) validateNodeName(name string) error {
 		}
 	}
 	return nil
-}
-
-func mapToLabels(m map[string]string) []metrics.Label {
-	if len(m) == 0 {
-		return nil
-	}
-	out := make([]metrics.Label, 0, len(m))
-	for k, v := range m {
-		out = append(out, metrics.Label{
-			Name:  k,
-			Value: v,
-		})
-	}
-	return out
 }

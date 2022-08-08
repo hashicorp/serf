@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/armon/go-metrics"
 	"github.com/hashicorp/memberlist"
 )
 
@@ -264,7 +265,7 @@ type Config struct {
 	ValidateNodeNames bool
 
 	// MetricLabels is a map of optional labels to apply to all metrics emitted.
-	MetricLabels map[string]string
+	MetricLabels []metrics.Label
 }
 
 // Init allocates the subdata structures
