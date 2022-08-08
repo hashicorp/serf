@@ -405,7 +405,7 @@ func (c *RPCClient) GetCoordinate(node string) (*coordinate.Coordinate, error) {
 type monitorHandler struct {
 	client *RPCClient
 	closed uint32 // atomic
-	init   bool
+	init   uint32 // atomic
 	initCh chan<- error
 	logCh  chan<- string
 	seq    uint64
@@ -413,8 +413,7 @@ type monitorHandler struct {
 
 func (mh *monitorHandler) Handle(resp *responseHeader) {
 	// Initialize on the first response
-	if !mh.init {
-		mh.init = true
+	if atomic.CompareAndSwapUint32(&mh.init, 0, 1) {
 		mh.initCh <- strToError(resp.Error)
 		return
 	}
@@ -434,10 +433,8 @@ func (mh *monitorHandler) Handle(resp *responseHeader) {
 }
 
 func (mh *monitorHandler) Cleanup() {
-	closed := atomic.SwapUint32(&mh.closed, 1)
-	if closed == 0 {
-		if !mh.init {
-			mh.init = true
+	if atomic.CompareAndSwapUint32(&mh.closed, 0, 1) {
+		if atomic.CompareAndSwapUint32(&mh.init, 0, 1) {
 			mh.initCh <- fmt.Errorf("Stream closed")
 		}
 		if mh.logCh != nil {
@@ -487,7 +484,7 @@ func (c *RPCClient) Monitor(level logutils.LogLevel, ch chan<- string) (StreamHa
 type streamHandler struct {
 	client  *RPCClient
 	closed  uint32 // atomic
-	init    bool
+	init    uint32 // atomic
 	initCh  chan<- error
 	eventCh chan<- map[string]interface{}
 	seq     uint64
@@ -495,8 +492,7 @@ type streamHandler struct {
 
 func (sh *streamHandler) Handle(resp *responseHeader) {
 	// Initialize on the first response
-	if !sh.init {
-		sh.init = true
+	if atomic.CompareAndSwapUint32(&sh.init, 0, 1) {
 		sh.initCh <- strToError(resp.Error)
 		return
 	}
@@ -516,10 +512,8 @@ func (sh *streamHandler) Handle(resp *responseHeader) {
 }
 
 func (sh *streamHandler) Cleanup() {
-	closed := atomic.SwapUint32(&sh.closed, 1)
-	if closed == 0 {
-		if !sh.init {
-			sh.init = true
+	if atomic.CompareAndSwapUint32(&sh.closed, 0, 1) {
+		if atomic.CompareAndSwapUint32(&sh.init, 0, 1) {
 			sh.initCh <- fmt.Errorf("Stream closed")
 		}
 		if sh.eventCh != nil {
@@ -569,7 +563,7 @@ func (c *RPCClient) Stream(filter string, ch chan<- map[string]interface{}) (Str
 type queryHandler struct {
 	client *RPCClient
 	closed uint32 // atomic
-	init   bool
+	init   uint32 // atomic
 	initCh chan<- error
 	ackCh  chan<- string
 	respCh chan<- NodeResponse
@@ -578,8 +572,7 @@ type queryHandler struct {
 
 func (qh *queryHandler) Handle(resp *responseHeader) {
 	// Initialize on the first response
-	if !qh.init {
-		qh.init = true
+	if atomic.CompareAndSwapUint32(&qh.init, 0, 1) {
 		qh.initCh <- strToError(resp.Error)
 		return
 	}
@@ -617,10 +610,8 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 }
 
 func (qh *queryHandler) Cleanup() {
-	closed := atomic.SwapUint32(&qh.closed, 1)
-	if closed == 0 {
-		if !qh.init {
-			qh.init = true
+	if atomic.CompareAndSwapUint32(&qh.closed, 0, 1) {
+		if atomic.CompareAndSwapUint32(&qh.init, 0, 1) {
 			qh.initCh <- fmt.Errorf("Stream closed")
 		}
 		if qh.ackCh != nil {
