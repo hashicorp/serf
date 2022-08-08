@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/hashicorp/logutils v1.0.0
 	github.com/hashicorp/mdns v1.0.4
-	github.com/hashicorp/memberlist v0.3.0
+	github.com/hashicorp/memberlist v0.4.0
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mitchellh/cli v1.1.0
 	github.com/mitchellh/mapstructure v0.0.0-20160808181253-ca63d7c062ee
