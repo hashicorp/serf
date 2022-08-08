@@ -404,7 +404,7 @@ func (c *RPCClient) GetCoordinate(node string) (*coordinate.Coordinate, error) {
 
 type monitorHandler struct {
 	client *RPCClient
-	closed bool
+	closed uint32 // atomic
 	init   bool
 	initCh chan<- error
 	logCh  chan<- string
@@ -434,7 +434,8 @@ func (mh *monitorHandler) Handle(resp *responseHeader) {
 }
 
 func (mh *monitorHandler) Cleanup() {
-	if !mh.closed {
+	closed := atomic.SwapUint32(&mh.closed, 1)
+	if closed == 0 {
 		if !mh.init {
 			mh.init = true
 			mh.initCh <- fmt.Errorf("Stream closed")
@@ -442,7 +443,6 @@ func (mh *monitorHandler) Cleanup() {
 		if mh.logCh != nil {
 			close(mh.logCh)
 		}
-		mh.closed = true
 	}
 }
 
@@ -486,7 +486,7 @@ func (c *RPCClient) Monitor(level logutils.LogLevel, ch chan<- string) (StreamHa
 
 type streamHandler struct {
 	client  *RPCClient
-	closed  bool
+	closed  uint32 // atomic
 	init    bool
 	initCh  chan<- error
 	eventCh chan<- map[string]interface{}
@@ -516,7 +516,8 @@ func (sh *streamHandler) Handle(resp *responseHeader) {
 }
 
 func (sh *streamHandler) Cleanup() {
-	if !sh.closed {
+	closed := atomic.SwapUint32(&sh.closed, 1)
+	if closed == 0 {
 		if !sh.init {
 			sh.init = true
 			sh.initCh <- fmt.Errorf("Stream closed")
@@ -524,7 +525,6 @@ func (sh *streamHandler) Cleanup() {
 		if sh.eventCh != nil {
 			close(sh.eventCh)
 		}
-		sh.closed = true
 	}
 }
 
@@ -568,7 +568,7 @@ func (c *RPCClient) Stream(filter string, ch chan<- map[string]interface{}) (Str
 
 type queryHandler struct {
 	client *RPCClient
-	closed bool
+	closed uint32 // atomic
 	init   bool
 	initCh chan<- error
 	ackCh  chan<- string
@@ -617,7 +617,8 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 }
 
 func (qh *queryHandler) Cleanup() {
-	if !qh.closed {
+	closed := atomic.SwapUint32(&qh.closed, 1)
+	if closed == 0 {
 		if !qh.init {
 			qh.init = true
 			qh.initCh <- fmt.Errorf("Stream closed")
@@ -628,7 +629,6 @@ func (qh *queryHandler) Cleanup() {
 		if qh.respCh != nil {
 			close(qh.respCh)
 		}
-		qh.closed = true
 	}
 }
 
