@@ -379,7 +379,7 @@ func (i *AgentIPC) listen() {
 			continue
 		}
 		i.logger.Printf("[INFO] agent.ipc: Accepted client: %v", conn.RemoteAddr())
-		metrics.IncrCounter([]string{"agent", "ipc", "accept"}, 1)
+		metrics.IncrCounterWithLabels([]string{"agent", "ipc", "accept"}, 1, nil)
 
 		// Wrap the connection in a client
 		client := &IPCClient{
@@ -468,7 +468,7 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 		client.Send(&respHeader, nil)
 		return fmt.Errorf(handshakeRequired)
 	}
-	metrics.IncrCounter([]string{"agent", "ipc", "command"}, 1)
+	metrics.IncrCounterWithLabels([]string{"agent", "ipc", "command"}, 1, nil)
 
 	// Ensure the client has authenticated after the handshake if necessary
 	if i.authKey != "" && !client.didAuth && command != authCommand && command != handshakeCommand {
