@@ -40,7 +40,7 @@ var sanitizeTagRegexp = regexp.MustCompile(`[^A-Z0-9_]`)
 // In all events, data is passed in via stdin to facilitate piping. See
 // the various stdin functions below for more information.
 func invokeEventScript(logger *log.Logger, script string, self serf.Member, event serf.Event) error {
-	defer metrics.MeasureSinceWithLabels([]string{"agent", "invoke", script}, time.Now(), []metrics.Label{})
+	defer metrics.MeasureSinceWithLabels([]string{"agent", "invoke", script}, time.Now(), nil)
 	output, _ := circbuf.NewBuffer(maxBufSize)
 
 	// Determine the shell invocation based on OS
