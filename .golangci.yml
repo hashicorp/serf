@@ -1,6 +1,7 @@
 linters:
   disable-all: true
   enable:
+    # (TODO) uncomment after fixing the lint issues
     # - gofmt
     - govet
     # - unconvert
