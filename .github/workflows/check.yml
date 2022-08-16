@@ -10,6 +10,36 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: "Run golangci-lint"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        GO_VERSION: [ "1.16","1.17","1.18" ]
+    steps:
+      - name: "Fetch source code"
+        uses: actions/checkout@v2
+
+      - name: Install Go toolchain
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.GO_VERSION }}
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
+          restore-keys: |
+            go-mod-${{ matrix.GO_VERSION }}
+      - name: "Download golang-lint"
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+          golangci-lint --version
+      - name: "lint"
+        run: |
+          golangci-lint run -v
   unit-tests:
     name: "Unit Tests"
     runs-on: ubuntu-latest

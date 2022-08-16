@@ -2,7 +2,7 @@ linters:
   disable-all: true
   enable:
     # - gofmt
-    # - govet
+    - govet
     # - unconvert
     # - staticcheck
     # - ineffassign
@@ -66,6 +66,10 @@ linters-settings:
     forbid:
       - '\brequire\.New\b(# Use package-level functions with explicit TestingT)?'
       - '\bassert\.New\b(# Use package-level functions with explicit TestingT)?'
+      - '\bmetrics\.IncrCounter\b(# Use labeled metrics)?'
+      - '\bmetrics\.AddSample\b(# Use labeled metrics)?'
+      - '\bmetrics\.MeasureSince\b(# Use labeled metrics)?'
+      - '\bmetrics\.SetGauge\b(# Use labeled metrics)?'
     # Exclude godoc examples from forbidigo checks.
     # Default: true
     exclude_godoc_examples: false
