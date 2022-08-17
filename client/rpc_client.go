@@ -403,12 +403,20 @@ func (c *RPCClient) GetCoordinate(node string) (*coordinate.Coordinate, error) {
 }
 
 type monitorHandler struct {
+	// These fields are constant
 	client *RPCClient
-	closed uint32 // atomic
+	seq    uint64
+
+	// These fields relate to the initial response. Once the initial response has been received, init
+	// is atomically set and the initial response is put into initCh.
 	init   uint32 // atomic
 	initCh chan<- error
+
+	// These fields relate to whether or not the stream handler is still open and the log channel.
+	// The two following fields are protected by the mutex.
+	mtx    sync.Mutex
+	closed bool
 	logCh  chan<- string
-	seq    uint64
 }
 
 func (mh *monitorHandler) Handle(resp *responseHeader) {
@@ -418,13 +426,25 @@ func (mh *monitorHandler) Handle(resp *responseHeader) {
 		return
 	}
 
-	// Decode logs for all other responses
+	// Decode the log
 	var rec logRecord
 	if err := mh.client.dec.Decode(&rec); err != nil {
 		log.Printf("[ERR] Failed to decode log: %v", err)
 		mh.client.deregisterHandler(mh.seq)
 		return
 	}
+
+	// Take the mutex for the remainder of this function to ensure safe access to member variables
+	mh.mtx.Lock()
+	defer mh.mtx.Unlock()
+
+	// If we're closed, dump the response
+	if mh.closed {
+		log.Printf("[WARN] Dropping monitor response, handler closed")
+		return
+	}
+
+	// Not closed, so feed the response to the log channel
 	select {
 	case mh.logCh <- rec.Log:
 	default:
@@ -433,14 +453,22 @@ func (mh *monitorHandler) Handle(resp *responseHeader) {
 }
 
 func (mh *monitorHandler) Cleanup() {
-	if atomic.CompareAndSwapUint32(&mh.closed, 0, 1) {
-		if atomic.CompareAndSwapUint32(&mh.init, 0, 1) {
-			mh.initCh <- fmt.Errorf("Stream closed")
-		}
-		if mh.logCh != nil {
-			close(mh.logCh)
-		}
+	if atomic.CompareAndSwapUint32(&mh.init, 0, 1) {
+		mh.initCh <- fmt.Errorf("Stream closed")
 	}
+
+	mh.mtx.Lock()
+	defer mh.mtx.Unlock()
+
+	if mh.closed {
+		return
+	}
+
+	if mh.logCh != nil {
+		close(mh.logCh)
+	}
+
+	mh.closed = true
 }
 
 // Monitor is used to subscribe to the logs of the agent
@@ -457,6 +485,7 @@ func (c *RPCClient) Monitor(level logutils.LogLevel, ch chan<- string) (StreamHa
 
 	// Create a monitor handler
 	initCh := make(chan error, 1)
+	defer close(initCh)
 	handler := &monitorHandler{
 		client: c,
 		initCh: initCh,
@@ -482,12 +511,20 @@ func (c *RPCClient) Monitor(level logutils.LogLevel, ch chan<- string) (StreamHa
 }
 
 type streamHandler struct {
-	client  *RPCClient
-	closed  uint32 // atomic
-	init    uint32 // atomic
-	initCh  chan<- error
+	// These fields are constant
+	client *RPCClient
+	seq    uint64
+
+	// These fields relate to the initial response. Once the initial response has been received, init
+	// is atomically set and the initial response is put into initCh.
+	init   uint32 // atomic
+	initCh chan<- error
+
+	// These fields relate to whether or not the stream handler is still open and the event channel.
+	// The two following fields are protected by the mutex.
+	mtx     sync.Mutex
+	closed  bool
 	eventCh chan<- map[string]interface{}
-	seq     uint64
 }
 
 func (sh *streamHandler) Handle(resp *responseHeader) {
@@ -497,13 +534,25 @@ func (sh *streamHandler) Handle(resp *responseHeader) {
 		return
 	}
 
-	// Decode logs for all other responses
+	// Decode the event
 	var rec map[string]interface{}
 	if err := sh.client.dec.Decode(&rec); err != nil {
 		log.Printf("[ERR] Failed to decode stream record: %v", err)
 		sh.client.deregisterHandler(sh.seq)
 		return
 	}
+
+	// Take the mutex for the remainder of this function to ensure safe access to member variables
+	sh.mtx.Lock()
+	defer sh.mtx.Unlock()
+
+	// If we're closed, dump the response
+	if sh.closed {
+		log.Printf("[WARN] Dropping stream response, handler closed")
+		return
+	}
+
+	// Not closed, so feed the response to the event channel
 	select {
 	case sh.eventCh <- rec:
 	default:
@@ -512,14 +561,22 @@ func (sh *streamHandler) Handle(resp *responseHeader) {
 }
 
 func (sh *streamHandler) Cleanup() {
-	if atomic.CompareAndSwapUint32(&sh.closed, 0, 1) {
-		if atomic.CompareAndSwapUint32(&sh.init, 0, 1) {
-			sh.initCh <- fmt.Errorf("Stream closed")
-		}
-		if sh.eventCh != nil {
-			close(sh.eventCh)
-		}
+	if atomic.CompareAndSwapUint32(&sh.init, 0, 1) {
+		sh.initCh <- fmt.Errorf("Stream closed")
 	}
+
+	sh.mtx.Lock()
+	defer sh.mtx.Unlock()
+
+	if sh.closed {
+		return
+	}
+
+	if sh.eventCh != nil {
+		close(sh.eventCh)
+	}
+
+	sh.closed = true
 }
 
 // Stream is used to subscribe to events
@@ -536,6 +593,7 @@ func (c *RPCClient) Stream(filter string, ch chan<- map[string]interface{}) (Str
 
 	// Create a monitor handler
 	initCh := make(chan error, 1)
+	defer close(initCh)
 	handler := &streamHandler{
 		client:  c,
 		initCh:  initCh,
@@ -561,13 +619,21 @@ func (c *RPCClient) Stream(filter string, ch chan<- map[string]interface{}) (Str
 }
 
 type queryHandler struct {
+	// These fields are constant
 	client *RPCClient
-	closed uint32 // atomic
+	seq    uint64
+
+	// These fields relate to the initial response. Once the initial response has been received, init
+	// is atomically set and the initial response is put into initCh.
 	init   uint32 // atomic
 	initCh chan<- error
+
+	// These fields relate to whether or not the query handler is still open and the ACK and response
+	// channels. The three following fields are protected by the mutex.
+	mtx    sync.Mutex
+	closed bool
 	ackCh  chan<- string
 	respCh chan<- NodeResponse
-	seq    uint64
 }
 
 func (qh *queryHandler) Handle(resp *responseHeader) {
@@ -585,6 +651,17 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 		return
 	}
 
+	// Take the mutex for the remainder of this function to ensure safe access to member variables
+	qh.mtx.Lock()
+	defer qh.mtx.Unlock()
+
+	// If we're closed, dump the response
+	if qh.closed {
+		log.Printf("[WARN] Dropping query response, handler closed")
+		return
+	}
+
+	// Not closed, so feed the response to the appropriate channel
 	switch rec.Type {
 	case queryRecordAck:
 		select {
@@ -610,17 +687,25 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 }
 
 func (qh *queryHandler) Cleanup() {
-	if atomic.CompareAndSwapUint32(&qh.closed, 0, 1) {
-		if atomic.CompareAndSwapUint32(&qh.init, 0, 1) {
-			qh.initCh <- fmt.Errorf("Stream closed")
-		}
-		if qh.ackCh != nil {
-			close(qh.ackCh)
-		}
-		if qh.respCh != nil {
-			close(qh.respCh)
-		}
+	if atomic.CompareAndSwapUint32(&qh.init, 0, 1) {
+		qh.initCh <- fmt.Errorf("Stream closed")
 	}
+
+	qh.mtx.Lock()
+	defer qh.mtx.Unlock()
+
+	if qh.closed {
+		return
+	}
+
+	if qh.ackCh != nil {
+		close(qh.ackCh)
+	}
+	if qh.respCh != nil {
+		close(qh.respCh)
+	}
+
+	qh.closed = true
 }
 
 // QueryParam is provided to query set various settings.
@@ -659,6 +744,7 @@ func (c *RPCClient) Query(params *QueryParam) error {
 
 	// Create a query handler
 	initCh := make(chan error, 1)
+	defer close(initCh)
 	handler := &queryHandler{
 		client: c,
 		initCh: initCh,
