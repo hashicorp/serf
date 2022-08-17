@@ -50,6 +50,11 @@ type Config struct {
 	// If provided, overrides the DefaultTimeout used for
 	// IO deadlines
 	Timeout time.Duration
+
+	// Logger is a custom logger which you provide. If Logger is set, it will use
+	// this for the internal logger. If Logger is not set, it will fall back to the
+	// default logger from the log package.
+	Logger *log.Logger
 }
 
 // RPCClient is used to make requests to the Agent using an RPC mechanism.
@@ -65,6 +70,7 @@ type RPCClient struct {
 	dec       *codec.Decoder
 	enc       *codec.Encoder
 	writeLock sync.Mutex
+	logger    *log.Logger
 
 	dispatch     map[uint64]seqHandler
 	dispatchLock sync.Mutex
@@ -140,6 +146,10 @@ func ClientFromConfig(c *Config) (*RPCClient, error) {
 		writer:     bufio.NewWriter(conn),
 		dispatch:   make(map[uint64]seqHandler),
 		shutdownCh: make(chan struct{}),
+		logger:     c.Logger,
+	}
+	if client.logger == nil {
+		client.logger = log.Default()
 	}
 	client.dec = codec.NewDecoder(client.reader,
 		&codec.MsgpackHandle{RawToString: true, WriteExt: true})
@@ -421,14 +431,14 @@ func (mh *monitorHandler) Handle(resp *responseHeader) {
 	// Decode logs for all other responses
 	var rec logRecord
 	if err := mh.client.dec.Decode(&rec); err != nil {
-		log.Printf("[ERR] Failed to decode log: %v", err)
+		mh.client.logger.Printf("[ERR] Failed to decode log: %v", err)
 		mh.client.deregisterHandler(mh.seq)
 		return
 	}
 	select {
 	case mh.logCh <- rec.Log:
 	default:
-		log.Printf("[ERR] Dropping log! Monitor channel full")
+		mh.client.logger.Printf("[ERR] Dropping log! Monitor channel full")
 	}
 }
 
@@ -500,14 +510,14 @@ func (sh *streamHandler) Handle(resp *responseHeader) {
 	// Decode logs for all other responses
 	var rec map[string]interface{}
 	if err := sh.client.dec.Decode(&rec); err != nil {
-		log.Printf("[ERR] Failed to decode stream record: %v", err)
+		sh.client.logger.Printf("[ERR] Failed to decode stream record: %v", err)
 		sh.client.deregisterHandler(sh.seq)
 		return
 	}
 	select {
 	case sh.eventCh <- rec:
 	default:
-		log.Printf("[ERR] Dropping event! Stream channel full")
+		sh.client.logger.Printf("[ERR] Dropping event! Stream channel full")
 	}
 }
 
@@ -580,7 +590,7 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 	// Decode the query response
 	var rec queryRecord
 	if err := qh.client.dec.Decode(&rec); err != nil {
-		log.Printf("[ERR] Failed to decode query response: %v", err)
+		qh.client.logger.Printf("[ERR] Failed to decode query response: %v", err)
 		qh.client.deregisterHandler(qh.seq)
 		return
 	}
@@ -590,14 +600,14 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 		select {
 		case qh.ackCh <- rec.From:
 		default:
-			log.Printf("[ERR] Dropping query ack, channel full")
+			qh.client.logger.Printf("[ERR] Dropping query ack, channel full")
 		}
 
 	case queryRecordResponse:
 		select {
 		case qh.respCh <- NodeResponse{rec.From, rec.Payload}:
 		default:
-			log.Printf("[ERR] Dropping query response, channel full")
+			qh.client.logger.Printf("[ERR] Dropping query response, channel full")
 		}
 
 	case queryRecordDone:
@@ -605,7 +615,7 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 		qh.client.deregisterHandler(qh.seq)
 
 	default:
-		log.Printf("[ERR] Unrecognized query record type: %s", rec.Type)
+		qh.client.logger.Printf("[ERR] Unrecognized query record type: %s", rec.Type)
 	}
 }
 
@@ -824,7 +834,7 @@ func (c *RPCClient) listen() {
 	for {
 		if err := c.dec.Decode(&respHeader); err != nil {
 			if !c.shutdown {
-				log.Printf("[ERR] agent.client: Failed to decode response header: %v", err)
+				c.logger.Printf("[ERR] agent.client: Failed to decode response header: %v", err)
 			}
 			break
 		}
