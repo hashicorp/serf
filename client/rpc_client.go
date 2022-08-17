@@ -663,10 +663,12 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 
 	// Take the mutex for the remainder of this function to ensure safe access to member variables
 	qh.mtx.Lock()
-	defer qh.mtx.Unlock()
+	// Note: not calling "defer qh.mtx.Unlock()" because we need to unlock it before calling
+	// deregisterHandler below.
 
 	// If we're closed, dump the response
 	if qh.closed {
+		qh.mtx.Unlock()
 		qh.client.logger.Printf("[WARN] Dropping query response, handler closed")
 		return
 	}
@@ -676,22 +678,28 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 	case queryRecordAck:
 		select {
 		case qh.ackCh <- rec.From:
+			qh.mtx.Unlock()
 		default:
+			qh.mtx.Unlock()
 			qh.client.logger.Printf("[ERR] Dropping query ack, channel full")
 		}
 
 	case queryRecordResponse:
 		select {
 		case qh.respCh <- NodeResponse{rec.From, rec.Payload}:
+			qh.mtx.Unlock()
 		default:
+			qh.mtx.Unlock()
 			qh.client.logger.Printf("[ERR] Dropping query response, channel full")
 		}
 
 	case queryRecordDone:
 		// No further records coming
+		qh.mtx.Unlock()
 		qh.client.deregisterHandler(qh.seq)
 
 	default:
+		qh.mtx.Unlock()
 		qh.client.logger.Printf("[ERR] Unrecognized query record type: %s", rec.Type)
 	}
 }
