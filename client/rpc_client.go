@@ -520,6 +520,7 @@ func (c *RPCClient) Monitor(level logutils.LogLevel, ch chan<- string) (StreamHa
 		c.deregisterHandler(seq)
 		return 0, errClientClosed
 	case <-time.After(c.timeout):
+		c.deregisterHandler(seq)
 		return 0, errRequestTimeout
 	}
 }
@@ -630,6 +631,7 @@ func (c *RPCClient) Stream(filter string, ch chan<- map[string]interface{}) (Str
 		c.deregisterHandler(seq)
 		return 0, errClientClosed
 	case <-time.After(c.timeout):
+		c.deregisterHandler(seq)
 		return 0, errRequestTimeout
 	}
 }
@@ -792,6 +794,7 @@ func (c *RPCClient) Query(params *QueryParam) error {
 		c.deregisterHandler(seq)
 		return errClientClosed
 	case <-time.After(c.timeout):
+		c.deregisterHandler(seq)
 		return errRequestTimeout
 	}
 }
