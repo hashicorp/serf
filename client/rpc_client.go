@@ -671,12 +671,10 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 
 	// Take the mutex for the remainder of this function to ensure safe access to member variables
 	qh.mtx.Lock()
-	// Note: not calling "defer qh.mtx.Unlock()" because we need to unlock it before calling
-	// deregisterHandler below.
+	defer qh.mtx.Unlock()
 
 	// If we're closed, dump the response
 	if qh.closed {
-		qh.mtx.Unlock()
 		qh.client.logger.Printf("[WARN] Dropping query response, handler closed")
 		return
 	}
@@ -686,28 +684,26 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 	case queryRecordAck:
 		select {
 		case qh.ackCh <- rec.From:
-			qh.mtx.Unlock()
 		default:
-			qh.mtx.Unlock()
 			qh.client.logger.Printf("[ERR] Dropping query ack, channel full")
 		}
 
 	case queryRecordResponse:
 		select {
 		case qh.respCh <- NodeResponse{rec.From, rec.Payload}:
-			qh.mtx.Unlock()
 		default:
-			qh.mtx.Unlock()
 			qh.client.logger.Printf("[ERR] Dropping query response, channel full")
 		}
 
 	case queryRecordDone:
 		// No further records coming
+		// XXX: Need to unlock around this call!
 		qh.mtx.Unlock()
 		qh.client.deregisterHandler(qh.seq)
+		// XXX: Re-locking so the defer qh.mtx.Unlock() above works correctly
+		qh.mtx.Lock()
 
 	default:
-		qh.mtx.Unlock()
 		qh.client.logger.Printf("[ERR] Unrecognized query record type: %s", rec.Type)
 	}
 }
@@ -897,12 +893,13 @@ func (c *RPCClient) getSeq() uint64 {
 // deregisterAll is used to deregister all handlers
 func (c *RPCClient) deregisterAll() {
 	c.dispatchLock.Lock()
-	defer c.dispatchLock.Unlock()
+	dispatch := c.dispatch
+	c.dispatch = make(map[uint64]seqHandler)
+	c.dispatchLock.Unlock()
 
-	for _, seqH := range c.dispatch {
+	for _, seqH := range dispatch {
 		seqH.Cleanup()
 	}
-	c.dispatch = make(map[uint64]seqHandler)
 }
 
 // deregisterHandler is used to deregister a handler
