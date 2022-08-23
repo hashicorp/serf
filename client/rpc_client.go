@@ -2,7 +2,7 @@ package client
 
 import (
 	"bufio"
-	"fmt"
+	"errors"
 	"log"
 	"net"
 	"sync"
@@ -20,7 +20,9 @@ const (
 )
 
 var (
-	clientClosed = fmt.Errorf("client closed")
+	errClientClosed   = errors.New("client closed")
+	errStreamClosed   = errors.New("stream closed")
+	errRequestTimeout = errors.New("request timeout")
 )
 
 type seqCallback struct {
@@ -87,7 +89,7 @@ func (c *RPCClient) send(header *requestHeader, obj interface{}) error {
 	defer c.writeLock.Unlock()
 
 	if c.shutdown {
-		return clientClosed
+		return errClientClosed
 	}
 
 	// Setup an IO deadline, this way we won't wait indefinitely
@@ -464,7 +466,7 @@ func (mh *monitorHandler) Handle(resp *responseHeader) {
 
 func (mh *monitorHandler) Cleanup() {
 	if atomic.CompareAndSwapUint32(&mh.init, 0, 1) {
-		mh.initCh <- fmt.Errorf("Stream closed")
+		mh.initCh <- errStreamClosed
 	}
 
 	mh.mtx.Lock()
@@ -516,7 +518,9 @@ func (c *RPCClient) Monitor(level logutils.LogLevel, ch chan<- string) (StreamHa
 		return StreamHandle(seq), err
 	case <-c.shutdownCh:
 		c.deregisterHandler(seq)
-		return 0, clientClosed
+		return 0, errClientClosed
+	case <-time.After(c.timeout):
+		return 0, errRequestTimeout
 	}
 }
 
@@ -572,7 +576,7 @@ func (sh *streamHandler) Handle(resp *responseHeader) {
 
 func (sh *streamHandler) Cleanup() {
 	if atomic.CompareAndSwapUint32(&sh.init, 0, 1) {
-		sh.initCh <- fmt.Errorf("Stream closed")
+		sh.initCh <- errStreamClosed
 	}
 
 	sh.mtx.Lock()
@@ -624,7 +628,9 @@ func (c *RPCClient) Stream(filter string, ch chan<- map[string]interface{}) (Str
 		return StreamHandle(seq), err
 	case <-c.shutdownCh:
 		c.deregisterHandler(seq)
-		return 0, clientClosed
+		return 0, errClientClosed
+	case <-time.After(c.timeout):
+		return 0, errRequestTimeout
 	}
 }
 
@@ -706,7 +712,7 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 
 func (qh *queryHandler) Cleanup() {
 	if atomic.CompareAndSwapUint32(&qh.init, 0, 1) {
-		qh.initCh <- fmt.Errorf("Stream closed")
+		qh.initCh <- errStreamClosed
 	}
 
 	qh.mtx.Lock()
@@ -784,7 +790,9 @@ func (c *RPCClient) Query(params *QueryParam) error {
 		return err
 	case <-c.shutdownCh:
 		c.deregisterHandler(seq)
-		return clientClosed
+		return errClientClosed
+	case <-time.After(c.timeout):
+		return errRequestTimeout
 	}
 }
 
@@ -860,14 +868,14 @@ func (c *RPCClient) genericRPC(header *requestHeader, req interface{}, resp inte
 	case err := <-errCh:
 		return err
 	case <-c.shutdownCh:
-		return clientClosed
+		return errClientClosed
 	}
 }
 
 // strToError converts a string to an error if not blank
 func strToError(s string) error {
 	if s != "" {
-		return fmt.Errorf(s)
+		return errors.New(s)
 	}
 	return nil
 }
