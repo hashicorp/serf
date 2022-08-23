@@ -786,6 +786,12 @@ func (c *RPCClient) Query(params *QueryParam) error {
 		return err
 	}
 
+	// Use the lower of either the channel timeout of the query params timeout (if provided)
+	timeout := c.timeout
+	if params.Timeout != 0 && params.Timeout < timeout {
+		timeout = params.Timeout
+	}
+
 	// Wait for a response
 	select {
 	case err := <-initCh:
@@ -793,7 +799,7 @@ func (c *RPCClient) Query(params *QueryParam) error {
 	case <-c.shutdownCh:
 		c.deregisterHandler(seq)
 		return errClientClosed
-	case <-time.After(c.timeout):
+	case <-time.After(timeout):
 		c.deregisterHandler(seq)
 		return errRequestTimeout
 	}
