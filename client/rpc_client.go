@@ -669,9 +669,26 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 		return
 	}
 
-	// Take the mutex for the remainder of this function to ensure safe access to member variables
-	qh.mtx.Lock()
-	defer qh.mtx.Unlock()
+	// We want to "defer qh.mtx.Unlock()" after locking, but we need to unlock before calling
+	// deregisterHandler below; so this variable and these helper functions allow us to "unlock"
+	// multiple times -- one in a defer, and one manually before deregistering the handler.
+	locked := false
+	lockSafely := func() {
+		if !locked {
+			qh.mtx.Lock()
+			locked = true
+		}
+	}
+	unlockSafely := func() {
+		if locked {
+			qh.mtx.Unlock()
+			locked = false
+		}
+	}
+
+	// Lock the mutex for the remainder of this function to ensure safe access to member variables
+	lockSafely()
+	defer unlockSafely()
 
 	// If we're closed, dump the response
 	if qh.closed {
@@ -697,11 +714,10 @@ func (qh *queryHandler) Handle(resp *responseHeader) {
 
 	case queryRecordDone:
 		// No further records coming
-		// XXX: Need to unlock around this call!
-		qh.mtx.Unlock()
+		// XXX: We need to unlock the mutex before calling deregisterHandler, as it will call Cleanup,
+		// which wants to lock the mutex!
+		unlockSafely()
 		qh.client.deregisterHandler(qh.seq)
-		// XXX: Re-locking so the defer qh.mtx.Unlock() above works correctly
-		qh.mtx.Lock()
 
 	default:
 		qh.client.logger.Printf("[ERR] Unrecognized query record type: %s", rec.Type)
