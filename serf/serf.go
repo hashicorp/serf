@@ -108,6 +108,9 @@ type Serf struct {
 
 	// metricLabels is the slice of labels to put on all emitted metrics
 	metricLabels []metrics.Label
+
+	// lamport clock time of last received join intent message
+	memberJoinIntentstatusLTime map[string]LamportTime
 }
 
 // SerfState is the state of the Serf instance.
@@ -375,6 +378,9 @@ func Create(conf *Config) (*Serf, error) {
 
 	// Create the buffer for recent intents
 	serf.recentIntents = make(map[string]nodeIntent)
+
+	//Create the buffer for recent JoinIntent statusLTime
+	serf.memberJoinIntentstatusLTime = make(map[string]LamportTime)
 
 	// Create a buffer for events and queries
 	serf.eventBuffer = make([]*userEvents, conf.EventBuffer)
@@ -965,6 +971,9 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 			metrics.IncrCounterWithLabels([]string{"serf", "member", "flap"}, 1, s.metricLabels)
 		}
 
+		if join, ok := s.memberJoinIntentstatusLTime[n.Name]; ok {
+			member.statusLTime = join
+		}
 		member.Status = StatusAlive
 		member.leaveTime = time.Time{}
 		member.Addr = n.Addr
@@ -1116,6 +1125,10 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		return false
 	}
 
+	if join, ok := s.memberJoinIntentstatusLTime[leaveMsg.Node]; ok && leaveMsg.LTime <= join {
+		return false
+	}
+
 	// Refute us leaving if we are in the alive state
 	// Must be done in another goroutine since we have the memberLock
 	if leaveMsg.Node == s.config.NodeName && state == SerfAlive {
@@ -1226,12 +1239,18 @@ func (s *Serf) handleNodeJoinIntent(joinMsg *messageJoin) bool {
 	}
 
 	// Update the LTime
-	member.statusLTime = joinMsg.LTime
+	if join, ok := s.memberJoinIntentstatusLTime[joinMsg.Node]; ok && joinMsg.LTime <= join {
+		return false
+	}
+	s.memberJoinIntentstatusLTime[joinMsg.Node] = joinMsg.LTime
 
 	// If we are in the leaving state, we should go back to alive,
 	// since the leaving message must have been for an older time
-	if member.Status == StatusLeaving {
+	// Since default member.Status is StatusAlive and member.statusLTime is zero,
+	// we should update member.statusLTime here
+	if member.Status == StatusLeaving || member.Status == StatusAlive {
 		member.Status = StatusAlive
+		member.statusLTime = joinMsg.LTime
 	}
 	return true
 }
@@ -1528,7 +1547,7 @@ func (s *Serf) resolveNodeConflict() {
 	}
 }
 
-//eraseNode takes a node completely out of the member list
+// eraseNode takes a node completely out of the member list
 func (s *Serf) eraseNode(m *memberState) {
 	// Delete from members
 	delete(s.members, m.Name)
