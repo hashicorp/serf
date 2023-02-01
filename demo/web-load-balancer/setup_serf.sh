@@ -1,4 +1,7 @@
 #!/bin/sh
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 #
 # This script installs and configures the Serf agent that runs on
 # every node. As with the other scripts, this should probably be done with

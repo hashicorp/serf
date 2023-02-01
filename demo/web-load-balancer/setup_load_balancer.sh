@@ -1,4 +1,7 @@
 #!/bin/sh
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 #
 # This script sets up the HAProxy load balancer initially, configured with
 # no working backend servers. Presumably in a real environment you would

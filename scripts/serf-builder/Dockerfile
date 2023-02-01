@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 FROM docker.mirror.hashicorp.services/debian:stable
 
 ENV GOVERSION 1.11.4
