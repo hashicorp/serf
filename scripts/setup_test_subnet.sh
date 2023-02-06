@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 #
 # This script makes sure that 127.0.0.x is routable. On Darwin, there
 # is a bug that it isn't routable and this causes errors.

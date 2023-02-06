@@ -1,4 +1,7 @@
 #!/bin/sh
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 #
 # This script sets up the web servers. The web servers just output who
 # they are initially. Serf will do some additional configuration. Presumably
