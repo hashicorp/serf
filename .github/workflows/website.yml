@@ -9,57 +9,18 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   FASTLY_API_TOKEN: ${{ secrets.FASTLY_API_TOKEN }}
 jobs:
-  restore-cache:
-    runs-on: ubuntu-latest
-    outputs:
-      cache-primary-key: ${{ steps.restore-cache.outputs.cache-primary-key }}
-    steps:
-      - uses: actions/checkout@v3.3.0
-      - name: restore cache
-        id: restore-cache
-        uses: actions/cache/restore@v3.3.1
-        with:
-          key: static-site-gems-v1-${{ hashFiles('website/Gemfile.lock') }}
-          path: website/vendor/bundle
-      - name: save cached website
-        uses: actions/upload-artifact@v3
-        with:
-          name: website
-          path: website
   build-website:
     runs-on: ubuntu-latest
     container:
       image: docker.mirror.hashicorp.services/hashicorp/middleman-hashicorp:0.3.47
     steps:
-      - name: retrieve cached website
-        uses: actions/download-artifact@v3
-        with:
-          name: website
-      - name: test
-        run: ls -lah && exit 1
-      - name: install gems
-        run: |
-          bundle check || bundle install --path vendor/bundle --retry=3
-      - name: middleman build
-        run: |
-          bundle exec middleman build
-      - name: website deploy
-        run: echo "calling the deploy script"
-        # run: ./scripts/deploy.sh
-      - name: save cached website
-        uses: actions/upload-artifact@v3
-        with:
-          name: website
-          path: website
-  save-cache:
-    runs-on: ubuntu-latest
-    steps:
-      - name: retrieve cached website
-        uses: actions/download-artifact@v3
-        with:
-          name: website
-      - name: save cache
-        uses: actions/cache/save@v3.3.1
-        with:
-          key: ${{ needs.restore-cache.outputs.cache-primary-key }}
-          path: website/vendor/bundle
+    - uses: actions/checkout@v3.3.0
+    - name: install gems
+      run: |
+        cd website && bundle install --path vendor/bundle --retry=3
+    - name: middleman build
+      run: |
+        cd website && bundle exec middleman build
+    - name: website deploy
+      run: echo "calling the deploy script"
+      # run: cd website && ./scripts/deploy.sh
