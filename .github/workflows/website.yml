@@ -1,29 +1,30 @@
-name: hashicorp/serf/website
+name: website
 on:
   push:
+    branches:
+      - master
+      - gha_migration_master
 env:
-  FASTLY_API_TOKEN: xxxxKNgq
+  FASTLY_API_TOKEN: ${{ secrets.FASTLY_API_TOKEN }}
 jobs:
   build-website:
-    if: github.ref == 'refs/heads/master'
-    defaults:
-      run:
-        working-directory: "~/project/website"
     runs-on: ubuntu-latest
     container:
-      image: docker.mirror.hashicorp.services/hashicorp/middleman-hashicorp:0.3.35
+      image: docker.mirror.hashicorp.services/hashicorp/middleman-hashicorp:0.3.47
     steps:
     - uses: actions/checkout@v3.3.0
-      with:
-        path: "~/project"
-    - name: restore_cache
-      uses: actions/cache@v3.3.1
-      with:
-        key: static-site-gems-v1-{{ checksum "Gemfile.lock" }}
-        path: "~/project/website/vendor/bundle"
+    # - name: restore_cache
+    #   uses: actions/cache@v3.3.1
+    #   with:
+    #     key: static-site-gems-v1-{{ checksum "Gemfile.lock" }}
+    #     path: "~/project/website/vendor/bundle"
     - name: install gems
-      run: bundle check || bundle install --path vendor/bundle --retry=3
+      run: |
+        cd website
+        bundle check || bundle install --path vendor/bundle --retry=3
     - name: middleman build
-      run: bundle exec middleman build
+      run: |
+        cd website && bundle exec middleman build
     - name: website deploy
-      run: "./scripts/deploy.sh"
+      run: echo "calling the deploy script"
+      # run: cd website && ./scripts/deploy.sh
