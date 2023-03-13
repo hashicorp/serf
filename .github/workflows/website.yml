@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - master
-      - gha_migration_master
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -22,5 +21,4 @@ jobs:
       run: |
         cd website && bundle exec middleman build
     - name: website deploy
-      run: echo "calling the deploy script"
-      # run: cd website && ./scripts/deploy.sh
+      run: cd website && ./scripts/deploy.sh
