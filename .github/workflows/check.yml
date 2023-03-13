@@ -35,7 +35,7 @@ jobs:
             go-mod-${{ matrix.GO_VERSION }}
       - name: "Download golang-lint"
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$(go env GOPATH)/bin"
           golangci-lint --version
       - name: "lint"
         run: |
