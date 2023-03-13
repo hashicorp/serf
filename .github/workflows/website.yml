@@ -1,0 +1,29 @@
+name: hashicorp/serf/website
+on:
+  push:
+env:
+  FASTLY_API_TOKEN: xxxxKNgq
+jobs:
+  build-website:
+    if: github.ref == 'refs/heads/master'
+    defaults:
+      run:
+        working-directory: "~/project/website"
+    runs-on: ubuntu-latest
+    container:
+      image: docker.mirror.hashicorp.services/hashicorp/middleman-hashicorp:0.3.35
+    steps:
+    - uses: actions/checkout@v3.3.0
+      with:
+        path: "~/project"
+    - name: restore_cache
+      uses: actions/cache@v3.3.1
+      with:
+        key: static-site-gems-v1-{{ checksum "Gemfile.lock" }}
+        path: "~/project/website/vendor/bundle"
+    - name: install gems
+      run: bundle check || bundle install --path vendor/bundle --retry=3
+    - name: middleman build
+      run: bundle exec middleman build
+    - name: website deploy
+      run: "./scripts/deploy.sh"
