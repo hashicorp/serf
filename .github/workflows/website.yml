@@ -12,6 +12,9 @@ env:
 jobs:
   build-website:
     runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: website
     container:
       image: docker.mirror.hashicorp.services/hashicorp/middleman-hashicorp:0.3.47
     steps:
