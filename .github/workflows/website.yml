@@ -12,18 +12,18 @@ env:
 jobs:
   build-website:
     runs-on: ubuntu-latest
-        defaults:
-            run:
-                working-directory: website
+    defaults:
+      run:
+        working-directory: website
     container:
       image: docker.mirror.hashicorp.services/hashicorp/middleman-hashicorp:0.3.47
     steps:
     - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
     - name: install gems
       run: |
-        cd website && bundle install --path vendor/bundle --retry=3
+        bundle install --path vendor/bundle --retry=3
     - name: middleman build
       run: |
-        cd website && bundle exec middleman build
+        bundle exec middleman build
     - name: website deploy
-      run: cd website && ./scripts/deploy.sh
+      run: ./scripts/deploy.sh
