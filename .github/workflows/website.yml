@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - gha_migration_master
 permissions:
   contents: none
 env:
@@ -26,4 +27,5 @@ jobs:
       run: |
         bundle exec middleman build
     - name: website deploy
-      run: ./scripts/deploy.sh
+      run: echo "calling deploy from $(pwd)"
+      # run: ./scripts/deploy.sh
