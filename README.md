@@ -1,4 +1,4 @@
-# Serf [![CircleCI](https://circleci.com/gh/hashicorp/serf.svg?style=svg)](https://circleci.com/gh/hashicorp/serf) [![Join the chat at https://gitter.im/hashicorp-serf/Lobby](https://badges.gitter.im/hashicorp-serf/Lobby.svg)](https://gitter.im/hashicorp-serf/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+# Serf [![Build Status](https://github.com/hashicorp/serf/workflows/Checks/badge.svg)](https://github.com/hashicorp/serf/actions) [![Join the chat at https://gitter.im/hashicorp-serf/Lobby](https://badges.gitter.im/hashicorp-serf/Lobby.svg)](https://gitter.im/hashicorp-serf/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 * Website: https://www.serf.io
 * Chat: [Gitter](https://gitter.im/hashicorp-serf/Lobby)
