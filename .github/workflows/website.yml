@@ -1,9 +1,6 @@
 name: website
 
-on:
-  push:
-    branches:
-      - master
+on: [workflow_dispatch]
 
 permissions:
   contents: none
