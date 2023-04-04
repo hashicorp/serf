@@ -18,5 +18,5 @@ require (
 	github.com/mitchellh/cli v1.1.5
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/posener/complete v1.2.3 // indirect
-	github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f
+	github.com/ryanuber/columnize v2.1.2+incompatible
 )
