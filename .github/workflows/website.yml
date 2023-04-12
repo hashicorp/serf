@@ -18,7 +18,7 @@ jobs:
       run:
         working-directory: website
     steps:
-    - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+    - uses: actions/checkout@83b7061638ee4956cf7545a6f7efe594e5ad0247 # v3.5.1
     - name: install gems
       run: bundle install --path vendor/bundle --retry=3
     - name: middleman build
