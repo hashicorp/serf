@@ -5,12 +5,12 @@ package agent
 
 import (
 	"bytes"
-	"log"
 	"net"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/serf/serf"
 )
 
@@ -33,7 +33,9 @@ func (m *MockStreamClient) RegisterQuery(q *serf.Query) uint64 {
 func TestIPCEventStream(t *testing.T) {
 	sc := &MockStreamClient{}
 	filters := ParseEventFilter("user:foobar,member-join,query:deploy")
-	es := newEventStream(sc, filters, 42, log.New(os.Stderr, "", log.LstdFlags))
+	es := newEventStream(sc, filters, 42, hclog.New(&hclog.LoggerOptions{
+		Output: os.Stderr,
+	}))
 	defer es.Stop()
 
 	es.HandleEvent(serf.UserEvent{

@@ -6,11 +6,12 @@ package serf
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/go-hclog"
 )
 
 func TestSnapshotter(t *testing.T) {
@@ -23,7 +24,7 @@ func TestSnapshotter(t *testing.T) {
 	clock := new(LamportClock)
 	outCh := make(chan Event, 64)
 	stopCh := make(chan struct{})
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	logger := hclog.Default()
 	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit, false,
 		logger, clock, outCh, stopCh)
 	if err != nil {
@@ -176,7 +177,7 @@ func TestSnapshotter_forceCompact(t *testing.T) {
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	logger := hclog.Default()
 
 	// Create a very low limit
 	inCh, snap, err := NewSnapshotter(td+"snap", 1024, false,
@@ -240,7 +241,7 @@ func TestSnapshotter_leave(t *testing.T) {
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	logger := hclog.Default()
 	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit, false,
 		logger, clock, nil, stopCh)
 	if err != nil {
@@ -321,7 +322,7 @@ func TestSnapshotter_leave_rejoin(t *testing.T) {
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	logger := hclog.Default()
 	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit, true,
 		logger, clock, nil, stopCh)
 	if err != nil {
@@ -404,7 +405,7 @@ func TestSnapshotter_slowDiskNotBlockingEventCh(t *testing.T) {
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	logger := hclog.Default()
 
 	outCh := make(chan Event, 1024)
 	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit, true,
@@ -490,7 +491,7 @@ func TestSnapshotter_blockedUpstreamNotBlockingMemberlist(t *testing.T) {
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	logger := hclog.Default()
 
 	// OutCh is unbuffered simulating a slow upstream
 	outCh := make(chan Event)

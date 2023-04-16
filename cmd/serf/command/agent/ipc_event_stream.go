@@ -5,8 +5,8 @@ package agent
 
 import (
 	"fmt"
-	"log"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/serf/serf"
 )
 
@@ -20,11 +20,11 @@ type eventStream struct {
 	client  streamClient
 	eventCh chan serf.Event
 	filters []EventFilter
-	logger  *log.Logger
+	logger  hclog.Logger
 	seq     uint64
 }
 
-func newEventStream(client streamClient, filters []EventFilter, seq uint64, logger *log.Logger) *eventStream {
+func newEventStream(client streamClient, filters []EventFilter, seq uint64, logger hclog.Logger) *eventStream {
 	es := &eventStream{
 		client:  client,
 		eventCh: make(chan serf.Event, 512),
@@ -50,7 +50,7 @@ HANDLE:
 	select {
 	case es.eventCh <- e:
 	default:
-		es.logger.Printf("[WARN] agent.ipc: Dropping event to %v", es.client)
+		es.logger.Warn(fmt.Sprintf("agent.ipc: Dropping event to %v", es.client))
 	}
 }
 
@@ -72,8 +72,8 @@ func (es *eventStream) stream() {
 			err = fmt.Errorf("Unknown event type: %s", event.EventType().String())
 		}
 		if err != nil {
-			es.logger.Printf("[ERR] agent.ipc: Failed to stream event to %v: %v",
-				es.client, err)
+			es.logger.Error(fmt.Sprintf("agent.ipc: Failed to stream event to %v: %v",
+				es.client, err))
 			return
 		}
 	}

@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -17,8 +16,8 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-hclog"
 	gsyslog "github.com/hashicorp/go-syslog"
-	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/serf"
 	"github.com/mitchellh/cli"
@@ -44,8 +43,7 @@ type Command struct {
 	ShutdownCh    <-chan struct{}
 	args          []string
 	scriptHandler *ScriptEventHandler
-	logFilter     *logutils.LevelFilter
-	logger        *log.Logger
+	logger        hclog.Logger
 }
 
 var _ cli.Command = &Command{}
@@ -370,16 +368,6 @@ func (c *Command) setupLoggers(config *Config) (*GatedWriter, *logWriter, io.Wri
 		Writer: &cli.UiWriter{Ui: c.Ui},
 	}
 
-	c.logFilter = LevelFilter()
-	c.logFilter.MinLevel = logutils.LogLevel(strings.ToUpper(config.LogLevel))
-	c.logFilter.Writer = logGate
-	if !ValidateLevelFilter(c.logFilter.MinLevel, c.logFilter) {
-		c.Ui.Error(fmt.Sprintf(
-			"Invalid log level: %s. Valid log levels are: %v",
-			c.logFilter.MinLevel, c.logFilter.Levels))
-		return nil, nil, nil
-	}
-
 	// Check if syslog is enabled
 	var syslog io.Writer
 	if config.EnableSyslog {
@@ -388,20 +376,23 @@ func (c *Command) setupLoggers(config *Config) (*GatedWriter, *logWriter, io.Wri
 			c.Ui.Error(fmt.Sprintf("Syslog setup failed: %v", err))
 			return nil, nil, nil
 		}
-		syslog = &SyslogWrapper{l, c.logFilter}
+		syslog = &SyslogWrapper{l}
 	}
 
 	// Create a log writer, and wrap a logOutput around it
 	logWriter := NewLogWriter(512)
 	var logOutput io.Writer
 	if syslog != nil {
-		logOutput = io.MultiWriter(c.logFilter, logWriter, syslog)
+		logOutput = io.MultiWriter(logWriter, syslog)
 	} else {
-		logOutput = io.MultiWriter(c.logFilter, logWriter)
+		logOutput = logWriter
 	}
 
 	// Create a logger
-	c.logger = log.New(logOutput, "", log.LstdFlags)
+	c.logger = hclog.New(&hclog.LoggerOptions{
+		Output: logOutput,
+		Level:  hclog.LevelFromString(config.LogLevel),
+	})
 	return logGate, logWriter, logOutput
 }
 
@@ -412,7 +403,9 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	c.scriptHandler = &ScriptEventHandler{
 		SelfFunc: func() serf.Member { return agent.Serf().LocalMember() },
 		Scripts:  config.EventScripts(),
-		Logger:   log.New(logOutput, "", log.LstdFlags),
+		Logger: hclog.New(&hclog.LoggerOptions{
+			Output: logOutput,
+		}),
 	}
 	agent.RegisterEventHandler(c.scriptHandler)
 
@@ -504,23 +497,23 @@ func (c *Command) retryJoin(config *Config, agent *Agent, errCh chan struct{}) {
 	attempt := 0
 	for {
 		// Try to perform the join
-		c.logger.Printf("[INFO] agent: Joining cluster...(replay: %v)", config.ReplayOnJoin)
+		c.logger.Info(fmt.Sprintf("agent: Joining cluster...(replay: %v)", config.ReplayOnJoin))
 		n, err := agent.Join(config.RetryJoin, config.ReplayOnJoin)
 		if err == nil {
-			c.logger.Printf("[INFO] agent: Join completed. Synced with %d initial agents", n)
+			c.logger.Info(fmt.Sprintf("agent: Join completed. Synced with %d initial agents", n))
 			return
 		}
 
 		// Check if the maximum attempts has been exceeded
 		attempt++
 		if config.RetryMaxAttempts > 0 && attempt > config.RetryMaxAttempts {
-			c.logger.Printf("[ERR] agent: maximum retry join attempts made, exiting")
+			c.logger.Error("agent: maximum retry join attempts made, exiting")
 			close(errCh)
 			return
 		}
 
 		// Log the failure and sleep
-		c.logger.Printf("[WARN] agent: Join failed: %v, retrying in %v", err, config.RetryInterval)
+		c.logger.Warn(fmt.Sprintf("agent: Join failed: %v, retrying in %v", err, config.RetryInterval))
 		time.Sleep(config.RetryInterval)
 	}
 }
@@ -686,22 +679,11 @@ func (c *Command) handleReload(config *Config, agent *Agent) *Config {
 	c.Ui.Output("Reloading configuration...")
 	newConf := c.readConfig()
 	if newConf == nil {
-		c.Ui.Error(fmt.Sprintf("Failed to reload configs"))
+		c.Ui.Error("Failed to reload configs")
 		return config
 	}
 
-	// Change the log level
-	minLevel := logutils.LogLevel(strings.ToUpper(newConf.LogLevel))
-	if ValidateLevelFilter(minLevel, c.logFilter) {
-		c.logFilter.SetMinLevel(minLevel)
-	} else {
-		c.Ui.Error(fmt.Sprintf(
-			"Invalid log level: %s. Valid log levels are: %v",
-			minLevel, c.logFilter.Levels))
-
-		// Keep the current log level
-		newConf.LogLevel = config.LogLevel
-	}
+	c.logger.SetLevel(hclog.LevelFromString(newConf.LogLevel))
 
 	// Change the event handlers
 	c.scriptHandler.UpdateScripts(newConf.EventScripts())

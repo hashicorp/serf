@@ -6,7 +6,6 @@ package agent
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"regexp"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/armon/circbuf"
 	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/serf/serf"
 )
 
@@ -42,7 +42,7 @@ var sanitizeTagRegexp = regexp.MustCompile(`[^A-Z0-9_]`)
 //
 // In all events, data is passed in via stdin to facilitate piping. See
 // the various stdin functions below for more information.
-func invokeEventScript(logger *log.Logger, script string, self serf.Member, event serf.Event) error {
+func invokeEventScript(logger hclog.Logger, script string, self serf.Member, event serf.Event) error {
 	defer metrics.MeasureSinceWithLabels([]string{"agent", "invoke", script}, time.Now(), nil)
 	output, _ := circbuf.NewBuffer(maxBufSize)
 
@@ -98,8 +98,8 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 
 	// Start a timer to warn about slow handlers
 	slowTimer := time.AfterFunc(warnSlow, func() {
-		logger.Printf("[WARN] agent: Script '%s' slow, execution exceeding %v",
-			script, warnSlow)
+		logger.Warn(fmt.Sprintf("agent: Script '%s' slow, execution exceeding %v",
+			script, warnSlow))
 	})
 
 	if err := cmd.Start(); err != nil {
@@ -108,14 +108,14 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 
 	// Warn if buffer is overritten
 	if output.TotalWritten() > output.Size() {
-		logger.Printf("[WARN] agent: Script '%s' generated %d bytes of output, truncated to %d",
-			script, output.TotalWritten(), output.Size())
+		logger.Warn(fmt.Sprintf("agent: Script '%s' generated %d bytes of output, truncated to %d",
+			script, output.TotalWritten(), output.Size()))
 	}
 
 	err = cmd.Wait()
 	slowTimer.Stop()
-	logger.Printf("[DEBUG] agent: Event '%s' script output: %s",
-		event.EventType().String(), output.String())
+	logger.Debug(fmt.Sprintf("agent: Event '%s' script output: %s",
+		event.EventType().String(), output.String()))
 	if err != nil {
 		return err
 	}
@@ -123,8 +123,8 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 	// If this is a query and we have output, respond
 	if query, ok := event.(*serf.Query); ok && output.TotalWritten() > 0 {
 		if err := query.Respond(output.Bytes()); err != nil {
-			logger.Printf("[WARN] agent: Failed to respond to query '%s': %s",
-				event.String(), err)
+			logger.Warn(fmt.Sprintf("agent: Failed to respond to query '%s': %s",
+				event.String(), err))
 		}
 	}
 
@@ -145,7 +145,7 @@ func eventClean(v string) string {
 // "NAME    ADDRESS    ROLE    TAGS" where the whitespace is actually tabs.
 // The name and role are cleaned so that newlines and tabs are replaced
 // with "\n" and "\t" respectively.
-func memberEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.MemberEvent) {
+func memberEventStdin(logger hclog.Logger, stdin io.WriteCloser, e *serf.MemberEvent) {
 	defer stdin.Close()
 	for _, member := range e.Members {
 		// Format the tags as tag1=v1,tag2=v2,...
@@ -171,7 +171,7 @@ func memberEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.MemberEv
 // Sends data on stdin for an event. The stdin simply contains the
 // payload (if any).
 // Most shells read implementations need a newline, force it to be there
-func streamPayload(logger *log.Logger, stdin io.WriteCloser, buf []byte) {
+func streamPayload(logger hclog.Logger, stdin io.WriteCloser, buf []byte) {
 	defer stdin.Close()
 
 	// Append a newline to payload if missing
@@ -181,7 +181,7 @@ func streamPayload(logger *log.Logger, stdin io.WriteCloser, buf []byte) {
 	}
 
 	if _, err := stdin.Write(payload); err != nil {
-		logger.Printf("[ERR] Error writing payload: %s", err)
+		logger.Error(fmt.Sprintf("Error writing payload: %s", err))
 		return
 	}
 }

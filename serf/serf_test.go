@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -21,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/coordinate"
@@ -59,8 +59,10 @@ func testConfig(t *testing.T, ip net.IP) *Config {
 	config.TombstoneTimeout = 1 * time.Microsecond
 
 	if t != nil {
-		config.Logger = log.New(os.Stderr, "test["+t.Name()+"]: ", log.LstdFlags)
-		config.MemberlistConfig.Logger = config.Logger
+		config.Logger = hclog.Default().Named("test[" + t.Name() + "]: ")
+		config.MemberlistConfig.Logger = config.Logger.StandardLogger(&hclog.StandardLoggerOptions{
+			InferLevels: true,
+		})
 	}
 
 	return config

@@ -4,20 +4,21 @@
 package agent
 
 import (
-	"log"
+	"fmt"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/serf/serf"
 )
 
 // queryResponseStream is used to stream the query results back to a client
 type queryResponseStream struct {
 	client streamClient
-	logger *log.Logger
+	logger hclog.Logger
 	seq    uint64
 }
 
-func newQueryResponseStream(client streamClient, seq uint64, logger *log.Logger) *queryResponseStream {
+func newQueryResponseStream(client streamClient, seq uint64, logger hclog.Logger) *queryResponseStream {
 	qs := &queryResponseStream{
 		client: client,
 		logger: logger,
@@ -38,17 +39,17 @@ func (qs *queryResponseStream) Stream(resp *serf.QueryResponse) {
 		select {
 		case a := <-ackCh:
 			if err := qs.sendAck(a); err != nil {
-				qs.logger.Printf("[ERR] agent.ipc: Failed to stream ack to %v: %v", qs.client, err)
+				qs.logger.Error(fmt.Sprintf("agent.ipc: Failed to stream ack to %v: %v", qs.client, err))
 				return
 			}
 		case r := <-respCh:
 			if err := qs.sendResponse(r.From, r.Payload); err != nil {
-				qs.logger.Printf("[ERR] agent.ipc: Failed to stream response to %v: %v", qs.client, err)
+				qs.logger.Error(fmt.Sprintf("agent.ipc: Failed to stream response to %v: %v", qs.client, err))
 				return
 			}
 		case <-done:
 			if err := qs.sendDone(); err != nil {
-				qs.logger.Printf("[ERR] agent.ipc: Failed to stream query end to %v: %v", qs.client, err)
+				qs.logger.Error(fmt.Sprintf("agent.ipc: Failed to stream query end to %v: %v", qs.client, err))
 			}
 			return
 		}

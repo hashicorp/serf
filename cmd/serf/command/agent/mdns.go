@@ -6,10 +6,10 @@ package agent
 import (
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/mdns"
 )
 
@@ -23,7 +23,7 @@ const (
 type AgentMDNS struct {
 	agent    *Agent
 	discover string
-	logger   *log.Logger
+	logger   hclog.Logger
 	seen     map[string]struct{}
 	server   *mdns.Server
 	replay   bool
@@ -62,11 +62,13 @@ func NewAgentMDNS(agent *Agent, logOutput io.Writer, replay bool,
 	m := &AgentMDNS{
 		agent:    agent,
 		discover: discover,
-		logger:   log.New(logOutput, "", log.LstdFlags),
-		seen:     make(map[string]struct{}),
-		server:   server,
-		replay:   replay,
-		iface:    iface,
+		logger: hclog.New(&hclog.LoggerOptions{
+			Output: logOutput,
+		}),
+		seen:   make(map[string]struct{}),
+		server: server,
+		replay: replay,
+		iface:  iface,
 	}
 
 	// Start the background workers
@@ -101,10 +103,10 @@ func (m *AgentMDNS) run() {
 			// Attempt the join
 			n, err := m.agent.Join(join, m.replay)
 			if err != nil {
-				m.logger.Printf("[ERR] agent.mdns: Failed to join: %v", err)
+				m.logger.Error("agent.mdns: Failed to join: %v", err)
 			}
 			if n > 0 {
-				m.logger.Printf("[INFO] agent.mdns: Joined %d hosts", n)
+				m.logger.Info("agent.mdns: Joined %d hosts", n)
 			}
 
 			// Mark all as seen
@@ -128,7 +130,7 @@ func (m *AgentMDNS) poll(hosts chan *mdns.ServiceEntry) {
 		Entries:   hosts,
 	}
 	if err := mdns.Query(&params); err != nil {
-		m.logger.Printf("[ERR] agent.mdns: Failed to poll for new hosts: %v", err)
+		m.logger.Error("agent.mdns: Failed to poll for new hosts: %v", err)
 	}
 }
 

@@ -5,17 +5,24 @@ package testutil
 
 import (
 	"io"
-	"log"
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/go-hclog"
 )
 
-func TestLogger(t testing.TB) *log.Logger {
-	return log.New(&testWriter{t}, "test: ", log.LstdFlags)
+func TestLogger(t testing.TB) hclog.Logger {
+	return hclog.New(&hclog.LoggerOptions{
+		Output: &testWriter{t},
+		Name:   "test: ",
+	})
 }
 
-func TestLoggerWithName(t testing.TB, name string) *log.Logger {
-	return log.New(&testWriter{t}, "test["+name+"]: ", log.LstdFlags)
+func TestLoggerWithName(t testing.TB, name string) hclog.Logger {
+	return hclog.New(&hclog.LoggerOptions{
+		Output: &testWriter{t},
+		Name:   "test[" + name + "]: ",
+	})
 }
 
 func TestWriter(t testing.TB) io.Writer {
