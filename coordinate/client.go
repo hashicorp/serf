@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-metrics"
 )
 
 // Client manages the estimated network coordinate for a given node, and adjusts
