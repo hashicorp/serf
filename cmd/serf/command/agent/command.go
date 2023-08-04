@@ -424,6 +424,10 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 
 	// Parse the bind address information
 	bindIP, bindPort, err := config.AddrParts(config.BindAddr)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Failed to parse bind address information: %v", err))
+		return nil
+	}
 	bindAddr := &net.TCPAddr{IP: net.ParseIP(bindIP), Port: bindPort}
 
 	// Start the discovery layer
