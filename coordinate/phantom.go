@@ -171,7 +171,7 @@ type Stats struct {
 // distances and compares them with the given truth matrix, returning summary
 // stats.
 func Evaluate(clients []*Client, truth [][]time.Duration) (stats Stats) {
-	if len(clients) == 0 {
+	if len(clients) <= 1 {
 		return
 	}
 	nodes := len(clients)
