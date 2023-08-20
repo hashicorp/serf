@@ -42,15 +42,10 @@ const (
 const MaxNodeNameLength int = 128
 
 var (
-	// FeatureNotSupported is returned if a feature cannot be used
+	// ErrFeatureNotSupported is returned if a feature cannot be used
 	// due to an older protocol version being used.
-	FeatureNotSupported = fmt.Errorf("feature not supported")
+	ErrFeatureNotSupported = fmt.Errorf("feature not supported")
 )
-
-func init() {
-	// Seed the random number generator
-	rand.Seed(time.Now().UnixNano())
-}
 
 // ReconnectTimeoutOverrider is an interface that can be implemented to allow overriding
 // the reconnect timeout for individual members.
@@ -218,7 +213,7 @@ func (ue *userEvent) Equals(other *userEvent) bool {
 	if ue.Name != other.Name {
 		return false
 	}
-	if bytes.Compare(ue.Payload, other.Payload) != 0 {
+	if !bytes.Equal(ue.Payload, other.Payload) {
 		return false
 	}
 	return true
@@ -539,7 +534,7 @@ func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
 func (s *Serf) Query(name string, payload []byte, params *QueryParam) (*QueryResponse, error) {
 	// Check that the latest protocol is in use
 	if s.ProtocolVersion() < 4 {
-		return nil, FeatureNotSupported
+		return nil, ErrFeatureNotSupported
 	}
 
 	// Provide default parameters if none given
@@ -969,7 +964,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 		s.members[n.Name] = member
 	} else {
 		oldStatus = member.Status
-		deadTime := time.Now().Sub(member.leaveTime)
+		deadTime := time.Since(member.leaveTime)
 		if oldStatus == StatusFailed && deadTime < s.config.FlapTimeout {
 			metrics.IncrCounterWithLabels([]string{"serf", "member", "flap"}, 1, s.metricLabels)
 		}
