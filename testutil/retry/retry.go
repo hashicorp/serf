@@ -5,14 +5,13 @@
 //
 // A sample retry operation looks like this:
 //
-//   func TestX(t *testing.T) {
-//       retry.Run(t, func(r *retry.R) {
-//           if err := foo(); err != nil {
-//               r.Fatal("f: ", err)
-//           }
-//       })
-//   }
-//
+//	func TestX(t *testing.T) {
+//	    retry.Run(t, func(r *retry.R) {
+//	        if err := foo(); err != nil {
+//	            r.Fatal("f: ", err)
+//	        }
+//	    })
+//	}
 package retry
 
 import (

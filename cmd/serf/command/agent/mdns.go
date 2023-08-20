@@ -4,10 +4,12 @@
 package agent
 
 import (
+	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net"
+	"os"
 	"time"
 
 	"github.com/hashicorp/mdns"
@@ -23,7 +25,7 @@ const (
 type AgentMDNS struct {
 	agent    *Agent
 	discover string
-	logger   *log.Logger
+	logger   *slog.Logger
 	seen     map[string]struct{}
 	server   *mdns.Server
 	replay   bool
@@ -58,11 +60,21 @@ func NewAgentMDNS(agent *Agent, logOutput io.Writer, replay bool,
 		return nil, err
 	}
 
+	var logLevel *slog.Level
+	if err := logLevel.UnmarshalText([]byte(agent.agentConf.LogLevel)); err != nil {
+		return nil, err
+	}
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stdout, handlerOpts)
+
 	// Initialize the AgentMDNS
 	m := &AgentMDNS{
 		agent:    agent,
 		discover: discover,
-		logger:   log.New(logOutput, "", log.LstdFlags),
+		logger:   slog.New(handler).WithGroup("agent.mdns"),
 		seen:     make(map[string]struct{}),
 		server:   server,
 		replay:   replay,
@@ -101,10 +113,10 @@ func (m *AgentMDNS) run() {
 			// Attempt the join
 			n, err := m.agent.Join(join, m.replay)
 			if err != nil {
-				m.logger.Printf("[ERR] agent.mdns: Failed to join: %v", err)
+				m.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to join", slog.String("error", err.Error()))
 			}
 			if n > 0 {
-				m.logger.Printf("[INFO] agent.mdns: Joined %d hosts", n)
+				m.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Joined hosts", slog.Int("count", n))
 			}
 
 			// Mark all as seen
@@ -128,7 +140,7 @@ func (m *AgentMDNS) poll(hosts chan *mdns.ServiceEntry) {
 		Entries:   hosts,
 	}
 	if err := mdns.Query(&params); err != nil {
-		m.logger.Printf("[ERR] agent.mdns: Failed to poll for new hosts: %v", err)
+		m.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to poll for new hosts", slog.String("error", err.Error()))
 	}
 }
 

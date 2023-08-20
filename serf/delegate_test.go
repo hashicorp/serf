@@ -174,10 +174,10 @@ func TestDelegate_MergeRemoteState(t *testing.T) {
 		LeftMembers: []string{"foo"},
 		EventLTime:  50,
 		Events: []*userEvents{
-			&userEvents{
+			{
 				LTime: 45,
 				Events: []userEvent{
-					userEvent{
+					{
 						Name:    "test",
 						Payload: nil,
 					},

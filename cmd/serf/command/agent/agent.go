@@ -4,12 +4,12 @@
 package agent
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"log"
+	"log/slog"
 	"os"
 	"strings"
 	"sync"
@@ -37,7 +37,7 @@ type Agent struct {
 	eventHandlersLock sync.Mutex
 
 	// logger instance wraps the logOutput
-	logger *log.Logger
+	logger *slog.Logger
 
 	// This is the underlying Serf we are wrapping
 	serf *serf.Serf
@@ -59,6 +59,15 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 	conf.MemberlistConfig.LogOutput = logOutput
 	conf.MemberlistConfig.EnableCompression = agentConf.EnableCompression
 	conf.LogOutput = logOutput
+	var logLevel *slog.Level
+	if err := logLevel.UnmarshalText([]byte(agentConf.LogLevel)); err != nil {
+		return nil, fmt.Errorf("error parsing log level: %s", err)
+	}
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: logLevel.Level() <= slog.LevelDebug,
+		Level:     logLevel,
+	}
+	handler := slog.NewTextHandler(logOutput, handlerOpts)
 
 	// Create a channel to listen for events from Serf
 	eventCh := make(chan serf.Event, 64)
@@ -70,7 +79,7 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 		agentConf:     agentConf,
 		eventCh:       eventCh,
 		eventHandlers: make(map[EventHandler]struct{}),
-		logger:        log.New(logOutput, "", log.LstdFlags),
+		logger:        slog.New(handler).WithGroup("agent"),
 		shutdownCh:    make(chan struct{}),
 	}
 
@@ -95,12 +104,12 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 // create so that there isn't a race condition between creating the
 // agent and registering handlers
 func (a *Agent) Start() error {
-	a.logger.Printf("[INFO] agent: Serf agent starting")
+	a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Serf agent starting")
 
 	// Create serf first
 	serf, err := serf.Create(a.conf)
 	if err != nil {
-		return fmt.Errorf("Error creating Serf: %s", err)
+		return fmt.Errorf("error creating Serf: %s", err)
 	}
 	a.serf = serf
 
@@ -115,7 +124,7 @@ func (a *Agent) Leave() error {
 		return nil
 	}
 
-	a.logger.Println("[INFO] agent: requesting graceful leave from Serf")
+	a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "requesting graceful leave from Serf")
 	return a.serf.Leave()
 }
 
@@ -133,13 +142,13 @@ func (a *Agent) Shutdown() error {
 		goto EXIT
 	}
 
-	a.logger.Println("[INFO] agent: requesting serf shutdown")
+	a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "requesting serf shutdown")
 	if err := a.serf.Shutdown(); err != nil {
 		return err
 	}
 
 EXIT:
-	a.logger.Println("[INFO] agent: shutdown complete")
+	a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "shutdown complete")
 	a.shutdown = true
 	close(a.shutdownCh)
 	return nil
@@ -163,24 +172,24 @@ func (a *Agent) SerfConfig() *serf.Config {
 
 // Join asks the Serf instance to join. See the Serf.Join function.
 func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
-	a.logger.Printf("[INFO] agent: joining: %v replay: %v", addrs, replay)
+	a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "joining", slog.String("addresses", strings.Join(addrs, ",")), slog.Bool("replay", replay))
 	ignoreOld := !replay
 	n, err = a.serf.Join(addrs, ignoreOld)
 	if n > 0 {
-		a.logger.Printf("[INFO] agent: joined: %d nodes", n)
+		a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "joined", slog.Int("nodes", n))
 	}
 	if err != nil {
-		a.logger.Printf("[WARN] agent: error joining: %v", err)
+		a.logger.LogAttrs(context.TODO(), slog.LevelWarn, "error joining", slog.String("error", err.Error()))
 	}
 	return
 }
 
 // ForceLeave is used to eject a failed node from the cluster
 func (a *Agent) ForceLeave(node string) error {
-	a.logger.Printf("[INFO] agent: Force leaving node: %s", node)
+	a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Force leaving", slog.String("node", node))
 	err := a.serf.RemoveFailedNode(node)
 	if err != nil {
-		a.logger.Printf("[WARN] agent: failed to remove node: %v", err)
+		a.logger.LogAttrs(context.TODO(), slog.LevelWarn, "failed to remove node", slog.String("error", err.Error()))
 	}
 	return err
 }
@@ -188,21 +197,20 @@ func (a *Agent) ForceLeave(node string) error {
 // ForceLeavePrune completely removes a failed node from the
 // member list entirely
 func (a *Agent) ForceLeavePrune(node string) error {
-	a.logger.Printf("[INFO] agent: Force leaving node (prune): %s", node)
+	a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Force leaving (prune)", slog.String("node", node))
 	err := a.serf.RemoveFailedNodePrune(node)
 	if err != nil {
-		a.logger.Printf("[WARN] agent: failed to remove node (prune): %v", err)
+		a.logger.LogAttrs(context.TODO(), slog.LevelWarn, "failed to remove (prune)", slog.String("error", err.Error()))
 	}
 	return err
 }
 
 // UserEvent sends a UserEvent on Serf, see Serf.UserEvent.
 func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
-	a.logger.Printf("[DEBUG] agent: Requesting user event send: %s. Coalesced: %#v. Payload: %#v",
-		name, coalesce, string(payload))
+	a.logger.LogAttrs(context.TODO(), slog.LevelDebug, "Requesting user event send", slog.String("name", name), slog.Bool("coalesce", coalesce), slog.String("payload", string(payload)))
 	err := a.serf.UserEvent(name, payload, coalesce)
 	if err != nil {
-		a.logger.Printf("[WARN] agent: failed to send user event: %v", err)
+		a.logger.LogAttrs(context.TODO(), slog.LevelWarn, "failed to send user event", slog.String("error", err.Error()))
 	}
 	return err
 }
@@ -213,14 +221,13 @@ func (a *Agent) Query(name string, payload []byte, params *serf.QueryParam) (*se
 	if strings.HasPrefix(name, serf.InternalQueryPrefix) {
 		// Allow the special "ping" query
 		if name != serf.InternalQueryPrefix+"ping" || payload != nil {
-			return nil, fmt.Errorf("Queries cannot contain the '%s' prefix", serf.InternalQueryPrefix)
+			return nil, fmt.Errorf("queries cannot contain the '%s' prefix", serf.InternalQueryPrefix)
 		}
 	}
-	a.logger.Printf("[DEBUG] agent: Requesting query send: %s. Payload: %#v",
-		name, string(payload))
+	a.logger.LogAttrs(context.TODO(), slog.LevelDebug, "Requesting query send", slog.String("name", name), slog.String("payload", string(payload)))
 	resp, err := a.serf.Query(name, payload, params)
 	if err != nil {
-		a.logger.Printf("[WARN] agent: failed to start user query: %v", err)
+		a.logger.LogAttrs(context.TODO(), slog.LevelWarn, "failed to start user query", slog.String("error", err.Error()))
 	}
 	return resp, err
 }
@@ -255,7 +262,7 @@ func (a *Agent) eventLoop() {
 	for {
 		select {
 		case e := <-a.eventCh:
-			a.logger.Printf("[INFO] agent: Received event: %s", e.String())
+			a.logger.LogAttrs(context.TODO(), slog.LevelDebug, "Received event", slog.String("event", e.String()))
 			a.eventHandlersLock.Lock()
 			handlers := a.eventHandlerList
 			a.eventHandlersLock.Unlock()
@@ -264,7 +271,7 @@ func (a *Agent) eventLoop() {
 			}
 
 		case <-serfShutdownCh:
-			a.logger.Printf("[WARN] agent: Serf shutdown detected, quitting")
+			a.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Serf shutdown detected, quitting")
 			a.Shutdown()
 			return
 
@@ -276,28 +283,28 @@ func (a *Agent) eventLoop() {
 
 // InstallKey initiates a query to install a new key on all members
 func (a *Agent) InstallKey(key string) (*serf.KeyResponse, error) {
-	a.logger.Print("[INFO] agent: Initiating key installation")
+	a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Initiating key installation")
 	manager := a.serf.KeyManager()
 	return manager.InstallKey(key)
 }
 
 // UseKey sends a query instructing all members to switch primary keys
 func (a *Agent) UseKey(key string) (*serf.KeyResponse, error) {
-	a.logger.Print("[INFO] agent: Initiating primary key change")
+	a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Initiating primary key change")
 	manager := a.serf.KeyManager()
 	return manager.UseKey(key)
 }
 
 // RemoveKey sends a query to all members to remove a key from the keyring
 func (a *Agent) RemoveKey(key string) (*serf.KeyResponse, error) {
-	a.logger.Print("[INFO] agent: Initiating key removal")
+	a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Initiating key removal")
 	manager := a.serf.KeyManager()
 	return manager.RemoveKey(key)
 }
 
 // ListKeys sends a query to all members to return a list of their keys
 func (a *Agent) ListKeys() (*serf.KeyResponse, error) {
-	a.logger.Print("[INFO] agent: Initiating key listing")
+	a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Initiating key listing")
 	manager := a.serf.KeyManager()
 	return manager.ListKeys()
 }
@@ -308,7 +315,7 @@ func (a *Agent) SetTags(tags map[string]string) error {
 	// Update the tags file if we have one
 	if a.agentConf.TagsFile != "" {
 		if err := a.writeTagsFile(tags); err != nil {
-			a.logger.Printf("[ERR] agent: %s", err)
+			a.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to update tags file", slog.String("error", err.Error()))
 			return err
 		}
 	}
@@ -322,19 +329,18 @@ func (a *Agent) SetTags(tags map[string]string) error {
 func (a *Agent) loadTagsFile(tagsFile string) error {
 	// Avoid passing tags and using a tags file at the same time
 	if len(a.agentConf.Tags) > 0 {
-		return fmt.Errorf("Tags config not allowed while using tag files")
+		return fmt.Errorf("tags config not allowed while using tag files")
 	}
 
 	if _, err := os.Stat(tagsFile); err == nil {
-		tagData, err := ioutil.ReadFile(tagsFile)
+		tagData, err := os.ReadFile(tagsFile)
 		if err != nil {
-			return fmt.Errorf("Failed to read tags file: %s", err)
+			return fmt.Errorf("failed to read tags file: %s", err)
 		}
 		if err := json.Unmarshal(tagData, &a.conf.Tags); err != nil {
-			return fmt.Errorf("Failed to decode tags file: %s", err)
+			return fmt.Errorf("failed to decode tags file: %s", err)
 		}
-		a.logger.Printf("[INFO] agent: Restored %d tag(s) from %s",
-			len(a.conf.Tags), tagsFile)
+		a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Restored tags from file", slog.Int("count", len(a.conf.Tags)), slog.String("file", tagsFile))
 	}
 
 	// Success!
@@ -345,12 +351,12 @@ func (a *Agent) loadTagsFile(tagsFile string) error {
 func (a *Agent) writeTagsFile(tags map[string]string) error {
 	encoded, err := json.MarshalIndent(tags, "", "  ")
 	if err != nil {
-		return fmt.Errorf("Failed to encode tags: %s", err)
+		return fmt.Errorf("failed to encode tags: %s", err)
 	}
 
 	// Use 0600 for permissions, in case tag data is sensitive
-	if err = ioutil.WriteFile(a.agentConf.TagsFile, encoded, 0600); err != nil {
-		return fmt.Errorf("Failed to write tags file: %s", err)
+	if err = os.WriteFile(a.agentConf.TagsFile, encoded, 0600); err != nil {
+		return fmt.Errorf("failed to write tags file: %s", err)
 	}
 
 	// Success!
@@ -374,7 +380,7 @@ func UnmarshalTags(tags []string) (map[string]string, error) {
 	for _, tag := range tags {
 		parts := strings.SplitN(tag, "=", 2)
 		if len(parts) != 2 || len(parts[0]) == 0 {
-			return nil, fmt.Errorf("Invalid tag: '%s'", tag)
+			return nil, fmt.Errorf("invalid tag: '%s'", tag)
 		}
 		result[parts[0]] = parts[1]
 	}
@@ -385,7 +391,7 @@ func UnmarshalTags(tags []string) (map[string]string, error) {
 func (a *Agent) loadKeyringFile(keyringFile string) error {
 	// Avoid passing an encryption key and a keyring file at the same time
 	if len(a.agentConf.EncryptKey) > 0 {
-		return fmt.Errorf("Encryption key not allowed while using a keyring")
+		return fmt.Errorf("encryption key not allowed while using a keyring")
 	}
 
 	if _, err := os.Stat(keyringFile); err != nil {
@@ -393,15 +399,15 @@ func (a *Agent) loadKeyringFile(keyringFile string) error {
 	}
 
 	// Read in the keyring file data
-	keyringData, err := ioutil.ReadFile(keyringFile)
+	keyringData, err := os.ReadFile(keyringFile)
 	if err != nil {
-		return fmt.Errorf("Failed to read keyring file: %s", err)
+		return fmt.Errorf("failed to read keyring file: %s", err)
 	}
 
 	// Decode keyring JSON
 	keys := make([]string, 0)
 	if err := json.Unmarshal(keyringData, &keys); err != nil {
-		return fmt.Errorf("Failed to decode keyring file: %s", err)
+		return fmt.Errorf("failed to decode keyring file: %s", err)
 	}
 
 	// Decode base64 values
@@ -409,24 +415,23 @@ func (a *Agent) loadKeyringFile(keyringFile string) error {
 	for i, key := range keys {
 		keyBytes, err := base64.StdEncoding.DecodeString(key)
 		if err != nil {
-			return fmt.Errorf("Failed to decode key from keyring: %s", err)
+			return fmt.Errorf("failed to decode key from keyring: %s", err)
 		}
 		keysDecoded[i] = keyBytes
 	}
 
 	// Guard against empty keyring file
 	if len(keysDecoded) == 0 {
-		return fmt.Errorf("Keyring file contains no keys")
+		return fmt.Errorf("keyring file contains no keys")
 	}
 
 	// Create the keyring
 	keyring, err := memberlist.NewKeyring(keysDecoded, keysDecoded[0])
 	if err != nil {
-		return fmt.Errorf("Failed to restore keyring: %s", err)
+		return fmt.Errorf("failed to restore keyring: %s", err)
 	}
 	a.conf.MemberlistConfig.Keyring = keyring
-	a.logger.Printf("[INFO] agent: Restored keyring with %d keys from %s",
-		len(keys), keyringFile)
+	a.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Restored keyring", slog.Int("count", len(keys)), slog.String("file", keyringFile))
 
 	// Success!
 	return nil
@@ -444,7 +449,7 @@ func (a *Agent) Stats() map[string]map[string]string {
 	}
 
 	output := map[string]map[string]string{
-		"agent": map[string]string{
+		"agent": {
 			"name": local.Name,
 		},
 		"runtime":        runtimeStats(),

@@ -26,9 +26,10 @@ package agent
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net"
 	"os"
 	"regexp"
@@ -73,16 +74,16 @@ const (
 )
 
 const (
-	unsupportedCommand    = "Unsupported command"
-	unsupportedIPCVersion = "Unsupported IPC version"
-	duplicateHandshake    = "Handshake already performed"
-	handshakeRequired     = "Handshake required"
-	monitorExists         = "Monitor already exists"
-	invalidFilter         = "Invalid event filter"
-	streamExists          = "Stream with given sequence exists"
-	invalidQueryID        = "No pending queries matching ID"
-	authRequired          = "Authentication required"
-	invalidAuthToken      = "Invalid authentication token"
+	unsupportedCommand    = "unsupported command"
+	unsupportedIPCVersion = "unsupported IPC version"
+	duplicateHandshake    = "handshake already performed"
+	handshakeRequired     = "handshake required"
+	monitorExists         = "monitor already exists"
+	invalidFilter         = "invalid event filter"
+	streamExists          = "stream with given sequence exists"
+	invalidQueryID        = "no pending queries matching ID"
+	authRequired          = "authentication required"
+	invalidAuthToken      = "invalid authentication token"
 )
 
 const (
@@ -245,7 +246,7 @@ type AgentIPC struct {
 	authKey   string
 	clients   map[string]*IPCClient
 	listener  net.Listener
-	logger    *log.Logger
+	logger    *slog.Logger
 	logWriter *logWriter
 	stop      uint32
 	stopCh    chan struct{}
@@ -309,7 +310,7 @@ func (c *IPCClient) RegisterQuery(q *serf.Query) uint64 {
 	id := c.nextQueryID()
 
 	// Ensure the query deadline is in the future
-	timeout := q.Deadline().Sub(time.Now())
+	timeout := time.Until(q.Deadline())
 	if timeout < 0 {
 		return id
 	}
@@ -334,12 +335,21 @@ func NewAgentIPC(agent *Agent, authKey string, listener net.Listener,
 	if logOutput == nil {
 		logOutput = os.Stderr
 	}
+	var logLevel *slog.Level
+	if err := logLevel.UnmarshalText([]byte(agent.agentConf.LogLevel)); err != nil {
+		return nil
+	}
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stdout, handlerOpts)
 	ipc := &AgentIPC{
 		agent:     agent,
 		authKey:   authKey,
 		clients:   make(map[string]*IPCClient),
 		listener:  listener,
-		logger:    log.New(logOutput, "", log.LstdFlags),
+		logger:    slog.New(handler).WithGroup("agent.ipc"),
 		logWriter: logWriter,
 		stopCh:    make(chan struct{}),
 	}
@@ -378,10 +388,10 @@ func (i *AgentIPC) listen() {
 			if i.isStopped() {
 				return
 			}
-			i.logger.Printf("[ERR] agent.ipc: Failed to accept client: %v", err)
+			i.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to accept client", slog.String("error", err.Error()))
 			continue
 		}
-		i.logger.Printf("[INFO] agent.ipc: Accepted client: %v", conn.RemoteAddr())
+		i.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Accepted client", slog.String("client", conn.RemoteAddr().String()))
 		metrics.IncrCounterWithLabels([]string{"agent", "ipc", "accept"}, 1, nil)
 
 		// Wrap the connection in a client
@@ -394,9 +404,9 @@ func (i *AgentIPC) listen() {
 			pendingQueries: make(map[uint64]*serf.Query),
 		}
 		client.dec = codec.NewDecoder(client.reader,
-			&codec.MsgpackHandle{RawToString: true, WriteExt: true})
+			&codec.MsgpackHandle{WriteExt: true})
 		client.enc = codec.NewEncoder(client.writer,
-			&codec.MsgpackHandle{RawToString: true, WriteExt: true})
+			&codec.MsgpackHandle{WriteExt: true})
 
 		// Register the client
 		i.Lock()
@@ -445,7 +455,7 @@ func (i *AgentIPC) handleClient(client *IPCClient) {
 				// errors from Windows which appear to happen every
 				// time there is an EOF.
 				if err != io.EOF && !strings.Contains(strings.ToLower(err.Error()), "wsarecv") {
-					i.logger.Printf("[ERR] agent.ipc: failed to decode request header: %v", err)
+					i.logger.LogAttrs(context.TODO(), slog.LevelError, "failed to decode request header", slog.String("error", err.Error()))
 				}
 			}
 			return
@@ -453,7 +463,7 @@ func (i *AgentIPC) handleClient(client *IPCClient) {
 
 		// Evaluate the command
 		if err := i.handleRequest(client, &reqHeader); err != nil {
-			i.logger.Printf("[ERR] agent.ipc: Failed to evaluate request: %v", err)
+			i.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to evaluate request", slog.String("error", err.Error()))
 			return
 		}
 	}
@@ -475,7 +485,7 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 
 	// Ensure the client has authenticated after the handshake if necessary
 	if i.authKey != "" && !client.didAuth && command != authCommand && command != handshakeCommand {
-		i.logger.Printf("[WARN] agent.ipc: Client sending commands before auth")
+		i.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Client sending commands before auth")
 		respHeader := responseHeader{Seq: seq, Error: authRequired}
 		client.Send(&respHeader, nil)
 		return nil
@@ -702,19 +712,19 @@ func (i *AgentIPC) filterMembers(members []serf.Member, tags map[string]string,
 	for tag, expr := range tags {
 		re, err := regexp.Compile(fmt.Sprintf("^%s$", expr))
 		if err != nil {
-			return nil, fmt.Errorf("Failed to compile regex: %v", err)
+			return nil, fmt.Errorf("failed to compile regex: %v", err)
 		}
 		tagsRe[tag] = re
 	}
 
 	statusRe, err := regexp.Compile(fmt.Sprintf("^%s$", status))
 	if err != nil {
-		return nil, fmt.Errorf("Failed to compile regex: %v", err)
+		return nil, fmt.Errorf("failed to compile regex: %v", err)
 	}
 
 	nameRe, err := regexp.Compile(fmt.Sprintf("^%s$", name))
 	if err != nil {
-		return nil, fmt.Errorf("Failed to compile regex: %v", err)
+		return nil, fmt.Errorf("failed to compile regex: %v", err)
 	}
 
 OUTER:
@@ -931,12 +941,12 @@ func (i *AgentIPC) handleStop(client *IPCClient, seq uint64) error {
 }
 
 func (i *AgentIPC) handleLeave(client *IPCClient, seq uint64) error {
-	i.logger.Printf("[INFO] agent.ipc: Graceful leave triggered")
+	i.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Graceful leave triggered")
 
 	// Do the leave
 	err := i.agent.Leave()
 	if err != nil {
-		i.logger.Printf("[ERR] agent.ipc: leave failed: %v", err)
+		i.logger.LogAttrs(context.TODO(), slog.LevelError, "leave failed", slog.String("error", err.Error()))
 	}
 	resp := responseHeader{Seq: seq, Error: errToString(err)}
 
@@ -945,7 +955,7 @@ func (i *AgentIPC) handleLeave(client *IPCClient, seq uint64) error {
 
 	// Trigger a shutdown!
 	if err := i.agent.Shutdown(); err != nil {
-		i.logger.Printf("[ERR] agent.ipc: shutdown failed: %v", err)
+		i.logger.LogAttrs(context.TODO(), slog.LevelError, "shutdown failed", slog.String("error", err.Error()))
 	}
 	return err
 }

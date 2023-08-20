@@ -5,8 +5,9 @@ package serf
 
 import (
 	"bufio"
+	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"math/rand"
 	"net"
 	"os"
@@ -72,7 +73,7 @@ type Snapshotter struct {
 	lastQueryClock          LamportTime
 	leaveCh                 chan struct{}
 	leaving                 bool
-	logger                  *log.Logger
+	logger                  *slog.Logger
 	minCompactSize          int64
 	path                    string
 	offset                  int64
@@ -103,7 +104,7 @@ func (p PreviousNode) String() string {
 func NewSnapshotter(path string,
 	minCompactSize int,
 	rejoinAfterLeave bool,
-	logger *log.Logger,
+	logger *slog.Logger,
 	clock *LamportClock,
 	outCh chan<- Event,
 	shutdownCh <-chan struct{}) (chan<- Event, *Snapshotter, error) {
@@ -262,7 +263,7 @@ func (s *Snapshotter) stream() {
 		case *Query:
 			s.processQuery(typed)
 		default:
-			s.logger.Printf("[ERR] serf: Unknown event to snapshot: %#v", e)
+			s.logger.LogAttrs(context.TODO(), slog.LevelError, "Unknown event to snapshot", slog.String("error", e.String()))
 		}
 	}
 
@@ -277,10 +278,10 @@ func (s *Snapshotter) stream() {
 			}
 			s.tryAppend("leave\n")
 			if err := s.buffered.Flush(); err != nil {
-				s.logger.Printf("[ERR] serf: failed to flush leave to snapshot: %v", err)
+				s.logger.LogAttrs(context.TODO(), slog.LevelError, "failed to flush leave to snapshot", slog.String("error", err.Error()))
 			}
 			if err := s.fh.Sync(); err != nil {
-				s.logger.Printf("[ERR] serf: failed to sync leave to snapshot: %v", err)
+				s.logger.LogAttrs(context.TODO(), slog.LevelError, "failed to sync leave to snapshot", slog.String("error", err.Error()))
 			}
 
 		case e := <-s.streamCh:
@@ -310,10 +311,10 @@ func (s *Snapshotter) stream() {
 			}
 
 			if err := s.buffered.Flush(); err != nil {
-				s.logger.Printf("[ERR] serf: failed to flush snapshot: %v", err)
+				s.logger.LogAttrs(context.TODO(), slog.LevelError, "failed to flush snapshot", slog.String("error", err.Error()))
 			}
 			if err := s.fh.Sync(); err != nil {
-				s.logger.Printf("[ERR] serf: failed to sync snapshot: %v", err)
+				s.logger.LogAttrs(context.TODO(), slog.LevelError, "failed to sync snapshot", slog.String("error", err.Error()))
 			}
 			s.fh.Close()
 			close(s.waitCh)
@@ -377,16 +378,16 @@ func (s *Snapshotter) processQuery(q *Query) {
 // tryAppend will invoke append line but will not return an error
 func (s *Snapshotter) tryAppend(l string) {
 	if err := s.appendLine(l); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to update snapshot: %v", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to update snapshot", slog.String("error", err.Error()))
 		now := time.Now()
 		if now.Sub(s.lastAttemptedCompaction) > snapshotErrorRecoveryInterval {
 			s.lastAttemptedCompaction = now
-			s.logger.Printf("[INFO] serf: Attempting compaction to recover from error...")
+			s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Attempting compaction to recover from error...")
 			err = s.compact()
 			if err != nil {
-				s.logger.Printf("[ERR] serf: Compaction failed, will reattempt after %v: %v", snapshotErrorRecoveryInterval, err)
+				s.logger.LogAttrs(context.TODO(), slog.LevelError, "Compaction failed, will reattempt after snapshot recovery interval", slog.Duration("interval", snapshotErrorRecoveryInterval), slog.String("error", err.Error()))
 			} else {
-				s.logger.Printf("[INFO] serf: Finished compaction, successfully recovered from error state")
+				s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Finished compaction, successfully recovered from error state")
 			}
 		}
 	}
@@ -564,7 +565,7 @@ func (s *Snapshotter) replay() error {
 			info := strings.TrimPrefix(line, "alive: ")
 			addrIdx := strings.LastIndex(info, " ")
 			if addrIdx == -1 {
-				s.logger.Printf("[WARN] serf: Failed to parse address: %v", line)
+				s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Failed to parse address", slog.String("address", line))
 				continue
 			}
 			addr := info[addrIdx+1:]
@@ -579,7 +580,7 @@ func (s *Snapshotter) replay() error {
 			timeStr := strings.TrimPrefix(line, "clock: ")
 			timeInt, err := strconv.ParseUint(timeStr, 10, 64)
 			if err != nil {
-				s.logger.Printf("[WARN] serf: Failed to convert clock time: %v", err)
+				s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Failed to convert clock time", slog.String("error", err.Error()))
 				continue
 			}
 			s.lastClock = LamportTime(timeInt)
@@ -588,7 +589,7 @@ func (s *Snapshotter) replay() error {
 			timeStr := strings.TrimPrefix(line, "event-clock: ")
 			timeInt, err := strconv.ParseUint(timeStr, 10, 64)
 			if err != nil {
-				s.logger.Printf("[WARN] serf: Failed to convert event clock time: %v", err)
+				s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Failed to convert event clock time", slog.String("error", err.Error()))
 				continue
 			}
 			s.lastEventClock = LamportTime(timeInt)
@@ -597,7 +598,7 @@ func (s *Snapshotter) replay() error {
 			timeStr := strings.TrimPrefix(line, "query-clock: ")
 			timeInt, err := strconv.ParseUint(timeStr, 10, 64)
 			if err != nil {
-				s.logger.Printf("[WARN] serf: Failed to convert query clock time: %v", err)
+				s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Failed to convert query clock time", slog.String("error", err.Error()))
 				continue
 			}
 			s.lastQueryClock = LamportTime(timeInt)
@@ -607,7 +608,7 @@ func (s *Snapshotter) replay() error {
 		} else if line == "leave" {
 			// Ignore a leave if we plan on re-joining
 			if s.rejoinAfterLeave {
-				s.logger.Printf("[INFO] serf: Ignoring previous leave in snapshot")
+				s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Ignoring previous leave in snapshot")
 				continue
 			}
 			s.aliveNodes = make(map[string]string)
@@ -619,7 +620,7 @@ func (s *Snapshotter) replay() error {
 			// Skip comment lines
 
 		} else {
-			s.logger.Printf("[WARN] serf: Unrecognized snapshot line: %v", line)
+			s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Unrecognized snapshot line", slog.String("line", line))
 		}
 	}
 

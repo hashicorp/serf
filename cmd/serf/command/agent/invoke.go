@@ -93,7 +93,7 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 		cmd.Env = append(cmd.Env, fmt.Sprintf("SERF_QUERY_LTIME=%d", e.LTime))
 		go streamPayload(logger, stdin, e.Payload)
 	default:
-		return fmt.Errorf("Unknown event type: %s", event.EventType().String())
+		return fmt.Errorf("unknown event type: %s", event.EventType().String())
 	}
 
 	// Start a timer to warn about slow handlers

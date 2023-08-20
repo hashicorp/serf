@@ -388,44 +388,44 @@ func TestParseEventFilter(t *testing.T) {
 	}{
 		{
 			"",
-			[]EventFilter{EventFilter{"*", ""}},
+			[]EventFilter{{"*", ""}},
 		},
 
 		{
 			"member-join",
-			[]EventFilter{EventFilter{"member-join", ""}},
+			[]EventFilter{{"member-join", ""}},
 		},
 
 		{
 			"member-reap",
-			[]EventFilter{EventFilter{"member-reap", ""}},
+			[]EventFilter{{"member-reap", ""}},
 		},
 
 		{
 			"foo,bar",
 			[]EventFilter{
-				EventFilter{"foo", ""},
-				EventFilter{"bar", ""},
+				{"foo", ""},
+				{"bar", ""},
 			},
 		},
 
 		{
 			"user:deploy",
-			[]EventFilter{EventFilter{"user", "deploy"}},
+			[]EventFilter{{"user", "deploy"}},
 		},
 
 		{
 			"foo,user:blah,bar",
 			[]EventFilter{
-				EventFilter{"foo", ""},
-				EventFilter{"user", "blah"},
-				EventFilter{"bar", ""},
+				{"foo", ""},
+				{"user", "blah"},
+				{"bar", ""},
 			},
 		},
 
 		{
 			"query:load",
-			[]EventFilter{EventFilter{"query", "load"}},
+			[]EventFilter{{"query", "load"}},
 		},
 	}
 

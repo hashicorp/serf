@@ -5,7 +5,7 @@ package serf
 
 import (
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -209,7 +209,14 @@ type Config struct {
 	// this for the internal logger. If Logger is not set, it will fall back to the
 	// behavior for using LogOutput. You cannot specify both LogOutput and Logger
 	// at the same time.
-	Logger *log.Logger
+	Logger *slog.Logger
+
+	// LogLevel is a custom log level which you provide. If LogLevel is set, it will
+	// use this for the internal logger. If LogLevel is not set, it will default to Info.
+	// You cannot specify both LogLevel and Logger at the same time, as Logger will
+	// override LogLevel.
+	// Setting LogLevel to Debug will enable debug logging for Serf.
+	LogLevel slog.Leveler
 
 	// SnapshotPath if provided is used to snapshot live nodes as well
 	// as lamport clock values. When Serf is started with a snapshot,

@@ -9,7 +9,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"log"
+	"log/slog"
 	"net"
 	"os"
 	"path/filepath"
@@ -59,8 +59,13 @@ func testConfig(t *testing.T, ip net.IP) *Config {
 	config.TombstoneTimeout = 1 * time.Microsecond
 
 	if t != nil {
-		config.Logger = log.New(os.Stderr, "test["+t.Name()+"]: ", log.LstdFlags)
-		config.MemberlistConfig.Logger = config.Logger
+		handlerOpts := &slog.HandlerOptions{
+			AddSource: true,
+			Level:     slog.LevelDebug,
+		}
+		handler := slog.NewTextHandler(os.Stdout, handlerOpts)
+		config.Logger = slog.New(handler)
+		config.MemberlistConfig.Logger = slog.NewLogLogger(handler, slog.LevelDebug)
 	}
 
 	return config
@@ -1116,7 +1121,7 @@ func TestSerf_update(t *testing.T) {
 			t.Fatalf("err: %v", err)
 		}
 
-		if time.Now().Sub(start) > 2*time.Second {
+		if time.Since(start) > 2*time.Second {
 			t.Fatalf("timed out trying to restart")
 		}
 	}
@@ -1497,9 +1502,9 @@ func TestSerf_Reap(t *testing.T) {
 
 	m := Member{}
 	old := []*memberState{
-		&memberState{m, 0, time.Now()},
-		&memberState{m, 0, time.Now().Add(-5 * time.Second)},
-		&memberState{m, 0, time.Now().Add(-10 * time.Second)},
+		{m, 0, time.Now()},
+		{m, 0, time.Now().Add(-5 * time.Second)},
+		{m, 0, time.Now().Add(-10 * time.Second)},
 	}
 
 	old = s.reap(old, time.Now(), time.Second*6)
@@ -1510,9 +1515,9 @@ func TestSerf_Reap(t *testing.T) {
 
 func TestRemoveOldMember(t *testing.T) {
 	old := []*memberState{
-		&memberState{Member: Member{Name: "foo"}},
-		&memberState{Member: Member{Name: "bar"}},
-		&memberState{Member: Member{Name: "baz"}},
+		{Member: Member{Name: "foo"}},
+		{Member: Member{Name: "bar"}},
+		{Member: Member{Name: "baz"}},
 	}
 
 	old = removeOldMember(old, "bar")
@@ -1843,7 +1848,7 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 
 	// Wait for the node to auto rejoin
 	start := time.Now()
-	for time.Now().Sub(start) < time.Second {
+	for time.Since(start) < time.Second {
 		members := s1.Members()
 		if len(members) == 2 && members[0].Status == StatusAlive && members[1].Status == StatusAlive {
 			break
@@ -2595,7 +2600,7 @@ type CancelMergeDelegate struct {
 
 func (c *CancelMergeDelegate) NotifyMerge(members []*Member) error {
 	c.invoked = true
-	return fmt.Errorf("Merge canceled")
+	return fmt.Errorf("merge canceled")
 }
 
 func TestSerf_Join_Cancel(t *testing.T) {

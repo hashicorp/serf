@@ -104,7 +104,7 @@ WAIT:
 	if len(m) != 2 {
 		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
 	}
-	if findMember(t, m, a2.conf.NodeName).Status != serf.StatusFailed && time.Now().Sub(start) < 3*time.Second {
+	if findMember(t, m, a2.conf.NodeName).Status != serf.StatusFailed && time.Since(start) < 3*time.Second {
 		goto WAIT
 	}
 
@@ -166,7 +166,7 @@ WAIT:
 	if len(m) != 2 {
 		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
 	}
-	if findMember(t, m, a2.conf.NodeName).Status != serf.StatusFailed && time.Now().Sub(start) < 3*time.Second {
+	if findMember(t, m, a2.conf.NodeName).Status != serf.StatusFailed && time.Since(start) < 3*time.Second {
 		goto WAIT
 	}
 
@@ -545,7 +545,7 @@ func TestRPCClientStream_User(t *testing.T) {
 		if e["Name"].(string) != "deploy" {
 			t.Fatalf("bad event: %#v", e)
 		}
-		if bytes.Compare(e["Payload"].([]byte), []byte("foo")) != 0 {
+		if !bytes.Equal(e["Payload"].([]byte), []byte("foo")) {
 			t.Fatalf("bad event: %#v", e)
 		}
 		if e["Coalesce"].(bool) != false {
@@ -816,7 +816,7 @@ func TestRPCClientStream_Query(t *testing.T) {
 		if e["Name"].(string) != "deploy" {
 			t.Fatalf("bad query: %#v", e)
 		}
-		if bytes.Compare(e["Payload"].([]byte), []byte("foo")) != 0 {
+		if !bytes.Equal(e["Payload"].([]byte), []byte("foo")) {
 			t.Fatalf("bad query: %#v", e)
 		}
 
@@ -1017,7 +1017,7 @@ func TestRPCClient_Keys(t *testing.T) {
 
 	testutil.Yield()
 
-	keys, num, _, err := client.ListKeys()
+	keys, _, _, err := client.ListKeys()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1055,7 +1055,7 @@ func TestRPCClient_Keys(t *testing.T) {
 	}
 
 	// New key should now appear in the list of keys
-	keys, num, _, err = client.ListKeys()
+	keys, num, _, err := client.ListKeys()
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}

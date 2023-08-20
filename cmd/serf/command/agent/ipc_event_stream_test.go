@@ -5,7 +5,7 @@ package agent
 
 import (
 	"bytes"
-	"log"
+	"log/slog"
 	"net"
 	"os"
 	"testing"
@@ -33,7 +33,12 @@ func (m *MockStreamClient) RegisterQuery(q *serf.Query) uint64 {
 func TestIPCEventStream(t *testing.T) {
 	sc := &MockStreamClient{}
 	filters := ParseEventFilter("user:foobar,member-join,query:deploy")
-	es := newEventStream(sc, filters, 42, log.New(os.Stderr, "", log.LstdFlags))
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stdout, handlerOpts)
+	es := newEventStream(sc, filters, 42, slog.New(handler))
 	defer es.Stop()
 
 	es.HandleEvent(serf.UserEvent{
@@ -51,7 +56,7 @@ func TestIPCEventStream(t *testing.T) {
 	es.HandleEvent(serf.MemberEvent{
 		Type: serf.EventMemberJoin,
 		Members: []serf.Member{
-			serf.Member{
+			{
 				Name:        "TestNode",
 				Addr:        net.IP([]byte{127, 0, 0, 1}),
 				Port:        12345,
@@ -96,7 +101,7 @@ func TestIPCEventStream(t *testing.T) {
 	if obj1.Name != "foobar" {
 		t.Fatalf("bad event: %#v", obj1)
 	}
-	if bytes.Compare(obj1.Payload, []byte("test")) != 0 {
+	if !bytes.Equal(obj1.Payload, []byte("test")) {
 		t.Fatalf("bad event: %#v", obj1)
 	}
 	if !obj1.Coalesce {
@@ -111,7 +116,7 @@ func TestIPCEventStream(t *testing.T) {
 	if mem1.Name != "TestNode" {
 		t.Fatalf("bad member: %#v", mem1)
 	}
-	if bytes.Compare(mem1.Addr, []byte{127, 0, 0, 1}) != 0 {
+	if !bytes.Equal(mem1.Addr, []byte{127, 0, 0, 1}) {
 		t.Fatalf("bad member: %#v", mem1)
 	}
 	if mem1.Port != 12345 {
@@ -152,7 +157,7 @@ func TestIPCEventStream(t *testing.T) {
 	if obj3.Name != "deploy" {
 		t.Fatalf("bad query: %#v", obj3)
 	}
-	if bytes.Compare(obj3.Payload, []byte("test")) != 0 {
+	if !bytes.Equal(obj3.Payload, []byte("test")) {
 		t.Fatalf("bad query: %#v", obj3)
 	}
 

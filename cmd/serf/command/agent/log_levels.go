@@ -4,9 +4,18 @@
 package agent
 
 import (
-	"io/ioutil"
+	"io"
+	"log/slog"
 
 	"github.com/hashicorp/logutils"
+)
+
+const (
+	LevelTrace slog.Level = slog.LevelDebug - 4
+	LevelDebug slog.Level = slog.LevelDebug
+	LevelInfo  slog.Level = slog.LevelInfo
+	LevelWarn  slog.Level = slog.LevelWarn
+	LevelError slog.Level = slog.LevelError
 )
 
 // LevelFilter returns a LevelFilter that is configured with the log
@@ -15,7 +24,7 @@ func LevelFilter() *logutils.LevelFilter {
 	return &logutils.LevelFilter{
 		Levels:   []logutils.LogLevel{"TRACE", "DEBUG", "INFO", "WARN", "ERR"},
 		MinLevel: "INFO",
-		Writer:   ioutil.Discard,
+		Writer:   io.Discard,
 	}
 }
 

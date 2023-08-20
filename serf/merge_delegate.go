@@ -68,11 +68,11 @@ func (m *mergeDelegate) validateMemberInfo(n *memberlist.Node) error {
 	}
 
 	if len(n.Addr) != 4 && len(n.Addr) != 16 {
-		return fmt.Errorf("IP byte length is invalid: %d bytes is not either 4 or 16", len(n.Addr))
+		return fmt.Errorf("iP byte length is invalid: %d bytes is not either 4 or 16", len(n.Addr))
 	}
 
 	if len(n.Meta) > memberlist.MetaMaxSize {
-		return fmt.Errorf("Encoded length of tags exceeds limit of %d bytes",
+		return fmt.Errorf("encoded length of tags exceeds limit of %d bytes",
 			memberlist.MetaMaxSize)
 	}
 	return nil

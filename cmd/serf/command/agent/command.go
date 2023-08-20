@@ -4,10 +4,12 @@
 package agent
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net"
 	"os"
 	"os/signal"
@@ -45,7 +47,7 @@ type Command struct {
 	args          []string
 	scriptHandler *ScriptEventHandler
 	logFilter     *logutils.LevelFilter
-	logger        *log.Logger
+	logger        *slog.Logger
 }
 
 var _ cli.Command = &Command{}
@@ -400,8 +402,19 @@ func (c *Command) setupLoggers(config *Config) (*GatedWriter, *logWriter, io.Wri
 		logOutput = io.MultiWriter(c.logFilter, logWriter)
 	}
 
+	var logLevel *slog.Level
+	if err := logLevel.UnmarshalText([]byte(config.LogLevel)); err != nil {
+		c.Ui.Error(fmt.Sprintf("Error parsing log level: %s", err))
+		return nil, nil, nil
+	}
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: logLevel.Level() <= slog.LevelDebug,
+		Level:     logLevel,
+	}
+	handler := slog.NewTextHandler(logOutput, handlerOpts)
+
 	// Create a logger
-	c.logger = log.New(logOutput, "", log.LstdFlags)
+	c.logger = slog.New(handler)
 	return logGate, logWriter, logOutput
 }
 
@@ -424,6 +437,10 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 
 	// Parse the bind address information
 	bindIP, bindPort, err := config.AddrParts(config.BindAddr)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Failed to parse bind address: %v", err))
+		return nil
+	}
 	bindAddr := &net.TCPAddr{IP: net.ParseIP(bindIP), Port: bindPort}
 
 	// Start the discovery layer
@@ -504,23 +521,23 @@ func (c *Command) retryJoin(config *Config, agent *Agent, errCh chan struct{}) {
 	attempt := 0
 	for {
 		// Try to perform the join
-		c.logger.Printf("[INFO] agent: Joining cluster...(replay: %v)", config.ReplayOnJoin)
+		c.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Joining cluster...", slog.Bool("ReplayOnJoin", config.ReplayOnJoin))
 		n, err := agent.Join(config.RetryJoin, config.ReplayOnJoin)
 		if err == nil {
-			c.logger.Printf("[INFO] agent: Join completed. Synced with %d initial agents", n)
+			c.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Join completed", slog.Int("initial synced agents", n))
 			return
 		}
 
 		// Check if the maximum attempts has been exceeded
 		attempt++
 		if config.RetryMaxAttempts > 0 && attempt > config.RetryMaxAttempts {
-			c.logger.Printf("[ERR] agent: maximum retry join attempts made, exiting")
+			c.logger.LogAttrs(context.TODO(), slog.LevelError, "maximum retry join attempts made, exiting")
 			close(errCh)
 			return
 		}
 
 		// Log the failure and sleep
-		c.logger.Printf("[WARN] agent: Join failed: %v, retrying in %v", err, config.RetryInterval)
+		c.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Join failed: %v, retrying in %v", slog.String("error", err.Error()), slog.Duration("retrying in", config.RetryInterval))
 		time.Sleep(config.RetryInterval)
 	}
 }
@@ -686,7 +703,7 @@ func (c *Command) handleReload(config *Config, agent *Agent) *Config {
 	c.Ui.Output("Reloading configuration...")
 	newConf := c.readConfig()
 	if newConf == nil {
-		c.Ui.Error(fmt.Sprintf("Failed to reload configs"))
+		c.Ui.Error("Failed to reload configs")
 		return config
 	}
 
