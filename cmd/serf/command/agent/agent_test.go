@@ -5,8 +5,10 @@ package agent
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
+	"math/rand"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -128,10 +130,7 @@ func TestAgentTagsFile(t *testing.T) {
 		"datacenter": "us-east",
 	}
 
-	td, err := ioutil.TempDir("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
+	td := path.Join(os.TempDir(), fmt.Sprintf("serf-%d", rand.Int()))
 	defer os.RemoveAll(td)
 
 	ip1, returnFn1 := testutil.TakeIP()
@@ -153,9 +152,7 @@ func TestAgentTagsFile(t *testing.T) {
 
 	testutil.Yield()
 
-	err = a1.SetTags(tags)
-
-	if err != nil {
+	if err := a1.SetTags(tags); err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
@@ -248,10 +245,7 @@ func TestAgentKeyringFile(t *testing.T) {
 		"5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4=",
 	}
 
-	td, err := ioutil.TempDir("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
+	td := path.Join(os.TempDir(), fmt.Sprintf("serf-%d", rand.Int()))
 	defer os.RemoveAll(td)
 
 	keyringFile := filepath.Join(td, "keyring.json")
@@ -265,7 +259,7 @@ func TestAgentKeyringFile(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	if err := ioutil.WriteFile(keyringFile, encodedKeys, 0600); err != nil {
+	if err := os.WriteFile(keyringFile, encodedKeys, 0600); err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
@@ -299,21 +293,18 @@ func TestAgentKeyringFile_BadOptions(t *testing.T) {
 }
 
 func TestAgentKeyringFile_NoKeys(t *testing.T) {
-	dir, err := ioutil.TempDir("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
+	dir := path.Join(os.TempDir(), fmt.Sprintf("serf-%d", rand.Int()))
 	defer os.RemoveAll(dir)
 
 	keysFile := filepath.Join(dir, "keyring")
-	if err := ioutil.WriteFile(keysFile, []byte("[]"), 0600); err != nil {
+	if err := os.WriteFile(keysFile, []byte("[]"), 0600); err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
 	agentConfig := DefaultConfig()
 	agentConfig.KeyringFile = keysFile
 
-	_, err = Create(agentConfig, serf.DefaultConfig(), nil)
+	_, err := Create(agentConfig, serf.DefaultConfig(), nil)
 	if err == nil {
 		t.Fatalf("should have errored")
 	}

@@ -5,7 +5,6 @@ package serf
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log/slog"
 	"math/rand"
 	"os"
@@ -16,10 +15,7 @@ import (
 )
 
 func TestSnapshotter(t *testing.T) {
-	td, err := ioutil.TempDir("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
+	td := path.Join(os.TempDir(), fmt.Sprintf("serf-%d", rand.Int()))
 	defer os.RemoveAll(td)
 
 	clock := new(LamportClock)
