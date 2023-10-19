@@ -452,7 +452,7 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 
 	// Start the IPC layer
 	c.Ui.Output("Starting Serf agent RPC...")
-	ipc := NewAgentIPC(agent, config.RPCAuthKey, rpcListener, logOutput, logWriter)
+	ipc := NewAgentIPC(agent, config.RPCAuthKey, rpcListener, logOutput, logWriter, config.MsgpackUseNewTimeFormat)
 
 	c.Ui.Output("Serf agent running!")
 	c.Ui.Info(fmt.Sprintf("                  Node name: '%s'", config.NodeName))

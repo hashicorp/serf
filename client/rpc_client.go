@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/hashicorp/go-msgpack/v2/codec"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/coordinate"
 )
@@ -53,6 +53,12 @@ type Config struct {
 	// If provided, overrides the DefaultTimeout used for
 	// IO deadlines
 	Timeout time.Duration
+
+	// MsgpackUseNewTimeFormat is used to force the underlying msgpack codec to
+	// use the newer format of time.Time when encoding, used in versions <=0.5.5
+	// by default. Decoding is not affected, as all decoders know how to decode
+	// both formats.
+	MsgpackUseNewTimeFormat bool
 }
 
 // RPCClient is used to make requests to the Agent using an RPC mechanism.
@@ -144,10 +150,14 @@ func ClientFromConfig(c *Config) (*RPCClient, error) {
 		dispatch:   make(map[uint64]seqHandler),
 		shutdownCh: make(chan struct{}),
 	}
-	client.dec = codec.NewDecoder(client.reader,
-		&codec.MsgpackHandle{RawToString: true, WriteExt: true})
-	client.enc = codec.NewEncoder(client.writer,
-		&codec.MsgpackHandle{RawToString: true, WriteExt: true})
+	handle := &codec.MsgpackHandle{
+		WriteExt: true,
+		BasicHandle: codec.BasicHandle{
+			TimeNotBuiltin: !c.MsgpackUseNewTimeFormat,
+		},
+	}
+	client.dec = codec.NewDecoder(client.reader, handle)
+	client.enc = codec.NewEncoder(client.writer, handle)
 	go client.listen()
 
 	// Do the initial handshake
@@ -202,8 +212,8 @@ func (c *RPCClient) ForceLeave(node string) error {
 	return c.genericRPC(&header, &req, nil)
 }
 
-//ForceLeavePrune uses ForceLeave but is used to reap the
-//node entirely
+// ForceLeavePrune uses ForceLeave but is used to reap the
+// node entirely
 func (c *RPCClient) ForceLeavePrune(node string) error {
 	header := requestHeader{
 		Command: forceLeaveCommand,

@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/hashicorp/go-msgpack/v2/codec"
 )
 
 func TestQueryFlags(t *testing.T) {
@@ -23,7 +23,7 @@ func TestQueryFlags(t *testing.T) {
 
 func TestEncodeMessage(t *testing.T) {
 	in := &messageLeave{Node: "foo"}
-	raw, err := encodeMessage(messageLeaveType, in)
+	raw, err := encodeMessage(messageLeaveType, in, false)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}

@@ -115,7 +115,7 @@ func (k *KeyManager) handleKeyRequest(key, query string, opts *KeyRequestOptions
 	}
 
 	// Encode the query request
-	req, err := encodeMessage(messageKeyRequestType, keyRequest{Key: rawKey})
+	req, err := encodeMessage(messageKeyRequestType, keyRequest{Key: rawKey}, k.serf.msgpackUseNewTimeFormat)
 	if err != nil {
 		return resp, err
 	}

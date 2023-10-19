@@ -38,7 +38,7 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
-	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/hashicorp/go-msgpack/v2/codec"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/coordinate"
 	"github.com/hashicorp/serf/serf"
@@ -241,14 +241,15 @@ type memberEventRecord struct {
 
 type AgentIPC struct {
 	sync.Mutex
-	agent     *Agent
-	authKey   string
-	clients   map[string]*IPCClient
-	listener  net.Listener
-	logger    *log.Logger
-	logWriter *logWriter
-	stop      uint32
-	stopCh    chan struct{}
+	agent                   *Agent
+	authKey                 string
+	clients                 map[string]*IPCClient
+	listener                net.Listener
+	logger                  *log.Logger
+	logWriter               *logWriter
+	stop                    uint32
+	stopCh                  chan struct{}
+	msgpackUseNewTimeFormat bool
 }
 
 type IPCClient struct {
@@ -330,18 +331,19 @@ func (c *IPCClient) RegisterQuery(q *serf.Query) uint64 {
 
 // NewAgentIPC is used to create a new Agent IPC handler
 func NewAgentIPC(agent *Agent, authKey string, listener net.Listener,
-	logOutput io.Writer, logWriter *logWriter) *AgentIPC {
+	logOutput io.Writer, logWriter *logWriter, msgpackUseNewTimeFormat bool) *AgentIPC {
 	if logOutput == nil {
 		logOutput = os.Stderr
 	}
 	ipc := &AgentIPC{
-		agent:     agent,
-		authKey:   authKey,
-		clients:   make(map[string]*IPCClient),
-		listener:  listener,
-		logger:    log.New(logOutput, "", log.LstdFlags),
-		logWriter: logWriter,
-		stopCh:    make(chan struct{}),
+		agent:                   agent,
+		authKey:                 authKey,
+		clients:                 make(map[string]*IPCClient),
+		listener:                listener,
+		logger:                  log.New(logOutput, "", log.LstdFlags),
+		logWriter:               logWriter,
+		stopCh:                  make(chan struct{}),
+		msgpackUseNewTimeFormat: msgpackUseNewTimeFormat,
 	}
 	go ipc.listen()
 	return ipc
@@ -393,10 +395,14 @@ func (i *AgentIPC) listen() {
 			eventStreams:   make(map[uint64]*eventStream),
 			pendingQueries: make(map[uint64]*serf.Query),
 		}
-		client.dec = codec.NewDecoder(client.reader,
-			&codec.MsgpackHandle{RawToString: true, WriteExt: true})
-		client.enc = codec.NewEncoder(client.writer,
-			&codec.MsgpackHandle{RawToString: true, WriteExt: true})
+		handle := &codec.MsgpackHandle{
+			WriteExt: true,
+			BasicHandle: codec.BasicHandle{
+				TimeNotBuiltin: !i.msgpackUseNewTimeFormat,
+			},
+		}
+		client.dec = codec.NewDecoder(client.reader, handle)
+		client.enc = codec.NewEncoder(client.writer, handle)
 
 		// Register the client
 		i.Lock()
