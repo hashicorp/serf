@@ -54,10 +54,10 @@ type Config struct {
 	// IO deadlines
 	Timeout time.Duration
 
-	// MsgpackUseNewTimeFormat is used to force the underlying msgpack codec to
-	// use the newer format of time.Time when encoding, used in versions <=0.5.5
-	// by default. Decoding is not affected, as all decoders know how to decode
-	// both formats.
+	// MsgpackUseNewTimeFormat when set to true, force the underlying msgpack
+	// codec to use the new format of time.Time when encoding (used in
+	// go-msgpack v1.1.5 by default). Decoding is not affected, as all
+	// go-msgpack v2.1.0+ decoders know how to decode both formats.
 	MsgpackUseNewTimeFormat bool
 }
 
