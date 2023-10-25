@@ -1,6 +1,6 @@
 module github.com/hashicorp/serf
 
-go 1.20
+go 1.19
 
 require (
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
