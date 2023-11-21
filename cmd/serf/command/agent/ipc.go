@@ -372,6 +372,15 @@ func (i *AgentIPC) isStopped() bool {
 	return atomic.LoadUint32(&i.stop) == 1
 }
 
+func (i *AgentIPC) newMsgpackHandle() *codec.MsgpackHandle {
+	return &codec.MsgpackHandle{
+		WriteExt: true,
+		BasicHandle: codec.BasicHandle{
+			TimeNotBuiltin: !i.msgpackUseNewTimeFormat,
+		},
+	}
+}
+
 // listen is a long running routine that listens for new clients
 func (i *AgentIPC) listen() {
 	for {
@@ -395,14 +404,8 @@ func (i *AgentIPC) listen() {
 			eventStreams:   make(map[uint64]*eventStream),
 			pendingQueries: make(map[uint64]*serf.Query),
 		}
-		handle := &codec.MsgpackHandle{
-			WriteExt: true,
-			BasicHandle: codec.BasicHandle{
-				TimeNotBuiltin: !i.msgpackUseNewTimeFormat,
-			},
-		}
-		client.dec = codec.NewDecoder(client.reader, handle)
-		client.enc = codec.NewEncoder(client.writer, handle)
+		client.dec = codec.NewDecoder(client.reader, i.newMsgpackHandle())
+		client.enc = codec.NewEncoder(client.writer, i.newMsgpackHandle())
 
 		// Register the client
 		i.Lock()

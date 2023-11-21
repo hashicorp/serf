@@ -125,6 +125,15 @@ func NewRPCClient(addr string) (*RPCClient, error) {
 	return ClientFromConfig(&conf)
 }
 
+func (c *Config) newMsgpackHandle() *codec.MsgpackHandle {
+	return &codec.MsgpackHandle{
+		WriteExt: true,
+		BasicHandle: codec.BasicHandle{
+			TimeNotBuiltin: !c.MsgpackUseNewTimeFormat,
+		},
+	}
+}
+
 // ClientFromConfig is used to create a new RPC client given the
 // configuration object. This will return a client, or an error if
 // the connection could not be established.
@@ -150,14 +159,8 @@ func ClientFromConfig(c *Config) (*RPCClient, error) {
 		dispatch:   make(map[uint64]seqHandler),
 		shutdownCh: make(chan struct{}),
 	}
-	handle := &codec.MsgpackHandle{
-		WriteExt: true,
-		BasicHandle: codec.BasicHandle{
-			TimeNotBuiltin: !c.MsgpackUseNewTimeFormat,
-		},
-	}
-	client.dec = codec.NewDecoder(client.reader, handle)
-	client.enc = codec.NewEncoder(client.writer, handle)
+	client.dec = codec.NewDecoder(client.reader, c.newMsgpackHandle())
+	client.enc = codec.NewEncoder(client.writer, c.newMsgpackHandle())
 	go client.listen()
 
 	// Do the initial handshake
