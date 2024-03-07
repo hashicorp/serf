@@ -5,11 +5,11 @@ package serf
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"log/slog"
 	"math/rand"
 	"net"
 	"os"
@@ -30,7 +30,7 @@ import (
 // version to memberlist below.
 const (
 	ProtocolVersionMin uint8 = 2
-	ProtocolVersionMax       = 5
+	ProtocolVersionMax uint8 = 5
 )
 
 const (
@@ -42,15 +42,10 @@ const (
 const MaxNodeNameLength int = 128
 
 var (
-	// FeatureNotSupported is returned if a feature cannot be used
+	// ErrFeatureNotSupported is returned if a feature cannot be used
 	// due to an older protocol version being used.
-	FeatureNotSupported = fmt.Errorf("Feature not supported")
+	ErrFeatureNotSupported = fmt.Errorf("feature not supported")
 )
-
-func init() {
-	// Seed the random number generator
-	rand.Seed(time.Now().UnixNano())
-}
 
 // ReconnectTimeoutOverrider is an interface that can be implemented to allow overriding
 // the reconnect timeout for individual members.
@@ -96,7 +91,7 @@ type Serf struct {
 	queryResponse   map[LamportTime]*QueryResponse
 	queryLock       sync.RWMutex
 
-	logger     *log.Logger
+	logger     *slog.Logger
 	joinLock   sync.Mutex
 	stateLock  sync.Mutex
 	state      SerfState
@@ -218,7 +213,7 @@ func (ue *userEvent) Equals(other *userEvent) bool {
 	if ue.Name != other.Name {
 		return false
 	}
-	if bytes.Compare(ue.Payload, other.Payload) != 0 {
+	if !bytes.Equal(ue.Payload, other.Payload) {
 		return false
 	}
 	return true
@@ -249,10 +244,10 @@ const (
 func Create(conf *Config) (*Serf, error) {
 	conf.Init()
 	if conf.ProtocolVersion < ProtocolVersionMin {
-		return nil, fmt.Errorf("Protocol version '%d' too low. Must be in range: [%d, %d]",
+		return nil, fmt.Errorf("protocol version '%d' too low. Must be in range: [%d, %d]",
 			conf.ProtocolVersion, ProtocolVersionMin, ProtocolVersionMax)
 	} else if conf.ProtocolVersion > ProtocolVersionMax {
-		return nil, fmt.Errorf("Protocol version '%d' too high. Must be in range: [%d, %d]",
+		return nil, fmt.Errorf("protocol version '%d' too high. Must be in range: [%d, %d]",
 			conf.ProtocolVersion, ProtocolVersionMin, ProtocolVersionMax)
 	}
 
@@ -266,7 +261,13 @@ func Create(conf *Config) (*Serf, error) {
 		if logOutput == nil {
 			logOutput = os.Stderr
 		}
-		logger = log.New(logOutput, "", log.LstdFlags)
+		handlerOpts := slog.HandlerOptions{}
+		if conf.LogLevel != nil {
+			handlerOpts.Level = conf.LogLevel
+			handlerOpts.AddSource = handlerOpts.Level == slog.LevelDebug
+		}
+		handler := slog.NewTextHandler(logOutput, &handlerOpts)
+		logger = slog.New(handler)
 	}
 
 	serf := &Serf{
@@ -282,7 +283,7 @@ func Create(conf *Config) (*Serf, error) {
 
 	// Check that the meta data length is okay
 	if len(serf.encodeTags(conf.Tags)) > memberlist.MetaMaxSize {
-		return nil, fmt.Errorf("Encoded length of tags exceeds limit of %d bytes", memberlist.MetaMaxSize)
+		return nil, fmt.Errorf("encoded length of tags exceeds limit of %d bytes", memberlist.MetaMaxSize)
 	}
 	if err := serf.ValidateNodeNames(); err != nil {
 		return nil, err
@@ -314,7 +315,7 @@ func Create(conf *Config) (*Serf, error) {
 	// the queries
 	outCh, err := newSerfQueries(serf, serf.logger, conf.EventCh, serf.shutdownCh)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to setup serf query handler: %v", err)
+		return nil, fmt.Errorf("failed to setup serf query handler: %v", err)
 	}
 	conf.EventCh = outCh
 
@@ -324,7 +325,7 @@ func Create(conf *Config) (*Serf, error) {
 		coordinateConfig.MetricLabels = serf.metricLabels
 		serf.coordClient, err = coordinate.NewClient(coordinateConfig)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to create coordinate client: %v", err)
+			return nil, fmt.Errorf("failed to create coordinate client: %v", err)
 		}
 	}
 
@@ -341,7 +342,7 @@ func Create(conf *Config) (*Serf, error) {
 			conf.EventCh,
 			serf.shutdownCh)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to setup snapshot: %v", err)
+			return nil, fmt.Errorf("failed to setup snapshot: %v", err)
 		}
 		snap.metricLabels = serf.metricLabels
 		serf.snapshotter = snap
@@ -420,7 +421,7 @@ func Create(conf *Config) (*Serf, error) {
 	// and failure detection for the Serf instance.
 	memberlist, err := memberlist.Create(conf.MemberlistConfig)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create memberlist: %v", err)
+		return nil, fmt.Errorf("failed to create memberlist: %v", err)
 	}
 
 	serf.memberlist = memberlist
@@ -533,7 +534,7 @@ func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
 func (s *Serf) Query(name string, payload []byte, params *QueryParam) (*QueryResponse, error) {
 	// Check that the latest protocol is in use
 	if s.ProtocolVersion() < 4 {
-		return nil, FeatureNotSupported
+		return nil, ErrFeatureNotSupported
 	}
 
 	// Provide default parameters if none given
@@ -549,7 +550,7 @@ func (s *Serf) Query(name string, payload []byte, params *QueryParam) (*QueryRes
 	// Encode the filters
 	filters, err := params.encodeFilters()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to format filters: %v", err)
+		return nil, fmt.Errorf("failed to format filters: %v", err)
 	}
 
 	// Setup the flags
@@ -623,7 +624,7 @@ func (s *Serf) registerQueryResponse(timeout time.Duration, resp *QueryResponse)
 func (s *Serf) SetTags(tags map[string]string) error {
 	// Check that the meta data length is okay
 	if len(s.encodeTags(tags)) > memberlist.MetaMaxSize {
-		return fmt.Errorf("Encoded length of tags exceeds limit of %d bytes",
+		return fmt.Errorf("encoded length of tags exceeds limit of %d bytes",
 			memberlist.MetaMaxSize)
 	}
 
@@ -641,7 +642,7 @@ func (s *Serf) SetTags(tags map[string]string) error {
 func (s *Serf) Join(existing []string, ignoreOld bool) (int, error) {
 	// Do a quick state check
 	if s.State() != SerfAlive {
-		return 0, fmt.Errorf("Serf can't Join after Leave or Shutdown")
+		return 0, fmt.Errorf("serf can't Join after Leave or Shutdown")
 	}
 
 	// Hold the joinLock, this is to make eventJoinIgnore safe
@@ -688,7 +689,7 @@ func (s *Serf) broadcastJoin(ltime LamportTime) error {
 
 	// Start broadcasting the update
 	if err := s.broadcast(messageJoinType, &msg, nil); err != nil {
-		s.logger.Printf("[WARN] serf: Failed to broadcast join intent: %v", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Failed to broadcast join intent", slog.String("error", err.Error()))
 		return err
 	}
 	return nil
@@ -705,10 +706,10 @@ func (s *Serf) Leave() error {
 		return nil
 	} else if s.state == SerfLeaving {
 		s.stateLock.Unlock()
-		return fmt.Errorf("Leave already in progress")
+		return fmt.Errorf("leave already in progress")
 	} else if s.state == SerfShutdown {
 		s.stateLock.Unlock()
-		return fmt.Errorf("Leave called after Shutdown")
+		return fmt.Errorf("leave called after Shutdown")
 	}
 	s.state = SerfLeaving
 	s.stateLock.Unlock()
@@ -739,14 +740,14 @@ func (s *Serf) Leave() error {
 		select {
 		case <-notifyCh:
 		case <-time.After(s.config.BroadcastTimeout):
-			s.logger.Printf("[WARN] serf: timeout while waiting for graceful leave")
+			s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "timeout while waiting for graceful leave")
 		}
 	}
 
 	// Attempt the memberlist leave
 	err := s.memberlist.Leave(s.config.BroadcastTimeout)
 	if err != nil {
-		s.logger.Printf("[WARN] serf: timeout waiting for leave broadcast: %s", err.Error())
+		s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "timeout waiting for leave broadcast", slog.String("error", err.Error()))
 	}
 
 	// Wait for the leave to propagate through the cluster. The broadcast
@@ -870,7 +871,7 @@ func (s *Serf) Shutdown() error {
 	}
 
 	if s.state != SerfLeft {
-		s.logger.Printf("[WARN] serf: Shutdown without a Leave")
+		s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Shutdown without a Leave")
 	}
 
 	// Wait to close the shutdown channel until after we've shut down the
@@ -963,7 +964,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 		s.members[n.Name] = member
 	} else {
 		oldStatus = member.Status
-		deadTime := time.Now().Sub(member.leaveTime)
+		deadTime := time.Since(member.leaveTime)
 		if oldStatus == StatusFailed && deadTime < s.config.FlapTimeout {
 			metrics.IncrCounterWithLabels([]string{"serf", "member", "flap"}, 1, s.metricLabels)
 		}
@@ -995,8 +996,8 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 	metrics.IncrCounterWithLabels([]string{"serf", "member", "join"}, 1, s.metricLabels)
 
 	// Send an event along
-	s.logger.Printf("[INFO] serf: EventMemberJoin: %s %s",
-		member.Member.Name, member.Member.Addr)
+	s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "EventMemberJoin",
+		slog.String("name", member.Member.Name), slog.String("address", member.Member.Addr.String()))
 	if s.config.EventCh != nil {
 		s.config.EventCh <- MemberEvent{
 			Type:    EventMemberJoin,
@@ -1029,7 +1030,7 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 		s.failedMembers = append(s.failedMembers, member)
 	default:
 		// Unknown state that it was in? Just don't do anything
-		s.logger.Printf("[WARN] serf: Bad state when leave: %d", member.Status)
+		s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Bad state when leave", slog.String("status", member.Status.String()))
 		return
 	}
 
@@ -1044,8 +1045,7 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 	// Update some metrics
 	metrics.IncrCounterWithLabels([]string{"serf", "member", member.Status.String()}, 1, s.metricLabels)
 
-	s.logger.Printf("[INFO] serf: %s: %s %s",
-		eventStr, member.Member.Name, member.Member.Addr)
+	s.logger.LogAttrs(context.TODO(), slog.LevelInfo, eventStr, slog.String("name", member.Member.Name), slog.String("address", member.Member.Addr.String()))
 	if s.config.EventCh != nil {
 		s.config.EventCh <- MemberEvent{
 			Type:    event,
@@ -1089,7 +1089,7 @@ func (s *Serf) handleNodeUpdate(n *memberlist.Node) {
 	metrics.IncrCounterWithLabels([]string{"serf", "member", "update"}, 1, s.metricLabels)
 
 	// Send an event along
-	s.logger.Printf("[INFO] serf: EventMemberUpdate: %s", member.Member.Name)
+	s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "EventMemberUpdate", slog.String("name", member.Member.Name))
 	if s.config.EventCh != nil {
 		s.config.EventCh <- MemberEvent{
 			Type:    EventMemberUpdate,
@@ -1122,7 +1122,7 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 	// Refute us leaving if we are in the alive state
 	// Must be done in another goroutine since we have the memberLock
 	if leaveMsg.Node == s.config.NodeName && state == SerfAlive {
-		s.logger.Printf("[DEBUG] serf: Refuting an older leave intent")
+		s.logger.LogAttrs(context.TODO(), slog.LevelDebug, "Refuting an older leave intent")
 		go s.broadcastJoin(s.clock.Time())
 		return false
 	}
@@ -1166,8 +1166,8 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		// We must push a message indicating the node has now
 		// left to allow higher-level applications to handle the
 		// graceful leave.
-		s.logger.Printf("[INFO] serf: EventMemberLeave (forced): %s %s",
-			member.Member.Name, member.Member.Addr)
+		s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "[EventMemberLeave (forced)",
+			slog.String("name", member.Member.Name), slog.String("address", member.Member.Addr.String()))
 		if s.config.EventCh != nil {
 			s.config.EventCh <- MemberEvent{
 				Type:    EventMemberLeave,
@@ -1198,7 +1198,7 @@ func (s *Serf) handlePrune(member *memberState) {
 		time.Sleep(s.config.BroadcastTimeout + s.config.LeavePropagateDelay)
 	}
 
-	s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s %s", member.Name, member.Member.Addr)
+	s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "EventMemberReap (forced)", slog.String("name", member.Member.Name), slog.String("address", member.Member.Addr.String()))
 
 	//If we are leaving or left we may be in that list of members
 	if member.Status == StatusLeaving || member.Status == StatusLeft {
@@ -1257,11 +1257,11 @@ func (s *Serf) handleUserEvent(eventMsg *messageUserEvent) bool {
 	curTime := s.eventClock.Time()
 	if curTime > LamportTime(len(s.eventBuffer)) &&
 		eventMsg.LTime < curTime-LamportTime(len(s.eventBuffer)) {
-		s.logger.Printf(
-			"[WARN] serf: received old event %s from time %d (current: %d)",
-			eventMsg.Name,
-			eventMsg.LTime,
-			s.eventClock.Time())
+		s.logger.LogAttrs(context.TODO(), slog.LevelWarn,
+			"received old event",
+			slog.String("event", eventMsg.Name),
+			slog.Uint64("time", uint64(eventMsg.LTime)),
+			slog.Uint64("current time", uint64(s.eventClock.Time())))
 		return false
 	}
 
@@ -1316,11 +1316,11 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 	curTime := s.queryClock.Time()
 	if curTime > LamportTime(len(s.queryBuffer)) &&
 		query.LTime < curTime-LamportTime(len(s.queryBuffer)) {
-		s.logger.Printf(
-			"[WARN] serf: received old query %s from time %d (current: %d)",
-			query.Name,
-			query.LTime,
-			s.queryClock.Time())
+		s.logger.LogAttrs(context.TODO(), slog.LevelWarn,
+			"received old query",
+			slog.String("event", query.Name),
+			slog.Uint64("time", uint64(query.LTime)),
+			slog.Uint64("current time", uint64(s.queryClock.Time())))
 		return false
 	}
 
@@ -1369,7 +1369,7 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 		}
 		raw, err := encodeMessage(messageQueryResponseType, &ack)
 		if err != nil {
-			s.logger.Printf("[ERR] serf: failed to format ack: %v", err)
+			s.logger.LogAttrs(context.TODO(), slog.LevelError, "failed to format ack", slog.String("error", err.Error()))
 		} else {
 			udpAddr := net.UDPAddr{IP: query.Addr, Port: int(query.Port)}
 			addr := memberlist.Address{
@@ -1377,10 +1377,10 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 				Name: query.SourceNode,
 			}
 			if err := s.memberlist.SendToAddress(addr, raw); err != nil {
-				s.logger.Printf("[ERR] serf: failed to send ack: %v", err)
+				s.logger.LogAttrs(context.TODO(), slog.LevelError, "failed to send ack", slog.String("error", err.Error()))
 			}
 			if err := s.relayResponse(query.RelayFactor, udpAddr, query.SourceNode, &ack); err != nil {
-				s.logger.Printf("[ERR] serf: failed to relay ack: %v", err)
+				s.logger.LogAttrs(context.TODO(), slog.LevelError, "failed to relay ack", slog.String("error", err.Error()))
 			}
 		}
 	}
@@ -1410,15 +1410,15 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 	query, ok := s.queryResponse[resp.LTime]
 	s.queryLock.RUnlock()
 	if !ok {
-		s.logger.Printf("[WARN] serf: reply for non-running query (LTime: %d, ID: %d) From: %s",
-			resp.LTime, resp.ID, resp.From)
+		s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "reply for non-running query (LTime: %d, ID: %d) From: %s",
+			slog.Uint64("lamport time", uint64(resp.LTime)), slog.Uint64("ID", uint64(resp.ID)), slog.String("from", resp.From))
 		return
 	}
 
 	// Verify the ID matches
 	if query.id != resp.ID {
-		s.logger.Printf("[WARN] serf: query reply ID mismatch (Local: %d, Response: %d)",
-			query.id, resp.ID)
+		s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "query reply ID mismatch (Local: %d, Response: %d)",
+			slog.Uint64("local", uint64(query.id)), slog.Uint64("response", uint64(resp.ID)))
 		return
 	}
 
@@ -1438,7 +1438,7 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 		metrics.IncrCounterWithLabels([]string{"serf", "query_acks"}, 1, s.metricLabels)
 		err := query.sendAck(resp)
 		if err != nil {
-			s.logger.Printf("[WARN] %v", err)
+			s.logger.LogAttrs(context.TODO(), slog.LevelWarn, err.Error())
 		}
 	} else {
 		// Exit early if this is a duplicate response
@@ -1450,7 +1450,7 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 		metrics.IncrCounterWithLabels([]string{"serf", "query_responses"}, 1, s.metricLabels)
 		err := query.sendResponse(NodeResponse{From: resp.From, Payload: resp.Payload})
 		if err != nil {
-			s.logger.Printf("[WARN] %v", err)
+			s.logger.LogAttrs(context.TODO(), slog.LevelWarn, err.Error())
 		}
 	}
 }
@@ -1461,14 +1461,14 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 func (s *Serf) handleNodeConflict(existing, other *memberlist.Node) {
 	// Log a basic warning if the node is not us...
 	if existing.Name != s.config.NodeName {
-		s.logger.Printf("[WARN] serf: Name conflict for '%s' both %s:%d and %s:%d are claiming",
-			existing.Name, existing.Addr, existing.Port, other.Addr, other.Port)
+		s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Name conflict",
+			slog.String("name", existing.Name), slog.Group("existing", slog.String("addr", existing.Addr.String()), slog.Uint64("port", uint64(existing.Port))), slog.Group("other", slog.String("addr", other.Addr.String()), slog.Uint64("port", uint64(other.Port))))
 		return
 	}
 
 	// The current node is conflicting! This is an error
-	s.logger.Printf("[ERR] serf: Node name conflicts with another node at %s:%d. Names must be unique! (Resolution enabled: %v)",
-		other.Addr, other.Port, s.config.EnableNameConflictResolution)
+	s.logger.LogAttrs(context.TODO(), slog.LevelError, "Node name conflicts with another node. Names must be unique! (Resolution enabled: %v)",
+		slog.Group("conflicting node", slog.String("address", other.Addr.String()), slog.Uint64("port", uint64(other.Port))), slog.Bool("Resolution enabled", s.config.EnableNameConflictResolution))
 
 	// If automatic resolution is enabled, kick off the resolution
 	if s.config.EnableNameConflictResolution {
@@ -1487,7 +1487,7 @@ func (s *Serf) resolveNodeConflict() {
 	payload := []byte(s.config.NodeName)
 	resp, err := s.Query(qName, payload, nil)
 	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to start name resolution query: %v", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to start name resolution query", slog.String("error", err.Error()))
 		return
 	}
 
@@ -1499,12 +1499,12 @@ func (s *Serf) resolveNodeConflict() {
 	for r := range respCh {
 		// Decode the response
 		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageConflictResponseType {
-			s.logger.Printf("[ERR] serf: Invalid conflict query response type: %v", r.Payload)
+			s.logger.LogAttrs(context.TODO(), slog.LevelError, "Invalid conflict query response type", slog.String("payload", string(r.Payload)))
 			continue
 		}
 		var member Member
 		if err := decodeMessage(r.Payload[1:], &member); err != nil {
-			s.logger.Printf("[ERR] serf: Failed to decode conflict query response: %v", err)
+			s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to decode conflict query response", slog.String("error", err.Error()))
 			continue
 		}
 
@@ -1518,20 +1518,20 @@ func (s *Serf) resolveNodeConflict() {
 	// Query over, determine if we should live
 	majority := (responses / 2) + 1
 	if matching >= majority {
-		s.logger.Printf("[INFO] serf: majority in name conflict resolution [%d / %d]",
-			matching, responses)
+		s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "majority in name conflict resolution",
+			slog.Int("matching", matching), slog.Int("responses", responses))
 		return
 	}
 
 	// Since we lost the vote, we need to exit
-	s.logger.Printf("[WARN] serf: minority in name conflict resolution, quiting [%d / %d]",
-		matching, responses)
+	s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "minority in name conflict resolution, quiting",
+		slog.Int("matching", matching), slog.Int("responses", responses))
 	if err := s.Shutdown(); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to shutdown: %v", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to shutdown", slog.String("error", err.Error()))
 	}
 }
 
-//eraseNode takes a node completely out of the member list
+// eraseNode takes a node completely out of the member list
 func (s *Serf) eraseNode(m *memberState) {
 	// Delete from members
 	delete(s.members, m.Name)
@@ -1611,7 +1611,7 @@ func (s *Serf) reap(old []*memberState, now time.Time, timeout time.Duration) []
 		i--
 
 		// Delete from members and send out event
-		s.logger.Printf("[INFO] serf: EventMemberReap: %s", m.Name)
+		s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "EventMemberReap", slog.String("name", m.Name))
 		s.eraseNode(m)
 
 	}
@@ -1643,7 +1643,7 @@ func (s *Serf) reconnect() {
 	prob := numFailed / numAlive
 	if rand.Float32() > prob {
 		s.memberLock.RUnlock()
-		s.logger.Printf("[DEBUG] serf: forgoing reconnect for random throttling")
+		s.logger.LogAttrs(context.TODO(), slog.LevelDebug, "forgoing reconnect for random throttling")
 		return
 	}
 
@@ -1653,7 +1653,7 @@ func (s *Serf) reconnect() {
 
 	// Format the addr
 	addr := net.UDPAddr{IP: mem.Addr, Port: int(mem.Port)}
-	s.logger.Printf("[INFO] serf: attempting reconnect to %v %s", mem.Name, addr.String())
+	s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "attempting reconnect", slog.String("name", mem.Name), slog.String("address", addr.String()))
 
 	joinAddr := addr.String()
 	if mem.Name != "" {
@@ -1690,11 +1690,11 @@ func (s *Serf) checkQueueDepth(name string, queue *memberlist.TransmitLimitedQue
 			numq := queue.NumQueued()
 			metrics.AddSampleWithLabels([]string{"serf", "queue", name}, float32(numq), s.metricLabels)
 			if numq >= s.config.QueueDepthWarning {
-				s.logger.Printf("[WARN] serf: %s queue depth: %d", name, numq)
+				s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "%s queue depth: %d", slog.String("name", name), slog.Int("amount queued", numq))
 			}
 			if max := s.getQueueMax(); numq > max {
-				s.logger.Printf("[WARN] serf: %s queue depth (%d) exceeds limit (%d), dropping messages!",
-					name, numq, max)
+				s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "%s queue depth (%d) exceeds limit (%d), dropping messages!",
+					slog.String("name", name), slog.Int("queue depth", numq), slog.Int("limit", max))
 				queue.Prune(max)
 			}
 		case <-s.shutdownCh:
@@ -1772,14 +1772,14 @@ func (s *Serf) handleRejoin(previous []*PreviousNode) {
 			joinAddr = prev.Name + "/" + prev.Addr
 		}
 
-		s.logger.Printf("[INFO] serf: Attempting re-join to previously known node: %s", prev)
+		s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Attempting re-join to previously known node", slog.String("previous", prev.String()))
 		_, err := s.memberlist.Join([]string{joinAddr})
 		if err == nil {
-			s.logger.Printf("[INFO] serf: Re-joined to previously known node: %s", prev)
+			s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Re-joined to previously known node", slog.String("previous", prev.String()))
 			return
 		}
 	}
-	s.logger.Printf("[WARN] serf: Failed to re-join any previously known node")
+	s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Failed to re-join any previously known node")
 }
 
 // encodeTags is used to encode a tag map
@@ -1814,7 +1814,7 @@ func (s *Serf) decodeTags(buf []byte) map[string]string {
 	r := bytes.NewReader(buf[1:])
 	dec := codec.NewDecoder(r, &codec.MsgpackHandle{})
 	if err := dec.Decode(&tags); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to decode tags: %v", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to decode tags", slog.String("error", err.Error()))
 	}
 	return tags
 }
@@ -1866,12 +1866,12 @@ func (s *Serf) writeKeyringFile() error {
 
 	encodedKeys, err := json.MarshalIndent(keysEncoded, "", "  ")
 	if err != nil {
-		return fmt.Errorf("Failed to encode keys: %s", err)
+		return fmt.Errorf("failed to encode keys: %s", err)
 	}
 
 	// Use 0600 for permissions because key data is sensitive
-	if err = ioutil.WriteFile(s.config.KeyringFile, encodedKeys, 0600); err != nil {
-		return fmt.Errorf("Failed to write keyring file: %s", err)
+	if err = os.WriteFile(s.config.KeyringFile, encodedKeys, 0600); err != nil {
+		return fmt.Errorf("failed to write keyring file: %s", err)
 	}
 
 	// Success!
@@ -1884,7 +1884,7 @@ func (s *Serf) GetCoordinate() (*coordinate.Coordinate, error) {
 		return s.coordClient.GetCoordinate(), nil
 	}
 
-	return nil, fmt.Errorf("Coordinates are disabled")
+	return nil, fmt.Errorf("coordinates are disabled")
 }
 
 // GetCachedCoordinate returns the network coordinate for the node with the given
@@ -1923,11 +1923,11 @@ func (s *Serf) validateNodeName(name string) error {
 	if s.config.ValidateNodeNames {
 		var InvalidNameRe = regexp.MustCompile(`[^A-Za-z0-9\-\.]+`)
 		if InvalidNameRe.MatchString(name) {
-			return fmt.Errorf("Node name contains invalid characters %v , Valid characters include "+
+			return fmt.Errorf("node name contains invalid characters %v , Valid characters include "+
 				"all alpha-numerics and dashes and '.' ", name)
 		}
 		if len(name) > MaxNodeNameLength {
-			return fmt.Errorf("Node name is %v characters. "+
+			return fmt.Errorf("node name is %v characters. "+
 				"Valid length is between 1 and 128 characters", len(name))
 		}
 	}

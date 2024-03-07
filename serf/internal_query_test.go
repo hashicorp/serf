@@ -4,7 +4,7 @@
 package serf
 
 import (
-	"log"
+	"log/slog"
 	"os"
 	"strings"
 	"testing"
@@ -20,11 +20,15 @@ func TestInternalQueryName(t *testing.T) {
 
 func TestSerfQueries_Passthrough(t *testing.T) {
 	serf := &Serf{}
-	logger := log.New(os.Stderr, "", log.LstdFlags)
 	outCh := make(chan Event, 4)
 	shutdown := make(chan struct{})
 	defer close(shutdown)
-	eventCh, err := newSerfQueries(serf, logger, outCh, shutdown)
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stdout, handlerOpts)
+	eventCh, err := newSerfQueries(serf, slog.New(handler), outCh, shutdown)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -50,11 +54,15 @@ func TestSerfQueries_Passthrough(t *testing.T) {
 
 func TestSerfQueries_Ping(t *testing.T) {
 	serf := &Serf{}
-	logger := log.New(os.Stderr, "", log.LstdFlags)
 	outCh := make(chan Event, 4)
 	shutdown := make(chan struct{})
 	defer close(shutdown)
-	eventCh, err := newSerfQueries(serf, logger, outCh, shutdown)
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stdout, handlerOpts)
+	eventCh, err := newSerfQueries(serf, slog.New(handler), outCh, shutdown)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -72,11 +80,15 @@ func TestSerfQueries_Ping(t *testing.T) {
 
 func TestSerfQueries_Conflict_SameName(t *testing.T) {
 	serf := &Serf{config: &Config{NodeName: "foo"}}
-	logger := log.New(os.Stderr, "", log.LstdFlags)
 	outCh := make(chan Event, 4)
 	shutdown := make(chan struct{})
 	defer close(shutdown)
-	eventCh, err := newSerfQueries(serf, logger, outCh, shutdown)
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stdout, handlerOpts)
+	eventCh, err := newSerfQueries(serf, slog.New(handler), outCh, shutdown)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -124,7 +136,12 @@ func TestSerfQueries_estimateMaxKeysInListKeyResponseFactor(t *testing.T) {
 }
 
 func TestSerfQueries_keyListResponseWithCorrectSize(t *testing.T) {
-	s := serfQueries{logger: log.New(os.Stderr, "", log.LstdFlags)}
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stdout, handlerOpts)
+	s := serfQueries{logger: slog.New(handler)}
 	q := Query{id: 0, serf: &Serf{config: &Config{NodeName: "", QueryResponseSizeLimit: 1024}}}
 	cases := []struct {
 		resp     nodeKeyResponse

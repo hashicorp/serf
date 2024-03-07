@@ -4,8 +4,9 @@
 package agent
 
 import (
+	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/hashicorp/serf/serf"
 )
@@ -20,16 +21,16 @@ type eventStream struct {
 	client  streamClient
 	eventCh chan serf.Event
 	filters []EventFilter
-	logger  *log.Logger
+	logger  *slog.Logger
 	seq     uint64
 }
 
-func newEventStream(client streamClient, filters []EventFilter, seq uint64, logger *log.Logger) *eventStream {
+func newEventStream(client streamClient, filters []EventFilter, seq uint64, logger *slog.Logger) *eventStream {
 	es := &eventStream{
 		client:  client,
 		eventCh: make(chan serf.Event, 512),
 		filters: filters,
-		logger:  logger,
+		logger:  logger.WithGroup("agent.ipc"),
 		seq:     seq,
 	}
 	go es.stream()
@@ -50,7 +51,7 @@ HANDLE:
 	select {
 	case es.eventCh <- e:
 	default:
-		es.logger.Printf("[WARN] agent.ipc: Dropping event to %v", es.client)
+		es.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Dropping event", slog.Any("to", es.client))
 	}
 }
 
@@ -69,11 +70,11 @@ func (es *eventStream) stream() {
 		case *serf.Query:
 			err = es.sendQuery(e)
 		default:
-			err = fmt.Errorf("Unknown event type: %s", event.EventType().String())
+			err = fmt.Errorf("unknown event type: %s", event.EventType().String())
 		}
 		if err != nil {
-			es.logger.Printf("[ERR] agent.ipc: Failed to stream event to %v: %v",
-				es.client, err)
+			es.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to stream event to %v: %v",
+				slog.Any("destination", es.client), slog.String("error", err.Error()))
 			return
 		}
 	}

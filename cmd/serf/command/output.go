@@ -28,7 +28,7 @@ func formatOutput(data interface{}, format string) ([]byte, error) {
 		out = data.(fmt.Stringer).String()
 
 	default:
-		return nil, fmt.Errorf("Invalid output format \"%s\"", format)
+		return nil, fmt.Errorf("invalid output format \"%s\"", format)
 
 	}
 	return []byte(prepareOutput(out)), nil

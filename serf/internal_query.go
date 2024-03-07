@@ -4,9 +4,10 @@
 package serf
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 )
 
@@ -50,7 +51,7 @@ func internalQueryName(name string) string {
 // _serf and respond to them as appropriate.
 type serfQueries struct {
 	inCh       chan Event
-	logger     *log.Logger
+	logger     *slog.Logger
 	outCh      chan<- Event
 	serf       *Serf
 	shutdownCh <-chan struct{}
@@ -75,11 +76,11 @@ type nodeKeyResponse struct {
 // newSerfQueries is used to create a new serfQueries. We return an event
 // channel that is ingested and forwarded to an outCh. Any Queries that
 // have the InternalQueryPrefix are handled instead of forwarded.
-func newSerfQueries(serf *Serf, logger *log.Logger, outCh chan<- Event, shutdownCh <-chan struct{}) (chan<- Event, error) {
+func newSerfQueries(serf *Serf, logger *slog.Logger, outCh chan<- Event, shutdownCh <-chan struct{}) (chan<- Event, error) {
 	inCh := make(chan Event, 1024)
 	q := &serfQueries{
 		inCh:       inCh,
-		logger:     logger,
+		logger:     logger.WithGroup("serf"),
 		outCh:      outCh,
 		serf:       serf,
 		shutdownCh: shutdownCh,
@@ -125,7 +126,7 @@ func (s *serfQueries) handleQuery(q *Query) {
 	case listKeysQuery:
 		s.handleListKeys(q)
 	default:
-		s.logger.Printf("[WARN] serf: Unhandled internal query '%s'", queryName)
+		s.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Unhandled internal query", slog.String("name", queryName))
 	}
 }
 
@@ -140,7 +141,7 @@ func (s *serfQueries) handleConflict(q *Query) {
 	if node == s.serf.config.NodeName {
 		return
 	}
-	s.logger.Printf("[DEBUG] serf: Got conflict resolution query for '%s'", node)
+	s.logger.LogAttrs(context.TODO(), slog.LevelDebug, "Got conflict resolution query", slog.String("node", node))
 
 	// Look for the member info
 	var out *Member
@@ -153,13 +154,13 @@ func (s *serfQueries) handleConflict(q *Query) {
 	// Encode the response
 	buf, err := encodeMessage(messageConflictResponseType, out)
 	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to encode conflict query response: %v", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to encode conflict query response", slog.String("error", err.Error()))
 		return
 	}
 
 	// Send our answer
 	if err := q.Respond(buf); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to respond to conflict query: %v", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to respond to conflict query: %v", slog.String("error", err.Error()))
 	}
 }
 
@@ -196,11 +197,11 @@ func (s *serfQueries) keyListResponseWithCorrectSize(q *Query, resp *nodeKeyResp
 		}
 
 		if actual > i {
-			s.logger.Printf("[WARN] serf: %s", resp.Message)
+			s.logger.LogAttrs(context.TODO(), slog.LevelWarn, resp.Message)
 		}
 		return raw, qresp, nil
 	}
-	return nil, messageQueryResponse{}, fmt.Errorf("Failed to truncate response so that it fits into message")
+	return nil, messageQueryResponse{}, fmt.Errorf("failed to truncate response so that it fits into message")
 }
 
 // sendKeyResponse handles responding to key-related queries.
@@ -209,21 +210,21 @@ func (s *serfQueries) sendKeyResponse(q *Query, resp *nodeKeyResponse) {
 	case internalQueryName(listKeysQuery):
 		raw, qresp, err := s.keyListResponseWithCorrectSize(q, resp)
 		if err != nil {
-			s.logger.Printf("[ERR] serf: %v", err)
+			s.logger.LogAttrs(context.TODO(), slog.LevelError, err.Error())
 			return
 		}
 		if err := q.respondWithMessageAndResponse(raw, qresp); err != nil {
-			s.logger.Printf("[ERR] serf: Failed to respond to key query: %v", err)
+			s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to respond to key query", slog.String("error", err.Error()))
 			return
 		}
 	default:
 		buf, err := encodeMessage(messageKeyResponseType, resp)
 		if err != nil {
-			s.logger.Printf("[ERR] serf: Failed to encode key response: %v", err)
+			s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to encode key response", slog.String("error", err.Error()))
 			return
 		}
 		if err := q.Respond(buf); err != nil {
-			s.logger.Printf("[ERR] serf: Failed to respond to key query: %v", err)
+			s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to respond to key query", slog.String("error", err.Error()))
 			return
 		}
 	}
@@ -241,27 +242,27 @@ func (s *serfQueries) handleInstallKey(q *Query) {
 
 	err := decodeMessage(q.Payload[1:], &req)
 	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to decode key request: %v", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to decode key request", slog.String("error", err.Error()))
 		goto SEND
 	}
 
 	if !s.serf.EncryptionEnabled() {
 		response.Message = "No keyring to modify (encryption not enabled)"
-		s.logger.Printf("[ERR] serf: No keyring to modify (encryption not enabled)")
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "No keyring to modify (encryption not enabled)")
 		goto SEND
 	}
 
-	s.logger.Printf("[INFO] serf: Received install-key query")
+	s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Received install-key query")
 	if err := keyring.AddKey(req.Key); err != nil {
 		response.Message = err.Error()
-		s.logger.Printf("[ERR] serf: Failed to install key: %s", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to install key", slog.String("error", err.Error()))
 		goto SEND
 	}
 
 	if s.serf.config.KeyringFile != "" {
 		if err := s.serf.writeKeyringFile(); err != nil {
 			response.Message = err.Error()
-			s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
+			s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to write keyring file", slog.String("error", err.Error()))
 			goto SEND
 		}
 	}
@@ -283,26 +284,26 @@ func (s *serfQueries) handleUseKey(q *Query) {
 
 	err := decodeMessage(q.Payload[1:], &req)
 	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to decode key request: %v", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to decode key request", slog.String("error", err.Error()))
 		goto SEND
 	}
 
 	if !s.serf.EncryptionEnabled() {
 		response.Message = "No keyring to modify (encryption not enabled)"
-		s.logger.Printf("[ERR] serf: No keyring to modify (encryption not enabled)")
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "No keyring to modify (encryption not enabled)")
 		goto SEND
 	}
 
-	s.logger.Printf("[INFO] serf: Received use-key query")
+	s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Received use-key query")
 	if err := keyring.UseKey(req.Key); err != nil {
 		response.Message = err.Error()
-		s.logger.Printf("[ERR] serf: Failed to change primary key: %s", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to change primary key", slog.String("error", err.Error()))
 		goto SEND
 	}
 
 	if err := s.serf.writeKeyringFile(); err != nil {
 		response.Message = err.Error()
-		s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to write keyring file", slog.String("error", err.Error()))
 		goto SEND
 	}
 
@@ -323,26 +324,26 @@ func (s *serfQueries) handleRemoveKey(q *Query) {
 
 	err := decodeMessage(q.Payload[1:], &req)
 	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to decode key request: %v", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to decode key request", slog.String("error", err.Error()))
 		goto SEND
 	}
 
 	if !s.serf.EncryptionEnabled() {
 		response.Message = "No keyring to modify (encryption not enabled)"
-		s.logger.Printf("[ERR] serf: No keyring to modify (encryption not enabled)")
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "No keyring to modify (encryption not enabled)")
 		goto SEND
 	}
 
-	s.logger.Printf("[INFO] serf: Received remove-key query")
+	s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Received remove-key query")
 	if err := keyring.RemoveKey(req.Key); err != nil {
 		response.Message = err.Error()
-		s.logger.Printf("[ERR] serf: Failed to remove key: %s", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to remove key", slog.String("error", err.Error()))
 		goto SEND
 	}
 
 	if err := s.serf.writeKeyringFile(); err != nil {
 		response.Message = err.Error()
-		s.logger.Printf("[ERR] serf: Failed to write keyring file: %s", err)
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to write keyring file", slog.String("error", err.Error()))
 		goto SEND
 	}
 
@@ -362,11 +363,11 @@ func (s *serfQueries) handleListKeys(q *Query) {
 	var primaryKeyBytes []byte
 	if !s.serf.EncryptionEnabled() {
 		response.Message = "Keyring is empty (encryption not enabled)"
-		s.logger.Printf("[ERR] serf: Keyring is empty (encryption not enabled)")
+		s.logger.LogAttrs(context.TODO(), slog.LevelError, "Keyring is empty (encryption not enabled)")
 		goto SEND
 	}
 
-	s.logger.Printf("[INFO] serf: Received list-keys query")
+	s.logger.LogAttrs(context.TODO(), slog.LevelInfo, "Received list-keys query")
 	for _, keyBytes := range keyring.GetKeys() {
 		// Encode the keys before sending the response. This should help take
 		// some the burden of doing this off of the asking member.

@@ -4,7 +4,8 @@
 package agent
 
 import (
-	"log"
+	"context"
+	"log/slog"
 
 	"github.com/hashicorp/logutils"
 )
@@ -14,17 +15,17 @@ type logStream struct {
 	client streamClient
 	filter *logutils.LevelFilter
 	logCh  chan string
-	logger *log.Logger
+	logger *slog.Logger
 	seq    uint64
 }
 
 func newLogStream(client streamClient, filter *logutils.LevelFilter,
-	seq uint64, logger *log.Logger) *logStream {
+	seq uint64, logger *slog.Logger) *logStream {
 	ls := &logStream{
 		client: client,
 		filter: filter,
 		logCh:  make(chan string, 512),
-		logger: logger,
+		logger: logger.WithGroup("agent.ipc"),
 		seq:    seq,
 	}
 	go ls.stream()
@@ -45,7 +46,7 @@ func (ls *logStream) HandleLog(l string) {
 		// from the logWriter, and a log will need to invoke Write() which
 		// already holds the lock. We must therefor do the log async, so
 		// as to not deadlock
-		go ls.logger.Printf("[WARN] agent.ipc: Dropping logs to %v", ls.client)
+		go ls.logger.LogAttrs(context.TODO(), slog.LevelWarn, "Dropping logs", slog.Any("client", ls.client))
 	}
 }
 
@@ -60,8 +61,8 @@ func (ls *logStream) stream() {
 	for line := range ls.logCh {
 		rec.Log = line
 		if err := ls.client.Send(&header, &rec); err != nil {
-			ls.logger.Printf("[ERR] agent.ipc: Failed to stream log to %v: %v",
-				ls.client, err)
+			ls.logger.LogAttrs(context.TODO(), slog.LevelError, " Failed to stream log",
+				slog.Any("client", ls.client), slog.String("error", err.Error()))
 			return
 		}
 	}

@@ -145,9 +145,9 @@ func ClientFromConfig(c *Config) (*RPCClient, error) {
 		shutdownCh: make(chan struct{}),
 	}
 	client.dec = codec.NewDecoder(client.reader,
-		&codec.MsgpackHandle{RawToString: true, WriteExt: true})
+		&codec.MsgpackHandle{WriteExt: true})
 	client.enc = codec.NewEncoder(client.writer,
-		&codec.MsgpackHandle{RawToString: true, WriteExt: true})
+		&codec.MsgpackHandle{WriteExt: true})
 	go client.listen()
 
 	// Do the initial handshake
@@ -202,8 +202,8 @@ func (c *RPCClient) ForceLeave(node string) error {
 	return c.genericRPC(&header, &req, nil)
 }
 
-//ForceLeavePrune uses ForceLeave but is used to reap the
-//node entirely
+// ForceLeavePrune uses ForceLeave but is used to reap the
+// node entirely
 func (c *RPCClient) ForceLeavePrune(node string) error {
 	header := requestHeader{
 		Command: forceLeaveCommand,
@@ -440,7 +440,7 @@ func (mh *monitorHandler) Cleanup() {
 	if !mh.closed {
 		if !mh.init {
 			mh.init = true
-			mh.initCh <- fmt.Errorf("Stream closed")
+			mh.initCh <- fmt.Errorf("stream closed")
 		}
 		if mh.logCh != nil {
 			close(mh.logCh)
@@ -522,7 +522,7 @@ func (sh *streamHandler) Cleanup() {
 	if !sh.closed {
 		if !sh.init {
 			sh.init = true
-			sh.initCh <- fmt.Errorf("Stream closed")
+			sh.initCh <- fmt.Errorf("stream closed")
 		}
 		if sh.eventCh != nil {
 			close(sh.eventCh)
@@ -623,7 +623,7 @@ func (qh *queryHandler) Cleanup() {
 	if !qh.closed {
 		if !qh.init {
 			qh.init = true
-			qh.initCh <- fmt.Errorf("Stream closed")
+			qh.initCh <- fmt.Errorf("stream closed")
 		}
 		if qh.ackCh != nil {
 			close(qh.ackCh)

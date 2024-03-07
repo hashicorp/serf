@@ -31,7 +31,7 @@ func DefaultConfig() *Config {
 		AdvertiseAddr:          "",
 		LogLevel:               "INFO",
 		RPCAddr:                "127.0.0.1:7373",
-		Protocol:               serf.ProtocolVersionMax,
+		Protocol:               int(serf.ProtocolVersionMax),
 		ReplayOnJoin:           false,
 		Profile:                "lan",
 		RetryInterval:          30 * time.Second,
@@ -377,7 +377,7 @@ func MergeConfig(a, b *Config) *Config {
 	if b.Role != "" {
 		result.Role = b.Role
 	}
-	if b.DisableCoordinates == true {
+	if b.DisableCoordinates {
 		result.DisableCoordinates = true
 	}
 	if b.Tags != nil {
@@ -409,7 +409,7 @@ func MergeConfig(a, b *Config) *Config {
 	if b.RPCAuthKey != "" {
 		result.RPCAuthKey = b.RPCAuthKey
 	}
-	if b.ReplayOnJoin != false {
+	if b.ReplayOnJoin {
 		result.ReplayOnJoin = b.ReplayOnJoin
 	}
 	if b.Profile != "" {
@@ -418,10 +418,10 @@ func MergeConfig(a, b *Config) *Config {
 	if b.SnapshotPath != "" {
 		result.SnapshotPath = b.SnapshotPath
 	}
-	if b.LeaveOnTerm == true {
+	if b.LeaveOnTerm {
 		result.LeaveOnTerm = true
 	}
-	if b.SkipLeaveOnInt == true {
+	if b.SkipLeaveOnInt {
 		result.SkipLeaveOnInt = true
 	}
 	if b.Discover != "" {
@@ -510,13 +510,13 @@ func ReadConfigPaths(paths []string) (*Config, error) {
 	for _, path := range paths {
 		f, err := os.Open(path)
 		if err != nil {
-			return nil, fmt.Errorf("Error reading '%s': %s", path, err)
+			return nil, fmt.Errorf("error reading '%s': %s", path, err)
 		}
 
 		fi, err := f.Stat()
 		if err != nil {
 			f.Close()
-			return nil, fmt.Errorf("Error reading '%s': %s", path, err)
+			return nil, fmt.Errorf("error reading '%s': %s", path, err)
 		}
 
 		if !fi.IsDir() {
@@ -524,7 +524,7 @@ func ReadConfigPaths(paths []string) (*Config, error) {
 			f.Close()
 
 			if err != nil {
-				return nil, fmt.Errorf("Error decoding '%s': %s", path, err)
+				return nil, fmt.Errorf("error decoding '%s': %s", path, err)
 			}
 
 			result = MergeConfig(result, config)
@@ -534,7 +534,7 @@ func ReadConfigPaths(paths []string) (*Config, error) {
 		contents, err := f.Readdir(-1)
 		f.Close()
 		if err != nil {
-			return nil, fmt.Errorf("Error reading '%s': %s", path, err)
+			return nil, fmt.Errorf("error reading '%s': %s", path, err)
 		}
 
 		// Sort the contents, ensures lexical order
@@ -554,14 +554,14 @@ func ReadConfigPaths(paths []string) (*Config, error) {
 			subpath := filepath.Join(path, fi.Name())
 			f, err := os.Open(subpath)
 			if err != nil {
-				return nil, fmt.Errorf("Error reading '%s': %s", subpath, err)
+				return nil, fmt.Errorf("error reading '%s': %s", subpath, err)
 			}
 
 			config, err := DecodeConfig(f)
 			f.Close()
 
 			if err != nil {
-				return nil, fmt.Errorf("Error decoding '%s': %s", subpath, err)
+				return nil, fmt.Errorf("error decoding '%s': %s", subpath, err)
 			}
 
 			result = MergeConfig(result, config)

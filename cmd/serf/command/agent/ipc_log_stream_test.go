@@ -4,7 +4,7 @@
 package agent
 
 import (
-	"log"
+	"log/slog"
 	"os"
 	"testing"
 	"time"
@@ -17,7 +17,12 @@ func TestIPCLogStream(t *testing.T) {
 	filter := LevelFilter()
 	filter.MinLevel = logutils.LogLevel("INFO")
 
-	ls := newLogStream(sc, filter, 42, log.New(os.Stderr, "", log.LstdFlags))
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stdout, handlerOpts)
+	ls := newLogStream(sc, filter, 42, slog.New(handler))
 	defer ls.Stop()
 
 	log := "[DEBUG] this is a test log"

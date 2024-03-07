@@ -4,7 +4,8 @@
 package agent
 
 import (
-	"log"
+	"context"
+	"log/slog"
 	"time"
 
 	"github.com/hashicorp/serf/serf"
@@ -13,11 +14,11 @@ import (
 // queryResponseStream is used to stream the query results back to a client
 type queryResponseStream struct {
 	client streamClient
-	logger *log.Logger
+	logger *slog.Logger
 	seq    uint64
 }
 
-func newQueryResponseStream(client streamClient, seq uint64, logger *log.Logger) *queryResponseStream {
+func newQueryResponseStream(client streamClient, seq uint64, logger *slog.Logger) *queryResponseStream {
 	qs := &queryResponseStream{
 		client: client,
 		logger: logger,
@@ -29,7 +30,7 @@ func newQueryResponseStream(client streamClient, seq uint64, logger *log.Logger)
 // Stream is a long running routine used to stream the results of a query back to a client
 func (qs *queryResponseStream) Stream(resp *serf.QueryResponse) {
 	// Setup a timer for the query ending
-	remaining := resp.Deadline().Sub(time.Now())
+	remaining := time.Until(resp.Deadline())
 	done := time.After(remaining)
 
 	ackCh := resp.AckCh()
@@ -38,17 +39,17 @@ func (qs *queryResponseStream) Stream(resp *serf.QueryResponse) {
 		select {
 		case a := <-ackCh:
 			if err := qs.sendAck(a); err != nil {
-				qs.logger.Printf("[ERR] agent.ipc: Failed to stream ack to %v: %v", qs.client, err)
+				qs.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to stream ack to %v: %v", slog.Any("client", qs.client), slog.String("error", err.Error()))
 				return
 			}
 		case r := <-respCh:
 			if err := qs.sendResponse(r.From, r.Payload); err != nil {
-				qs.logger.Printf("[ERR] agent.ipc: Failed to stream response to %v: %v", qs.client, err)
+				qs.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to stream response to %v: %v", slog.Any("client", qs.client), slog.String("error", err.Error()))
 				return
 			}
 		case <-done:
 			if err := qs.sendDone(); err != nil {
-				qs.logger.Printf("[ERR] agent.ipc: Failed to stream query end to %v: %v", qs.client, err)
+				qs.logger.LogAttrs(context.TODO(), slog.LevelError, "Failed to stream query end to %v: %v", slog.Any("client", qs.client), slog.String("error", err.Error()))
 			}
 			return
 		}

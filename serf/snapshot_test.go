@@ -5,25 +5,24 @@ package serf
 
 import (
 	"fmt"
-	"io/ioutil"
-	"log"
+	"log/slog"
+	"math/rand"
 	"os"
+	"path"
 	"reflect"
 	"testing"
 	"time"
 )
 
 func TestSnapshotter(t *testing.T) {
-	td, err := ioutil.TempDir("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
+	td := path.Join(os.TempDir(), fmt.Sprintf("serf-%d", rand.Int()))
 	defer os.RemoveAll(td)
 
 	clock := new(LamportClock)
 	outCh := make(chan Event, 64)
 	stopCh := make(chan struct{})
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{})
+	logger := slog.New(handler)
 	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit, false,
 		logger, clock, outCh, stopCh)
 	if err != nil {
@@ -168,19 +167,20 @@ func TestSnapshotter(t *testing.T) {
 }
 
 func TestSnapshotter_forceCompact(t *testing.T) {
-	td, err := ioutil.TempDir("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
+	td := path.Join(os.TempDir(), fmt.Sprintf("serf-%d", rand.Int()))
 	defer os.RemoveAll(td)
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stderr, handlerOpts)
+	logger := slog.New(handler)
 
 	// Create a very low limit
-	inCh, snap, err := NewSnapshotter(td+"snap", 1024, false,
-		logger, clock, nil, stopCh)
+	inCh, snap, err := NewSnapshotter(td+"snap", 1024, false, logger, clock, nil, stopCh)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -232,15 +232,18 @@ func TestSnapshotter_forceCompact(t *testing.T) {
 }
 
 func TestSnapshotter_leave(t *testing.T) {
-	td, err := ioutil.TempDir("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
+	td := path.Join(os.TempDir(), fmt.Sprintf("serf-%d", rand.Int()))
 	defer os.RemoveAll(td)
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stderr, handlerOpts)
+	logger := slog.New(handler)
+
 	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit, false,
 		logger, clock, nil, stopCh)
 	if err != nil {
@@ -313,15 +316,18 @@ func TestSnapshotter_leave(t *testing.T) {
 }
 
 func TestSnapshotter_leave_rejoin(t *testing.T) {
-	td, err := ioutil.TempDir("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
+	td := path.Join(os.TempDir(), fmt.Sprintf("serf-%d", rand.Int()))
 	defer os.RemoveAll(td)
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stderr, handlerOpts)
+	logger := slog.New(handler)
+
 	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit, true,
 		logger, clock, nil, stopCh)
 	if err != nil {
@@ -395,16 +401,17 @@ func TestSnapshotter_leave_rejoin(t *testing.T) {
 
 func TestSnapshotter_slowDiskNotBlockingEventCh(t *testing.T) {
 	t.Skip("Flaky test")
-	td, err := ioutil.TempDir("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	t.Log("Temp dir", td)
+	td := path.Join(os.TempDir(), fmt.Sprintf("serf-%d", rand.Int()))
 	defer os.RemoveAll(td)
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stderr, handlerOpts)
+	logger := slog.New(handler)
 
 	outCh := make(chan Event, 1024)
 	inCh, snap, err := NewSnapshotter(td+"snap", snapshotSizeLimit, true,
@@ -481,16 +488,17 @@ func TestSnapshotter_slowDiskNotBlockingEventCh(t *testing.T) {
 }
 
 func TestSnapshotter_blockedUpstreamNotBlockingMemberlist(t *testing.T) {
-	td, err := ioutil.TempDir("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	t.Log("Temp dir", td)
+	td := path.Join(os.TempDir(), fmt.Sprintf("serf-%d", rand.Int()))
 	defer os.RemoveAll(td)
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	handlerOpts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(os.Stderr, handlerOpts)
+	logger := slog.New(handler)
 
 	// OutCh is unbuffered simulating a slow upstream
 	outCh := make(chan Event)
