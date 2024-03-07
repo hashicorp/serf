@@ -142,7 +142,7 @@ GEM
     turbolinks (5.0.1)
       turbolinks-source (~> 5)
     turbolinks-source (5.0.3)
-    tzinfo (1.2.3)
+    tzinfo (1.2.11)
       thread_safe (~> 0.1)
     uber (0.0.15)
     uglifier (2.7.2)
