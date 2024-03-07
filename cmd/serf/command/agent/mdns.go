@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"runtime"
 	"time"
 
 	"github.com/hashicorp/mdns"
@@ -126,6 +127,11 @@ func (m *AgentMDNS) poll(hosts chan *mdns.ServiceEntry) {
 		Service:   mdnsName(m.discover),
 		Interface: m.iface,
 		Entries:   hosts,
+	}
+	if runtime.GOOS == "windows" {
+		// listen udp6 setsockopt: not supported by windows
+		// see github.com/hashicorp/mdns/issues/80
+		params.DisableIPv6 = true
 	}
 	if err := mdns.Query(&params); err != nil {
 		m.logger.Printf("[ERR] agent.mdns: Failed to poll for new hosts: %v", err)
