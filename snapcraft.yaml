@@ -1,0 +1,24 @@
+name: serf
+version: '1.0'
+summary: Service orchestration and management tool 
+description: |
+  Service orchestration and management tool. 
+grade: stable
+confinement: strict
+base: core18
+parts:
+  serf:
+    plugin: go
+    source: https://github.com/hashicorp/serf.git
+    go-importpath: github.com/hashicorp/serf
+    build-packages:
+      - build-essential
+apps:
+  serf:
+    command: bin/serf
+    daemon: simple
+    restart-condition: on-abnormal
+    plugs:
+      - home
+      - network
+      - network-bind
