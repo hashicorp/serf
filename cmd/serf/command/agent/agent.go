@@ -9,11 +9,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"sync"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/serf"
 )
@@ -37,7 +37,7 @@ type Agent struct {
 	eventHandlersLock sync.Mutex
 
 	// logger instance wraps the logOutput
-	logger *log.Logger
+	logger hclog.Logger
 
 	// This is the underlying Serf we are wrapping
 	serf *serf.Serf
@@ -70,8 +70,10 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 		agentConf:     agentConf,
 		eventCh:       eventCh,
 		eventHandlers: make(map[EventHandler]struct{}),
-		logger:        log.New(logOutput, "", log.LstdFlags),
-		shutdownCh:    make(chan struct{}),
+		logger: hclog.New(&hclog.LoggerOptions{
+			Output: logOutput,
+		}),
+		shutdownCh: make(chan struct{}),
 	}
 
 	// Restore agent tags from a tags file
@@ -95,7 +97,7 @@ func Create(agentConf *Config, conf *serf.Config, logOutput io.Writer) (*Agent, 
 // create so that there isn't a race condition between creating the
 // agent and registering handlers
 func (a *Agent) Start() error {
-	a.logger.Printf("[INFO] agent: Serf agent starting")
+	a.logger.Info("agent: Serf agent starting")
 
 	// Create serf first
 	serf, err := serf.Create(a.conf)
@@ -115,7 +117,7 @@ func (a *Agent) Leave() error {
 		return nil
 	}
 
-	a.logger.Println("[INFO] agent: requesting graceful leave from Serf")
+	a.logger.Info("agent: requesting graceful leave from Serf")
 	return a.serf.Leave()
 }
 
@@ -133,13 +135,13 @@ func (a *Agent) Shutdown() error {
 		goto EXIT
 	}
 
-	a.logger.Println("[INFO] agent: requesting serf shutdown")
+	a.logger.Info("agent: requesting serf shutdown")
 	if err := a.serf.Shutdown(); err != nil {
 		return err
 	}
 
 EXIT:
-	a.logger.Println("[INFO] agent: shutdown complete")
+	a.logger.Info("agent: shutdown complete")
 	a.shutdown = true
 	close(a.shutdownCh)
 	return nil
@@ -163,24 +165,24 @@ func (a *Agent) SerfConfig() *serf.Config {
 
 // Join asks the Serf instance to join. See the Serf.Join function.
 func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
-	a.logger.Printf("[INFO] agent: joining: %v replay: %v", addrs, replay)
+	a.logger.Info(fmt.Sprintf("agent: joining: %v replay: %v", addrs, replay))
 	ignoreOld := !replay
 	n, err = a.serf.Join(addrs, ignoreOld)
 	if n > 0 {
-		a.logger.Printf("[INFO] agent: joined: %d nodes", n)
+		a.logger.Info(fmt.Sprintf("agent: joined: %d nodes", n))
 	}
 	if err != nil {
-		a.logger.Printf("[WARN] agent: error joining: %v", err)
+		a.logger.Warn(fmt.Sprintf("agent: error joining: %v", err))
 	}
 	return
 }
 
 // ForceLeave is used to eject a failed node from the cluster
 func (a *Agent) ForceLeave(node string) error {
-	a.logger.Printf("[INFO] agent: Force leaving node: %s", node)
+	a.logger.Info(fmt.Sprintf("agent: Force leaving node: %s", node))
 	err := a.serf.RemoveFailedNode(node)
 	if err != nil {
-		a.logger.Printf("[WARN] agent: failed to remove node: %v", err)
+		a.logger.Warn(fmt.Sprintf("agent: failed to remove node: %v", err))
 	}
 	return err
 }
@@ -188,21 +190,21 @@ func (a *Agent) ForceLeave(node string) error {
 // ForceLeavePrune completely removes a failed node from the
 // member list entirely
 func (a *Agent) ForceLeavePrune(node string) error {
-	a.logger.Printf("[INFO] agent: Force leaving node (prune): %s", node)
+	a.logger.Info(fmt.Sprintf("agent: Force leaving node (prune): %s", node))
 	err := a.serf.RemoveFailedNodePrune(node)
 	if err != nil {
-		a.logger.Printf("[WARN] agent: failed to remove node (prune): %v", err)
+		a.logger.Warn(fmt.Sprintf("agent: failed to remove node (prune): %v", err))
 	}
 	return err
 }
 
 // UserEvent sends a UserEvent on Serf, see Serf.UserEvent.
 func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
-	a.logger.Printf("[DEBUG] agent: Requesting user event send: %s. Coalesced: %#v. Payload: %#v",
-		name, coalesce, string(payload))
+	a.logger.Debug(fmt.Sprintf("agent: Requesting user event send: %s. Coalesced: %#v. Payload: %#v",
+		name, coalesce, string(payload)))
 	err := a.serf.UserEvent(name, payload, coalesce)
 	if err != nil {
-		a.logger.Printf("[WARN] agent: failed to send user event: %v", err)
+		a.logger.Warn("agent: failed to send user event: %v", err)
 	}
 	return err
 }
@@ -216,11 +218,11 @@ func (a *Agent) Query(name string, payload []byte, params *serf.QueryParam) (*se
 			return nil, fmt.Errorf("Queries cannot contain the '%s' prefix", serf.InternalQueryPrefix)
 		}
 	}
-	a.logger.Printf("[DEBUG] agent: Requesting query send: %s. Payload: %#v",
-		name, string(payload))
+	a.logger.Debug(fmt.Sprintf("agent: Requesting query send: %s. Payload: %#v",
+		name, string(payload)))
 	resp, err := a.serf.Query(name, payload, params)
 	if err != nil {
-		a.logger.Printf("[WARN] agent: failed to start user query: %v", err)
+		a.logger.Warn(fmt.Sprintf("agent: failed to start user query: %v", err))
 	}
 	return resp, err
 }
@@ -255,7 +257,7 @@ func (a *Agent) eventLoop() {
 	for {
 		select {
 		case e := <-a.eventCh:
-			a.logger.Printf("[INFO] agent: Received event: %s", e.String())
+			a.logger.Info(fmt.Sprintf("agent: Received event: %s", e.String()))
 			a.eventHandlersLock.Lock()
 			handlers := a.eventHandlerList
 			a.eventHandlersLock.Unlock()
@@ -264,7 +266,7 @@ func (a *Agent) eventLoop() {
 			}
 
 		case <-serfShutdownCh:
-			a.logger.Printf("[WARN] agent: Serf shutdown detected, quitting")
+			a.logger.Warn("agent: Serf shutdown detected, quitting")
 			a.Shutdown()
 			return
 
@@ -276,28 +278,28 @@ func (a *Agent) eventLoop() {
 
 // InstallKey initiates a query to install a new key on all members
 func (a *Agent) InstallKey(key string) (*serf.KeyResponse, error) {
-	a.logger.Print("[INFO] agent: Initiating key installation")
+	a.logger.Info("agent: Initiating key installation")
 	manager := a.serf.KeyManager()
 	return manager.InstallKey(key)
 }
 
 // UseKey sends a query instructing all members to switch primary keys
 func (a *Agent) UseKey(key string) (*serf.KeyResponse, error) {
-	a.logger.Print("[INFO] agent: Initiating primary key change")
+	a.logger.Info("agent: Initiating primary key change")
 	manager := a.serf.KeyManager()
 	return manager.UseKey(key)
 }
 
 // RemoveKey sends a query to all members to remove a key from the keyring
 func (a *Agent) RemoveKey(key string) (*serf.KeyResponse, error) {
-	a.logger.Print("[INFO] agent: Initiating key removal")
+	a.logger.Info("agent: Initiating key removal")
 	manager := a.serf.KeyManager()
 	return manager.RemoveKey(key)
 }
 
 // ListKeys sends a query to all members to return a list of their keys
 func (a *Agent) ListKeys() (*serf.KeyResponse, error) {
-	a.logger.Print("[INFO] agent: Initiating key listing")
+	a.logger.Info("agent: Initiating key listing")
 	manager := a.serf.KeyManager()
 	return manager.ListKeys()
 }
@@ -308,7 +310,7 @@ func (a *Agent) SetTags(tags map[string]string) error {
 	// Update the tags file if we have one
 	if a.agentConf.TagsFile != "" {
 		if err := a.writeTagsFile(tags); err != nil {
-			a.logger.Printf("[ERR] agent: %s", err)
+			a.logger.Error("agent: %s", err)
 			return err
 		}
 	}
@@ -333,7 +335,7 @@ func (a *Agent) loadTagsFile(tagsFile string) error {
 		if err := json.Unmarshal(tagData, &a.conf.Tags); err != nil {
 			return fmt.Errorf("Failed to decode tags file: %s", err)
 		}
-		a.logger.Printf("[INFO] agent: Restored %d tag(s) from %s",
+		a.logger.Info("agent: Restored %d tag(s) from %s",
 			len(a.conf.Tags), tagsFile)
 	}
 
@@ -425,8 +427,8 @@ func (a *Agent) loadKeyringFile(keyringFile string) error {
 		return fmt.Errorf("Failed to restore keyring: %s", err)
 	}
 	a.conf.MemberlistConfig.Keyring = keyring
-	a.logger.Printf("[INFO] agent: Restored keyring with %d keys from %s",
-		len(keys), keyringFile)
+	a.logger.Info(fmt.Sprintf("agent: Restored keyring with %d keys from %s",
+		len(keys), keyringFile))
 
 	// Success!
 	return nil

@@ -5,11 +5,11 @@ package agent
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"sync"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/serf/serf"
 )
 
@@ -22,7 +22,7 @@ type EventHandler interface {
 type ScriptEventHandler struct {
 	SelfFunc func() serf.Member
 	Scripts  []EventScript
-	Logger   *log.Logger
+	Logger   hclog.Logger
 
 	scriptLock sync.Mutex
 	newScripts []EventScript
@@ -38,7 +38,7 @@ func (h *ScriptEventHandler) HandleEvent(e serf.Event) {
 	h.scriptLock.Unlock()
 
 	if h.Logger == nil {
-		h.Logger = log.New(os.Stderr, "", log.LstdFlags)
+		h.Logger = hclog.New(&hclog.LoggerOptions{Output: os.Stderr})
 	}
 
 	self := h.SelfFunc()
@@ -49,8 +49,8 @@ func (h *ScriptEventHandler) HandleEvent(e serf.Event) {
 
 		err := invokeEventScript(h.Logger, script.Script, self, e)
 		if err != nil {
-			h.Logger.Printf("[ERR] agent: Error invoking script '%s': %s",
-				script.Script, err)
+			h.Logger.Error(fmt.Sprintf("agent: Error invoking script '%s': %s",
+				script.Script, err))
 		}
 	}
 }

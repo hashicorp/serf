@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"net"
 	"os"
@@ -20,6 +19,7 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/coordinate"
@@ -96,7 +96,7 @@ type Serf struct {
 	queryResponse   map[LamportTime]*QueryResponse
 	queryLock       sync.RWMutex
 
-	logger     *log.Logger
+	logger     hclog.Logger
 	joinLock   sync.Mutex
 	stateLock  sync.Mutex
 	state      SerfState
@@ -266,7 +266,10 @@ func Create(conf *Config) (*Serf, error) {
 		if logOutput == nil {
 			logOutput = os.Stderr
 		}
-		logger = log.New(logOutput, "", log.LstdFlags)
+
+		logger = hclog.New(&hclog.LoggerOptions{
+			Output: logOutput,
+		})
 	}
 
 	serf := &Serf{
@@ -688,7 +691,7 @@ func (s *Serf) broadcastJoin(ltime LamportTime) error {
 
 	// Start broadcasting the update
 	if err := s.broadcast(messageJoinType, &msg, nil); err != nil {
-		s.logger.Printf("[WARN] serf: Failed to broadcast join intent: %v", err)
+		s.logger.Warn(fmt.Sprintf("serf: Failed to broadcast join intent: %v", err))
 		return err
 	}
 	return nil
@@ -739,14 +742,14 @@ func (s *Serf) Leave() error {
 		select {
 		case <-notifyCh:
 		case <-time.After(s.config.BroadcastTimeout):
-			s.logger.Printf("[WARN] serf: timeout while waiting for graceful leave")
+			s.logger.Warn("serf: timeout while waiting for graceful leave")
 		}
 	}
 
 	// Attempt the memberlist leave
 	err := s.memberlist.Leave(s.config.BroadcastTimeout)
 	if err != nil {
-		s.logger.Printf("[WARN] serf: timeout waiting for leave broadcast: %s", err.Error())
+		s.logger.Warn(fmt.Sprintf("serf: timeout waiting for leave broadcast: %s", err.Error()))
 	}
 
 	// Wait for the leave to propagate through the cluster. The broadcast
@@ -870,7 +873,7 @@ func (s *Serf) Shutdown() error {
 	}
 
 	if s.state != SerfLeft {
-		s.logger.Printf("[WARN] serf: Shutdown without a Leave")
+		s.logger.Warn("serf: Shutdown without a Leave")
 	}
 
 	// Wait to close the shutdown channel until after we've shut down the
@@ -995,8 +998,8 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 	metrics.IncrCounterWithLabels([]string{"serf", "member", "join"}, 1, s.metricLabels)
 
 	// Send an event along
-	s.logger.Printf("[INFO] serf: EventMemberJoin: %s %s",
-		member.Member.Name, member.Member.Addr)
+	s.logger.Info(fmt.Sprintf("serf: EventMemberJoin: %s %s",
+		member.Member.Name, member.Member.Addr))
 	if s.config.EventCh != nil {
 		s.config.EventCh <- MemberEvent{
 			Type:    EventMemberJoin,
@@ -1029,7 +1032,7 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 		s.failedMembers = append(s.failedMembers, member)
 	default:
 		// Unknown state that it was in? Just don't do anything
-		s.logger.Printf("[WARN] serf: Bad state when leave: %d", member.Status)
+		s.logger.Warn(fmt.Sprintf("serf: Bad state when leave: %d", member.Status))
 		return
 	}
 
@@ -1044,8 +1047,8 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 	// Update some metrics
 	metrics.IncrCounterWithLabels([]string{"serf", "member", member.Status.String()}, 1, s.metricLabels)
 
-	s.logger.Printf("[INFO] serf: %s: %s %s",
-		eventStr, member.Member.Name, member.Member.Addr)
+	s.logger.Info(fmt.Sprintf("serf: %s: %s %s",
+		eventStr, member.Member.Name, member.Member.Addr))
 	if s.config.EventCh != nil {
 		s.config.EventCh <- MemberEvent{
 			Type:    event,
@@ -1089,7 +1092,7 @@ func (s *Serf) handleNodeUpdate(n *memberlist.Node) {
 	metrics.IncrCounterWithLabels([]string{"serf", "member", "update"}, 1, s.metricLabels)
 
 	// Send an event along
-	s.logger.Printf("[INFO] serf: EventMemberUpdate: %s", member.Member.Name)
+	s.logger.Info(fmt.Sprintf("serf: EventMemberUpdate: %s", member.Member.Name))
 	if s.config.EventCh != nil {
 		s.config.EventCh <- MemberEvent{
 			Type:    EventMemberUpdate,
@@ -1122,7 +1125,7 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 	// Refute us leaving if we are in the alive state
 	// Must be done in another goroutine since we have the memberLock
 	if leaveMsg.Node == s.config.NodeName && state == SerfAlive {
-		s.logger.Printf("[DEBUG] serf: Refuting an older leave intent")
+		s.logger.Debug("serf: Refuting an older leave intent")
 		go s.broadcastJoin(s.clock.Time())
 		return false
 	}
@@ -1166,8 +1169,8 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		// We must push a message indicating the node has now
 		// left to allow higher-level applications to handle the
 		// graceful leave.
-		s.logger.Printf("[INFO] serf: EventMemberLeave (forced): %s %s",
-			member.Member.Name, member.Member.Addr)
+		s.logger.Info(fmt.Sprintf("serf: EventMemberLeave (forced): %s %s",
+			member.Member.Name, member.Member.Addr))
 		if s.config.EventCh != nil {
 			s.config.EventCh <- MemberEvent{
 				Type:    EventMemberLeave,
@@ -1198,7 +1201,7 @@ func (s *Serf) handlePrune(member *memberState) {
 		time.Sleep(s.config.BroadcastTimeout + s.config.LeavePropagateDelay)
 	}
 
-	s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s %s", member.Name, member.Member.Addr)
+	s.logger.Info(fmt.Sprintf("serf: EventMemberReap (forced): %s %s", member.Name, member.Member.Addr))
 
 	//If we are leaving or left we may be in that list of members
 	if member.Status == StatusLeaving || member.Status == StatusLeft {
@@ -1257,11 +1260,11 @@ func (s *Serf) handleUserEvent(eventMsg *messageUserEvent) bool {
 	curTime := s.eventClock.Time()
 	if curTime > LamportTime(len(s.eventBuffer)) &&
 		eventMsg.LTime < curTime-LamportTime(len(s.eventBuffer)) {
-		s.logger.Printf(
-			"[WARN] serf: received old event %s from time %d (current: %d)",
-			eventMsg.Name,
-			eventMsg.LTime,
-			s.eventClock.Time())
+		s.logger.Warn(
+			fmt.Sprintf("serf: received old event %s from time %d (current: %d)",
+				eventMsg.Name,
+				eventMsg.LTime,
+				s.eventClock.Time()))
 		return false
 	}
 
@@ -1316,11 +1319,11 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 	curTime := s.queryClock.Time()
 	if curTime > LamportTime(len(s.queryBuffer)) &&
 		query.LTime < curTime-LamportTime(len(s.queryBuffer)) {
-		s.logger.Printf(
-			"[WARN] serf: received old query %s from time %d (current: %d)",
-			query.Name,
-			query.LTime,
-			s.queryClock.Time())
+		s.logger.Warn(
+			fmt.Sprintf("serf: received old query %s from time %d (current: %d)",
+				query.Name,
+				query.LTime,
+				s.queryClock.Time()))
 		return false
 	}
 
@@ -1369,7 +1372,7 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 		}
 		raw, err := encodeMessage(messageQueryResponseType, &ack)
 		if err != nil {
-			s.logger.Printf("[ERR] serf: failed to format ack: %v", err)
+			s.logger.Error(fmt.Sprintf("serf: failed to format ack: %v", err))
 		} else {
 			udpAddr := net.UDPAddr{IP: query.Addr, Port: int(query.Port)}
 			addr := memberlist.Address{
@@ -1377,10 +1380,10 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 				Name: query.SourceNode,
 			}
 			if err := s.memberlist.SendToAddress(addr, raw); err != nil {
-				s.logger.Printf("[ERR] serf: failed to send ack: %v", err)
+				s.logger.Error(fmt.Sprintf("serf: failed to send ack: %v", err))
 			}
 			if err := s.relayResponse(query.RelayFactor, udpAddr, query.SourceNode, &ack); err != nil {
-				s.logger.Printf("[ERR] serf: failed to relay ack: %v", err)
+				s.logger.Error(fmt.Sprintf("serf: failed to relay ack: %v", err))
 			}
 		}
 	}
@@ -1410,15 +1413,15 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 	query, ok := s.queryResponse[resp.LTime]
 	s.queryLock.RUnlock()
 	if !ok {
-		s.logger.Printf("[WARN] serf: reply for non-running query (LTime: %d, ID: %d) From: %s",
-			resp.LTime, resp.ID, resp.From)
+		s.logger.Warn(fmt.Sprintf("serf: reply for non-running query (LTime: %d, ID: %d) From: %s",
+			resp.LTime, resp.ID, resp.From))
 		return
 	}
 
 	// Verify the ID matches
 	if query.id != resp.ID {
-		s.logger.Printf("[WARN] serf: query reply ID mismatch (Local: %d, Response: %d)",
-			query.id, resp.ID)
+		s.logger.Warn(fmt.Sprintf("serf: query reply ID mismatch (Local: %d, Response: %d)",
+			query.id, resp.ID))
 		return
 	}
 
@@ -1438,7 +1441,7 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 		metrics.IncrCounterWithLabels([]string{"serf", "query_acks"}, 1, s.metricLabels)
 		err := query.sendAck(resp)
 		if err != nil {
-			s.logger.Printf("[WARN] %v", err)
+			s.logger.Warn(err.Error())
 		}
 	} else {
 		// Exit early if this is a duplicate response
@@ -1450,7 +1453,7 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 		metrics.IncrCounterWithLabels([]string{"serf", "query_responses"}, 1, s.metricLabels)
 		err := query.sendResponse(NodeResponse{From: resp.From, Payload: resp.Payload})
 		if err != nil {
-			s.logger.Printf("[WARN] %v", err)
+			s.logger.Warn(err.Error())
 		}
 	}
 }
@@ -1461,14 +1464,14 @@ func (s *Serf) handleQueryResponse(resp *messageQueryResponse) {
 func (s *Serf) handleNodeConflict(existing, other *memberlist.Node) {
 	// Log a basic warning if the node is not us...
 	if existing.Name != s.config.NodeName {
-		s.logger.Printf("[WARN] serf: Name conflict for '%s' both %s:%d and %s:%d are claiming",
-			existing.Name, existing.Addr, existing.Port, other.Addr, other.Port)
+		s.logger.Warn(fmt.Sprintf("serf: Name conflict for '%s' both %s:%d and %s:%d are claiming",
+			existing.Name, existing.Addr, existing.Port, other.Addr, other.Port))
 		return
 	}
 
 	// The current node is conflicting! This is an error
-	s.logger.Printf("[ERR] serf: Node name conflicts with another node at %s:%d. Names must be unique! (Resolution enabled: %v)",
-		other.Addr, other.Port, s.config.EnableNameConflictResolution)
+	s.logger.Error(fmt.Sprintf("serf: Node name conflicts with another node at %s:%d. Names must be unique! (Resolution enabled: %v)",
+		other.Addr, other.Port, s.config.EnableNameConflictResolution))
 
 	// If automatic resolution is enabled, kick off the resolution
 	if s.config.EnableNameConflictResolution {
@@ -1487,7 +1490,7 @@ func (s *Serf) resolveNodeConflict() {
 	payload := []byte(s.config.NodeName)
 	resp, err := s.Query(qName, payload, nil)
 	if err != nil {
-		s.logger.Printf("[ERR] serf: Failed to start name resolution query: %v", err)
+		s.logger.Error(fmt.Sprintf("serf: Failed to start name resolution query: %v", err))
 		return
 	}
 
@@ -1499,12 +1502,12 @@ func (s *Serf) resolveNodeConflict() {
 	for r := range respCh {
 		// Decode the response
 		if len(r.Payload) < 1 || messageType(r.Payload[0]) != messageConflictResponseType {
-			s.logger.Printf("[ERR] serf: Invalid conflict query response type: %v", r.Payload)
+			s.logger.Error(fmt.Sprintf("serf: Invalid conflict query response type: %v", r.Payload))
 			continue
 		}
 		var member Member
 		if err := decodeMessage(r.Payload[1:], &member); err != nil {
-			s.logger.Printf("[ERR] serf: Failed to decode conflict query response: %v", err)
+			s.logger.Error(fmt.Sprintf("serf: Failed to decode conflict query response: %v", err))
 			continue
 		}
 
@@ -1518,20 +1521,20 @@ func (s *Serf) resolveNodeConflict() {
 	// Query over, determine if we should live
 	majority := (responses / 2) + 1
 	if matching >= majority {
-		s.logger.Printf("[INFO] serf: majority in name conflict resolution [%d / %d]",
-			matching, responses)
+		s.logger.Info(fmt.Sprintf("serf: majority in name conflict resolution [%d / %d]",
+			matching, responses))
 		return
 	}
 
 	// Since we lost the vote, we need to exit
-	s.logger.Printf("[WARN] serf: minority in name conflict resolution, quiting [%d / %d]",
+	s.logger.Warn("serf: minority in name conflict resolution, quiting [%d / %d]",
 		matching, responses)
 	if err := s.Shutdown(); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to shutdown: %v", err)
+		s.logger.Error(fmt.Sprintf("serf: Failed to shutdown: %v", err))
 	}
 }
 
-//eraseNode takes a node completely out of the member list
+// eraseNode takes a node completely out of the member list
 func (s *Serf) eraseNode(m *memberState) {
 	// Delete from members
 	delete(s.members, m.Name)
@@ -1611,7 +1614,7 @@ func (s *Serf) reap(old []*memberState, now time.Time, timeout time.Duration) []
 		i--
 
 		// Delete from members and send out event
-		s.logger.Printf("[INFO] serf: EventMemberReap: %s", m.Name)
+		s.logger.Info(fmt.Sprintf("serf: EventMemberReap: %s", m.Name))
 		s.eraseNode(m)
 
 	}
@@ -1643,7 +1646,7 @@ func (s *Serf) reconnect() {
 	prob := numFailed / numAlive
 	if rand.Float32() > prob {
 		s.memberLock.RUnlock()
-		s.logger.Printf("[DEBUG] serf: forgoing reconnect for random throttling")
+		s.logger.Debug("serf: forgoing reconnect for random throttling")
 		return
 	}
 
@@ -1653,7 +1656,7 @@ func (s *Serf) reconnect() {
 
 	// Format the addr
 	addr := net.UDPAddr{IP: mem.Addr, Port: int(mem.Port)}
-	s.logger.Printf("[INFO] serf: attempting reconnect to %v %s", mem.Name, addr.String())
+	s.logger.Info("serf: attempting reconnect to %v %s", mem.Name, addr.String())
 
 	joinAddr := addr.String()
 	if mem.Name != "" {
@@ -1690,11 +1693,11 @@ func (s *Serf) checkQueueDepth(name string, queue *memberlist.TransmitLimitedQue
 			numq := queue.NumQueued()
 			metrics.AddSampleWithLabels([]string{"serf", "queue", name}, float32(numq), s.metricLabels)
 			if numq >= s.config.QueueDepthWarning {
-				s.logger.Printf("[WARN] serf: %s queue depth: %d", name, numq)
+				s.logger.Warn(fmt.Sprintf("serf: %s queue depth: %d", name, numq))
 			}
 			if max := s.getQueueMax(); numq > max {
-				s.logger.Printf("[WARN] serf: %s queue depth (%d) exceeds limit (%d), dropping messages!",
-					name, numq, max)
+				s.logger.Warn(fmt.Sprintf("serf: %s queue depth (%d) exceeds limit (%d), dropping messages!",
+					name, numq, max))
 				queue.Prune(max)
 			}
 		case <-s.shutdownCh:
@@ -1772,14 +1775,14 @@ func (s *Serf) handleRejoin(previous []*PreviousNode) {
 			joinAddr = prev.Name + "/" + prev.Addr
 		}
 
-		s.logger.Printf("[INFO] serf: Attempting re-join to previously known node: %s", prev)
+		s.logger.Info(fmt.Sprintf("serf: Attempting re-join to previously known node: %s", prev))
 		_, err := s.memberlist.Join([]string{joinAddr})
 		if err == nil {
-			s.logger.Printf("[INFO] serf: Re-joined to previously known node: %s", prev)
+			s.logger.Info(fmt.Sprintf("serf: Re-joined to previously known node: %s", prev))
 			return
 		}
 	}
-	s.logger.Printf("[WARN] serf: Failed to re-join any previously known node")
+	s.logger.Warn("serf: Failed to re-join any previously known node")
 }
 
 // encodeTags is used to encode a tag map
@@ -1814,7 +1817,7 @@ func (s *Serf) decodeTags(buf []byte) map[string]string {
 	r := bytes.NewReader(buf[1:])
 	dec := codec.NewDecoder(r, &codec.MsgpackHandle{})
 	if err := dec.Decode(&tags); err != nil {
-		s.logger.Printf("[ERR] serf: Failed to decode tags: %v", err)
+		s.logger.Error(fmt.Sprintf("serf: Failed to decode tags: %v", err))
 	}
 	return tags
 }

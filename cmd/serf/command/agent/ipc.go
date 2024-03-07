@@ -28,7 +28,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"regexp"
@@ -38,6 +37,7 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/coordinate"
@@ -245,7 +245,7 @@ type AgentIPC struct {
 	authKey   string
 	clients   map[string]*IPCClient
 	listener  net.Listener
-	logger    *log.Logger
+	logger    hclog.Logger
 	logWriter *logWriter
 	stop      uint32
 	stopCh    chan struct{}
@@ -335,11 +335,13 @@ func NewAgentIPC(agent *Agent, authKey string, listener net.Listener,
 		logOutput = os.Stderr
 	}
 	ipc := &AgentIPC{
-		agent:     agent,
-		authKey:   authKey,
-		clients:   make(map[string]*IPCClient),
-		listener:  listener,
-		logger:    log.New(logOutput, "", log.LstdFlags),
+		agent:    agent,
+		authKey:  authKey,
+		clients:  make(map[string]*IPCClient),
+		listener: listener,
+		logger: hclog.New(&hclog.LoggerOptions{
+			Output: logWriter,
+		}),
 		logWriter: logWriter,
 		stopCh:    make(chan struct{}),
 	}
@@ -378,10 +380,10 @@ func (i *AgentIPC) listen() {
 			if i.isStopped() {
 				return
 			}
-			i.logger.Printf("[ERR] agent.ipc: Failed to accept client: %v", err)
+			i.logger.Error(fmt.Sprintf("agent.ipc: Failed to accept client: %v", err))
 			continue
 		}
-		i.logger.Printf("[INFO] agent.ipc: Accepted client: %v", conn.RemoteAddr())
+		i.logger.Info(fmt.Sprintf("agent.ipc: Accepted client: %v", conn.RemoteAddr()))
 		metrics.IncrCounterWithLabels([]string{"agent", "ipc", "accept"}, 1, nil)
 
 		// Wrap the connection in a client
@@ -445,7 +447,7 @@ func (i *AgentIPC) handleClient(client *IPCClient) {
 				// errors from Windows which appear to happen every
 				// time there is an EOF.
 				if err != io.EOF && !strings.Contains(strings.ToLower(err.Error()), "wsarecv") {
-					i.logger.Printf("[ERR] agent.ipc: failed to decode request header: %v", err)
+					i.logger.Error(fmt.Sprintf("agent.ipc: failed to decode request header: %v", err))
 				}
 			}
 			return
@@ -453,7 +455,7 @@ func (i *AgentIPC) handleClient(client *IPCClient) {
 
 		// Evaluate the command
 		if err := i.handleRequest(client, &reqHeader); err != nil {
-			i.logger.Printf("[ERR] agent.ipc: Failed to evaluate request: %v", err)
+			i.logger.Error(fmt.Sprintf("agent.ipc: Failed to evaluate request: %v", err))
 			return
 		}
 	}
@@ -475,7 +477,7 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 
 	// Ensure the client has authenticated after the handshake if necessary
 	if i.authKey != "" && !client.didAuth && command != authCommand && command != handshakeCommand {
-		i.logger.Printf("[WARN] agent.ipc: Client sending commands before auth")
+		i.logger.Warn("agent.ipc: Client sending commands before auth")
 		respHeader := responseHeader{Seq: seq, Error: authRequired}
 		client.Send(&respHeader, nil)
 		return nil
@@ -931,12 +933,12 @@ func (i *AgentIPC) handleStop(client *IPCClient, seq uint64) error {
 }
 
 func (i *AgentIPC) handleLeave(client *IPCClient, seq uint64) error {
-	i.logger.Printf("[INFO] agent.ipc: Graceful leave triggered")
+	i.logger.Info("agent.ipc: Graceful leave triggered")
 
 	// Do the leave
 	err := i.agent.Leave()
 	if err != nil {
-		i.logger.Printf("[ERR] agent.ipc: leave failed: %v", err)
+		i.logger.Error(fmt.Sprintf("agent.ipc: leave failed: %v", err))
 	}
 	resp := responseHeader{Seq: seq, Error: errToString(err)}
 
@@ -945,7 +947,7 @@ func (i *AgentIPC) handleLeave(client *IPCClient, seq uint64) error {
 
 	// Trigger a shutdown!
 	if err := i.agent.Shutdown(); err != nil {
-		i.logger.Printf("[ERR] agent.ipc: shutdown failed: %v", err)
+		i.logger.Error(fmt.Sprintf("agent.ipc: shutdown failed: %v", err))
 	}
 	return err
 }

@@ -219,7 +219,7 @@ func (s *Serf) shouldProcessQuery(filters [][]byte) bool {
 			// Decode the filter
 			var nodes filterNode
 			if err := decodeMessage(filter[1:], &nodes); err != nil {
-				s.logger.Printf("[WARN] serf: failed to decode filterNodeType: %v", err)
+				s.logger.Warn(fmt.Sprintf("serf: failed to decode filterNodeType: %v", err))
 				return false
 			}
 
@@ -239,7 +239,7 @@ func (s *Serf) shouldProcessQuery(filters [][]byte) bool {
 			// Decode the filter
 			var filt filterTag
 			if err := decodeMessage(filter[1:], &filt); err != nil {
-				s.logger.Printf("[WARN] serf: failed to decode filterTagType: %v", err)
+				s.logger.Warn(fmt.Sprintf("serf: failed to decode filterTagType: %v", err))
 				return false
 			}
 
@@ -247,7 +247,7 @@ func (s *Serf) shouldProcessQuery(filters [][]byte) bool {
 			tags := s.config.Tags
 			matched, err := regexp.MatchString(filt.Expr, tags[filt.Tag])
 			if err != nil {
-				s.logger.Printf("[WARN] serf: failed to compile filter regex (%s): %v", filt.Expr, err)
+				s.logger.Warn("serf: failed to compile filter regex (%s): %v", filt.Expr, err)
 				return false
 			}
 			if !matched {
@@ -255,7 +255,7 @@ func (s *Serf) shouldProcessQuery(filters [][]byte) bool {
 			}
 
 		default:
-			s.logger.Printf("[WARN] serf: query has unrecognized filter type: %d", filter[0])
+			s.logger.Warn(fmt.Sprintf("serf: query has unrecognized filter type: %d", filter[0]))
 			return false
 		}
 	}

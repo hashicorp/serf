@@ -5,11 +5,11 @@ package serf
 
 import (
 	"io"
-	"log"
 	"os"
 	"time"
 
 	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/memberlist"
 )
 
@@ -209,7 +209,7 @@ type Config struct {
 	// this for the internal logger. If Logger is not set, it will fall back to the
 	// behavior for using LogOutput. You cannot specify both LogOutput and Logger
 	// at the same time.
-	Logger *log.Logger
+	Logger hclog.Logger
 
 	// SnapshotPath if provided is used to snapshot live nodes as well
 	// as lamport clock values. When Serf is started with a snapshot,

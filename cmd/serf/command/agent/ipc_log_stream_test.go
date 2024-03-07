@@ -4,11 +4,11 @@
 package agent
 
 import (
-	"log"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/logutils"
 )
 
@@ -17,7 +17,9 @@ func TestIPCLogStream(t *testing.T) {
 	filter := LevelFilter()
 	filter.MinLevel = logutils.LogLevel("INFO")
 
-	ls := newLogStream(sc, filter, 42, log.New(os.Stderr, "", log.LstdFlags))
+	ls := newLogStream(sc, filter, 42, hclog.New(&hclog.LoggerOptions{
+		Output: os.Stderr,
+	}))
 	defer ls.Stop()
 
 	log := "[DEBUG] this is a test log"

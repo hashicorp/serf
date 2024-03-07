@@ -47,53 +47,53 @@ func (d *delegate) NotifyMsg(buf []byte) {
 	case messageLeaveType:
 		var leave messageLeave
 		if err := decodeMessage(buf[1:], &leave); err != nil {
-			d.serf.logger.Printf("[ERR] serf: Error decoding leave message: %s", err)
+			d.serf.logger.Error(fmt.Sprintf("serf: Error decoding leave message: %s", err))
 			break
 		}
 
-		d.serf.logger.Printf("[DEBUG] serf: messageLeaveType: %s", leave.Node)
+		d.serf.logger.Debug(fmt.Sprintf("serf: messageLeaveType: %s", leave.Node))
 		rebroadcast = d.serf.handleNodeLeaveIntent(&leave)
 
 	case messageJoinType:
 		var join messageJoin
 		if err := decodeMessage(buf[1:], &join); err != nil {
-			d.serf.logger.Printf("[ERR] serf: Error decoding join message: %s", err)
+			d.serf.logger.Error(fmt.Sprintf("serf: Error decoding join message: %s", err))
 			break
 		}
 
-		d.serf.logger.Printf("[DEBUG] serf: messageJoinType: %s", join.Node)
+		d.serf.logger.Debug(fmt.Sprintf("serf: messageJoinType: %s", join.Node))
 		rebroadcast = d.serf.handleNodeJoinIntent(&join)
 
 	case messageUserEventType:
 		var event messageUserEvent
 		if err := decodeMessage(buf[1:], &event); err != nil {
-			d.serf.logger.Printf("[ERR] serf: Error decoding user event message: %s", err)
+			d.serf.logger.Error(fmt.Sprintf("serf: Error decoding user event message: %s", err))
 			break
 		}
 
-		d.serf.logger.Printf("[DEBUG] serf: messageUserEventType: %s", event.Name)
+		d.serf.logger.Debug(fmt.Sprintf("serf: messageUserEventType: %s", event.Name))
 		rebroadcast = d.serf.handleUserEvent(&event)
 		rebroadcastQueue = d.serf.eventBroadcasts
 
 	case messageQueryType:
 		var query messageQuery
 		if err := decodeMessage(buf[1:], &query); err != nil {
-			d.serf.logger.Printf("[ERR] serf: Error decoding query message: %s", err)
+			d.serf.logger.Error("serf: Error decoding query message: %s", err)
 			break
 		}
 
-		d.serf.logger.Printf("[DEBUG] serf: messageQueryType: %s", query.Name)
+		d.serf.logger.Debug(fmt.Sprintf("serf: messageQueryType: %s", query.Name))
 		rebroadcast = d.serf.handleQuery(&query)
 		rebroadcastQueue = d.serf.queryBroadcasts
 
 	case messageQueryResponseType:
 		var resp messageQueryResponse
 		if err := decodeMessage(buf[1:], &resp); err != nil {
-			d.serf.logger.Printf("[ERR] serf: Error decoding query response message: %s", err)
+			d.serf.logger.Error(fmt.Sprintf("serf: Error decoding query response message: %s", err))
 			break
 		}
 
-		d.serf.logger.Printf("[DEBUG] serf: messageQueryResponseType: %v", resp.From)
+		d.serf.logger.Debug(fmt.Sprintf("serf: messageQueryResponseType: %v", resp.From))
 		d.serf.handleQueryResponse(&resp)
 
 	case messageRelayType:
@@ -102,7 +102,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 		reader := bytes.NewReader(buf[1:])
 		decoder := codec.NewDecoder(reader, &handle)
 		if err := decoder.Decode(&header); err != nil {
-			d.serf.logger.Printf("[ERR] serf: Error decoding relay header: %s", err)
+			d.serf.logger.Error(fmt.Sprintf("serf: Error decoding relay header: %s", err))
 			break
 		}
 
@@ -115,14 +115,14 @@ func (d *delegate) NotifyMsg(buf []byte) {
 			Name: header.DestName,
 		}
 
-		d.serf.logger.Printf("[DEBUG] serf: Relaying response to addr: %s", header.DestAddr.String())
+		d.serf.logger.Debug(fmt.Sprintf("serf: Relaying response to addr: %s", header.DestAddr.String()))
 		if err := d.serf.memberlist.SendToAddress(addr, raw); err != nil {
-			d.serf.logger.Printf("[ERR] serf: Error forwarding message to %s: %s", header.DestAddr.String(), err)
+			d.serf.logger.Error(fmt.Sprintf("serf: Error forwarding message to %s: %s", header.DestAddr.String(), err))
 			break
 		}
 
 	default:
-		d.serf.logger.Printf("[WARN] serf: Received message of unknown type: %d", t)
+		d.serf.logger.Warn(fmt.Sprintf("serf: Received message of unknown type: %d", t))
 	}
 
 	if rebroadcast {
@@ -202,7 +202,7 @@ func (d *delegate) LocalState(join bool) []byte {
 	// Encode the push pull state
 	buf, err := encodeMessage(messagePushPullType, &pp)
 	if err != nil {
-		d.serf.logger.Printf("[ERR] serf: Failed to encode local state: %v", err)
+		d.serf.logger.Error("serf: Failed to encode local state: %v", err)
 		return nil
 	}
 	return buf
@@ -211,13 +211,13 @@ func (d *delegate) LocalState(join bool) []byte {
 func (d *delegate) MergeRemoteState(buf []byte, isJoin bool) {
 	// Ensure we have a message
 	if len(buf) == 0 {
-		d.serf.logger.Printf("[ERR] serf: Remote state is zero bytes")
+		d.serf.logger.Error("serf: Remote state is zero bytes")
 		return
 	}
 
 	// Check the message type
 	if messageType(buf[0]) != messagePushPullType {
-		d.serf.logger.Printf("[ERR] serf: Remote state has bad type prefix: %v", buf[0])
+		d.serf.logger.Error("serf: Remote state has bad type prefix: %v", buf[0])
 		return
 	}
 
@@ -228,7 +228,7 @@ func (d *delegate) MergeRemoteState(buf []byte, isJoin bool) {
 	// Attempt a decode
 	pp := messagePushPull{}
 	if err := decodeMessage(buf[1:], &pp); err != nil {
-		d.serf.logger.Printf("[ERR] serf: Failed to decode remote state: %v", err)
+		d.serf.logger.Error("serf: Failed to decode remote state: %v", err)
 		return
 	}
 

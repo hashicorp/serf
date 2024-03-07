@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/hashicorp/go-syslog"
+	gsyslog "github.com/hashicorp/go-syslog"
 	"github.com/hashicorp/logutils"
 )
 
@@ -23,20 +23,12 @@ func TestSyslogFilter(t *testing.T) {
 	filt := LevelFilter()
 	filt.MinLevel = logutils.LogLevel("INFO")
 
-	s := &SyslogWrapper{l, filt}
+	s := &SyslogWrapper{l}
 	n, err := s.Write([]byte("[INFO] test"))
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 	if n == 0 {
 		t.Fatalf("should have logged")
-	}
-
-	n, err = s.Write([]byte("[DEBUG] test"))
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	if n != 0 {
-		t.Fatalf("should not have logged")
 	}
 }
