@@ -5,11 +5,11 @@ go 1.19
 require (
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
 	github.com/armon/go-metrics v0.4.1
-	github.com/hashicorp/go-msgpack/v2 v2.1.1
+	github.com/hashicorp/go-msgpack/v2 v2.1.2
 	github.com/hashicorp/go-syslog v1.0.0
 	github.com/hashicorp/logutils v1.0.0
 	github.com/hashicorp/mdns v1.0.4
-	github.com/hashicorp/memberlist v0.5.1-0.20231024164941-f2362678b85d
+	github.com/hashicorp/memberlist v0.5.1
 	github.com/mitchellh/cli v1.1.5
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/ryanuber/columnize v2.1.2+incompatible
