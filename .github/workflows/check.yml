@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: ['1.19', '1.20']
+        GO_VERSION: [ "1.19","1.20","1.21" ]
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.16","1.17","1.18" ]
+        GO_VERSION: [ "1.19","1.20","1.21" ]
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.16","1.17","1.18" ]
+        GO_VERSION: [ "1.19","1.20","1.21" ]
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -107,7 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.16","1.17","1.18" ]
+        GO_VERSION: [ "1.19","1.20","1.21" ]
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1

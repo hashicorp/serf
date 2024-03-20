@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
-	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/hashicorp/go-msgpack/v2/codec"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/coordinate"
 )
@@ -110,7 +110,8 @@ type Serf struct {
 	coordCacheLock sync.RWMutex
 
 	// metricLabels is the slice of labels to put on all emitted metrics
-	metricLabels []metrics.Label
+	metricLabels            []metrics.Label
+	msgpackUseNewTimeFormat bool
 }
 
 // SerfState is the state of the Serf instance.
@@ -270,13 +271,14 @@ func Create(conf *Config) (*Serf, error) {
 	}
 
 	serf := &Serf{
-		config:        conf,
-		logger:        logger,
-		members:       make(map[string]*memberState),
-		queryResponse: make(map[LamportTime]*QueryResponse),
-		shutdownCh:    make(chan struct{}),
-		state:         SerfAlive,
-		metricLabels:  conf.MetricLabels,
+		config:                  conf,
+		logger:                  logger,
+		members:                 make(map[string]*memberState),
+		queryResponse:           make(map[LamportTime]*QueryResponse),
+		shutdownCh:              make(chan struct{}),
+		state:                   SerfAlive,
+		metricLabels:            conf.MetricLabels,
+		msgpackUseNewTimeFormat: conf.MsgpackUseNewTimeFormat,
 	}
 	serf.eventJoinIgnore.Store(false)
 
@@ -494,7 +496,7 @@ func (s *Serf) UserEvent(name string, payload []byte, coalesce bool) error {
 	}
 
 	// Start broadcasting the event
-	raw, err := encodeMessage(messageUserEventType, &msg)
+	raw, err := encodeMessage(messageUserEventType, &msg, s.msgpackUseNewTimeFormat)
 	if err != nil {
 		return err
 	}
@@ -574,7 +576,7 @@ func (s *Serf) Query(name string, payload []byte, params *QueryParam) (*QueryRes
 	}
 
 	// Encode the query
-	raw, err := encodeMessage(messageQueryType, &q)
+	raw, err := encodeMessage(messageQueryType, &q, s.msgpackUseNewTimeFormat)
 	if err != nil {
 		return nil, err
 	}
@@ -913,7 +915,7 @@ func (s *Serf) State() SerfState {
 // the broadcast. If a notify channel is given, this channel will be closed
 // when the broadcast is sent.
 func (s *Serf) broadcast(t messageType, msg interface{}, notify chan<- struct{}) error {
-	raw, err := encodeMessage(t, msg)
+	raw, err := encodeMessage(t, msg, s.msgpackUseNewTimeFormat)
 	if err != nil {
 		return err
 	}
@@ -1367,7 +1369,7 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 			From:  s.config.NodeName,
 			Flags: queryFlagAck,
 		}
-		raw, err := encodeMessage(messageQueryResponseType, &ack)
+		raw, err := encodeMessage(messageQueryResponseType, &ack, s.msgpackUseNewTimeFormat)
 		if err != nil {
 			s.logger.Printf("[ERR] serf: failed to format ack: %v", err)
 		} else {
@@ -1531,7 +1533,7 @@ func (s *Serf) resolveNodeConflict() {
 	}
 }
 
-//eraseNode takes a node completely out of the member list
+// eraseNode takes a node completely out of the member list
 func (s *Serf) eraseNode(m *memberState) {
 	// Delete from members
 	delete(s.members, m.Name)

@@ -235,6 +235,12 @@ type Config struct {
 	// contain alphanumeric, dashes and '.'characters
 	// and sets maximum length to 128 characters
 	ValidateNodeNames bool `mapstructure:"validate_node_names"`
+
+	// MsgpackUseNewTimeFormat is used to force the underlying msgpack codec to
+	// use the newer format of time.Time when encoding, used in versions <=0.5.5
+	// by default. Decoding is not affected, as all decoders know how to decode
+	// both formats.
+	MsgpackUseNewTimeFormat bool
 }
 
 // BindAddrParts returns the parts of the BindAddr that should be

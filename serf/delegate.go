@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/armon/go-metrics"
-	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/hashicorp/go-msgpack/v2/codec"
 	"github.com/hashicorp/memberlist"
 )
 
@@ -200,7 +200,7 @@ func (d *delegate) LocalState(join bool) []byte {
 	}
 
 	// Encode the push pull state
-	buf, err := encodeMessage(messagePushPullType, &pp)
+	buf, err := encodeMessage(messagePushPullType, &pp, d.serf.msgpackUseNewTimeFormat)
 	if err != nil {
 		d.serf.logger.Printf("[ERR] serf: Failed to encode local state: %v", err)
 		return nil
