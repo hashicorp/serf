@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -1768,11 +1767,7 @@ func TestSerf_Join_IgnoreOld(t *testing.T) {
 }
 
 func TestSerf_SnapshotRecovery(t *testing.T) {
-	td, err := ioutil.TempDir("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	defer os.RemoveAll(td)
+	td := t.TempDir()
 
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
@@ -1865,11 +1860,7 @@ func TestSerf_Leave_SnapshotRecovery(t *testing.T) {
 		t.Skip("test contains a data race")
 	}
 
-	td, err := ioutil.TempDir("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	defer os.RemoveAll(td)
+	td := t.TempDir()
 
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
@@ -2446,11 +2437,7 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 	existing := "T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s="
 	newKey := "HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8="
 
-	td, err := ioutil.TempDir("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	defer os.RemoveAll(td)
+	td := t.TempDir()
 
 	keyringFile := filepath.Join(td, "tags.json")
 
@@ -2483,7 +2470,7 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	content, err := ioutil.ReadFile(keyringFile)
+	content, err := os.ReadFile(keyringFile)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -2513,7 +2500,7 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	content, err = ioutil.ReadFile(keyringFile)
+	content, err = os.ReadFile(keyringFile)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -2533,7 +2520,7 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	content, err = ioutil.ReadFile(keyringFile)
+	content, err = os.ReadFile(keyringFile)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
