@@ -122,7 +122,7 @@ GEM
     rb-fsevent (0.10.2)
     rb-inotify (0.9.10)
       ffi (>= 0.5.0, < 2)
-    redcarpet (3.4.0)
+    redcarpet (3.6.0)
     rouge (2.2.1)
     sass (3.4.25)
     sprockets (2.12.4)
