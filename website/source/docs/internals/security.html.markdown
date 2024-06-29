@@ -22,7 +22,7 @@ to learn about them without having to go spelunking through the source code.
 
 ## Security Primitives
 
-The Serf security model is built on around a symmetric key, or shared secret system.
+The Serf security model is built around a symmetric key, or shared secret system.
 All members of the Serf cluster must be provided the shared secret ahead of time.
 This places the burden of key distribution on the user.
 
