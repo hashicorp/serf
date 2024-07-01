@@ -48,7 +48,9 @@ type dirEnts []os.FileInfo
 type MDNSConfig struct {
 	// Interface is used to provide a binding interface to use for mDNS.
 	// if not set, iface will be used.
-	Interface string `mapstructure:"interface"`
+	Interface   string `mapstructure:"interface"`
+	DisableIPv4 bool   `mapstructure:"disable_ipv4"`
+	DisableIPv6 bool   `mapstructure:"disable_ipv6"`
 }
 
 // Config is the configuration that can be set for an Agent. Some of these
@@ -457,6 +459,14 @@ func MergeConfig(a, b *Config) *Config {
 
 	if b.MDNS.Interface != "" {
 		result.MDNS.Interface = b.MDNS.Interface
+	}
+
+	if b.MDNS.DisableIPv4 == true {
+		result.MDNS.DisableIPv4 = true
+	}
+
+	if b.MDNS.DisableIPv6 == true {
+		result.MDNS.DisableIPv6 = true
 	}
 
 	if b.ReconnectInterval != 0 {

@@ -89,6 +89,8 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.StringVar(&cmdConfig.Discover, "discover", "", "mDNS discovery name")
 	cmdFlags.StringVar(&cmdConfig.Interface, "iface", "", "interface to bind to")
 	cmdFlags.StringVar(&cmdConfig.MDNS.Interface, "mdns-iface", "", "interface to use for mDNS")
+	cmdFlags.BoolVar(&cmdConfig.MDNS.DisableIPv4, "mdns-disable-ipv4", false, "disable IPv4 for mDNS")
+	cmdFlags.BoolVar(&cmdConfig.MDNS.DisableIPv6, "mdns-disable-ipv6", false, "disable IPv6 for mDNS")
 	cmdFlags.StringVar(&cmdConfig.TagsFile, "tags-file", "", "tag persistence file")
 	cmdFlags.BoolVar(&cmdConfig.EnableSyslog, "syslog", false,
 		"enable logging to syslog facility")
@@ -185,6 +187,12 @@ func (c *Command) readConfig() *Config {
 
 		if _, err := net.InterfaceByName(config.MDNS.Interface); err != nil {
 			c.Ui.Error(fmt.Sprintf("Invalid mDNS network interface: %s", err))
+			return nil
+		}
+
+		// Check for a valid mdns ip mode
+		if config.MDNS.DisableIPv4 && config.MDNS.DisableIPv6 {
+			c.Ui.Error("Invalid mDNS configuration: both IPv4 and IPv6 are disabled")
 			return nil
 		}
 	}
@@ -450,7 +458,7 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 		c.logger.Printf("[INFO] agent: Starting mDNS listener on interface %s", iface.Name)
 
 		_, err := NewAgentMDNS(agent, logOutput, config.ReplayOnJoin,
-			config.NodeName, config.Discover, iface, local.Addr, int(local.Port))
+			config.NodeName, config.Discover, iface, local.Addr, int(local.Port), config.MDNS)
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error starting mDNS listener: %s", err))
 			return nil
@@ -753,6 +761,8 @@ Options:
                            if mdns-iface is not specified.
   -mdns-iface              Network interface to use for mDNS. If not provided, the
                            -iface value is used.
+  -mdns-disable-ipv4       Disable IPv4 for mDNS.
+  -mdns-disable-ipv6       Disable IPv6 for mDNS.
   -advertise=0.0.0.0       Address to advertise to the other cluster members
   -config-file=foo         Path to a JSON file to read configuration from.
                            This can be specified multiple times.
