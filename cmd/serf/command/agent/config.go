@@ -45,6 +45,12 @@ func DefaultConfig() *Config {
 
 type dirEnts []os.FileInfo
 
+type MDNSConfig struct {
+	// Interface is used to provide a binding interface to use for mDNS.
+	// if not set, iface will be used.
+	Interface string `mapstructure:"interface"`
+}
+
 // Config is the configuration that can be set for an Agent. Some of these
 // configurations are exposed as command-line flags to `serf agent`, whereas
 // many of the more advanced configurations can only be set by creating
@@ -154,10 +160,12 @@ type Config struct {
 	// allows Serf agents to join each other with zero configuration.
 	Discover string `mapstructure:"discover"`
 
+	MDNS MDNSConfig `mapstructure:"mdns"`
+
 	// Interface is used to provide a binding interface to use. It can be
 	// used instead of providing a bind address, as Serf will discover the
 	// address of the provided interface. It is also used to set the multicast
-	// device used with `-discover`.
+	// device used with `-discover`, if `mdns-iface` is not set
 	Interface string `mapstructure:"interface"`
 
 	// ReconnectIntervalRaw is the string reconnect interval time. This interval
@@ -290,6 +298,16 @@ func (c *Config) NetworkInterface() (*net.Interface, error) {
 		return nil, nil
 	}
 	return net.InterfaceByName(c.Interface)
+}
+
+func (c *Config) MDNSNetworkInterface() (*net.Interface, error) {
+	if c.MDNS.Interface == "" && c.Interface == "" {
+		return nil, nil
+	} else if c.MDNS.Interface != "" {
+		return net.InterfaceByName(c.MDNS.Interface)
+	} else {
+		return net.InterfaceByName(c.Interface)
+	}
 }
 
 // DecodeConfig reads the configuration from the given reader in JSON
@@ -436,6 +454,11 @@ func MergeConfig(a, b *Config) *Config {
 	if b.Interface != "" {
 		result.Interface = b.Interface
 	}
+
+	if b.MDNS.Interface != "" {
+		result.MDNS.Interface = b.MDNS.Interface
+	}
+
 	if b.ReconnectInterval != 0 {
 		result.ReconnectInterval = b.ReconnectInterval
 	}

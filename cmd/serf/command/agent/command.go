@@ -88,6 +88,7 @@ func (c *Command) readConfig() *Config {
 		"tag pair, specified as key=value")
 	cmdFlags.StringVar(&cmdConfig.Discover, "discover", "", "mDNS discovery name")
 	cmdFlags.StringVar(&cmdConfig.Interface, "iface", "", "interface to bind to")
+	cmdFlags.StringVar(&cmdConfig.MDNS.Interface, "mdns-iface", "", "interface to use for mDNS")
 	cmdFlags.StringVar(&cmdConfig.TagsFile, "tags-file", "", "tag persistence file")
 	cmdFlags.BoolVar(&cmdConfig.EnableSyslog, "syslog", false,
 		"enable logging to syslog facility")
@@ -174,6 +175,18 @@ func (c *Command) readConfig() *Config {
 	if _, err := config.NetworkInterface(); err != nil {
 		c.Ui.Error(fmt.Sprintf("Invalid network interface: %s", err))
 		return nil
+	}
+
+	if config.MDNS.Interface != "" {
+		if config.Discover == "" {
+			c.Ui.Error("mDNS interface specified without enabling mDNS discovery")
+			return nil
+		}
+
+		if _, err := net.InterfaceByName(config.MDNS.Interface); err != nil {
+			c.Ui.Error(fmt.Sprintf("Invalid mDNS network interface: %s", err))
+			return nil
+		}
 	}
 
 	// Backward compatibility hack for 'Role'
@@ -432,7 +445,9 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 		local := agent.Serf().Memberlist().LocalNode()
 
 		// Get the bind interface if any
-		iface, _ := config.NetworkInterface()
+		iface, _ := config.MDNSNetworkInterface()
+
+		c.logger.Printf("[INFO] agent: Starting mDNS listener on interface %s", iface.Name)
 
 		_, err := NewAgentMDNS(agent, logOutput, config.ReplayOnJoin,
 			config.NodeName, config.Discover, iface, local.Addr, int(local.Port))
@@ -734,7 +749,10 @@ Options:
                            -bind if the interface is known but not the address.
                            If both are provided, then Serf verifies that the
                            interface has the bind address that is provided. This
-                           flag also sets the multicast device used for -discover.
+                           flag also sets the multicast device used for -discover,
+                           if mdns-iface is not specified.
+  -mdns-iface              Network interface to use for mDNS. If not provided, the
+                           -iface value is used.
   -advertise=0.0.0.0       Address to advertise to the other cluster members
   -config-file=foo         Path to a JSON file to read configuration from.
                            This can be specified multiple times.
