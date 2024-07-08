@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/go-msgpack/v2 v2.1.2
 	github.com/hashicorp/go-syslog v1.0.0
 	github.com/hashicorp/logutils v1.0.0
-	github.com/hashicorp/mdns v1.0.4
+	github.com/hashicorp/mdns v1.0.5
 	github.com/hashicorp/memberlist v0.5.1
 	github.com/mitchellh/cli v1.1.5
 	github.com/mitchellh/mapstructure v1.5.0
