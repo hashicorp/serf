@@ -44,14 +44,6 @@ func (c *memberEventCoalescer) Flush(outCh chan<- Event) {
 	// Coalesce the various events we got into a single set of events.
 	events := make(map[EventType]*MemberEvent)
 	for name, cevent := range c.latestEvents {
-		previous, ok := c.lastEvents[name]
-
-		// If we sent the same event before, then ignore
-		// unless it is a MemberUpdate
-		if ok && previous == cevent.Type && cevent.Type != EventMemberUpdate {
-			continue
-		}
-
 		// Update our last event
 		c.lastEvents[name] = cevent.Type
 
