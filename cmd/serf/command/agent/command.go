@@ -347,13 +347,11 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer) *Agent {
 	serfConfig.Tags = config.Tags
 	serfConfig.SnapshotPath = config.SnapshotPath
 	serfConfig.ProtocolVersion = uint8(config.Protocol)
-	serfConfig.CoalescePeriod = 3 * time.Second
-	serfConfig.QuiescentPeriod = time.Second
+	serfConfig.CoalescePeriod = time.Second
 	serfConfig.QueryResponseSizeLimit = config.QueryResponseSizeLimit
 	serfConfig.QuerySizeLimit = config.QuerySizeLimit
 	serfConfig.UserEventSizeLimit = config.UserEventSizeLimit
-	serfConfig.UserCoalescePeriod = 3 * time.Second
-	serfConfig.UserQuiescentPeriod = time.Second
+	serfConfig.UserCoalescePeriod = time.Second
 	if config.ReconnectInterval != 0 {
 		serfConfig.ReconnectInterval = config.ReconnectInterval
 	}
