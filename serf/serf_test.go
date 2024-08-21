@@ -1699,17 +1699,30 @@ func TestSerf_joinLeaveJoin(t *testing.T) {
 			r.Fatalf("s2 members: %d", s2.NumNodes())
 		}
 
-		// s2 should see the itself as alive
-		mems := s2.Members()
-		anyLeaving := false
+		// s1 should see the all nodes as alive
+		mems := s1.Members()
+		anyNotAlive := false
 		for _, m := range mems {
-			if m.Status == StatusLeaving {
-				anyLeaving = true
+			if m.Status != StatusAlive {
+				anyNotAlive = true
 				break
 			}
 		}
-		if anyLeaving {
-			t.Fatalf("all nodes should be alive!")
+		if anyNotAlive {
+			r.Fatalf("all nodes should be alive!")
+		}
+
+		// s2 should see the all nodes as alive
+		mems = s2.Members()
+		anyNotAlive = false
+		for _, m := range mems {
+			if m.Status != StatusAlive {
+				anyNotAlive = true
+				break
+			}
+		}
+		if anyNotAlive {
+			r.Fatalf("all nodes should be alive!")
 		}
 	})
 }
