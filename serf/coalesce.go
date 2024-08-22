@@ -49,6 +49,7 @@ func coalesceLoop(inCh <-chan Event, outCh chan<- Event, shutdownCh <-chan struc
 		case <-time.After(coalescePeriod):
 			c.Flush(outCh)
 		case <-shutdownCh:
+			c.Flush(outCh)
 			return
 		}
 	}
