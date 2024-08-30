@@ -559,10 +559,11 @@ func (s *Serf) Query(name string, payload []byte, params *QueryParam) (*QueryRes
 	if params.RequestAck {
 		flags |= queryFlagAck
 	}
-
+	lTime := s.queryClock.Time()
+	s.queryClock.Increment()
 	// Create a message
 	q := messageQuery{
-		LTime:       s.queryClock.Time(),
+		LTime:       lTime,
 		ID:          uint32(rand.Int31()),
 		Addr:        local.Addr,
 		Port:        local.Port,
