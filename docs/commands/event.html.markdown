@@ -71,7 +71,7 @@ send the "deploy" event with "1234567890" as the payload.
 ## Receiving an Event
 
 The events can be handled by registering an
-[event handler](/docs/agent/event-handlers.html) with the Serf agent. The
+[event handler](/docs/agent/event-handlers.html.markdown) with the Serf agent. The
 documentation for how the user event is dispatched is all contained within
 that linked page.
 

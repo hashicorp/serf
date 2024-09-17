@@ -10,7 +10,7 @@ description: |-
 
 The Serf agent supports encrypting all of its network traffic. The exact
 method of this encryption is described on the
-[encryption internals page](/docs/internals/security.html).
+[encryption internals page](/docs/internals/security.html.markdown).
 
 ## Enabling Encryption
 

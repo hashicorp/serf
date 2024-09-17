@@ -12,7 +12,7 @@ Serf's true power and flexibility comes in the form of event handlers:
 scripts that are executed in response to various events that can occur
 related to the Serf cluster. Serf invokes events related to membership
 changes (when a node comes online or goes offline) as well as
-[custom events](/docs/commands/event.html) or [queries](/docs/commands/query.html).
+[custom events](/docs/commands/event.html) or [queries](/docs/commands/query.html.markdown).
 
 Event handlers can be any executable, including piped executables (such
 as `awk '{print $2}' | grep foo`), since event handlers are invoked within
@@ -137,4 +137,4 @@ $stderr.reopen('/dev/null', 'w')
 ```
 
 **Note:** This method is really only useful for event handlers, and is mostly
-useless for [queries](/docs/commands/query.html).
+useless for [queries](/docs/commands/query.html.markdown).

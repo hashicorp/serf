@@ -33,7 +33,7 @@ below, assume you're running version A of Serf, and then version B comes out.
    You can verify this is the case by running `serf members -detailed` to
    make sure all members are speaking the same, latest protocol version.
 
-The key to making this work is the [protocol compatibility](/docs/compatibility.html)
+The key to making this work is the [protocol compatibility](/docs/compatibility.html.markdown)
 of Serf. The protocol version system is discussed below.
 
 ## Protocol Versions

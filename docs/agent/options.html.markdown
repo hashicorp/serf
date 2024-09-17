@@ -36,7 +36,7 @@ The options below are all specified on the command-line.
   If this configuration value is changed and no port is specified, the default of
   "7946" will be used. An important compatibility note, protocol version 2
   introduces support for non-consistent ports across the cluster. For more information,
-  see the [compatibility page](/docs/compatibility.html).
+  see the [compatibility page](/docs/compatibility.html.markdown).
   Note: To use an IPv6 address, specify "[::1]" or "[::1]:7946".
 
 * `-iface` - This flag can be used to provide a binding interface. It can be
@@ -89,7 +89,7 @@ The options below are all specified on the command-line.
 * `-event-handler` - Adds an event handler that Serf will invoke for
   events. This flag can be specified multiple times to define multiple
   event handlers. By default no event handlers are registered. See the
-  [event handler page](/docs/agent/event-handlers.html) for more details on
+  [event handler page](/docs/agent/event-handlers.html.markdown) for more details on
   event handlers as well as a syntax for filtering event handlers by event.
   Event handlers can be changed by reloading the configuration.
 
@@ -124,7 +124,7 @@ The options below are all specified on the command-line.
   are too tight.
 
 * `-protocol` - The Serf protocol version to use. This defaults to the latest
-  version. This should be set only when [upgrading](/docs/upgrading.html).
+  version. This should be set only when [upgrading](/docs/upgrading.html.markdown).
   You can view the protocol versions supported by Serf by running `serf -v`.
 
 * `-retry-join` - Address of another agent to join after starting up. This can
@@ -157,7 +157,7 @@ The options below are all specified on the command-line.
   By default this is "127.0.0.1:7373", allowing only loopback connections.
   The RPC address is used by other Serf commands, such as  `serf members`,
   in order to query a running Serf agent. It is also used by other applications
-  to control Serf using it's [RPC protocol](/docs/agent/rpc.html).
+  to control Serf using it's [RPC protocol](/docs/agent/rpc.html.markdown).
 
 * `-snapshot` - The snapshot flag provides a file path that is used to store
   recovery information, so when Serf restarts it is able to automatically
@@ -223,7 +223,7 @@ at a single JSON object with configuration within it.
 
 * `role` - **Deprecated**. Equivalent to the `-role` command-line flag.
 
-* `disable_coordinates` - Disables features related to [network coordinates](/docs/internals/coordinates.html).
+* `disable_coordinates` - Disables features related to [network coordinates](/docs/internals/coordinates.html.markdown).
 
 * `tags` - This is a dictionary of tag values. It is the same as specifying
   the `tag` command-line flag once per tag.

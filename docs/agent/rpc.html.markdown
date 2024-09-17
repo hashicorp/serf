@@ -115,7 +115,7 @@ following request body:
 ```
 
 The `Name` is a string, but `Payload` is just opaque bytes. Coalesce
-is used to control if Serf should enable [event coalescing](/docs/commands/event.html).
+is used to control if Serf should enable [event coalescing](/docs/commands/event.html.markdown).
 
 There is no special response body.
 
@@ -217,7 +217,7 @@ the stream is stopped. The request body looks like:
     {"Type": "member-join,user:deploy"}`
 ```
 
-The format of type is the same as the [event handler](/docs/agent/event-handlers.html),
+The format of type is the same as the [event handler](/docs/agent/event-handlers.html.markdown),
 except no script is specified. The one exception is that `"*"` can be specified to
 subscribe to all events.
 
@@ -415,7 +415,7 @@ The request looks like:
 ```
 
 The `Key` should be 32 bytes of base64-encoded data. `24` and `16` bytes are also accepted, but 32 bytes are recommended for improved security. This value can be generated
-using the [keygen command](/docs/commands/keygen.html).
+using the [keygen command](/docs/commands/keygen.html.markdown).
 
 Once invoked, this method will begin broadcasting the new key to all members in
 the cluster via the gossip protocol. Once the query has completed, a response
@@ -507,7 +507,7 @@ successful, this number should be equivalent to the `NumNodes` field. If not all
 members are aware of a key, you should either rebroadcast that key using the
 `install-key` RPC command, or remove it using the `remove-key` RPC command. More
 on encryption keys can be found on the
-[agent encryption](/docs/agent/encryption.html) page.
+[agent encryption](/docs/agent/encryption.html.markdown) page.
 
 ### stats
 
@@ -577,6 +577,6 @@ The returned coordinate is valid only if `Ok` is true. Otherwise, there wasn't
 a coordinate available for the given node. This might mean that coordinates
 are not enabled, or that the node has not yet contacted the agent.
 
-See the [Network Coordinates](/docs/internals/coordinates.html)
+See the [Network Coordinates](/docs/internals/coordinates.html.markdown)
 internals guide for more information on how these coordinates are computed, and
 for details on how to perform calculations with them.

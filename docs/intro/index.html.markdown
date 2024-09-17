@@ -11,7 +11,7 @@ description: |-
 Welcome to the intro guide to Serf! This guide will show you what Serf is,
 explain the problems Serf solves, compare Serf versus other similar
 software, and show how easy it is to actually use Serf. If you're already familiar
-with the basics of Serf, the [documentation](/docs/index.html) provides more
+with the basics of Serf, the [documentation](/docs/index.html.markdown) provides more
 of a reference for all available features.
 
 ## What is Serf?
@@ -22,7 +22,7 @@ highly available. Serf runs on every major platform: Linux, Mac OS X, and Window
 extremely lightweight: it uses 5 to 10 MB of resident memory and primarily
 communicates using infrequent UDP messages.
 
-Serf uses an efficient [gossip protocol](/docs/internals/gossip.html)
+Serf uses an efficient [gossip protocol](/docs/internals/gossip.html.markdown)
 to solve three major problems:
 
 * **Membership**: Serf maintains cluster membership lists and is able to
@@ -42,9 +42,9 @@ to solve three major problems:
   deliver messages in the face of offline nodes or network partitions. Queries
   provide a simple realtime request/response mechanism.
 
-See the [use cases page](/intro/use-cases.html) for a list of concrete use
+See the [use cases page](/docs/intro/use-cases.html.markdown) for a list of concrete use
 cases built on top of the features Serf provides. See the page on
-[how Serf compares to other software](/intro/vs-other-sw.html) to see just
+[how Serf compares to other software](/docs/intro/vs-other-sw.html.markdown) to see just
 how it fits into your existing infrastructure. Or continue onwards with
-the [getting started guide](/intro/getting-started/install.html) to get
+the [getting started guide](/docs/intro/getting-started/install.html.markdown) to get
 Serf up and running and see how it works.

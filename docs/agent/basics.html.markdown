@@ -57,17 +57,17 @@ There are six important components that `serf agent` outputs:
   By default, this binds only to localhost on the default port. If you
   change this address, you'll have to specify an `-rpc-addr` to commands
   such as `serf members` so they know how to talk to the agent. This is also
-  the address other applications can use over [RPC to control Serf](/docs/agent/rpc.html).
+  the address other applications can use over [RPC to control Serf](/docs/agent/rpc.html.markdown).
 
 * **Encrypted**: This shows if Serf is encrypting all traffic that it
   sends and expects to receive. It is a good sanity check to avoid sending
   non-encrypted traffic over any public networks. You can read more about
-  [encryption here](/docs/agent/encryption.html).
+  [encryption here](/docs/agent/encryption.html.markdown).
 
 * **Snapshot**: This shows if Serf snapshotting is enabled. The snapshot
   file enables Serf to automatically re-join a cluster after failure and
   prevents replay of events that have already been seen. It requires storing
-  state on disk, and [must be configured](/docs/agent/options.html)
+  state on disk, and [must be configured](/docs/agent/options.html.markdown)
   using a CLI flag or in the configuration directory. If it is not provided,
   other nodes will still attempt to reconnect on recovery, however the node
   will take longer to join the cluster and will replay old events.
@@ -76,7 +76,7 @@ There are six important components that `serf agent` outputs:
   be appropriate to the environment Serf is running in. It defaults to
   optimizing for a LAN environment, but can also be set for WAN or
   local-only communication. The profile can be set in
-  the [configuration](/docs/agent/options.html).
+  the [configuration](/docs/agent/options.html.markdown).
 
 ## Stopping an Agent
 

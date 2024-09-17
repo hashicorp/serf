@@ -10,7 +10,7 @@ description: |-
 
 This section goes over some of the internals of Serf, such as the gossip
 protocol, ordering of messages via Lamport clocks, etc. This section
-also contains a useful [convergence simulator](/docs/internals/simulator.html)
+also contains a useful [convergence simulator](/docs/internals/simulator.html.markdown)
 that can be used to see how fast a Serf cluster will converge under
 various conditions with specific configurations.
 

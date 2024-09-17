@@ -44,7 +44,7 @@ the current load average of the machine.
 
 Serf agents must be configured to handle queries before they will
 respond to them. See the "Specifying Event Handlers" section in the
-[Event Handlers documentation](/docs/agent/event-handlers.html) for
+[Event Handlers documentation](/docs/agent/event-handlers.html.markdown) for
 examples of the configuration format.
 
 ## Query Payloads

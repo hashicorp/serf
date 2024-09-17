@@ -99,5 +99,5 @@ to invoke multiple event handlers as well as invoke certain event handlers
 for only certain Serf events.
 
 To learn more about these features, see the full documentation section
-of [event handlers](/docs/agent/event-handlers.html).
+of [event handlers](/docs/agent/event-handlers.html.markdown).
 

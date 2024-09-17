@@ -37,7 +37,7 @@ Catalog, while Serf is only eventually consistent.
 In addition to the service level abstraction and improved health checking,
 Consul provides a key/value store and support for multiple datacenters.
 Serf can run across the WAN but with degraded performance. Consul makes use
-of [multiple gossip pools](https://www.consul.io/docs/internals/architecture.html),
+of [multiple gossip pools](https://www.consul.io/docs/internals/architecture.html.markdown),
 so that the performance of Serf over a LAN can be retained while still using it over
 a WAN for linking together multiple datacenters.
 

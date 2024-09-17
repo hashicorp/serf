@@ -9,7 +9,7 @@ description: |-
 # Recipe: Event handler router
 
 Typically you must configure a handler for each type of event you expect to
-encounter (more about events and handlers [here](/docs/agent/event-handlers.html)).
+encounter (more about events and handlers [here](/docs/agent/event-handlers.html.markdown)).
 To change handler configuration, one must update the Serf configuration and reload
 the agent with a SIGHUP or a restart.
 
