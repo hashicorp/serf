@@ -28,7 +28,7 @@ Here are some example use cases of Serf, though there are many others:
 
 ## Quick Start
 
-First, [download a pre-built Serf binary](https://github.com/hashicorp/serf)
+First, [download a pre-built Serf binary](https://releases.hashicorp.com/serf)
 for your operating system, [compile Serf yourself](#developing-serf), or install
 using `go get -u github.com/hashicorp/serf/cmd/serf`.
 
