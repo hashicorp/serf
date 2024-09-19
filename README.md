@@ -88,7 +88,7 @@ cluster of the node failure.
 
 Full, comprehensive documentation is viewable on the Serf website:
 
-https://github.com/hashicorp/serf/docs
+https://github.com/hashicorp/serf/tree/master/docs
 
 ## Developing Serf
 
