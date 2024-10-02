@@ -24,4 +24,4 @@ At this point the two nodes are running and you can SSH in to play with them:
     ...
 
 To learn more about starting serf, joining nodes and interacting with the agent,
-checkout the [getting started guide](https://www.serf.io/intro/getting-started/install.html).
+checkout the [getting started guide](/docs/intro/getting-started/install.html.markdown).

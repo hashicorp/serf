@@ -5,7 +5,7 @@ package client
 
 import (
 	"bufio"
-	"fmt"
+	"errors"
 	"log"
 	"net"
 	"sync"
@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	clientClosed = fmt.Errorf("client closed")
+	clientClosed = errors.New("client closed")
 )
 
 type seqCallback struct {
@@ -453,7 +453,7 @@ func (mh *monitorHandler) Cleanup() {
 	if !mh.closed {
 		if !mh.init {
 			mh.init = true
-			mh.initCh <- fmt.Errorf("Stream closed")
+			mh.initCh <- errors.New("Stream closed")
 		}
 		if mh.logCh != nil {
 			close(mh.logCh)
@@ -535,7 +535,7 @@ func (sh *streamHandler) Cleanup() {
 	if !sh.closed {
 		if !sh.init {
 			sh.init = true
-			sh.initCh <- fmt.Errorf("Stream closed")
+			sh.initCh <- errors.New("Stream closed")
 		}
 		if sh.eventCh != nil {
 			close(sh.eventCh)
@@ -636,7 +636,7 @@ func (qh *queryHandler) Cleanup() {
 	if !qh.closed {
 		if !qh.init {
 			qh.init = true
-			qh.initCh <- fmt.Errorf("Stream closed")
+			qh.initCh <- errors.New("Stream closed")
 		}
 		if qh.ackCh != nil {
 			close(qh.ackCh)
@@ -788,7 +788,7 @@ func (c *RPCClient) genericRPC(header *requestHeader, req interface{}, resp inte
 // strToError converts a string to an error if not blank
 func strToError(s string) error {
 	if s != "" {
-		return fmt.Errorf(s)
+		return errors.New(s)
 	}
 	return nil
 }
