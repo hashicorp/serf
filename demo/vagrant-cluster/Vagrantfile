@@ -7,7 +7,7 @@ sudo apt-get install -y unzip
 
 echo Fetching Serf...
 cd /tmp/
-wget https://releases.hashicorp.com/serf/0.7.0/serf_0.7.0_linux_amd64.zip -O serf.zip
+wget https://releases.hashicorp.com/serf/0.8.2/serf_0.8.2_linux_amd64.zip -O serf.zip
 
 echo Installing Serf...
 unzip serf.zip
@@ -20,7 +20,7 @@ SCRIPT
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = "hashicorp/precise64"
+  config.vm.box = "ubuntu/bionic64"
 
   config.vm.provision "shell", inline: $script
 
