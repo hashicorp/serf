@@ -4,7 +4,7 @@
 > [!NOTE]
 > Looking for serf.io? The Serf website was shut down on 10/02/2024. The docs
 previously served from serf.io can be found
-[here](https://github.com/hashicorp/serf/blob/master/docs/index.html.markdown)
+[https://github.com/hashicorp/serf/blob/master/docs/index.html.markdown](https://github.com/hashicorp/serf/blob/master/docs/index.html.markdown)
 
 
 * Website: https://github.com/hashicorp/serf
