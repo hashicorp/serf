@@ -291,24 +291,24 @@ func Create(conf *Config) (*Serf, error) {
 	}
 
 	// Check if serf member event coalescing is enabled
-	if conf.CoalescePeriod > 0 && conf.QuiescentPeriod > 0 && conf.EventCh != nil {
+	if conf.CoalescePeriod > 0 && conf.EventCh != nil {
 		c := &memberEventCoalescer{
 			lastEvents:   make(map[string]EventType),
 			latestEvents: make(map[string]coalesceEvent),
 		}
 
 		conf.EventCh = coalescedEventCh(conf.EventCh, serf.shutdownCh,
-			conf.CoalescePeriod, conf.QuiescentPeriod, c)
+			conf.CoalescePeriod, c)
 	}
 
 	// Check if user event coalescing is enabled
-	if conf.UserCoalescePeriod > 0 && conf.UserQuiescentPeriod > 0 && conf.EventCh != nil {
+	if conf.UserCoalescePeriod > 0 && conf.EventCh != nil {
 		c := &userEventCoalescer{
 			events: make(map[string]*latestUserEvents),
 		}
 
 		conf.EventCh = coalescedEventCh(conf.EventCh, serf.shutdownCh,
-			conf.UserCoalescePeriod, conf.UserQuiescentPeriod, c)
+			conf.UserCoalescePeriod, c)
 	}
 
 	// Listen for internal Serf queries. This is setup before the snapshotter, since
