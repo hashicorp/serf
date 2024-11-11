@@ -347,9 +347,9 @@ func (s *Snapshotter) processMemberEvent(e MemberEvent) {
 // clock value. This is done after member events but should also be done
 // periodically due to race conditions with join and leave intents
 func (s *Snapshotter) updateClock() {
-	lastSeen := s.clock.Time() - 1
-	if lastSeen > s.lastClock {
-		s.lastClock = lastSeen
+	current := s.clock.Time() - 1
+	if current > s.lastClock+1 {
+		s.lastClock = current - 1
 		s.tryAppend(fmt.Sprintf("clock: %d\n", s.lastClock))
 	}
 }
