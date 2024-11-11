@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/armon/circbuf"
-	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-metrics/compat"
 	"github.com/hashicorp/serf/serf"
 )
 

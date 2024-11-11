@@ -4,7 +4,7 @@
 package coordinate
 
 import (
-	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-metrics/compat"
 )
 
 // Config is used to set the parameters of the Vivaldi-based coordinate mapping

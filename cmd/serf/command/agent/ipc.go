@@ -37,7 +37,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-metrics/compat"
 	"github.com/hashicorp/go-msgpack/v2/codec"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/coordinate"
