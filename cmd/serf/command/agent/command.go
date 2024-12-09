@@ -88,6 +88,9 @@ func (c *Command) readConfig() *Config {
 		"tag pair, specified as key=value")
 	cmdFlags.StringVar(&cmdConfig.Discover, "discover", "", "mDNS discovery name")
 	cmdFlags.StringVar(&cmdConfig.Interface, "iface", "", "interface to bind to")
+	cmdFlags.StringVar(&cmdConfig.MDNS.Interface, "mdns-iface", "", "interface to use for mDNS")
+	cmdFlags.BoolVar(&cmdConfig.MDNS.DisableIPv4, "mdns-disable-ipv4", false, "disable IPv4 for mDNS")
+	cmdFlags.BoolVar(&cmdConfig.MDNS.DisableIPv6, "mdns-disable-ipv6", false, "disable IPv6 for mDNS")
 	cmdFlags.StringVar(&cmdConfig.TagsFile, "tags-file", "", "tag persistence file")
 	cmdFlags.BoolVar(&cmdConfig.EnableSyslog, "syslog", false,
 		"enable logging to syslog facility")
@@ -174,6 +177,24 @@ func (c *Command) readConfig() *Config {
 	if _, err := config.NetworkInterface(); err != nil {
 		c.Ui.Error(fmt.Sprintf("Invalid network interface: %s", err))
 		return nil
+	}
+
+	if config.MDNS.Interface != "" {
+		if config.Discover == "" {
+			c.Ui.Error("mDNS interface specified without enabling mDNS discovery")
+			return nil
+		}
+
+		if _, err := net.InterfaceByName(config.MDNS.Interface); err != nil {
+			c.Ui.Error(fmt.Sprintf("Invalid mDNS network interface: %s", err))
+			return nil
+		}
+
+		// Check for a valid mdns ip mode
+		if config.MDNS.DisableIPv4 && config.MDNS.DisableIPv6 {
+			c.Ui.Error("Invalid mDNS configuration: both IPv4 and IPv6 are disabled")
+			return nil
+		}
 	}
 
 	// Backward compatibility hack for 'Role'
@@ -432,10 +453,12 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 		local := agent.Serf().Memberlist().LocalNode()
 
 		// Get the bind interface if any
-		iface, _ := config.NetworkInterface()
+		iface, _ := config.MDNSNetworkInterface()
+
+		c.logger.Printf("[INFO] agent: Starting mDNS listener on interface %s", iface.Name)
 
 		_, err := NewAgentMDNS(agent, logOutput, config.ReplayOnJoin,
-			config.NodeName, config.Discover, iface, local.Addr, int(local.Port))
+			config.NodeName, config.Discover, iface, local.Addr, int(local.Port), config.MDNS)
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error starting mDNS listener: %s", err))
 			return nil
@@ -452,7 +475,7 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 
 	// Start the IPC layer
 	c.Ui.Output("Starting Serf agent RPC...")
-	ipc := NewAgentIPC(agent, config.RPCAuthKey, rpcListener, logOutput, logWriter)
+	ipc := NewAgentIPC(agent, config.RPCAuthKey, rpcListener, logOutput, logWriter, config.MsgpackUseNewTimeFormat)
 
 	c.Ui.Output("Serf agent running!")
 	c.Ui.Info(fmt.Sprintf("                  Node name: '%s'", config.NodeName))
@@ -734,7 +757,12 @@ Options:
                            -bind if the interface is known but not the address.
                            If both are provided, then Serf verifies that the
                            interface has the bind address that is provided. This
-                           flag also sets the multicast device used for -discover.
+                           flag also sets the multicast device used for -discover,
+                           if mdns-iface is not specified.
+  -mdns-iface              Network interface to use for mDNS. If not provided, the
+                           -iface value is used.
+  -mdns-disable-ipv4       Disable IPv4 for mDNS.
+  -mdns-disable-ipv6       Disable IPv6 for mDNS.
   -advertise=0.0.0.0       Address to advertise to the other cluster members
   -config-file=foo         Path to a JSON file to read configuration from.
                            This can be specified multiple times.

@@ -1,6 +1,13 @@
 # Serf [![Build Status](https://github.com/hashicorp/serf/workflows/Checks/badge.svg)](https://github.com/hashicorp/serf/actions) [![Join the chat at https://gitter.im/hashicorp-serf/Lobby](https://badges.gitter.im/hashicorp-serf/Lobby.svg)](https://gitter.im/hashicorp-serf/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-* Website: https://www.serf.io
+
+> [!NOTE]
+> Looking for serf.io? The Serf website was shut down on 10/02/2024. The docs
+previously served from serf.io can be found
+[https://github.com/hashicorp/serf/blob/master/docs/index.html.markdown](https://github.com/hashicorp/serf/blob/master/docs/index.html.markdown)
+
+
+* Website: https://github.com/hashicorp/serf
 * Chat: [Gitter](https://gitter.im/hashicorp-serf/Lobby)
 * Mailing list: [Google Groups](https://groups.google.com/group/serfdom/)
 
@@ -28,7 +35,7 @@ Here are some example use cases of Serf, though there are many others:
 
 ## Quick Start
 
-First, [download a pre-built Serf binary](https://www.serf.io/downloads.html)
+First, [download a pre-built Serf binary](https://releases.hashicorp.com/serf)
 for your operating system, [compile Serf yourself](#developing-serf), or install
 using `go get -u github.com/hashicorp/serf/cmd/serf`.
 
@@ -88,7 +95,7 @@ cluster of the node failure.
 
 Full, comprehensive documentation is viewable on the Serf website:
 
-https://www.serf.io/docs
+https://github.com/hashicorp/serf/tree/master/docs
 
 ## Developing Serf
 

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/armon/go-metrics"
-	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/hashicorp/go-msgpack/v2/codec"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/coordinate"
 )
@@ -37,7 +37,11 @@ func (p *pingDelegate) AckPayload() []byte {
 	buf.Write(version)
 
 	// The rest of the message is the serialized coordinate.
-	enc := codec.NewEncoder(&buf, &codec.MsgpackHandle{})
+	enc := codec.NewEncoder(&buf, &codec.MsgpackHandle{
+		BasicHandle: codec.BasicHandle{
+			TimeNotBuiltin: !p.serf.msgpackUseNewTimeFormat,
+		},
+	})
 	if err := enc.Encode(p.serf.coordClient.GetCoordinate()); err != nil {
 		p.serf.logger.Printf("[ERR] serf: Failed to encode coordinate: %v\n", err)
 	}

@@ -8,7 +8,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/hashicorp/go-msgpack/v2/codec"
 )
 
 // messageType are the types of gossip messages Serf will send along
@@ -131,15 +131,19 @@ func (m *messageQueryResponse) Ack() bool {
 }
 
 func decodeMessage(buf []byte, out interface{}) error {
-	var handle codec.MsgpackHandle
+	handle := codec.MsgpackHandle{}
 	return codec.NewDecoder(bytes.NewReader(buf), &handle).Decode(out)
 }
 
-func encodeMessage(t messageType, msg interface{}) ([]byte, error) {
+func encodeMessage(t messageType, msg interface{}, msgpackUseNewTimeFormat bool) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteByte(uint8(t))
 
-	handle := codec.MsgpackHandle{}
+	handle := codec.MsgpackHandle{
+		BasicHandle: codec.BasicHandle{
+			TimeNotBuiltin: !msgpackUseNewTimeFormat,
+		},
+	}
 	encoder := codec.NewEncoder(buf, &handle)
 	err := encoder.Encode(msg)
 	return buf.Bytes(), err

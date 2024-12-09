@@ -15,17 +15,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: ['1.19', '1.20']
+        GO_VERSION: [ "1.19","1.20","1.21" ]
     steps:
       - name: "Fetch source code"
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Install Go toolchain
         uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
         with:
           go-version: ${{ matrix.GO_VERSION }}
       - name: Cache Go modules
-        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+        uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4.0.1
         with:
           path: |
             ~/.cache/go-build
@@ -45,10 +45,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.16","1.17","1.18" ]
+        GO_VERSION: [ "1.19","1.20","1.21" ]
     steps:
       - name: "Fetch source code"
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Install Go toolchain
         uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
@@ -59,7 +59,7 @@ jobs:
       # identical across the unit-tests, e2e-tests, and consistency-checks
       # jobs, or else weird things could happen.
       - name: Cache Go modules
-        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+        uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4.0.1
         with:
           path: |
             ~/.cache/go-build
@@ -76,10 +76,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.16","1.17","1.18" ]
+        GO_VERSION: [ "1.19","1.20","1.21" ]
     steps:
       - name: "Fetch source code"
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Install Go toolchain
         uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
@@ -90,7 +90,7 @@ jobs:
       # identical across the unit-tests, e2e-tests, and consistency-checks
       # jobs, or else weird things could happen.
       - name: Cache Go modules
-        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+        uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4.0.1
         with:
           path: |
             ~/.cache/go-build
@@ -107,10 +107,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.16","1.17","1.18" ]
+        GO_VERSION: [ "1.19","1.20","1.21" ]
     steps:
       - name: "Fetch source code"
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Install Go toolchain
         uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
@@ -121,7 +121,7 @@ jobs:
       # identical across the unit-tests and consistency-checks
       # jobs, or else weird things could happen.
       - name: Cache Go modules
-        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+        uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4.0.1
         with:
           path: |
             ~/.cache/go-build

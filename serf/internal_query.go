@@ -151,7 +151,7 @@ func (s *serfQueries) handleConflict(q *Query) {
 	s.serf.memberLock.Unlock()
 
 	// Encode the response
-	buf, err := encodeMessage(messageConflictResponseType, out)
+	buf, err := encodeMessage(messageConflictResponseType, out, s.serf.msgpackUseNewTimeFormat)
 	if err != nil {
 		s.logger.Printf("[ERR] serf: Failed to encode conflict query response: %v", err)
 		return
@@ -174,7 +174,7 @@ func (s *serfQueries) keyListResponseWithCorrectSize(q *Query, resp *nodeKeyResp
 	}
 
 	for i := maxListKeys; i >= 0; i-- {
-		buf, err := encodeMessage(messageKeyResponseType, resp)
+		buf, err := encodeMessage(messageKeyResponseType, resp, q.serf.config.MsgpackUseNewTimeFormat)
 		if err != nil {
 			return nil, messageQueryResponse{}, err
 		}
@@ -183,7 +183,7 @@ func (s *serfQueries) keyListResponseWithCorrectSize(q *Query, resp *nodeKeyResp
 		qresp := q.createResponse(buf)
 
 		// Encode response
-		raw, err := encodeMessage(messageQueryResponseType, qresp)
+		raw, err := encodeMessage(messageQueryResponseType, qresp, q.serf.msgpackUseNewTimeFormat)
 		if err != nil {
 			return nil, messageQueryResponse{}, err
 		}
@@ -217,7 +217,7 @@ func (s *serfQueries) sendKeyResponse(q *Query, resp *nodeKeyResponse) {
 			return
 		}
 	default:
-		buf, err := encodeMessage(messageKeyResponseType, resp)
+		buf, err := encodeMessage(messageKeyResponseType, resp, s.serf.msgpackUseNewTimeFormat)
 		if err != nil {
 			s.logger.Printf("[ERR] serf: Failed to encode key response: %v", err)
 			return

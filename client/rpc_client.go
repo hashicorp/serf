@@ -5,14 +5,14 @@ package client
 
 import (
 	"bufio"
-	"fmt"
+	"errors"
 	"log"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/hashicorp/go-msgpack/v2/codec"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/coordinate"
 )
@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	clientClosed = fmt.Errorf("client closed")
+	clientClosed = errors.New("client closed")
 )
 
 type seqCallback struct {
@@ -53,6 +53,12 @@ type Config struct {
 	// If provided, overrides the DefaultTimeout used for
 	// IO deadlines
 	Timeout time.Duration
+
+	// MsgpackUseNewTimeFormat when set to true, force the underlying msgpack
+	// codec to use the new format of time.Time when encoding (used in
+	// go-msgpack v1.1.5 by default). Decoding is not affected, as all
+	// go-msgpack v2.1.0+ decoders know how to decode both formats.
+	MsgpackUseNewTimeFormat bool
 }
 
 // RPCClient is used to make requests to the Agent using an RPC mechanism.
@@ -119,6 +125,15 @@ func NewRPCClient(addr string) (*RPCClient, error) {
 	return ClientFromConfig(&conf)
 }
 
+func (c *Config) newMsgpackHandle() *codec.MsgpackHandle {
+	return &codec.MsgpackHandle{
+		WriteExt: true,
+		BasicHandle: codec.BasicHandle{
+			TimeNotBuiltin: !c.MsgpackUseNewTimeFormat,
+		},
+	}
+}
+
 // ClientFromConfig is used to create a new RPC client given the
 // configuration object. This will return a client, or an error if
 // the connection could not be established.
@@ -144,10 +159,8 @@ func ClientFromConfig(c *Config) (*RPCClient, error) {
 		dispatch:   make(map[uint64]seqHandler),
 		shutdownCh: make(chan struct{}),
 	}
-	client.dec = codec.NewDecoder(client.reader,
-		&codec.MsgpackHandle{RawToString: true, WriteExt: true})
-	client.enc = codec.NewEncoder(client.writer,
-		&codec.MsgpackHandle{RawToString: true, WriteExt: true})
+	client.dec = codec.NewDecoder(client.reader, c.newMsgpackHandle())
+	client.enc = codec.NewEncoder(client.writer, c.newMsgpackHandle())
 	go client.listen()
 
 	// Do the initial handshake
@@ -202,8 +215,8 @@ func (c *RPCClient) ForceLeave(node string) error {
 	return c.genericRPC(&header, &req, nil)
 }
 
-//ForceLeavePrune uses ForceLeave but is used to reap the
-//node entirely
+// ForceLeavePrune uses ForceLeave but is used to reap the
+// node entirely
 func (c *RPCClient) ForceLeavePrune(node string) error {
 	header := requestHeader{
 		Command: forceLeaveCommand,
@@ -440,7 +453,7 @@ func (mh *monitorHandler) Cleanup() {
 	if !mh.closed {
 		if !mh.init {
 			mh.init = true
-			mh.initCh <- fmt.Errorf("Stream closed")
+			mh.initCh <- errors.New("Stream closed")
 		}
 		if mh.logCh != nil {
 			close(mh.logCh)
@@ -522,7 +535,7 @@ func (sh *streamHandler) Cleanup() {
 	if !sh.closed {
 		if !sh.init {
 			sh.init = true
-			sh.initCh <- fmt.Errorf("Stream closed")
+			sh.initCh <- errors.New("Stream closed")
 		}
 		if sh.eventCh != nil {
 			close(sh.eventCh)
@@ -623,7 +636,7 @@ func (qh *queryHandler) Cleanup() {
 	if !qh.closed {
 		if !qh.init {
 			qh.init = true
-			qh.initCh <- fmt.Errorf("Stream closed")
+			qh.initCh <- errors.New("Stream closed")
 		}
 		if qh.ackCh != nil {
 			close(qh.ackCh)
@@ -775,7 +788,7 @@ func (c *RPCClient) genericRPC(header *requestHeader, req interface{}, resp inte
 // strToError converts a string to an error if not blank
 func strToError(s string) error {
 	if s != "" {
-		return fmt.Errorf(s)
+		return errors.New(s)
 	}
 	return nil
 }
