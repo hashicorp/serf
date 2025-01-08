@@ -7,10 +7,10 @@ import (
 	"time"
 )
 
-// coalescer is a simple interface that must be implemented to be
+// Coalescer is a simple interface that must be implemented to be
 // used inside of a coalesceLoop
-type coalescer interface {
-	// Can the coalescer handle this event, if not it is
+type Coalescer interface {
+	// Can the Coalescer handle this event, if not it is
 	// directly passed through to the destination channel
 	Handle(Event) bool
 
@@ -22,9 +22,9 @@ type coalescer interface {
 }
 
 // coalescedEventCh returns an event channel where the events are coalesced
-// using the given coalescer.
+// using the given Coalescer.
 func coalescedEventCh(outCh chan<- Event, shutdownCh <-chan struct{},
-	cPeriod time.Duration, qPeriod time.Duration, c coalescer) chan<- Event {
+	cPeriod time.Duration, qPeriod time.Duration, c Coalescer) chan<- Event {
 	inCh := make(chan Event, 1024)
 	go coalesceLoop(inCh, outCh, shutdownCh, cPeriod, qPeriod, c)
 	return inCh
@@ -33,7 +33,7 @@ func coalescedEventCh(outCh chan<- Event, shutdownCh <-chan struct{},
 // coalesceLoop is a simple long-running routine that manages the high-level
 // flow of coalescing based on quiescence and a maximum quantum period.
 func coalesceLoop(inCh <-chan Event, outCh chan<- Event, shutdownCh <-chan struct{},
-	coalescePeriod time.Duration, quiescentPeriod time.Duration, c coalescer) {
+	coalescePeriod time.Duration, quiescentPeriod time.Duration, c Coalescer) {
 	var quiescent <-chan time.Time
 	var quantum <-chan time.Time
 	shutdown := false
