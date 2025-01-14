@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/armon/go-metrics"
+	"github.com/hashicorp/go-metrics/compat"
 	"github.com/hashicorp/memberlist"
 )
 
