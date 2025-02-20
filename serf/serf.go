@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
@@ -1872,7 +1871,7 @@ func (s *Serf) writeKeyringFile() error {
 	}
 
 	// Use 0600 for permissions because key data is sensitive
-	if err = ioutil.WriteFile(s.config.KeyringFile, encodedKeys, 0600); err != nil {
+	if err = os.WriteFile(s.config.KeyringFile, encodedKeys, 0600); err != nil {
 		return fmt.Errorf("Failed to write keyring file: %s", err)
 	}
 
