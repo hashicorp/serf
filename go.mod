@@ -5,6 +5,7 @@ go 1.24.0
 require (
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
 	github.com/armon/go-metrics v0.4.1
+	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/hashicorp/cli v1.1.7
 	github.com/hashicorp/go-metrics v0.5.4
 	github.com/hashicorp/go-msgpack/v2 v2.1.5
@@ -12,7 +13,6 @@ require (
 	github.com/hashicorp/logutils v1.0.0
 	github.com/hashicorp/mdns v1.0.6
 	github.com/hashicorp/memberlist v0.5.4
-	github.com/mitchellh/mapstructure v1.5.0
 	github.com/ryanuber/columnize v2.1.2+incompatible
 )
 
