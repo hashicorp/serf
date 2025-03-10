@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/cli"
 	"github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/testutil"
-	"github.com/mitchellh/cli"
 )
 
 func TestCommandRun(t *testing.T) {

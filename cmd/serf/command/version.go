@@ -6,8 +6,8 @@ package command
 import (
 	"fmt"
 
+	"github.com/hashicorp/cli"
 	"github.com/hashicorp/serf/serf"
-	"github.com/mitchellh/cli"
 )
 
 // VersionCommand is a Command implementation prints the version.
