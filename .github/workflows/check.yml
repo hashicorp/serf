@@ -1,8 +1,7 @@
 name: Checks
 
 on:
-  push:
-    branches: [coverage-test]
+  pull_request:
 
 # This workflow runs for not-yet-reviewed external contributions and so it
 # intentionally has no write access and only limited read access to the
@@ -25,6 +24,7 @@ jobs:
         uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
         with:
           go-version: ${{ matrix.GO_VERSION }}
+
       - name: Cache Go modules
         uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
         with:
@@ -34,13 +34,16 @@ jobs:
           key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
           restore-keys: |
             go-mod-${{ matrix.GO_VERSION }}
+
       - name: "Download golang-lint"
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$(go env GOPATH)/bin"
           golangci-lint --version
+
       - name: "lint"
         run: |
           golangci-lint run -v
+
   unit-tests:
     name: "Unit Tests"
     runs-on: ubuntu-latest
@@ -109,6 +112,7 @@ jobs:
           key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
           restore-keys: |
             go-mod-${{ matrix.GO_VERSION }}
+
       - name: "Race Unit tests"
         run: |
           go test -race ./serf/...
@@ -140,6 +144,7 @@ jobs:
           key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
           restore-keys: |
             go-mod-${{ matrix.GO_VERSION }}
+
       - name: "go.mod and go.sum consistency check"
         run: |
           go mod tidy
@@ -147,9 +152,11 @@ jobs:
             echo >&2 "ERROR: go.mod/go.sum are not up-to-date. Run 'go mod tidy' and then commit the updated files."
             exit 1
           fi
+
       - name: "go vet"
         run: |
           go vet ./...
+
       - name: "go fmt check"
         run: |
           files=$(go fmt ./...)
