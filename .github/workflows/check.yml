@@ -24,8 +24,9 @@ jobs:
         uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
         with:
           go-version: ${{ matrix.GO_VERSION }}
+
       - name: Cache Go modules
-        uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4.0.1
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
         with:
           path: |
             ~/.cache/go-build
@@ -33,13 +34,16 @@ jobs:
           key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
           restore-keys: |
             go-mod-${{ matrix.GO_VERSION }}
+
       - name: "Download golang-lint"
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$(go env GOPATH)/bin"
           golangci-lint --version
+
       - name: "lint"
         run: |
           golangci-lint run -v
+
   unit-tests:
     name: "Unit Tests"
     runs-on: ubuntu-latest
@@ -59,7 +63,7 @@ jobs:
       # identical across the unit-tests, e2e-tests, and consistency-checks
       # jobs, or else weird things could happen.
       - name: Cache Go modules
-        uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4.0.1
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
         with:
           path: |
             ~/.cache/go-build
@@ -67,9 +71,19 @@ jobs:
           key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
           restore-keys: |
             go-mod-${{ matrix.GO_VERSION }}
+
       - name: "Unit tests"
         run: |
-          go test ./...
+          go test -v -coverprofile=coverage.out ./...
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        with:
+          path: coverage.out
+          name: coverage-report-${{matrix.GO_VERSION}}
+
+      - name: Display coverage report
+        run: go tool cover -func=coverage.out
 
   unit-tests-race:
     name: "Unit Tests Race"
@@ -90,7 +104,7 @@ jobs:
       # identical across the unit-tests, e2e-tests, and consistency-checks
       # jobs, or else weird things could happen.
       - name: Cache Go modules
-        uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4.0.1
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
         with:
           path: |
             ~/.cache/go-build
@@ -98,6 +112,7 @@ jobs:
           key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
           restore-keys: |
             go-mod-${{ matrix.GO_VERSION }}
+
       - name: "Race Unit tests"
         run: |
           go test -race ./serf/...
@@ -121,7 +136,7 @@ jobs:
       # identical across the unit-tests and consistency-checks
       # jobs, or else weird things could happen.
       - name: Cache Go modules
-        uses: actions/cache@ab5e6d0c87105b4c9c2047343972218f562e4319 # v4.0.1
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
         with:
           path: |
             ~/.cache/go-build
@@ -129,6 +144,7 @@ jobs:
           key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
           restore-keys: |
             go-mod-${{ matrix.GO_VERSION }}
+
       - name: "go.mod and go.sum consistency check"
         run: |
           go mod tidy
@@ -136,9 +152,11 @@ jobs:
             echo >&2 "ERROR: go.mod/go.sum are not up-to-date. Run 'go mod tidy' and then commit the updated files."
             exit 1
           fi
+
       - name: "go vet"
         run: |
           go vet ./...
+
       - name: "go fmt check"
         run: |
           files=$(go fmt ./...)
