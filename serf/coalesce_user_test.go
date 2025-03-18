@@ -19,7 +19,7 @@ func TestUserEventCoalesce_Basic(t *testing.T) {
 	}
 
 	inCh := coalescedEventCh(outCh, shutdownCh,
-		5*time.Millisecond, 5*time.Millisecond, c)
+		5*time.Millisecond, c)
 
 	send := []Event{
 		UserEvent{

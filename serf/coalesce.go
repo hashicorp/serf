@@ -24,25 +24,16 @@ type coalescer interface {
 // coalescedEventCh returns an event channel where the events are coalesced
 // using the given coalescer.
 func coalescedEventCh(outCh chan<- Event, shutdownCh <-chan struct{},
-	cPeriod time.Duration, qPeriod time.Duration, c coalescer) chan<- Event {
+	cPeriod time.Duration, c coalescer) chan<- Event {
 	inCh := make(chan Event, 1024)
-	go coalesceLoop(inCh, outCh, shutdownCh, cPeriod, qPeriod, c)
+	go coalesceLoop(inCh, outCh, shutdownCh, cPeriod, c)
 	return inCh
 }
 
 // coalesceLoop is a simple long-running routine that manages the high-level
 // flow of coalescing based on quiescence and a maximum quantum period.
 func coalesceLoop(inCh <-chan Event, outCh chan<- Event, shutdownCh <-chan struct{},
-	coalescePeriod time.Duration, quiescentPeriod time.Duration, c coalescer) {
-	var quiescent <-chan time.Time
-	var quantum <-chan time.Time
-	shutdown := false
-
-INGEST:
-	// Reset the timers
-	quantum = nil
-	quiescent = nil
-
+	coalescePeriod time.Duration, c coalescer) {
 	for {
 		select {
 		case e := <-inCh:
@@ -52,32 +43,14 @@ INGEST:
 				continue
 			}
 
-			// Start a new quantum if we need to
-			// and restart the quiescent timer
-			if quantum == nil {
-				quantum = time.After(coalescePeriod)
-			}
-			quiescent = time.After(quiescentPeriod)
-
 			// Coalesce the event
 			c.Coalesce(e)
 
-		case <-quantum:
-			goto FLUSH
-		case <-quiescent:
-			goto FLUSH
+		case <-time.After(coalescePeriod):
+			c.Flush(outCh)
 		case <-shutdownCh:
-			shutdown = true
-			goto FLUSH
+			c.Flush(outCh)
+			return
 		}
-	}
-
-FLUSH:
-	// Flush the coalesced events
-	c.Flush(outCh)
-
-	// Restart ingestion if we are not done
-	if !shutdown {
-		goto INGEST
 	}
 }
