@@ -5,7 +5,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 
@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 
 	// Get the command line args. We shortcut "--version" and "-v" to
 	// just show the version.
