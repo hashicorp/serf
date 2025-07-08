@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/cli"
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
-	"github.com/mitchellh/cli"
 )
 
 func TestForceLeaveCommandRun(t *testing.T) {

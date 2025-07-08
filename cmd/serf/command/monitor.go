@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/hashicorp/cli"
 	"github.com/hashicorp/logutils"
-	"github.com/mitchellh/cli"
 )
 
 // MonitorCommand is a Command implementation that queries a running
