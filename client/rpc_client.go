@@ -180,7 +180,7 @@ func ClientFromConfig(c *Config) (*RPCClient, error) {
 	return client, err
 }
 
-// StreamHandle is an opaque handle passed to stop to stop streaming
+// StreamHandle is an opaque handle passed to stop streaming
 type StreamHandle uint64
 
 func (c *RPCClient) IsClosed() bool {
