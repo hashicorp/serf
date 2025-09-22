@@ -2,10 +2,11 @@
 
 IMPROVEMENTS:
 * ValidateNodeName flag can now restrict node names to alphanumeric, -, and . while also keeping node names under 128 characters. Verification of IP Address and tags occur for messages. [GH-612](https://github.com/hashicorp/serf/pull/612)
+* build: Serf now builds with Go 1.25.1
 
 ## 0.8.4 (September 19, 2019)
 
-FEATURES: 
+FEATURES:
 * Force Leave command can now take `prune` option to completely remove members [GH-574]
 
 IMPROVEMENTS:
