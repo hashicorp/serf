@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/mitchellh/cli"
+	"github.com/hashicorp/cli"
 )
 
 func main() {
