@@ -2,7 +2,7 @@
 
 IMPROVEMENTS:
 * ValidateNodeName flag can now restrict node names to alphanumeric, -, and . while also keeping node names under 128 characters. Verification of IP Address and tags occur for messages. [GH-612](https://github.com/hashicorp/serf/pull/612)
-* build: Serf now builds with Go 1.25.1
+* build: Serf now builds with Go 1.25.1 [GH-777](https://github.com/hashicorp/serf/pull/777)
 
 ## 0.8.4 (September 19, 2019)
 
