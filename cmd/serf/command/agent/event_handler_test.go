@@ -5,6 +5,7 @@ package agent
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"testing"
@@ -50,7 +51,7 @@ done
 // agent. It returns the path to the event script itself and a path to
 // the file that will contain the events that that script receives.
 func testEventScript(t *testing.T, script string) (string, string) {
-	scriptFile, err := os.CreateTemp("", "serf")
+	scriptFile, err := ioutil.TempFile("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -60,7 +61,7 @@ func testEventScript(t *testing.T, script string) (string, string) {
 		t.Fatalf("err: %v", err)
 	}
 
-	resultFile, err := os.CreateTemp("", "serf-result")
+	resultFile, err := ioutil.TempFile("", "serf-result")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -110,7 +111,7 @@ func TestScriptEventHandler(t *testing.T) {
 
 	h.HandleEvent(event)
 
-	result, err := os.ReadFile(results)
+	result, err := ioutil.ReadFile(results)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -151,7 +152,7 @@ func TestScriptUserEventHandler(t *testing.T) {
 
 	h.HandleEvent(userEvent)
 
-	result, err := os.ReadFile(results)
+	result, err := ioutil.ReadFile(results)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -190,7 +191,7 @@ func TestScriptQueryEventHandler(t *testing.T) {
 
 	h.HandleEvent(query)
 
-	result, err := os.ReadFile(results)
+	result, err := ioutil.ReadFile(results)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}

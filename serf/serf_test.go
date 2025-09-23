@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -1767,7 +1768,7 @@ func TestSerf_Join_IgnoreOld(t *testing.T) {
 }
 
 func TestSerf_SnapshotRecovery(t *testing.T) {
-	td, err := os.MkdirTemp("", "serf")
+	td, err := ioutil.TempDir("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -1864,7 +1865,7 @@ func TestSerf_Leave_SnapshotRecovery(t *testing.T) {
 		t.Skip("test contains a data race")
 	}
 
-	td, err := os.MkdirTemp("", "serf")
+	td, err := ioutil.TempDir("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -2445,7 +2446,7 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 	existing := "T9jncgl9mbLus+baTTa7q7nPSUrXwbDi2dhbtqir37s="
 	newKey := "HvY8ubRZMgafUOWvrOadwOckVa1wN3QWAo46FVKbVN8="
 
-	td, err := os.MkdirTemp("", "serf")
+	td, err := ioutil.TempDir("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -2482,7 +2483,7 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	content, err := os.ReadFile(keyringFile)
+	content, err := ioutil.ReadFile(keyringFile)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -2512,7 +2513,7 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	content, err = os.ReadFile(keyringFile)
+	content, err = ioutil.ReadFile(keyringFile)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -2532,7 +2533,7 @@ func TestSerf_WriteKeyringFile(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	content, err = os.ReadFile(keyringFile)
+	content, err = ioutil.ReadFile(keyringFile)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}

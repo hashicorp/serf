@@ -6,6 +6,7 @@ package agent
 import (
 	"bytes"
 	"encoding/base64"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -534,7 +535,7 @@ func TestReadConfigPaths_badPath(t *testing.T) {
 }
 
 func TestReadConfigPaths_file(t *testing.T) {
-	tf, err := os.CreateTemp("", "serf")
+	tf, err := ioutil.TempFile("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -553,26 +554,26 @@ func TestReadConfigPaths_file(t *testing.T) {
 }
 
 func TestReadConfigPaths_dir(t *testing.T) {
-	td, err := os.MkdirTemp("", "serf")
+	td, err := ioutil.TempDir("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 	defer os.RemoveAll(td)
 
-	err = os.WriteFile(filepath.Join(td, "a.json"),
+	err = ioutil.WriteFile(filepath.Join(td, "a.json"),
 		[]byte(`{"node_name": "bar"}`), 0644)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
-	err = os.WriteFile(filepath.Join(td, "b.json"),
+	err = ioutil.WriteFile(filepath.Join(td, "b.json"),
 		[]byte(`{"node_name": "baz"}`), 0644)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
 	// A non-json file, shouldn't be read
-	err = os.WriteFile(filepath.Join(td, "c"),
+	err = ioutil.WriteFile(filepath.Join(td, "c"),
 		[]byte(`{"node_name": "bad"}`), 0644)
 	if err != nil {
 		t.Fatalf("err: %v", err)

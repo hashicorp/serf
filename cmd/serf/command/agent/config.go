@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-viper/mapstructure/v2"
 	"github.com/hashicorp/serf/serf"
+	"github.com/mitchellh/mapstructure"
 )
 
 // This is the default port that we use for Serf communication

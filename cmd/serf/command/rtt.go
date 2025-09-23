@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/cli"
+	"github.com/mitchellh/cli"
 )
 
 // RTTCommand is a Command implementation that allows users to query the

@@ -16,12 +16,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hashicorp/cli"
-	metrics "github.com/hashicorp/go-metrics/compat"
+	"github.com/hashicorp/go-metrics/compat"
 	gsyslog "github.com/hashicorp/go-syslog"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/serf"
+	"github.com/mitchellh/cli"
 )
 
 const (

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hashicorp/cli"
+	"github.com/mitchellh/cli"
 )
 
 func TestEventCommandRun_noEvent(t *testing.T) {

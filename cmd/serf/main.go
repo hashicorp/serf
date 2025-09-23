@@ -5,15 +5,15 @@ package main
 
 import (
 	"fmt"
-	"io"
+	"io/ioutil"
 	"log"
 	"os"
 
-	"github.com/hashicorp/cli"
+	"github.com/mitchellh/cli"
 )
 
 func main() {
-	log.SetOutput(io.Discard)
+	log.SetOutput(ioutil.Discard)
 
 	// Get the command line args. We shortcut "--version" and "-v" to
 	// just show the version.

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/cli"
+	"github.com/mitchellh/cli"
 )
 
 // KeygenCommand is a Command implementation that generates an encryption
