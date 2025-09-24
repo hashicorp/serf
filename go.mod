@@ -1,15 +1,17 @@
 module github.com/hashicorp/serf
 
-go 1.19
+go 1.24.0
+
+toolchain go1.24.7
 
 require (
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
 	github.com/hashicorp/go-metrics v0.5.4
-	github.com/hashicorp/go-msgpack/v2 v2.1.2
+	github.com/hashicorp/go-msgpack/v2 v2.1.5
 	github.com/hashicorp/go-syslog v1.0.0
 	github.com/hashicorp/logutils v1.0.0
-	github.com/hashicorp/mdns v1.0.5
-	github.com/hashicorp/memberlist v0.5.2
+	github.com/hashicorp/mdns v1.0.6
+	github.com/hashicorp/memberlist v0.5.3
 	github.com/mitchellh/cli v1.1.5
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/ryanuber/columnize v2.1.2+incompatible
@@ -42,9 +44,10 @@ require (
 	github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
-	golang.org/x/crypto v0.33.0 // indirect
-	golang.org/x/mod v0.13.0 // indirect
-	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/tools v0.14.0 // indirect
+	golang.org/x/crypto v0.42.0 // indirect
+	golang.org/x/mod v0.28.0 // indirect
+	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/tools v0.37.0 // indirect
 )
