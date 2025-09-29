@@ -121,7 +121,7 @@ func GenerateCircle(nodes int, radius time.Duration) [][]time.Duration {
 // distributed delays, with the given mean and deviation. The RNG is re-seeded
 // so you always get the same matrix for a given size.
 func GenerateRandom(nodes int, mean time.Duration, deviation time.Duration) [][]time.Duration {
-	rand.New(rand.NewSource(1))
+	rand.Seed(1)
 
 	truth := make([][]time.Duration, nodes)
 	for i := range truth {
@@ -145,10 +145,10 @@ func GenerateRandom(nodes int, mean time.Duration, deviation time.Duration) [][]
 // underlying algorithm which will use random numbers for position vectors when
 // starting out with everything at the origin).
 func Simulate(clients []*Client, truth [][]time.Duration, cycles int) {
-	rand.New(rand.NewSource(1))
+	rand.Seed(1)
 
 	nodes := len(clients)
-	for range cycles {
+	for cycle := 0; cycle < cycles; cycle++ {
 		for i := range clients {
 			if j := rand.Intn(nodes); j != i {
 				c := clients[j].GetCoordinate()
