@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.19","1.20","1.21" ]
+        GO_VERSION: ["1.24", "1.25"]
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
@@ -49,7 +49,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.19","1.20","1.21" ]
+        GO_VERSION: ["1.24", "1.25"]
+    env:
+      # Coordinate Performance Tests rely on Go 1.16 RNG seeding behavior.
+      GODEBUG: "randseednop=0"
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
@@ -90,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.19","1.20","1.21" ]
+        GO_VERSION: ["1.24", "1.25"]
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
@@ -122,7 +125,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.19","1.20","1.21" ]
+        GO_VERSION: ["1.24", "1.25"]
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
