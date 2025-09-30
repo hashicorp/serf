@@ -50,6 +50,9 @@ jobs:
     strategy:
       matrix:
         GO_VERSION: ["1.24", "1.25"]
+    env:
+      # Coordinate Performance Tests rely on Go 1.16 RNG seeding behavior.
+      GODEBUG: "randseednop=0"
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
