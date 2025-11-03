@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) HashiCorp, Inc.
+# Copyright IBM Corp. 2013, 2025
 # SPDX-License-Identifier: MPL-2.0
 
 NODE_SETUP_URL="https://raw.github.com/hashicorp/serf/master/demo/web-load-balancer/setup_load_balancer.sh"
