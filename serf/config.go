@@ -95,6 +95,9 @@ type Config struct {
 	UserCoalescePeriod  time.Duration
 	UserQuiescentPeriod time.Duration
 
+	// Optional user defined Coalescer for user events.
+	UserEventCoalescer Coalescer
+
 	// The settings below relate to Serf keeping track of recently
 	// failed/left nodes and attempting reconnects.
 	//
