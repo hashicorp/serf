@@ -77,7 +77,7 @@ jobs:
           go test -v -coverprofile=coverage.out ./...
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           path: coverage.out
           name: coverage-report-${{matrix.GO_VERSION}}
