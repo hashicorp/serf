@@ -146,6 +146,7 @@ func GenerateRandom(nodes int, mean time.Duration, deviation time.Duration) [][]
 // starting out with everything at the origin).
 func Simulate(clients []*Client, truth [][]time.Duration, cycles int) {
 	rand.Seed(1)
+	fmt.Printf("starting the process")
 
 	nodes := len(clients)
 	for cycle := 0; cycle < cycles; cycle++ {
