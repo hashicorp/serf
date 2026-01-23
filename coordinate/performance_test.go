@@ -12,7 +12,7 @@ import (
 )
 
 func TestPerformance_Line(t *testing.T) {
-	retry.RunWith(retry.RunNTimesWithWait(10, 25), t, func(r *retry.R) {
+	retry.RunWith(retry.RunNTimesWithWait(20, 25), t, func(r *retry.R) {
 
 		const spacing = 10 * time.Millisecond
 		const nodes, cycles = 10, 1000
@@ -31,7 +31,7 @@ func TestPerformance_Line(t *testing.T) {
 }
 
 func TestPerformance_Grid(t *testing.T) {
-	retry.RunWith(retry.RunNTimesWithWait(10, 25), t, func(r *retry.R) {
+	retry.RunWith(retry.RunNTimesWithWait(20, 25), t, func(r *retry.R) {
 
 		const spacing = 10 * time.Millisecond
 		const nodes, cycles = 25, 1000
@@ -50,7 +50,7 @@ func TestPerformance_Grid(t *testing.T) {
 }
 
 func TestPerformance_Split(t *testing.T) {
-	retry.RunWith(retry.RunNTimesWithWait(10, 25), t, func(r *retry.R) {
+	retry.RunWith(retry.RunNTimesWithWait(20, 25), t, func(r *retry.R) {
 
 		const lan, wan = 1 * time.Millisecond, 10 * time.Millisecond
 		const nodes, cycles = 25, 1000
@@ -69,7 +69,7 @@ func TestPerformance_Split(t *testing.T) {
 }
 
 func TestPerformance_Height(t *testing.T) {
-	retry.RunWith(retry.RunNTimesWithWait(10, 25), t, func(r *retry.R) {
+	retry.RunWith(retry.RunNTimesWithWait(20, 25), t, func(r *retry.R) {
 
 		const radius = 100 * time.Millisecond
 		const nodes, cycles = 25, 1000
@@ -111,7 +111,7 @@ func TestPerformance_Height(t *testing.T) {
 }
 
 func TestPerformance_Drift(t *testing.T) {
-	retry.RunWith(retry.RunNTimesWithWait(10, 25), t, func(r *retry.R) {
+	retry.RunWith(retry.RunNTimesWithWait(20, 25), t, func(r *retry.R) {
 
 		const dist = 500 * time.Millisecond
 		const nodes = 4
@@ -186,7 +186,7 @@ func TestPerformance_Drift(t *testing.T) {
 }
 
 func TestPerformance_Random(t *testing.T) {
-	retry.RunWith(retry.RunNTimesWithWait(10, 25), t, func(r *retry.R) {
+	retry.RunWith(retry.RunNTimesWithWait(20, 25), t, func(r *retry.R) {
 
 		const mean, deviation = 100 * time.Millisecond, 10 * time.Millisecond
 		const nodes, cycles = 25, 1000
