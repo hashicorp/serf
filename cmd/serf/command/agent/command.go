@@ -100,6 +100,8 @@ func (c *Command) readConfig() *Config {
 	cmdFlags.StringVar(&retryInterval, "retry-interval", "", "retry join interval")
 	cmdFlags.BoolVar(&cmdConfig.RejoinAfterLeave, "rejoin", false,
 		"enable re-joining after a previous leave")
+	cmdFlags.BoolVar(&cmdConfig.EnableMetrics, "metrics", false, "expose Prometheus formatted metrics")
+	cmdFlags.StringVar(&cmdConfig.MetricsBindAddr, "metrics-addr", "0.0.0.0:10073", "address to bind metrics listener to")
 
 	cmdFlags.BoolVar(
 		&disableCompression,
@@ -193,6 +195,13 @@ func (c *Command) readConfig() *Config {
 		// Check for a valid mdns ip mode
 		if config.MDNS.DisableIPv4 && config.MDNS.DisableIPv6 {
 			c.Ui.Error("Invalid mDNS configuration: both IPv4 and IPv6 are disabled")
+			return nil
+		}
+	}
+
+	if config.EnableMetrics {
+		if _, _, err := net.SplitHostPort(config.MetricsBindAddr); err != nil {
+			c.Ui.Error(fmt.Sprintf("Invalid metrics bind address %q: %s", config.MetricsBindAddr, err))
 			return nil
 		}
 	}
@@ -492,6 +501,7 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 	c.Ui.Info(fmt.Sprintf("                   Snapshot: %v", config.SnapshotPath != ""))
 	c.Ui.Info(fmt.Sprintf("                    Profile: %s", config.Profile))
 	c.Ui.Info(fmt.Sprintf("Message Compression Enabled: %v", config.EnableCompression))
+	c.Ui.Info(fmt.Sprintf("         Prometheus Metrics: %v", config.EnableMetrics))
 
 	if config.Discover != "" {
 		c.Ui.Info(fmt.Sprintf("               mDNS cluster: %s", config.Discover))

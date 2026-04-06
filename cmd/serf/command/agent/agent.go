@@ -4,15 +4,20 @@
 package agent
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 	"sync"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/serf/serf"
@@ -41,6 +46,9 @@ type Agent struct {
 
 	// This is the underlying Serf we are wrapping
 	serf *serf.Serf
+
+	// Prometheus server instance
+	promServer *http.Server
 
 	// shutdownCh is used for shutdowns
 	shutdown     bool
@@ -104,6 +112,19 @@ func (a *Agent) Start() error {
 	}
 	a.serf = serf
 
+	if a.agentConf.EnableMetrics {
+		a.logger.Printf("[INFO] agent: Starting Prometheus HTTP server on %s", a.agentConf.MetricsBindAddr)
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.Handler())
+		server := &http.Server{Addr: a.agentConf.MetricsBindAddr, Handler: mux}
+		go func() {
+			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				a.logger.Printf("[ERROR] agent: Prometheus HTTP server error: %v", err)
+			}
+		}()
+		a.promServer = server
+	}
+
 	// Start event loop
 	go a.eventLoop()
 	return nil
@@ -136,6 +157,16 @@ func (a *Agent) Shutdown() error {
 	a.logger.Println("[INFO] agent: requesting serf shutdown")
 	if err := a.serf.Shutdown(); err != nil {
 		return err
+	}
+
+	// Shutdown Prometheus HTTP server
+	if a.promServer != nil {
+		a.logger.Println("[INFO] agent: shutting down Prometheus HTTP server")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := a.promServer.Shutdown(ctx); err != nil {
+			a.logger.Printf("[ERROR] agent: Prometheus HTTP server shutdown error: %v", err)
+		}
 	}
 
 EXIT:
@@ -252,6 +283,10 @@ func (a *Agent) DeregisterEventHandler(eh EventHandler) {
 // eventLoop listens to events from Serf and fans out to event handlers
 func (a *Agent) eventLoop() {
 	serfShutdownCh := a.serf.ShutdownCh()
+	var extraHandlers []EventHandler
+	if a.agentConf.EnableMetrics {
+		extraHandlers = append(extraHandlers, NewMetricsEventHandler(a))
+	}
 	for {
 		select {
 		case e := <-a.eventCh:
@@ -259,6 +294,7 @@ func (a *Agent) eventLoop() {
 			a.eventHandlersLock.Lock()
 			handlers := a.eventHandlerList
 			a.eventHandlersLock.Unlock()
+			handlers = append(handlers, extraHandlers...)
 			for _, eh := range handlers {
 				eh.HandleEvent(e)
 			}
