@@ -80,7 +80,7 @@ type RPCClient struct {
 
 	shutdown     bool
 	shutdownCh   chan struct{}
-	shutdownLock sync.Mutex
+	shutdownLock sync.RWMutex
 }
 
 // send is used to send an object using the MsgPack encoding. send
@@ -89,7 +89,7 @@ func (c *RPCClient) send(header *requestHeader, obj interface{}) error {
 	c.writeLock.Lock()
 	defer c.writeLock.Unlock()
 
-	if c.shutdown {
+	if c.IsClosed() {
 		return clientClosed
 	}
 
@@ -184,6 +184,8 @@ func ClientFromConfig(c *Config) (*RPCClient, error) {
 type StreamHandle uint64
 
 func (c *RPCClient) IsClosed() bool {
+	c.shutdownLock.RLock()
+	defer c.shutdownLock.RUnlock()
 	return c.shutdown
 }
 
@@ -848,7 +850,7 @@ func (c *RPCClient) listen() {
 	var respHeader responseHeader
 	for {
 		if err := c.dec.Decode(&respHeader); err != nil {
-			if !c.shutdown {
+			if !c.IsClosed() {
 				log.Printf("[ERR] agent.client: Failed to decode response header: %v", err)
 			}
 			break
