@@ -155,6 +155,10 @@ func ThreeTimes() *Counter {
 	return &Counter{Count: 3, Wait: 25 * time.Millisecond}
 }
 
+func RunNTimesWithWait(n int, wait int) *Counter {
+	return &Counter{Count: n, Wait: time.Duration(wait) * time.Millisecond}
+}
+
 // Retryer provides an interface for repeating operations
 // until they succeed or an exit condition is met.
 type Retryer interface {
