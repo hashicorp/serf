@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mitchellh/cli"
+	"github.com/hashicorp/cli"
 )
 
 // InfoCommand is a Command implementation that queries a running
