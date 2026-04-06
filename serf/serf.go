@@ -293,8 +293,8 @@ func Create(conf *Config) (*Serf, error) {
 	// Check if serf member event coalescing is enabled
 	if conf.CoalescePeriod > 0 && conf.QuiescentPeriod > 0 && conf.EventCh != nil {
 		c := &memberEventCoalescer{
-			lastEvents:   make(map[string]EventType),
-			latestEvents: make(map[string]coalesceEvent),
+			lastEvents: make(map[string]*nodeEvent),
+			newEvents:  make(map[string]*nodeEvent),
 		}
 
 		conf.EventCh = coalescedEventCh(conf.EventCh, serf.shutdownCh,
