@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
+	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/hashicorp/go-metrics v0.5.4
 	github.com/hashicorp/go-msgpack/v2 v2.1.2
 	github.com/hashicorp/go-syslog v1.0.0
@@ -11,7 +12,6 @@ require (
 	github.com/hashicorp/mdns v1.0.5
 	github.com/hashicorp/memberlist v0.5.2
 	github.com/mitchellh/cli v1.1.5
-	github.com/mitchellh/mapstructure v1.5.0
 	github.com/ryanuber/columnize v2.1.2+incompatible
 )
 
@@ -47,4 +47,5 @@ require (
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
