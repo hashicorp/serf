@@ -4,7 +4,7 @@
 package agent
 
 import (
-	"io/ioutil"
+	"io"
 
 	"github.com/hashicorp/logutils"
 )
@@ -15,7 +15,7 @@ func LevelFilter() *logutils.LevelFilter {
 	return &logutils.LevelFilter{
 		Levels:   []logutils.LogLevel{"TRACE", "DEBUG", "INFO", "WARN", "ERR"},
 		MinLevel: "INFO",
-		Writer:   ioutil.Discard,
+		Writer:   io.Discard,
 	}
 }
 
