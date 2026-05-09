@@ -118,12 +118,12 @@ func TestForceLeaveCommandRun_nonexistentNode(t *testing.T) {
 	}
 
 	code := c.Run(args)
-	if code != 1 {
-		t.Fatalf("expected exit code 1, got: %d", code)
+	if code != 0 {
+		t.Fatalf("expected exit code 0 (force-leave is idempotent), got: %d", code)
 	}
 
-	if !strings.Contains(ui.ErrorWriter.String(), "not found") {
-		t.Fatalf("expected 'not found' error, got: %#v", ui.ErrorWriter.String())
+	if !strings.Contains(ui.OutputWriter.String(), "not found") {
+		t.Fatalf("expected 'not found' warning in output, got: %#v", ui.OutputWriter.String())
 	}
 }
 

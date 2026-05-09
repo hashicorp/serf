@@ -46,24 +46,18 @@ func (c *ForceLeaveCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
-	// Validate that the node exists in the cluster
 	members, err := client.Members()
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error querying members: %s", err))
-		return 1
-	}
-
-	nodeExists := false
-	for _, member := range members {
-		if member.Name == nodes[0] {
-			nodeExists = true
-			break
+	if err == nil {
+		found := false
+		for _, member := range members {
+			if member.Name == nodes[0] {
+				found = true
+				break
+			}
 		}
-	}
-
-	if !nodeExists {
-		c.Ui.Error(fmt.Sprintf("Node '%s' not found in cluster", nodes[0]))
-		return 1
+		if !found {
+			c.Ui.Output(fmt.Sprintf("Warning: node '%s' not found in local member list, broadcasting force-leave anyway", nodes[0]))
+		}
 	}
 
 	if prune {
