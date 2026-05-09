@@ -97,6 +97,36 @@ func TestForceLeaveCommandRun_noAddrs(t *testing.T) {
 	}
 }
 
+func TestForceLeaveCommandRun_nonexistentNode(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	ip2, returnFn2 := testutil.TakeIP()
+	defer returnFn2()
+
+	a1 := testAgent(t, ip1)
+	defer a1.Shutdown()
+
+	rpcAddr, ipc := testIPC(t, ip2, a1)
+	defer ipc.Shutdown()
+
+	ui := new(cli.MockUi)
+	c := &ForceLeaveCommand{Ui: ui}
+	args := []string{
+		"-rpc-addr=" + rpcAddr,
+		"nonexistent-node",
+	}
+
+	code := c.Run(args)
+	if code != 1 {
+		t.Fatalf("expected exit code 1, got: %d", code)
+	}
+
+	if !strings.Contains(ui.ErrorWriter.String(), "not found") {
+		t.Fatalf("expected 'not found' error, got: %#v", ui.ErrorWriter.String())
+	}
+}
+
 func TestForceLeaveCommandRun_prune(t *testing.T) {
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
