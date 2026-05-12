@@ -47,7 +47,9 @@ func (c *ForceLeaveCommand) Run(args []string) int {
 	defer client.Close()
 
 	members, err := client.Members()
-	if err == nil {
+	if err != nil {
+		c.Ui.Output(fmt.Sprintf("Warning: could not query members (%s), broadcasting force-leave anyway", err))
+	} else {
 		found := false
 		for _, member := range members {
 			if member.Name == nodes[0] {
