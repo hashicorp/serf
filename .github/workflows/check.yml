@@ -15,7 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.19","1.20","1.21" ]
+        version:
+          - 'oldstable'
+          - 'stable'
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -23,7 +25,7 @@ jobs:
       - name: Install Go toolchain
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
-          go-version: ${{ matrix.GO_VERSION }}
+          go-version: ${{ matrix.version }}
 
       - name: Cache Go modules
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
@@ -31,25 +33,23 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
+          key: go-mod-${{ matrix.version }}-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-mod-${{ matrix.GO_VERSION }}
+            go-mod-${{ matrix.version }}
 
-      - name: "Download golang-lint"
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$(go env GOPATH)/bin"
-          golangci-lint --version
-
-      - name: "lint"
-        run: |
-          golangci-lint run -v
+      - name: Lint code
+        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9.2.0
+        with:
+          version: v2.12.2
 
   unit-tests:
     name: "Unit Tests"
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.19","1.20","1.21" ]
+        version:
+          - 'oldstable'
+          - 'stable'
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -57,7 +57,7 @@ jobs:
       - name: Install Go toolchain
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
-          go-version: ${{ matrix.GO_VERSION }}
+          go-version: ${{ matrix.version }}
 
       # NOTE: This cache is shared so the following step must always be
       # identical across the unit-tests, e2e-tests, and consistency-checks
@@ -68,9 +68,9 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
+          key: go-mod-${{ matrix.version }}-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-mod-${{ matrix.GO_VERSION }}
+            go-mod-${{ matrix.version }}
 
       - name: "Unit tests"
         run: |
@@ -80,7 +80,7 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           path: coverage.out
-          name: coverage-report-${{matrix.GO_VERSION}}
+          name: coverage-report-${{ matrix.version }}
 
       - name: Display coverage report
         run: go tool cover -func=coverage.out
@@ -90,7 +90,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.19","1.20","1.21" ]
+        version:
+          - 'oldstable'
+          - 'stable'
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -98,7 +100,7 @@ jobs:
       - name: Install Go toolchain
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
-          go-version: ${{ matrix.GO_VERSION }}
+          go-version: ${{ matrix.version }}
 
       # NOTE: This cache is shared so the following step must always be
       # identical across the unit-tests, e2e-tests, and consistency-checks
@@ -109,9 +111,9 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
+          key: go-mod-${{ matrix.version }}-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-mod-${{ matrix.GO_VERSION }}
+            go-mod-${{ matrix.version }}
 
       - name: "Race Unit tests"
         run: |
@@ -122,7 +124,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        GO_VERSION: [ "1.19","1.20","1.21" ]
+        version:
+          - 'oldstable'
+          - 'stable'
     steps:
       - name: "Fetch source code"
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
@@ -130,7 +134,7 @@ jobs:
       - name: Install Go toolchain
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
-          go-version: ${{ matrix.GO_VERSION }}
+          go-version: ${{ matrix.version }}
 
       # NOTE: This cache is shared so the following step must always be
       # identical across the unit-tests and consistency-checks
@@ -141,9 +145,9 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: go-mod-${{ matrix.GO_VERSION }}-${{ hashFiles('go.sum') }}
+          key: go-mod-${{ matrix.version }}-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-mod-${{ matrix.GO_VERSION }}
+            go-mod-${{ matrix.version }}
 
       - name: "go.mod and go.sum consistency check"
         run: |
