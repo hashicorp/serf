@@ -5,7 +5,6 @@ package serf
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestSnapshotter(t *testing.T) {
-	td, err := ioutil.TempDir("", "serf")
+	td, err := os.MkdirTemp("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -168,7 +167,7 @@ func TestSnapshotter(t *testing.T) {
 }
 
 func TestSnapshotter_forceCompact(t *testing.T) {
-	td, err := ioutil.TempDir("", "serf")
+	td, err := os.MkdirTemp("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -232,7 +231,7 @@ func TestSnapshotter_forceCompact(t *testing.T) {
 }
 
 func TestSnapshotter_leave(t *testing.T) {
-	td, err := ioutil.TempDir("", "serf")
+	td, err := os.MkdirTemp("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -313,7 +312,7 @@ func TestSnapshotter_leave(t *testing.T) {
 }
 
 func TestSnapshotter_leave_rejoin(t *testing.T) {
-	td, err := ioutil.TempDir("", "serf")
+	td, err := os.MkdirTemp("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -395,7 +394,7 @@ func TestSnapshotter_leave_rejoin(t *testing.T) {
 
 func TestSnapshotter_slowDiskNotBlockingEventCh(t *testing.T) {
 	t.Skip("Flaky test")
-	td, err := ioutil.TempDir("", "serf")
+	td, err := os.MkdirTemp("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -481,7 +480,7 @@ func TestSnapshotter_slowDiskNotBlockingEventCh(t *testing.T) {
 }
 
 func TestSnapshotter_blockedUpstreamNotBlockingMemberlist(t *testing.T) {
-	td, err := ioutil.TempDir("", "serf")
+	td, err := os.MkdirTemp("", "serf")
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
