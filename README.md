@@ -100,7 +100,7 @@ https://github.com/hashicorp/serf/tree/master/docs
 ## Developing Serf
 
 If you wish to work on Serf itself, you'll first need [Go](https://golang.org)
-installed (version 1.25+ is _required_). Make sure you have Go properly
+installed (stable version is _required_). Make sure you have Go properly
 [installed](https://golang.org/doc/install),
 including setting up your [GOPATH](https://golang.org/doc/code.html#GOPATH).
 
