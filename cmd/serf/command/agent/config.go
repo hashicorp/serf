@@ -235,6 +235,12 @@ type Config struct {
 	// metrics will be sent to that instance.
 	StatsdAddr string `mapstructure:"statsd_addr"`
 
+	// EnableMetrics is used to expose prometheus formated metrics
+	EnableMetrics bool `mapstructure:"enable_metrics"`
+
+	// MetricsBindAddr is the address to bind the metrics server to
+	MetricsBindAddr string `mapstructure:"metrics_bind_addr"`
+
 	// BroadcastTimeoutRaw is the string retry interval. This interval
 	// controls the timeout for broadcast events. This defaults to
 	// 5 seconds.
@@ -517,6 +523,15 @@ func MergeConfig(a, b *Config) *Config {
 	if b.UserEventSizeLimit != 0 {
 		result.UserEventSizeLimit = b.UserEventSizeLimit
 	}
+
+	if b.EnableMetrics == true {
+		result.EnableMetrics = true
+	}
+
+	if b.MetricsBindAddr != "" {
+		result.MetricsBindAddr = b.MetricsBindAddr
+	}
+
 	if b.BroadcastTimeout != 0 {
 		result.BroadcastTimeout = b.BroadcastTimeout
 	}
