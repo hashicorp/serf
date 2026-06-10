@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	clientClosed = errors.New("client closed")
+	errClientClosed = errors.New("client closed")
 )
 
 type seqCallback struct {
@@ -90,7 +90,7 @@ func (c *RPCClient) send(header *requestHeader, obj any) error {
 	defer c.writeLock.Unlock()
 
 	if c.shutdown {
-		return clientClosed
+		return errClientClosed
 	}
 
 	// Setup an IO deadline, this way we won't wait indefinitely
@@ -496,7 +496,7 @@ func (c *RPCClient) Monitor(level logutils.LogLevel, ch chan<- string) (StreamHa
 		return StreamHandle(seq), err
 	case <-c.shutdownCh:
 		c.deregisterHandler(seq)
-		return 0, clientClosed
+		return 0, errClientClosed
 	}
 }
 
@@ -578,7 +578,7 @@ func (c *RPCClient) Stream(filter string, ch chan<- map[string]any) (StreamHandl
 		return StreamHandle(seq), err
 	case <-c.shutdownCh:
 		c.deregisterHandler(seq)
-		return 0, clientClosed
+		return 0, errClientClosed
 	}
 }
 
@@ -705,7 +705,7 @@ func (c *RPCClient) Query(params *QueryParam) error {
 		return err
 	case <-c.shutdownCh:
 		c.deregisterHandler(seq)
-		return clientClosed
+		return errClientClosed
 	}
 }
 
@@ -781,7 +781,7 @@ func (c *RPCClient) genericRPC(header *requestHeader, req any, resp any) error {
 	case err := <-errCh:
 		return err
 	case <-c.shutdownCh:
-		return clientClosed
+		return errClientClosed
 	}
 }
 

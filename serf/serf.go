@@ -694,16 +694,19 @@ func (s *Serf) broadcastJoin(ltime LamportTime) error {
 func (s *Serf) Leave() error {
 	// Check the current state
 	s.stateLock.Lock()
-	if s.state == SerfLeft {
+
+	switch s.state {
+	case SerfLeft:
 		s.stateLock.Unlock()
 		return nil
-	} else if s.state == SerfLeaving {
+	case SerfLeaving:
 		s.stateLock.Unlock()
 		return fmt.Errorf("Leave already in progress")
-	} else if s.state == SerfShutdown {
+	case SerfShutdown:
 		s.stateLock.Unlock()
 		return fmt.Errorf("Leave called after Shutdown")
 	}
+
 	s.state = SerfLeaving
 	s.stateLock.Unlock()
 
