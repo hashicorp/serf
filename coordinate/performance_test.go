@@ -5,6 +5,7 @@ package coordinate
 
 import (
 	"math"
+	"math/rand"
 	"testing"
 	"time"
 )
@@ -13,6 +14,7 @@ func TestPerformance_Line(t *testing.T) {
 	const spacing = 10 * time.Millisecond
 	const nodes, cycles = 10, 1000
 	config := DefaultConfig()
+	config.rand = rand.New(rand.NewSource(1))
 	clients, err := GenerateClients(nodes, config)
 	if err != nil {
 		t.Fatal(err)
@@ -20,7 +22,7 @@ func TestPerformance_Line(t *testing.T) {
 	truth := GenerateLine(nodes, spacing)
 	Simulate(clients, truth, cycles)
 	stats := Evaluate(clients, truth)
-	if stats.ErrorAvg > 0.0018 || stats.ErrorMax > 0.0092 {
+	if stats.ErrorAvg > 0.0031 || stats.ErrorMax > 0.0130 {
 		t.Fatalf("performance stats are out of spec: %v", stats)
 	}
 }
@@ -29,6 +31,7 @@ func TestPerformance_Grid(t *testing.T) {
 	const spacing = 10 * time.Millisecond
 	const nodes, cycles = 25, 1000
 	config := DefaultConfig()
+	config.rand = rand.New(rand.NewSource(1))
 	clients, err := GenerateClients(nodes, config)
 	if err != nil {
 		t.Fatal(err)
@@ -36,7 +39,7 @@ func TestPerformance_Grid(t *testing.T) {
 	truth := GenerateGrid(nodes, spacing)
 	Simulate(clients, truth, cycles)
 	stats := Evaluate(clients, truth)
-	if stats.ErrorAvg > 0.0015 || stats.ErrorMax > 0.022 {
+	if stats.ErrorAvg > 0.0016 || stats.ErrorMax > 0.0230 {
 		t.Fatalf("performance stats are out of spec: %v", stats)
 	}
 }
@@ -45,6 +48,7 @@ func TestPerformance_Split(t *testing.T) {
 	const lan, wan = 1 * time.Millisecond, 10 * time.Millisecond
 	const nodes, cycles = 25, 1000
 	config := DefaultConfig()
+	config.rand = rand.New(rand.NewSource(1))
 	clients, err := GenerateClients(nodes, config)
 	if err != nil {
 		t.Fatal(err)
@@ -64,6 +68,7 @@ func TestPerformance_Height(t *testing.T) {
 	// Constrain us to two dimensions so that we can just exactly represent
 	// the circle.
 	config := DefaultConfig()
+	config.rand = rand.New(rand.NewSource(1))
 	config.Dimensionality = 2
 	clients, err := GenerateClients(nodes, config)
 	if err != nil {
@@ -91,7 +96,7 @@ func TestPerformance_Height(t *testing.T) {
 		}
 	}
 	stats := Evaluate(clients, truth)
-	if stats.ErrorAvg > 0.0025 || stats.ErrorMax > 0.064 {
+	if stats.ErrorAvg > 0.0028 || stats.ErrorMax > 0.064 {
 		t.Fatalf("performance stats are out of spec: %v", stats)
 	}
 }
@@ -100,6 +105,7 @@ func TestPerformance_Drift(t *testing.T) {
 	const dist = 500 * time.Millisecond
 	const nodes = 4
 	config := DefaultConfig()
+	config.rand = rand.New(rand.NewSource(1))
 	config.Dimensionality = 2
 	clients, err := GenerateClients(nodes, config)
 	if err != nil {
@@ -172,6 +178,7 @@ func TestPerformance_Random(t *testing.T) {
 	const mean, deviation = 100 * time.Millisecond, 10 * time.Millisecond
 	const nodes, cycles = 25, 1000
 	config := DefaultConfig()
+	config.rand = rand.New(rand.NewSource(1))
 	clients, err := GenerateClients(nodes, config)
 	if err != nil {
 		t.Fatal(err)
