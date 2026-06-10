@@ -60,7 +60,7 @@ func (c *MonitorCommand) Run(args []string) int {
 	}
 	defer client.Close()
 
-	eventCh := make(chan map[string]interface{}, 1024)
+	eventCh := make(chan map[string]any, 1024)
 	streamHandle, err := client.Stream("*", eventCh)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error starting stream: %s", err))

@@ -29,6 +29,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"maps"
 	"net"
 	"os"
 	"regexp"
@@ -37,7 +38,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/hashicorp/go-metrics/compat"
+	metrics "github.com/hashicorp/go-metrics/compat"
 	"github.com/hashicorp/go-msgpack/v2/codec"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/serf/coordinate"
@@ -247,13 +248,13 @@ type AgentIPC struct {
 	listener                net.Listener
 	logger                  *log.Logger
 	logWriter               *logWriter
-	stop                    uint32
+	stop                    atomic.Uint32
 	stopCh                  chan struct{}
 	msgpackUseNewTimeFormat bool
 }
 
 type IPCClient struct {
-	queryID      uint64 // Used to increment query IDs
+	queryID      atomic.Uint64 // Used to increment query IDs
 	name         string
 	conn         net.Conn
 	reader       *bufio.Reader
@@ -273,7 +274,7 @@ type IPCClient struct {
 
 // send is used to send an object using the MsgPack encoding. send
 // is serialized to prevent write overlaps, while properly buffering.
-func (c *IPCClient) Send(header *responseHeader, obj interface{}) error {
+func (c *IPCClient) Send(header *responseHeader, obj any) error {
 	c.writeLock.Lock()
 	defer c.writeLock.Unlock()
 
@@ -300,7 +301,7 @@ func (c *IPCClient) String() string {
 
 // nextQueryID safely generates a new query ID
 func (c *IPCClient) nextQueryID() uint64 {
-	return atomic.AddUint64(&c.queryID, 1)
+	return c.queryID.Add(1)
 }
 
 // RegisterQuery is used to register a pending query that may
@@ -358,7 +359,7 @@ func (i *AgentIPC) Shutdown() {
 		return
 	}
 
-	atomic.StoreUint32(&i.stop, 1)
+	i.stop.Store(1)
 	close(i.stopCh)
 	i.listener.Close()
 
@@ -369,7 +370,7 @@ func (i *AgentIPC) Shutdown() {
 }
 
 func (i *AgentIPC) isStopped() bool {
-	return atomic.LoadUint32(&i.stop) == 1
+	return i.stop.Load() == 1
 }
 
 func (i *AgentIPC) newMsgpackHandle() *codec.MsgpackHandle {
@@ -977,9 +978,7 @@ func (i *AgentIPC) handleTags(client *IPCClient, seq uint64) error {
 		}
 	}
 
-	for key, val := range req.Tags {
-		tags[key] = val
-	}
+	maps.Copy(tags, req.Tags)
 
 	err := i.agent.SetTags(tags)
 

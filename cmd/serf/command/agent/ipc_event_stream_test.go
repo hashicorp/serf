@@ -16,11 +16,11 @@ import (
 
 type MockStreamClient struct {
 	headers []*responseHeader
-	objs    []interface{}
+	objs    []any
 	err     error
 }
 
-func (m *MockStreamClient) Send(h *responseHeader, o interface{}) error {
+func (m *MockStreamClient) Send(h *responseHeader, o any) error {
 	m.headers = append(m.headers, h)
 	m.objs = append(m.objs, o)
 	return m.err

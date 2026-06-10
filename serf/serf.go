@@ -13,6 +13,7 @@ import (
 	"net"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -913,7 +914,7 @@ func (s *Serf) State() SerfState {
 // broadcast takes a Serf message type, encodes it for the wire, and queues
 // the broadcast. If a notify channel is given, this channel will be closed
 // when the broadcast is sent.
-func (s *Serf) broadcast(t messageType, msg interface{}, notify chan<- struct{}) error {
+func (s *Serf) broadcast(t messageType, msg any, notify chan<- struct{}) error {
 	raw, err := encodeMessage(t, msg, s.msgpackUseNewTimeFormat)
 	if err != nil {
 		return err
@@ -1329,11 +1330,9 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 	idx := query.LTime % LamportTime(len(s.queryBuffer))
 	seen := s.queryBuffer[idx]
 	if seen != nil && seen.LTime == query.LTime {
-		for _, previous := range seen.QueryIDs {
-			if previous == query.ID {
-				// Seen this ID already
-				return false
-			}
+		if slices.Contains(seen.QueryIDs, query.ID) {
+			// Seen this ID already
+			return false
 		}
 	} else {
 		seen = &queries{LTime: query.LTime}

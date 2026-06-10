@@ -12,7 +12,7 @@ import (
 // Format some raw data for output. For better or worse, this currently forces
 // the passed data object to implement fmt.Stringer, since it's pretty hard to
 // implement a canonical *-to-string function.
-func formatOutput(data interface{}, format string) ([]byte, error) {
+func formatOutput(data any, format string) ([]byte, error) {
 	var out string
 
 	switch format {

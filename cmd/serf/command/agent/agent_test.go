@@ -50,7 +50,7 @@ func TestAgentShutdown_multiple(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		if err := a.Shutdown(); err != nil {
 			t.Fatalf("err: %v", err)
 		}

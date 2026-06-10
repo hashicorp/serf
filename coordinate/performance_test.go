@@ -134,7 +134,7 @@ func TestPerformance_Drift(t *testing.T) {
 	for i := range truth {
 		truth[i] = make([]time.Duration, nodes)
 	}
-	for i := 0; i < nodes; i++ {
+	for i := range nodes {
 		for j := i + 1; j < nodes; j++ {
 			rtt := dist
 			if (i%2 == 0) && (j%2 == 0) {

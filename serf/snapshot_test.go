@@ -185,7 +185,7 @@ func TestSnapshotter_forceCompact(t *testing.T) {
 	}
 
 	// Write lots of user events
-	for i := 0; i < 1024; i++ {
+	for i := range 1024 {
 		ue := UserEvent{
 			LTime: LamportTime(i),
 		}
@@ -193,7 +193,7 @@ func TestSnapshotter_forceCompact(t *testing.T) {
 	}
 
 	// Write lots of queries
-	for i := 0; i < 1024; i++ {
+	for i := range 1024 {
 		q := &Query{
 			LTime: LamportTime(i),
 		}
@@ -423,7 +423,7 @@ func TestSnapshotter_slowDiskNotBlockingEventCh(t *testing.T) {
 	startCh := make(chan struct{})
 	go func() {
 		<-startCh
-		for i := 0; i < numEvents; i++ {
+		for i := range numEvents {
 			e := MemberEvent{
 				Type: EventMemberJoin,
 				Members: []Member{
@@ -504,7 +504,7 @@ func TestSnapshotter_blockedUpstreamNotBlockingMemberlist(t *testing.T) {
 	numEvents := 3000
 
 	// Send some updates
-	for i := 0; i < numEvents; i++ {
+	for i := range numEvents {
 		e := MemberEvent{
 			Type: EventMemberJoin,
 			Members: []Member{

@@ -519,7 +519,7 @@ func TestRPCClientStream_User(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	eventCh := make(chan map[string]interface{}, 64)
+	eventCh := make(chan map[string]any, 64)
 	if handle, err := client.Stream("user", eventCh); err != nil {
 		t.Fatalf("err: %v", err)
 	} else {
@@ -581,7 +581,7 @@ func TestRPCClientStream_Member(t *testing.T) {
 
 	testutil.Yield()
 
-	eventCh := make(chan map[string]interface{}, 64)
+	eventCh := make(chan map[string]any, 64)
 	if handle, err := client.Stream("*", eventCh); err != nil {
 		t.Fatalf("err: %v", err)
 	} else {
@@ -603,11 +603,11 @@ func TestRPCClientStream_Member(t *testing.T) {
 			t.Fatalf("bad event: %#v", e)
 		}
 
-		members := e["Members"].([]interface{})
+		members := e["Members"].([]any)
 		if len(members) != 1 {
 			t.Fatalf("should have 1 member")
 		}
-		member := members[0].(map[interface{}]interface{})
+		member := members[0].(map[any]any)
 
 		if _, ok := member["Name"].(string); !ok {
 			t.Fatalf("bad event: %#v", e)
@@ -618,7 +618,7 @@ func TestRPCClientStream_Member(t *testing.T) {
 		if _, ok := member["Port"].(uint64); !ok {
 			t.Fatalf("bad event: %#v", e)
 		}
-		if _, ok := member["Tags"].(map[interface{}]interface{}); !ok {
+		if _, ok := member["Tags"].(map[any]any); !ok {
 			t.Fatalf("bad event: %#v", e)
 		}
 		if stat, _ := member["Status"].(string); stat != "alive" {
@@ -782,7 +782,7 @@ func TestRPCClientStream_Query(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	eventCh := make(chan map[string]interface{}, 64)
+	eventCh := make(chan map[string]any, 64)
 	if handle, err := cl.Stream("query", eventCh); err != nil {
 		t.Fatalf("err: %v", err)
 	} else {
@@ -838,7 +838,7 @@ func TestRPCClientStream_Query_Respond(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	eventCh := make(chan map[string]interface{}, 64)
+	eventCh := make(chan map[string]any, 64)
 	if handle, err := cl.Stream("query", eventCh); err != nil {
 		t.Fatalf("err: %v", err)
 	} else {

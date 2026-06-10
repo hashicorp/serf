@@ -85,7 +85,7 @@ type RPCClient struct {
 
 // send is used to send an object using the MsgPack encoding. send
 // is serialized to prevent write overlaps, while properly buffering.
-func (c *RPCClient) send(header *requestHeader, obj interface{}) error {
+func (c *RPCClient) send(header *requestHeader, obj any) error {
 	c.writeLock.Lock()
 	defer c.writeLock.Unlock()
 
@@ -505,7 +505,7 @@ type streamHandler struct {
 	closed  bool
 	init    bool
 	initCh  chan<- error
-	eventCh chan<- map[string]interface{}
+	eventCh chan<- map[string]any
 	seq     uint64
 }
 
@@ -518,7 +518,7 @@ func (sh *streamHandler) Handle(resp *responseHeader) {
 	}
 
 	// Decode logs for all other responses
-	var rec map[string]interface{}
+	var rec map[string]any
 	if err := sh.client.dec.Decode(&rec); err != nil {
 		log.Printf("[ERR] Failed to decode stream record: %v", err)
 		sh.client.deregisterHandler(sh.seq)
@@ -545,7 +545,7 @@ func (sh *streamHandler) Cleanup() {
 }
 
 // Stream is used to subscribe to events
-func (c *RPCClient) Stream(filter string, ch chan<- map[string]interface{}) (StreamHandle, error) {
+func (c *RPCClient) Stream(filter string, ch chan<- map[string]any) (StreamHandle, error) {
 	// Setup the request
 	seq := c.getSeq()
 	header := requestHeader{
@@ -750,7 +750,7 @@ func (c *RPCClient) auth(authKey string) error {
 
 // genericRPC is used to send a request and wait for an
 // errorSequenceResponse, potentially returning an error
-func (c *RPCClient) genericRPC(header *requestHeader, req interface{}, resp interface{}) error {
+func (c *RPCClient) genericRPC(header *requestHeader, req any, resp any) error {
 	// Setup a response handler
 	errCh := make(chan error, 1)
 	handler := func(respHeader *responseHeader) {

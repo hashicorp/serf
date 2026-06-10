@@ -156,12 +156,12 @@ func memberEventStdin(_ *log.Logger, stdin io.WriteCloser, e *serf.MemberEvent) 
 		tags := strings.Join(tagPairs, ",")
 
 		// Send the entire line
-		_, err := stdin.Write([]byte(fmt.Sprintf(
+		_, err := stdin.Write(fmt.Appendf(nil,
 			"%s\t%s\t%s\t%s\n",
 			eventClean(member.Name),
 			member.Addr.String(),
 			eventClean(member.Tags["role"]),
-			eventClean(tags))))
+			eventClean(tags)))
 		if err != nil {
 			return
 		}
