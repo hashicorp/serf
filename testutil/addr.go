@@ -74,6 +74,6 @@ func TakeIP() (ip net.IP, returnFn func()) {
 	}
 }
 
-func logf(format string, a ...interface{}) {
+func logf(format string, a ...any) {
 	fmt.Fprintf(os.Stdout, "testutil: "+format+"\n", a...)
 }

@@ -8,9 +8,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -315,7 +317,7 @@ func (c *Config) MDNSNetworkInterface() (*net.Interface, error) {
 // DecodeConfig reads the configuration from the given reader in JSON
 // format and decodes it into a proper Config structure.
 func DecodeConfig(r io.Reader) (*Config, error) {
-	var raw interface{}
+	var raw any
 	dec := json.NewDecoder(r)
 	if err := dec.Decode(&raw); err != nil {
 		return nil, err
@@ -384,12 +386,7 @@ func DecodeConfig(r io.Reader) (*Config, error) {
 // containsKey is used to check if a slice of string keys contains
 // another key
 func containsKey(keys []string, key string) bool {
-	for _, k := range keys {
-		if k == key {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(keys, key)
 }
 
 // MergeConfig merges two configurations together to make a single new
@@ -410,9 +407,7 @@ func MergeConfig(a, b *Config) *Config {
 		if result.Tags == nil {
 			result.Tags = make(map[string]string)
 		}
-		for name, value := range b.Tags {
-			result.Tags[name] = value
-		}
+		maps.Copy(result.Tags, b.Tags)
 	}
 	if b.BindAddr != "" {
 		result.BindAddr = b.BindAddr

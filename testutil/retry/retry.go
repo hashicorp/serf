@@ -26,7 +26,7 @@ import (
 // Failer is an interface compatible with testing.T.
 type Failer interface {
 	// Log is called for the final test output
-	Log(args ...interface{})
+	Log(args ...any)
 
 	// FailNow is called when the retrying is abandoned.
 	FailNow()
@@ -43,22 +43,22 @@ func (r *R) FailNow() {
 	runtime.Goexit()
 }
 
-func (r *R) Fatal(args ...interface{}) {
+func (r *R) Fatal(args ...any) {
 	r.log(fmt.Sprint(args...))
 	r.FailNow()
 }
 
-func (r *R) Fatalf(format string, args ...interface{}) {
+func (r *R) Fatalf(format string, args ...any) {
 	r.log(fmt.Sprintf(format, args...))
 	r.FailNow()
 }
 
-func (r *R) Error(args ...interface{}) {
+func (r *R) Error(args ...any) {
 	r.log(fmt.Sprint(args...))
 	r.fail = true
 }
 
-func (r *R) Errorf(format string, args ...interface{}) {
+func (r *R) Errorf(format string, args ...any) {
 	r.log(fmt.Sprintf(format, args...))
 	r.fail = true
 }

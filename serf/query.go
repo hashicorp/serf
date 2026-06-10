@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net"
 	"regexp"
+	"slices"
 	"sync"
 	"time"
 
@@ -224,13 +225,7 @@ func (s *Serf) shouldProcessQuery(filters [][]byte) bool {
 			}
 
 			// Check if we are being targeted
-			found := false
-			for _, n := range nodes {
-				if n == s.config.NodeName {
-					found = true
-					break
-				}
-			}
+			found := slices.Contains(nodes, s.config.NodeName)
 			if !found {
 				return false
 			}

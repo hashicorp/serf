@@ -5,7 +5,6 @@ package serf
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -67,7 +66,7 @@ func testConfig(t *testing.T, ip net.IP) *Config {
 
 // compatible with testing.TB and *retry.R
 type testFailer interface {
-	Fatalf(format string, args ...interface{})
+	Fatalf(format string, args ...any)
 }
 
 // testMember tests that a member in a list is in a given state.
@@ -126,7 +125,6 @@ func TestCreate_badProtocolVersion(t *testing.T) {
 	defer returnFn1()
 
 	for _, tc := range cases {
-		tc := tc
 		t.Run(fmt.Sprintf("version-%d", tc.version), func(t *testing.T) {
 			c := testConfig(t, ip1)
 			c.ProtocolVersion = tc.version
@@ -319,11 +317,11 @@ func TestSerf_eventsLeave_avoidInfiniteLeaveRebroadcast(t *testing.T) {
 	s2Name := s2Config.NodeName
 
 	// Allow s3 and s4 to drop joins in the future.
-	var dropJoins uint32
+	var dropJoins atomic.Uint32
 	messageDropper := func(t messageType) bool {
 		switch t {
 		case messageJoinType, messagePushPullType:
-			return atomic.LoadUint32(&dropJoins) == 1
+			return dropJoins.Load() == 1
 		default:
 			return false
 		}
@@ -384,7 +382,7 @@ func TestSerf_eventsLeave_avoidInfiniteLeaveRebroadcast(t *testing.T) {
 
 	// Make s3 and s4 drop inbound join messages and push-pulls for a bit so it won't see
 	// s2 rejoin
-	atomic.StoreUint32(&dropJoins, 1)
+	dropJoins.Store(1)
 
 	// Bring back s2 by mimicking its name and address
 	s2Config = testConfigLocal(t, ip2)
@@ -567,7 +565,7 @@ func TestSerf_getQueueMax(t *testing.T) {
 	// We don't need a running Serf so fake it out with the required
 	// state.
 	s.members = make(map[string]*memberState)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		name := fmt.Sprintf("Member%d", i)
 		s.members[name] = &memberState{
 			Member: Member{
@@ -2035,8 +2033,7 @@ func TestSerf_Query(t *testing.T) {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	wg.Add(1)
 	go func() {
@@ -2090,7 +2087,7 @@ func TestSerf_Query(t *testing.T) {
 
 	ackCh := resp.AckCh()
 	respCh := resp.ResponseCh()
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		select {
 		case a := <-ackCh:
 			acks = append(acks, a)
@@ -2140,8 +2137,7 @@ func TestSerf_Query_Filter(t *testing.T) {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	wg.Add(1)
 	go func() {
@@ -2215,7 +2211,7 @@ func TestSerf_Query_Filter(t *testing.T) {
 
 	ackCh := resp.AckCh()
 	respCh := resp.ResponseCh()
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		select {
 		case a := <-ackCh:
 			acks = append(acks, a)

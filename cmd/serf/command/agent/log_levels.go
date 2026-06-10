@@ -5,6 +5,7 @@ package agent
 
 import (
 	"io/ioutil"
+	"slices"
 
 	"github.com/hashicorp/logutils"
 )
@@ -22,10 +23,5 @@ func LevelFilter() *logutils.LevelFilter {
 // ValidateLevelFilter verifies that the log levels within the filter
 // are valid.
 func ValidateLevelFilter(minLevel logutils.LogLevel, filter *logutils.LevelFilter) bool {
-	for _, level := range filter.Levels {
-		if level == minLevel {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(filter.Levels, minLevel)
 }

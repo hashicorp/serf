@@ -33,7 +33,7 @@ func GenerateLine(nodes int, spacing time.Duration) [][]time.Duration {
 		truth[i] = make([]time.Duration, nodes)
 	}
 
-	for i := 0; i < nodes; i++ {
+	for i := range nodes {
 		for j := i + 1; j < nodes; j++ {
 			rtt := time.Duration(j-i) * spacing
 			truth[i][j], truth[j][i] = rtt, rtt
@@ -51,7 +51,7 @@ func GenerateGrid(nodes int, spacing time.Duration) [][]time.Duration {
 	}
 
 	n := int(math.Sqrt(float64(nodes)))
-	for i := 0; i < nodes; i++ {
+	for i := range nodes {
 		for j := i + 1; j < nodes; j++ {
 			x1, y1 := float64(i%n), float64(i/n)
 			x2, y2 := float64(j%n), float64(j/n)
@@ -75,7 +75,7 @@ func GenerateSplit(nodes int, lan time.Duration, wan time.Duration) [][]time.Dur
 	}
 
 	split := nodes / 2
-	for i := 0; i < nodes; i++ {
+	for i := range nodes {
 		for j := i + 1; j < nodes; j++ {
 			rtt := lan
 			if (i <= split && j > split) || (i > split && j <= split) {
@@ -97,7 +97,7 @@ func GenerateCircle(nodes int, radius time.Duration) [][]time.Duration {
 		truth[i] = make([]time.Duration, nodes)
 	}
 
-	for i := 0; i < nodes; i++ {
+	for i := range nodes {
 		for j := i + 1; j < nodes; j++ {
 			var rtt time.Duration
 			if i == 0 {
@@ -128,7 +128,7 @@ func GenerateRandom(nodes int, mean time.Duration, deviation time.Duration) [][]
 		truth[i] = make([]time.Duration, nodes)
 	}
 
-	for i := 0; i < nodes; i++ {
+	for i := range nodes {
 		for j := i + 1; j < nodes; j++ {
 			rttSeconds := rng.NormFloat64()*deviation.Seconds() + mean.Seconds()
 			rtt := time.Duration(rttSeconds * secondsToNanoseconds)
@@ -148,7 +148,7 @@ func Simulate(clients []*Client, truth [][]time.Duration, cycles int) {
 	rng := rand.New(rand.NewSource(1))
 
 	nodes := len(clients)
-	for cycle := 0; cycle < cycles; cycle++ {
+	for range cycles {
 		for i := range clients {
 			if j := rng.Intn(nodes); j != i {
 				c := clients[j].GetCoordinate()
@@ -176,7 +176,7 @@ func Evaluate(clients []*Client, truth [][]time.Duration) (stats Stats) {
 	}
 	nodes := len(clients)
 	count := 0
-	for i := 0; i < nodes; i++ {
+	for i := range nodes {
 		for j := i + 1; j < nodes; j++ {
 			est := clients[i].DistanceTo(clients[j].GetCoordinate()).Seconds()
 			actual := truth[i][j].Seconds()

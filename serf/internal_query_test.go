@@ -39,7 +39,7 @@ func TestSerfQueries_Passthrough(t *testing.T) {
 	eventCh <- MemberEvent{Type: EventMemberJoin}
 
 	// Should get passed through
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		select {
 		case <-outCh:
 		case <-time.After(100 * time.Millisecond):

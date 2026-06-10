@@ -11,7 +11,7 @@ import (
 )
 
 type streamClient interface {
-	Send(*responseHeader, interface{}) error
+	Send(*responseHeader, any) error
 	RegisterQuery(*serf.Query) uint64
 }
 
