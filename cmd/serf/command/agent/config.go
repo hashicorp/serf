@@ -392,7 +392,7 @@ func containsKey(keys []string, key string) bool {
 // MergeConfig merges two configurations together to make a single new
 // configuration.
 func MergeConfig(a, b *Config) *Config {
-	var result Config = *a
+	var result = *a
 
 	if b.NodeName != "" {
 		result.NodeName = b.NodeName
