@@ -714,7 +714,7 @@ func (c *Command) handleReload(config *Config, agent *Agent) *Config {
 	c.Ui.Output("Reloading configuration...")
 	newConf := c.readConfig()
 	if newConf == nil {
-		c.Ui.Error(fmt.Sprintf("Failed to reload configs"))
+		c.Ui.Error("Failed to reload configs")
 		return config
 	}
 

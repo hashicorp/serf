@@ -28,7 +28,7 @@ func (c *KeygenCommand) Run(_ []string) int {
 		return 1
 	}
 	if n != 32 {
-		c.Ui.Error(fmt.Sprintf("Couldn't read enough entropy. Generate more entropy!"))
+		c.Ui.Error("Couldn't read enough entropy. Generate more entropy!")
 		return 1
 	}
 

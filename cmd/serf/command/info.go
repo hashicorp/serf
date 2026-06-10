@@ -91,7 +91,7 @@ func (s StatsContainer) String() string {
 
 	// Iterate over each top-level key
 	for _, key := range keys {
-		buf.WriteString(fmt.Sprintf("%s:\n", key))
+		fmt.Fprintf(&buf, "%s:\n", key)
 
 		// Sort the sub-keys
 		subvals := s[key]
@@ -104,7 +104,7 @@ func (s StatsContainer) String() string {
 		// Iterate over the subkeys
 		for _, subkey := range subkeys {
 			val := subvals[subkey]
-			buf.WriteString(fmt.Sprintf("\t%s = %s\n", subkey, val))
+			fmt.Fprintf(&buf, "\t%s = %s\n", subkey, val)
 		}
 	}
 	return buf.String()

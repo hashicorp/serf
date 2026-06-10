@@ -26,6 +26,7 @@ package agent
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -479,7 +480,7 @@ func (i *AgentIPC) handleRequest(client *IPCClient, reqHeader *requestHeader) er
 	if command != handshakeCommand && client.version == 0 {
 		respHeader := responseHeader{Seq: seq, Error: handshakeRequired}
 		client.Send(&respHeader, nil)
-		return fmt.Errorf(handshakeRequired)
+		return errors.New(handshakeRequired)
 	}
 	metrics.IncrCounterWithLabels([]string{"agent", "ipc", "command"}, 1, nil)
 
@@ -1036,7 +1037,7 @@ func (i *AgentIPC) handleRespond(client *IPCClient, seq uint64) error {
 	if ok {
 		err = query.Respond(req.Payload)
 	} else {
-		err = fmt.Errorf(invalidQueryID)
+		err = errors.New(invalidQueryID)
 	}
 
 	// Respond
