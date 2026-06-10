@@ -104,7 +104,7 @@ WAIT:
 	if len(m) != 2 {
 		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
 	}
-	if findMember(t, m, a2.conf.NodeName).Status != serf.StatusFailed && time.Now().Sub(start) < 3*time.Second {
+	if findMember(t, m, a2.conf.NodeName).Status != serf.StatusFailed && time.Since(start) < 3*time.Second {
 		goto WAIT
 	}
 
@@ -166,7 +166,7 @@ WAIT:
 	if len(m) != 2 {
 		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
 	}
-	if findMember(t, m, a2.conf.NodeName).Status != serf.StatusFailed && time.Now().Sub(start) < 3*time.Second {
+	if findMember(t, m, a2.conf.NodeName).Status != serf.StatusFailed && time.Since(start) < 3*time.Second {
 		goto WAIT
 	}
 

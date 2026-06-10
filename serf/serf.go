@@ -957,7 +957,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 		s.members[n.Name] = member
 	} else {
 		oldStatus = member.Status
-		deadTime := time.Now().Sub(member.leaveTime)
+		deadTime := time.Since(member.leaveTime)
 		if oldStatus == StatusFailed && deadTime < s.config.FlapTimeout {
 			metrics.IncrCounterWithLabels([]string{"serf", "member", "flap"}, 1, s.metricLabels)
 		}

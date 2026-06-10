@@ -52,7 +52,7 @@ WAIT:
 		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
 	}
 
-	if m[1].Status != serf.StatusFailed && time.Now().Sub(start) < 3*time.Second {
+	if m[1].Status != serf.StatusFailed && time.Since(start) < 3*time.Second {
 		goto WAIT
 	}
 
@@ -136,7 +136,7 @@ WAIT:
 		t.Fatalf("should have 2 members: %#v", a1.Serf().Members())
 	}
 
-	if m[1].Status != serf.StatusFailed && time.Now().Sub(start) < 3*time.Second {
+	if m[1].Status != serf.StatusFailed && time.Since(start) < 3*time.Second {
 		goto WAIT
 	}
 

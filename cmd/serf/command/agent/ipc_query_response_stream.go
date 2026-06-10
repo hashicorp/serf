@@ -29,7 +29,7 @@ func newQueryResponseStream(client streamClient, seq uint64, logger *log.Logger)
 // Stream is a long running routine used to stream the results of a query back to a client
 func (qs *queryResponseStream) Stream(resp *serf.QueryResponse) {
 	// Setup a timer for the query ending
-	remaining := resp.Deadline().Sub(time.Now())
+	remaining := time.Until(resp.Deadline())
 	done := time.After(remaining)
 
 	ackCh := resp.AckCh()

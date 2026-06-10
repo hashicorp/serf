@@ -132,7 +132,7 @@ OUTER:
 	}
 
 	if verbose {
-		total := float64(time.Now().Sub(start)) / float64(time.Second)
+		total := float64(time.Since(start)) / float64(time.Second)
 		timeToLast := float64(last.Sub(start)) / float64(time.Second)
 		c.Ui.Output(fmt.Sprintf("Query time: %0.2f sec, time to last response: %0.2f sec", total, timeToLast))
 	}

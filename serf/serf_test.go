@@ -1114,7 +1114,7 @@ func TestSerf_update(t *testing.T) {
 			t.Fatalf("err: %v", err)
 		}
 
-		if time.Now().Sub(start) > 2*time.Second {
+		if time.Since(start) > 2*time.Second {
 			t.Fatalf("timed out trying to restart")
 		}
 	}
@@ -1841,7 +1841,7 @@ func TestSerf_SnapshotRecovery(t *testing.T) {
 
 	// Wait for the node to auto rejoin
 	start := time.Now()
-	for time.Now().Sub(start) < time.Second {
+	for time.Since(start) < time.Second {
 		members := s1.Members()
 		if len(members) == 2 && members[0].Status == StatusAlive && members[1].Status == StatusAlive {
 			break
