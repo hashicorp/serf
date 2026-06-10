@@ -47,11 +47,6 @@ var (
 	FeatureNotSupported = fmt.Errorf("Feature not supported")
 )
 
-func init() {
-	// Seed the random number generator
-	rand.Seed(time.Now().UnixNano())
-}
-
 // ReconnectTimeoutOverrider is an interface that can be implemented to allow overriding
 // the reconnect timeout for individual members.
 type ReconnectTimeoutOverrider interface {
