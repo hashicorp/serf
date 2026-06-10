@@ -534,15 +534,11 @@ func TestReadConfigPaths_badPath(t *testing.T) {
 }
 
 func TestReadConfigPaths_file(t *testing.T) {
-	tf, err := os.CreateTemp("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	tf.Write([]byte(`{"node_name":"bar"}`))
-	tf.Close()
-	defer os.Remove(tf.Name())
+	td := t.TempDir()
+	tf := filepath.Join(td, "serf")
+	_ = os.WriteFile(tf, []byte(`{"node_name":"bar"}`), 0644)
 
-	config, err := ReadConfigPaths([]string{tf.Name()})
+	config, err := ReadConfigPaths([]string{tf})
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -553,13 +549,9 @@ func TestReadConfigPaths_file(t *testing.T) {
 }
 
 func TestReadConfigPaths_dir(t *testing.T) {
-	td, err := os.MkdirTemp("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	defer os.RemoveAll(td)
+	td := t.TempDir()
 
-	err = os.WriteFile(filepath.Join(td, "a.json"),
+	err := os.WriteFile(filepath.Join(td, "a.json"),
 		[]byte(`{"node_name": "bar"}`), 0644)
 	if err != nil {
 		t.Fatalf("err: %v", err)

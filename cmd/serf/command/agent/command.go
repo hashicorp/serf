@@ -607,10 +607,10 @@ func (c *Command) Run(args []string) int {
 	// Initialize the global sink
 	if len(fanout) > 0 {
 		fanout = append(fanout, inm)
-		metrics.NewGlobal(metricsConf, fanout)
+		_, _ = metrics.NewGlobal(metricsConf, fanout)
 	} else {
 		metricsConf.EnableHostname = false
-		metrics.NewGlobal(metricsConf, inm)
+		_, _ = metrics.NewGlobal(metricsConf, inm)
 	}
 
 	// Setup serf

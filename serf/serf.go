@@ -1120,7 +1120,7 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 	// Must be done in another goroutine since we have the memberLock
 	if leaveMsg.Node == s.config.NodeName && state == SerfAlive {
 		s.logger.Printf("[DEBUG] serf: Refuting an older leave intent")
-		go s.broadcastJoin(s.clock.Time())
+		go s.broadcastJoin(s.clock.Time()) //nolint:errcheck
 		return false
 	}
 
@@ -1654,7 +1654,7 @@ func (s *Serf) reconnect() {
 	s.memberLock.RUnlock()
 
 	// Attempt to join at the memberlist level
-	s.memberlist.Join([]string{joinAddr})
+	_, _ = s.memberlist.Join([]string{joinAddr})
 }
 
 // getQueueMax will get the maximum queue depth, which might be dynamic depending

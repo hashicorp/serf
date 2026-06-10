@@ -76,7 +76,7 @@ func testEventScript(t *testing.T, script string) (string, string) {
 }
 
 func TestScriptEventHandler(t *testing.T) {
-	os.Setenv("os_env_var", "os-env-foo")
+	t.Setenv("os_env_var", "os-env-foo")
 
 	script, results := testEventScript(t, eventScript)
 

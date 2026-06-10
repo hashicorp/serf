@@ -63,7 +63,10 @@ func TestClient_Update(t *testing.T) {
 
 	// Set the coordinate to a known state.
 	c.Vec[2] = 99.0
-	client.SetCoordinate(c)
+	err = client.SetCoordinate(c)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
 	c = client.GetCoordinate()
 	verifyEqualFloats(t, c.Vec[2], 99.0)
 }

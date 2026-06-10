@@ -492,7 +492,7 @@ func TestRPCClientMonitor(t *testing.T) {
 	drainEventCh(eventCh)
 
 	// Join a bad thing to generate more events
-	a1.Join(nil, false)
+	_, _ = a1.Join(nil, false)
 
 	testutil.Yield()
 

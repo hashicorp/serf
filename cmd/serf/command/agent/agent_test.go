@@ -127,11 +127,7 @@ func TestAgentTagsFile(t *testing.T) {
 		"datacenter": "us-east",
 	}
 
-	td, err := os.MkdirTemp("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	defer os.RemoveAll(td)
+	td := t.TempDir()
 
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
@@ -152,8 +148,7 @@ func TestAgentTagsFile(t *testing.T) {
 
 	testutil.Yield()
 
-	err = a1.SetTags(tags)
-
+	err := a1.SetTags(tags)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -247,12 +242,7 @@ func TestAgentKeyringFile(t *testing.T) {
 		"5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4=",
 	}
 
-	td, err := os.MkdirTemp("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	defer os.RemoveAll(td)
-
+	td := t.TempDir()
 	keyringFile := filepath.Join(td, "keyring.json")
 
 	serfConfig := serf.DefaultConfig()
@@ -298,13 +288,9 @@ func TestAgentKeyringFile_BadOptions(t *testing.T) {
 }
 
 func TestAgentKeyringFile_NoKeys(t *testing.T) {
-	dir, err := os.MkdirTemp("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	defer os.RemoveAll(dir)
+	td := t.TempDir()
 
-	keysFile := filepath.Join(dir, "keyring")
+	keysFile := filepath.Join(td, "keyring")
 	if err := os.WriteFile(keysFile, []byte("[]"), 0600); err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -312,7 +298,7 @@ func TestAgentKeyringFile_NoKeys(t *testing.T) {
 	agentConfig := DefaultConfig()
 	agentConfig.KeyringFile = keysFile
 
-	_, err = Create(agentConfig, serf.DefaultConfig(), nil)
+	_, err := Create(agentConfig, serf.DefaultConfig(), nil)
 	if err == nil {
 		t.Fatalf("should have errored")
 	}

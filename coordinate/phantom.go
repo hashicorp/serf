@@ -154,7 +154,7 @@ func Simulate(clients []*Client, truth [][]time.Duration, cycles int) {
 				c := clients[j].GetCoordinate()
 				rtt := truth[i][j]
 				node := fmt.Sprintf("node_%d", j)
-				clients[i].Update(node, c, rtt)
+				_, _ = clients[i].Update(node, c, rtt)
 			}
 		}
 	}

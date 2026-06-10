@@ -13,11 +13,7 @@ import (
 )
 
 func TestSnapshotter(t *testing.T) {
-	td, err := os.MkdirTemp("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	defer os.RemoveAll(td)
+	td := t.TempDir()
 
 	clock := new(LamportClock)
 	outCh := make(chan Event, 64)
@@ -167,11 +163,7 @@ func TestSnapshotter(t *testing.T) {
 }
 
 func TestSnapshotter_forceCompact(t *testing.T) {
-	td, err := os.MkdirTemp("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	defer os.RemoveAll(td)
+	td := t.TempDir()
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
@@ -231,11 +223,7 @@ func TestSnapshotter_forceCompact(t *testing.T) {
 }
 
 func TestSnapshotter_leave(t *testing.T) {
-	td, err := os.MkdirTemp("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	defer os.RemoveAll(td)
+	td := t.TempDir()
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
@@ -312,11 +300,7 @@ func TestSnapshotter_leave(t *testing.T) {
 }
 
 func TestSnapshotter_leave_rejoin(t *testing.T) {
-	td, err := os.MkdirTemp("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	defer os.RemoveAll(td)
+	td := t.TempDir()
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
@@ -394,12 +378,7 @@ func TestSnapshotter_leave_rejoin(t *testing.T) {
 
 func TestSnapshotter_slowDiskNotBlockingEventCh(t *testing.T) {
 	t.Skip("Flaky test")
-	td, err := os.MkdirTemp("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	t.Log("Temp dir", td)
-	defer os.RemoveAll(td)
+	td := t.TempDir()
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
@@ -480,12 +459,7 @@ func TestSnapshotter_slowDiskNotBlockingEventCh(t *testing.T) {
 }
 
 func TestSnapshotter_blockedUpstreamNotBlockingMemberlist(t *testing.T) {
-	td, err := os.MkdirTemp("", "serf")
-	if err != nil {
-		t.Fatalf("err: %v", err)
-	}
-	t.Log("Temp dir", td)
-	defer os.RemoveAll(td)
+	td := t.TempDir()
 
 	clock := new(LamportClock)
 	stopCh := make(chan struct{})
