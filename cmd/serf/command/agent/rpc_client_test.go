@@ -1021,6 +1021,9 @@ func TestRPCClient_Keys(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
+	if num != 1 {
+		t.Fatalf("expected only 1 key, got: %d", num)
+	}
 	if _, ok := keys[newKey]; ok {
 		t.Fatalf("have new key: %s", newKey)
 	}

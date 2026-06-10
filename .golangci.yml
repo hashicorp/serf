@@ -9,11 +9,11 @@ linters:
   enable:
     - forbidigo
     - govet
+    - ineffassign
     - modernize
     - unparam
     - unused
     # - errcheck
-    # - ineffassign
     # - staticcheck
 
   settings:
