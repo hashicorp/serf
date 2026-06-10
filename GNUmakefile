@@ -55,12 +55,19 @@ tools:
 	fi
 
 vet:
-	@echo "--> Running go vet"
-	@go vet -tags '$(GOTAGS)' $(GOFILES); if [ $$? -eq 1 ]; then \
+	go vet -tags '$(GOTAGS)' $(GOFILES); if [ $$? -eq 1 ]; then \
 		echo ""; \
 		echo "Vet found suspicious constructs. Please check the reported constructs"; \
 		echo "and fix them if necessary before submitting the code for review."; \
 		exit 1; \
 	fi
 
-.PHONY: default bin cov format dev dist get-tools subnet test testrace tools vet copywriteheaders
+tidy:
+	go mod tidy
+	@if (git status --porcelain | grep -Eq "go\.(mod|sum)"); then \
+		echo go.mod or go.sum needs updating; \
+		git --no-pager diff go.mod; \
+		git --no-pager diff go.sum; \
+		exit 1; fi
+
+.PHONY: default bin cov format dev dist get-tools subnet test testrace tools vet tidy copywriteheaders

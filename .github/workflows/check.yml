@@ -2,6 +2,9 @@ name: Checks
 
 on:
   pull_request:
+  push:
+    branches:
+      - master
 
 # This workflow runs for not-yet-reviewed external contributions and so it
 # intentionally has no write access and only limited read access to the
@@ -26,16 +29,10 @@ jobs:
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: ${{ matrix.version }}
+          cache: true
 
-      - name: Cache Go modules
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: go-mod-${{ matrix.version }}-${{ hashFiles('go.sum') }}
-          restore-keys: |
-            go-mod-${{ matrix.version }}
+      - name: "go.mod and go.sum consistency check"
+        run: make tidy
 
       - name: Lint code
         uses: golangci/golangci-lint-action@82606bf257cbaff209d206a39f5134f0cfbfd2ee # v9.2.1
@@ -58,19 +55,7 @@ jobs:
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: ${{ matrix.version }}
-
-      # NOTE: This cache is shared so the following step must always be
-      # identical across the unit-tests, e2e-tests, and consistency-checks
-      # jobs, or else weird things could happen.
-      - name: Cache Go modules
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: go-mod-${{ matrix.version }}-${{ hashFiles('go.sum') }}
-          restore-keys: |
-            go-mod-${{ matrix.version }}
+          cache: true
 
       - name: "Unit tests"
         run: |
@@ -101,71 +86,8 @@ jobs:
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: ${{ matrix.version }}
-
-      # NOTE: This cache is shared so the following step must always be
-      # identical across the unit-tests, e2e-tests, and consistency-checks
-      # jobs, or else weird things could happen.
-      - name: Cache Go modules
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: go-mod-${{ matrix.version }}-${{ hashFiles('go.sum') }}
-          restore-keys: |
-            go-mod-${{ matrix.version }}
+          cache: true
 
       - name: "Race Unit tests"
         run: |
           go test -race ./serf/...
-
-  consistency-checks:
-    name: "Code Consistency Checks"
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        version:
-          - 'oldstable'
-          - 'stable'
-    steps:
-      - name: "Fetch source code"
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-
-      - name: Install Go toolchain
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
-        with:
-          go-version: ${{ matrix.version }}
-
-      # NOTE: This cache is shared so the following step must always be
-      # identical across the unit-tests and consistency-checks
-      # jobs, or else weird things could happen.
-      - name: Cache Go modules
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: go-mod-${{ matrix.version }}-${{ hashFiles('go.sum') }}
-          restore-keys: |
-            go-mod-${{ matrix.version }}
-
-      - name: "go.mod and go.sum consistency check"
-        run: |
-          go mod tidy
-          if [[ -n "$(git status --porcelain)" ]]; then
-            echo >&2 "ERROR: go.mod/go.sum are not up-to-date. Run 'go mod tidy' and then commit the updated files."
-            exit 1
-          fi
-
-      - name: "go vet"
-        run: |
-          go vet ./...
-
-      - name: "go fmt check"
-        run: |
-          files=$(go fmt ./...)
-          if [ -n "$files" ]; then
-            echo "The following file(s) do not conform to go fmt:"
-            echo "$files"
-            exit 1
-          fi
