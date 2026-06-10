@@ -19,7 +19,7 @@ func TestAgent_eventHandler(t *testing.T) {
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
 
-	a1 := testAgent(t, ip1, nil)
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
 	defer a1.Leave()
 
@@ -45,7 +45,7 @@ func TestAgentShutdown_multiple(t *testing.T) {
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
 
-	a := testAgent(t, ip1, nil)
+	a := testAgent(t, ip1)
 	if err := a.Start(); err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -61,7 +61,7 @@ func TestAgentUserEvent(t *testing.T) {
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
 
-	a1 := testAgent(t, ip1, nil)
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
 	defer a1.Leave()
 
@@ -105,7 +105,7 @@ func TestAgentQuery_BadPrefix(t *testing.T) {
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
 
-	a1 := testAgent(t, ip1, nil)
+	a1 := testAgent(t, ip1)
 	defer a1.Shutdown()
 	defer a1.Leave()
 

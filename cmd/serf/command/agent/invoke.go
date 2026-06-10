@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/armon/circbuf"
-	"github.com/hashicorp/go-metrics/compat"
+	metrics "github.com/hashicorp/go-metrics/compat"
 	"github.com/hashicorp/serf/serf"
 )
 
@@ -145,7 +145,7 @@ func eventClean(v string) string {
 // "NAME    ADDRESS    ROLE    TAGS" where the whitespace is actually tabs.
 // The name and role are cleaned so that newlines and tabs are replaced
 // with "\n" and "\t" respectively.
-func memberEventStdin(logger *log.Logger, stdin io.WriteCloser, e *serf.MemberEvent) {
+func memberEventStdin(_ *log.Logger, stdin io.WriteCloser, e *serf.MemberEvent) {
 	defer stdin.Close()
 	for _, member := range e.Members {
 		// Format the tags as tag1=v1,tag2=v2,...
