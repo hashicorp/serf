@@ -44,7 +44,7 @@ const MaxNodeNameLength int = 128
 var (
 	// FeatureNotSupported is returned if a feature cannot be used
 	// due to an older protocol version being used.
-	FeatureNotSupported = fmt.Errorf("Feature not supported")
+	FeatureNotSupported = fmt.Errorf("Feature not supported") //nolint:staticcheck
 )
 
 // ReconnectTimeoutOverrider is an interface that can be implemented to allow overriding
