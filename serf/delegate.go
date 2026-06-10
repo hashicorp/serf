@@ -108,7 +108,7 @@ func (d *delegate) NotifyMsg(buf []byte) {
 
 		// The remaining contents are the message itself, so forward that
 		raw := make([]byte, reader.Len())
-		reader.Read(raw)
+		_, _ = reader.Read(raw)
 
 		addr := memberlist.Address{
 			Addr: header.DestAddr.String(),

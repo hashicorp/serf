@@ -7,6 +7,7 @@ run:
 linters:
   default: none
   enable:
+    - errcheck
     - forbidigo
     - govet
     - ineffassign
@@ -14,7 +15,6 @@ linters:
     - staticcheck
     - unparam
     - unused
-    # - errcheck
 
   settings:
     forbidigo:
@@ -29,6 +29,29 @@ linters:
       # Exclude godoc examples from forbidigo checks.
       # Default: true
       exclude-godoc-examples: false
+
+    errcheck:
+      disable-default-exclusions: false
+      verbose: true
+      exclude-functions:
+        - "fmt.Fprintf"
+        - "(*os.File).Close"
+        - "(net.Conn).Close"
+        - "(io.Closer).Close"
+        - "(net.Listener).Close"
+        - "(*net.TCPListener).Close"
+
+        - "(*github.com/hashicorp/serf/client.Client).Close"
+        - "(*github.com/hashicorp/serf/client.RPCClient).Stop"
+        - "(*github.com/hashicorp/serf/client.RPCClient).Close"
+        - "(*github.com/hashicorp/serf/cmd/serf/command/agent.Agent).Shutdown"
+        - "(*github.com/hashicorp/serf/cmd/serf/command/agent.Agent).Leave"
+        - "(*github.com/hashicorp/serf/cmd/serf/command/agent.GatedWriter).Write"
+        - "(*github.com/hashicorp/serf/cmd/serf/command/agent.IPCClient).Send"
+        - "(*github.com/hashicorp/serf/cmd/serf/command/agent.logWriter).Write"
+        - "(*github.com/hashicorp/serf/serf.Serf).Shutdown"
+
+
   exclusions:
     rules:
       # ignore SA9004: only the first constant in this group has an explicit type

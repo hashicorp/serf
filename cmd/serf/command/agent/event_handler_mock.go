@@ -40,5 +40,5 @@ func (h *MockQueryHandler) HandleEvent(e serf.Event) {
 	h.Queries = append(h.Queries, query)
 	h.Unlock()
 
-	query.Respond(h.Response)
+	_ = query.Respond(h.Response)
 }

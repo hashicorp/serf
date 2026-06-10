@@ -268,7 +268,7 @@ func TestSerf_ListKeys(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	s2.config.MemberlistConfig.Keyring.AddKey(extraKeyBytes)
+	_ = s2.config.MemberlistConfig.Keyring.AddKey(extraKeyBytes)
 
 	waitUntilNumNodes(t, 1, s1, s2)
 

@@ -505,7 +505,7 @@ func (s *Snapshotter) compact() error {
 
 	// Flush the existing snapshot, ignoring errors since we will
 	// delete it momentarily.
-	s.buffered.Flush()
+	_ = s.buffered.Flush()
 	s.buffered = nil
 
 	// Close the file handle to the old snapshot
