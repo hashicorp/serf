@@ -21,6 +21,9 @@ format:
 	@echo "--> Running go fmt"
 	@go fmt $(GOFILES)
 
+copywriteheaders:
+	copywrite headers --plan
+
 # dev creates binaries for testing locally - these are put into ./bin and
 # $GOPATH
 dev:
@@ -60,4 +63,4 @@ vet:
 		exit 1; \
 	fi
 
-.PHONY: default bin cov format dev dist get-tools subnet test testrace tools vet
+.PHONY: default bin cov format dev dist get-tools subnet test testrace tools vet copywriteheaders
