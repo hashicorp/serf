@@ -73,7 +73,7 @@ func TestRPCClientForceLeave(t *testing.T) {
 	defer client.Close()
 	defer a1.Shutdown()
 
-	a2 := testAgent(t, ip2, nil)
+	a2 := testAgent(t, ip2)
 	defer a2.Shutdown()
 
 	if err := a1.Start(); err != nil {
@@ -140,7 +140,7 @@ func TestRPCClientForceLeave_prune(t *testing.T) {
 	}
 	defer a1.Shutdown()
 
-	a2 := testAgent(t, ip2, nil)
+	a2 := testAgent(t, ip2)
 	if err := a2.Start(); err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -199,7 +199,7 @@ func TestRPCClientJoin(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	a2 := testAgent(t, ip2, nil)
+	a2 := testAgent(t, ip2)
 	if err := a2.Start(); err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -233,7 +233,7 @@ func TestRPCClientMembers(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	a2 := testAgent(t, ip2, nil)
+	a2 := testAgent(t, ip2)
 	if err := a2.Start(); err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -283,7 +283,7 @@ func TestRPCClientMembersFiltered(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	a2 := testAgent(t, ip2, nil)
+	a2 := testAgent(t, ip2)
 	if err := a2.Start(); err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -573,7 +573,7 @@ func TestRPCClientStream_Member(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	a2 := testAgent(t, ip2, nil)
+	a2 := testAgent(t, ip2)
 	if err := a2.Start(); err != nil {
 		t.Fatalf("err: %v", err)
 	}

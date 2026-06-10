@@ -125,7 +125,7 @@ func TestCommandRun_join(t *testing.T) {
 	ip2, returnFn2 := testutil.TakeIP()
 	defer returnFn2()
 
-	a1 := testAgent(t, ip1, nil)
+	a1 := testAgent(t, ip1)
 	if err := a1.Start(); err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -354,7 +354,7 @@ func TestCommandRun_retry_join(t *testing.T) {
 	ip2, returnFn2 := testutil.TakeIP()
 	defer returnFn2()
 
-	a1 := testAgent(t, ip1, nil)
+	a1 := testAgent(t, ip1)
 	if err := a1.Start(); err != nil {
 		t.Fatalf("err: %v", err)
 	}

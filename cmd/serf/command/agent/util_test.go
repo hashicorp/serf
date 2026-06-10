@@ -29,8 +29,8 @@ func drainEventCh(ch <-chan string) {
 	}
 }
 
-func testAgent(t *testing.T, ip net.IP, logOutput io.Writer) *Agent {
-	return testAgentWithConfig(t, ip, DefaultConfig(), serf.DefaultConfig(), logOutput)
+func testAgent(t *testing.T, ip net.IP) *Agent {
+	return testAgentWithConfig(t, ip, DefaultConfig(), serf.DefaultConfig(), nil)
 }
 
 func testAgentWithConfig(t *testing.T, ip net.IP, agentConfig *Config, serfConfig *serf.Config, logOutput io.Writer) *Agent {
