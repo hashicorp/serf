@@ -545,7 +545,7 @@ func TestRPCClientStream_User(t *testing.T) {
 		if e["Name"].(string) != "deploy" {
 			t.Fatalf("bad event: %#v", e)
 		}
-		if bytes.Compare(e["Payload"].([]byte), []byte("foo")) != 0 {
+		if !bytes.Equal(e["Payload"].([]byte), []byte("foo")) {
 			t.Fatalf("bad event: %#v", e)
 		}
 		if e["Coalesce"].(bool) != false {
@@ -816,7 +816,7 @@ func TestRPCClientStream_Query(t *testing.T) {
 		if e["Name"].(string) != "deploy" {
 			t.Fatalf("bad query: %#v", e)
 		}
-		if bytes.Compare(e["Payload"].([]byte), []byte("foo")) != 0 {
+		if !bytes.Equal(e["Payload"].([]byte), []byte("foo")) {
 			t.Fatalf("bad query: %#v", e)
 		}
 
