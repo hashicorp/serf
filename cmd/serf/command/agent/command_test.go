@@ -245,7 +245,7 @@ func TestCommandRun_advertiseAddr(t *testing.T) {
 
 	// Check the addr and port is as advertised!
 	m := members[0]
-	if bytes.Compare(m.Addr, []byte{127, 0, 0, 10}) != 0 {
+	if !bytes.Equal(m.Addr, []byte{127, 0, 0, 10}) {
 		t.Fatalf("bad: %#v", m)
 	}
 	if m.Port != 12345 {

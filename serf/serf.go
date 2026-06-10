@@ -214,10 +214,7 @@ func (ue *userEvent) Equals(other *userEvent) bool {
 	if ue.Name != other.Name {
 		return false
 	}
-	if bytes.Compare(ue.Payload, other.Payload) != 0 {
-		return false
-	}
-	return true
+	return bytes.Equal(ue.Payload, other.Payload)
 }
 
 // userEvents stores all the user events at a specific time
