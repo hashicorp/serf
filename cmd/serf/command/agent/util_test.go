@@ -5,7 +5,6 @@ package agent
 
 import (
 	"io"
-	"math/rand"
 	"net"
 	"testing"
 	"time"
@@ -13,11 +12,6 @@ import (
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/serf/testutil"
 )
-
-func init() {
-	// Seed the random number generator
-	rand.Seed(time.Now().UnixNano())
-}
 
 func drainEventCh(ch <-chan string) {
 	for {

@@ -14,7 +14,7 @@ linters:
     - unparam
     - unused
     # - errcheck
-    # - staticcheck
+    - staticcheck
 
   settings:
     forbidigo:
@@ -36,21 +36,21 @@ linters:
       - linters:
           - staticcheck
         text: 'SA9004:'
-      - linters:
-          - staticcheck
-        text: 'SA1019: Package github.com/golang/protobuf/jsonpb is deprecated'
-      - linters:
-          - staticcheck
-        text: 'SA1019: Package github.com/golang/protobuf/proto is deprecated'
-      - linters:
-          - staticcheck
-        text: 'SA1019: ptypes.MarshalAny is deprecated'
-      - linters:
-          - staticcheck
-        text: 'SA1019: ptypes.UnmarshalAny is deprecated'
-      - linters:
-          - staticcheck
-        text: 'SA1019: package github.com/golang/protobuf/ptypes is deprecated'
+      # - linters:
+      #     - staticcheck
+      #   text: 'SA1019: Package github.com/golang/protobuf/jsonpb is deprecated'
+      # - linters:
+      #     - staticcheck
+      #   text: 'SA1019: Package github.com/golang/protobuf/proto is deprecated'
+      # - linters:
+      #     - staticcheck
+      #   text: 'SA1019: ptypes.MarshalAny is deprecated'
+      # - linters:
+      #     - staticcheck
+      #   text: 'SA1019: ptypes.UnmarshalAny is deprecated'
+      # - linters:
+      #     - staticcheck
+      #   text: 'SA1019: package github.com/golang/protobuf/ptypes is deprecated'
 
 formatters:
   settings:
