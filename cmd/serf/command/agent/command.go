@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/cli"
-	"github.com/hashicorp/go-metrics/compat"
+	metrics "github.com/hashicorp/go-metrics/compat"
 	gsyslog "github.com/hashicorp/go-syslog"
 	"github.com/hashicorp/logutils"
 	"github.com/hashicorp/memberlist"
@@ -454,8 +454,9 @@ func (c *Command) startAgent(config *Config, agent *Agent,
 
 		// Get the bind interface if any
 		iface, _ := config.MDNSNetworkInterface()
-
-		c.logger.Printf("[INFO] agent: Starting mDNS listener on interface %s", iface.Name)
+		if iface != nil {
+			c.logger.Printf("[INFO] agent: Starting mDNS listener on interface %s", iface.Name)
+		}
 
 		_, err := NewAgentMDNS(agent, logOutput, config.ReplayOnJoin,
 			config.NodeName, config.Discover, iface, local.Addr, int(local.Port), config.MDNS)
