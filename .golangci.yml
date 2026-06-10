@@ -11,10 +11,10 @@ linters:
     - govet
     - ineffassign
     - modernize
+    - staticcheck
     - unparam
     - unused
     # - errcheck
-    - staticcheck
 
   settings:
     forbidigo:
@@ -45,21 +45,10 @@ linters:
           - staticcheck
         text: 'ST1005:'
 
-      # - linters:
-      #     - staticcheck
-      #   text: 'SA1019: Package github.com/golang/protobuf/jsonpb is deprecated'
-      # - linters:
-      #     - staticcheck
-      #   text: 'SA1019: Package github.com/golang/protobuf/proto is deprecated'
-      # - linters:
-      #     - staticcheck
-      #   text: 'SA1019: ptypes.MarshalAny is deprecated'
-      # - linters:
-      #     - staticcheck
-      #   text: 'SA1019: ptypes.UnmarshalAny is deprecated'
-      # - linters:
-      #     - staticcheck
-      #   text: 'SA1019: package github.com/golang/protobuf/ptypes is deprecated'
+      # ignore SA1019 deprecation warning for backwards compatibility
+      - linters:
+          - staticcheck
+        text: 'SA1019: codec.BasicHandle is deprecated'
 
 formatters:
   settings:
