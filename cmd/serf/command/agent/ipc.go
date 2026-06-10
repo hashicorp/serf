@@ -311,7 +311,7 @@ func (c *IPCClient) RegisterQuery(q *serf.Query) uint64 {
 	id := c.nextQueryID()
 
 	// Ensure the query deadline is in the future
-	timeout := q.Deadline().Sub(time.Now())
+	timeout := time.Until(q.Deadline())
 	if timeout < 0 {
 		return id
 	}
