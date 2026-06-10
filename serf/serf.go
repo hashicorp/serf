@@ -993,7 +993,7 @@ func (s *Serf) handleNodeJoin(n *memberlist.Node) {
 
 	// Send an event along
 	s.logger.Printf("[INFO] serf: EventMemberJoin: %s %s",
-		member.Member.Name, member.Member.Addr)
+		member.Name, member.Addr)
 	if s.config.EventCh != nil {
 		s.config.EventCh <- MemberEvent{
 			Type:    EventMemberJoin,
@@ -1042,7 +1042,7 @@ func (s *Serf) handleNodeLeave(n *memberlist.Node) {
 	metrics.IncrCounterWithLabels([]string{"serf", "member", member.Status.String()}, 1, s.metricLabels)
 
 	s.logger.Printf("[INFO] serf: %s: %s %s",
-		eventStr, member.Member.Name, member.Member.Addr)
+		eventStr, member.Name, member.Addr)
 	if s.config.EventCh != nil {
 		s.config.EventCh <- MemberEvent{
 			Type:    event,
@@ -1086,7 +1086,7 @@ func (s *Serf) handleNodeUpdate(n *memberlist.Node) {
 	metrics.IncrCounterWithLabels([]string{"serf", "member", "update"}, 1, s.metricLabels)
 
 	// Send an event along
-	s.logger.Printf("[INFO] serf: EventMemberUpdate: %s", member.Member.Name)
+	s.logger.Printf("[INFO] serf: EventMemberUpdate: %s", member.Name)
 	if s.config.EventCh != nil {
 		s.config.EventCh <- MemberEvent{
 			Type:    EventMemberUpdate,
@@ -1164,7 +1164,7 @@ func (s *Serf) handleNodeLeaveIntent(leaveMsg *messageLeave) bool {
 		// left to allow higher-level applications to handle the
 		// graceful leave.
 		s.logger.Printf("[INFO] serf: EventMemberLeave (forced): %s %s",
-			member.Member.Name, member.Member.Addr)
+			member.Name, member.Addr)
 		if s.config.EventCh != nil {
 			s.config.EventCh <- MemberEvent{
 				Type:    EventMemberLeave,
@@ -1195,7 +1195,7 @@ func (s *Serf) handlePrune(member *memberState) {
 		time.Sleep(s.config.BroadcastTimeout + s.config.LeavePropagateDelay)
 	}
 
-	s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s %s", member.Name, member.Member.Addr)
+	s.logger.Printf("[INFO] serf: EventMemberReap (forced): %s %s", member.Name, member.Addr)
 
 	//If we are leaving or left we may be in that list of members
 	if member.Status == StatusLeaving || member.Status == StatusLeft {
