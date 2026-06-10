@@ -41,5 +41,5 @@ func GetHumanVersion() string {
 	}
 
 	// Strip off any single quotes added by the git information.
-	return strings.Replace(version, "'", "", -1)
+	return strings.ReplaceAll(version, "'", "")
 }

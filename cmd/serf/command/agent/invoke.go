@@ -133,8 +133,8 @@ func invokeEventScript(logger *log.Logger, script string, self serf.Member, even
 
 // eventClean cleans a value to be a parameter in an event line.
 func eventClean(v string) string {
-	v = strings.Replace(v, "\t", "\\t", -1)
-	v = strings.Replace(v, "\n", "\\n", -1)
+	v = strings.ReplaceAll(v, "\t", "\\t")
+	v = strings.ReplaceAll(v, "\n", "\\n")
 	return v
 }
 
