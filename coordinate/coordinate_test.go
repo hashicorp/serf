@@ -285,14 +285,14 @@ func TestCoordinate_magnitude(t *testing.T) {
 func TestCoordinate_unitVectorAt(t *testing.T) {
 	vec1 := []float64{1.0, 2.0, 3.0}
 	vec2 := []float64{0.5, 0.6, 0.7}
-	u, mag := unitVectorAt(vec1, vec2)
+	u, mag := unitVectorAt(nil, vec1, vec2)
 	verifyEqualVectors(t, u, []float64{0.18257418583505536, 0.511207720338155, 0.8398412548412546})
 	verifyEqualFloats(t, magnitude(u), 1.0)
 	verifyEqualFloats(t, mag, magnitude(diff(vec1, vec2)))
 
 	// If we give positions that are equal we should get a random unit vector
 	// returned to us, rather than a divide by zero.
-	u, mag = unitVectorAt(vec1, vec1)
+	u, mag = unitVectorAt(nil, vec1, vec1)
 	verifyEqualFloats(t, magnitude(u), 1.0)
 	verifyEqualFloats(t, mag, 0.0)
 
