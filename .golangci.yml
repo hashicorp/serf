@@ -31,11 +31,20 @@ linters:
       exclude-godoc-examples: false
   exclusions:
     rules:
-    # Temp Ignore SA9004: only the first constant in this group has an explicit type
-    # https://staticcheck.io/docs/checks#SA9004
+      # ignore SA9004: only the first constant in this group has an explicit type
+      # https://staticcheck.io/docs/checks#SA9004
       - linters:
           - staticcheck
         text: 'SA9004:'
+
+      # ignore ST1005: error strings should not be capitalized.
+      # https://staticcheck.io/docs/checks#ST1005
+      # we have a lot of existing errors and no idea whether downstream
+      # consumers will be switching on the exact error message
+      - linters:
+          - staticcheck
+        text: 'ST1005:'
+
       # - linters:
       #     - staticcheck
       #   text: 'SA1019: Package github.com/golang/protobuf/jsonpb is deprecated'
