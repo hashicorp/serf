@@ -400,7 +400,7 @@ func MergeConfig(a, b *Config) *Config {
 	if b.Role != "" {
 		result.Role = b.Role
 	}
-	if b.DisableCoordinates == true {
+	if b.DisableCoordinates {
 		result.DisableCoordinates = true
 	}
 	if b.Tags != nil {
@@ -430,7 +430,7 @@ func MergeConfig(a, b *Config) *Config {
 	if b.RPCAuthKey != "" {
 		result.RPCAuthKey = b.RPCAuthKey
 	}
-	if b.ReplayOnJoin != false {
+	if b.ReplayOnJoin {
 		result.ReplayOnJoin = b.ReplayOnJoin
 	}
 	if b.Profile != "" {
@@ -439,10 +439,10 @@ func MergeConfig(a, b *Config) *Config {
 	if b.SnapshotPath != "" {
 		result.SnapshotPath = b.SnapshotPath
 	}
-	if b.LeaveOnTerm == true {
+	if b.LeaveOnTerm {
 		result.LeaveOnTerm = true
 	}
-	if b.SkipLeaveOnInt == true {
+	if b.SkipLeaveOnInt {
 		result.SkipLeaveOnInt = true
 	}
 	if b.Discover != "" {
@@ -456,11 +456,11 @@ func MergeConfig(a, b *Config) *Config {
 		result.MDNS.Interface = b.MDNS.Interface
 	}
 
-	if b.MDNS.DisableIPv4 == true {
+	if b.MDNS.DisableIPv4 {
 		result.MDNS.DisableIPv4 = true
 	}
 
-	if b.MDNS.DisableIPv6 == true {
+	if b.MDNS.DisableIPv6 {
 		result.MDNS.DisableIPv6 = true
 	}
 

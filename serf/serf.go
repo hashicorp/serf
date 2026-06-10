@@ -1339,10 +1339,7 @@ func (s *Serf) handleQuery(query *messageQuery) bool {
 	metrics.IncrCounterWithLabels([]string{"serf", "queries", query.Name}, 1, s.metricLabels)
 
 	// Check if we should rebroadcast, this may be disabled by a flag
-	rebroadcast := true
-	if query.NoBroadcast() {
-		rebroadcast = false
-	}
+	rebroadcast := !query.NoBroadcast()
 
 	// Filter the query
 	if !s.shouldProcessQuery(query.Filters) {
