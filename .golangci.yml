@@ -10,11 +10,11 @@ linters:
     - forbidigo
     - govet
     - unparam
+    - unused
     # - errcheck
     # - ineffassign
     # - modernize
     # - staticcheck
-    # - unused
 
   settings:
     forbidigo:

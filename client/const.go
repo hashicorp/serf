@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/serf/coordinate"
-	"github.com/hashicorp/serf/serf"
 )
 
 const (
@@ -176,14 +175,6 @@ type logRecord struct {
 	Log string
 }
 
-type userEventRecord struct {
-	Event    string
-	LTime    serf.LamportTime
-	Name     string
-	Payload  []byte
-	Coalesce bool
-}
-
 // Member is used to represent a single member of the
 // Serf cluster
 type Member struct {
@@ -198,9 +189,4 @@ type Member struct {
 	DelegateMin uint8 // Minimum supported Serf protocol
 	DelegateMax uint8 // Maximum supported Serf protocol
 	DelegateCur uint8 // Currently set Serf protocol
-}
-
-type memberEventRecord struct {
-	Event   string
-	Members []Member
 }

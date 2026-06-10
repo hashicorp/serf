@@ -28,7 +28,6 @@ type AgentMDNS struct {
 	server      *mdns.Server
 	replay      bool
 	iface       *net.Interface
-	ipModes     []string
 	disableIPv4 bool
 	disableIPv6 bool
 }
