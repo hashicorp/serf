@@ -8,7 +8,20 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: "[deps] : "
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: "[deps] : "
+    groups:
+      go:
+        patterns:
+          - "*"
