@@ -26,10 +26,4 @@ _testmain.go
 
 *.exe
 *.test
-
-# Website
-website/build/
-website/.bundle
-website/vendor
-.vagrant
 /coverage.out
