@@ -320,3 +320,61 @@ func TestSerf_ListKeys(t *testing.T) {
 		}
 	}
 }
+
+func TestSerf_GetPrimaryKey(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	s1, err := testKeyringSerf(t, ip1)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	defer s1.Shutdown()
+
+	manager := s1.KeyManager()
+
+	initialPrimaryKeyBytes := s1.config.MemberlistConfig.Keyring.GetKeys()[0]
+	initialPrimaryKey := base64.StdEncoding.EncodeToString(initialPrimaryKeyBytes)
+
+	response, err := manager.GetPrimaryKey()
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	if len(response.Keys) != 1 {
+		t.Fatalf("Expected single key in keyring: %s, but got %v", initialPrimaryKey, response.Keys)
+	}
+
+	// should be single key there
+	for k := range response.Keys {
+		if k != string(initialPrimaryKey) {
+			t.Fatalf("Expected to find single primary key equals %s, but got %s", initialPrimaryKey, k)
+		}
+	}
+
+	extraKey := "5K9OtfP7efFrNKe5WCQvXvnaXJ5cWP0SvXiwe0kkjM4="
+	extraKeyBytes, err := base64.StdEncoding.DecodeString(extraKey)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	s1.config.MemberlistConfig.Keyring.AddKey(extraKeyBytes)
+	s1.config.MemberlistConfig.Keyring.UseKey(extraKeyBytes)
+
+	response, err = manager.GetPrimaryKey()
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	if len(response.Keys) != 1 {
+		t.Fatalf("Expected single key in keyring even after adding the key: %s, but got %v", initialPrimaryKey, response.Keys)
+	}
+
+	// should be single key there
+	for k := range response.Keys {
+		if k != extraKey {
+			t.Fatalf("Expected to find single primary key equals %s, but got %s", extraKey, k)
+		}
+	}
+
+}
