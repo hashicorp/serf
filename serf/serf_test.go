@@ -2027,9 +2027,7 @@ func TestSerf_Query(t *testing.T) {
 
 	ctx := t.Context()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case <-ctx.Done():
@@ -2048,7 +2046,7 @@ func TestSerf_Query(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	s2Config := testConfig(t, ip2)
 	s2, err := Create(s2Config)
@@ -2131,9 +2129,7 @@ func TestSerf_Query_Filter(t *testing.T) {
 
 	ctx := t.Context()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for {
 			select {
 			case <-ctx.Done():
@@ -2152,7 +2148,7 @@ func TestSerf_Query_Filter(t *testing.T) {
 				return
 			}
 		}
-	}()
+	})
 
 	s2Config := testConfig(t, ip2)
 	s2, err := Create(s2Config)
