@@ -126,11 +126,9 @@ func run(r Retryer, t Failer, f func(r *R)) {
 	}
 	for r.NextOr(fail) {
 		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			f(rr)
-		}()
+		})
 		wg.Wait()
 		if rr.fail {
 			rr.fail = false
