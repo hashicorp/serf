@@ -42,17 +42,17 @@ func (c *mockCoalesce) Flush(outChan chan<- Event) {
 	c.value = 0
 }
 
-func testCoalescer(cPeriod, qPeriod time.Duration) (chan<- Event, <-chan Event, chan<- struct{}) {
+func testCoalescer(cPeriod time.Duration) (chan<- Event, <-chan Event, chan<- struct{}) {
 	in := make(chan Event, 64)
 	out := make(chan Event)
 	shutdown := make(chan struct{})
 	c := &mockCoalesce{}
-	go coalesceLoop(in, out, shutdown, cPeriod, qPeriod, c)
+	go coalesceLoop(in, out, shutdown, cPeriod, c)
 	return in, out, shutdown
 }
 
 func TestCoalescer_basic(t *testing.T) {
-	in, out, shutdown := testCoalescer(5*time.Millisecond, time.Second)
+	in, out, shutdown := testCoalescer(5 * time.Millisecond)
 	defer close(shutdown)
 
 	send := []Event{
@@ -74,43 +74,13 @@ func TestCoalescer_basic(t *testing.T) {
 			t.Fatalf("bad: %#v", e)
 		}
 
-	case <-time.After(50 * time.Millisecond):
-		t.Fatalf("timeout")
-	}
-}
-
-func TestCoalescer_quiescent(t *testing.T) {
-	// This tests the quiescence by creating a long coalescence period
-	// with a short quiescent period and waiting only a multiple of the
-	// quiescent period for results.
-	in, out, shutdown := testCoalescer(10*time.Second, 10*time.Millisecond)
-	defer close(shutdown)
-
-	send := []Event{
-		counterEvent{1},
-		counterEvent{39},
-		counterEvent{2},
-	}
-	for _, e := range send {
-		in <- e
-	}
-
-	select {
-	case e := <-out:
-		if e.EventType() != EventCounter {
-			t.Fatalf("expected counter, got: %d", e.EventType())
-		}
-
-		if e.(counterEvent).delta != 42 {
-			t.Fatalf("bad: %#v", e)
-		}
 	case <-time.After(50 * time.Millisecond):
 		t.Fatalf("timeout")
 	}
 }
 
 func TestCoalescer_passThrough(t *testing.T) {
-	in, out, shutdown := testCoalescer(time.Second, time.Second)
+	in, out, shutdown := testCoalescer(time.Second)
 	defer close(shutdown)
 
 	send := []Event{
