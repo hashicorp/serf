@@ -14,6 +14,7 @@ GIT_COMMIT_FLAG = $(GO_MODULE)/version.GitCommit=$(GIT_COMMIT)$(GIT_DIRTY)
 GO_MODULE = github.com/hashicorp/serf
 GO_LDFLAGS = -X $(GIT_COMMIT_FLAG)
 GO_PKGS ?= $(shell go list ./...)
+GO_TAGS = "hashicorpmetrics"
 
 # ----------------------------------------------------------
 # build and package for distribution

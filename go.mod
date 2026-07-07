@@ -4,7 +4,6 @@ go 1.25.0
 
 require (
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
-	github.com/armon/go-metrics v0.4.1
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/hashicorp/cli v1.1.7
 	github.com/hashicorp/go-metrics v0.6.0
@@ -20,6 +19,7 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
+	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
