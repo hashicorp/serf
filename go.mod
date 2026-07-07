@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-syslog v1.0.0
 	github.com/hashicorp/logutils v1.0.0
 	github.com/hashicorp/mdns v1.0.7
-	github.com/hashicorp/memberlist v0.5.4
+	github.com/hashicorp/memberlist v0.6.0
 	github.com/ryanuber/columnize v2.1.2+incompatible
 )
 
@@ -47,5 +47,5 @@ require (
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
-	golang.org/x/tools v0.46.0 // indirect
+	golang.org/x/tools v0.47.0 // indirect
 )
