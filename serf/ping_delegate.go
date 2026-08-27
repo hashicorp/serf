@@ -38,7 +38,7 @@ func (p *pingDelegate) AckPayload() []byte {
 
 	// The rest of the message is the serialized coordinate.
 	enc := codec.NewEncoder(&buf, &codec.MsgpackHandle{
-		BasicHandle: codec.BasicHandle{
+		BasicHandle: codec.BasicHandle{ //nolint:staticcheck
 			TimeNotBuiltin: !p.serf.msgpackUseNewTimeFormat,
 		},
 	})

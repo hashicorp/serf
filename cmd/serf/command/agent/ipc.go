@@ -377,7 +377,7 @@ func (i *AgentIPC) isStopped() bool {
 func (i *AgentIPC) newMsgpackHandle() *codec.MsgpackHandle {
 	return &codec.MsgpackHandle{
 		WriteExt: true,
-		BasicHandle: codec.BasicHandle{
+		BasicHandle: codec.BasicHandle{ //nolint:staticcheck
 			TimeNotBuiltin: !i.msgpackUseNewTimeFormat,
 		},
 	}

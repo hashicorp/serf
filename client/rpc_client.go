@@ -128,7 +128,7 @@ func NewRPCClient(addr string) (*RPCClient, error) {
 func (c *Config) newMsgpackHandle() *codec.MsgpackHandle {
 	return &codec.MsgpackHandle{
 		WriteExt: true,
-		BasicHandle: codec.BasicHandle{
+		BasicHandle: codec.BasicHandle{ //nolint:staticcheck
 			TimeNotBuiltin: !c.MsgpackUseNewTimeFormat,
 		},
 	}
@@ -377,7 +377,7 @@ func (c *RPCClient) RemoveKey(key string) (map[string]string, error) {
 
 // ListKeys returns all of the active keys on each member of the cluster
 func (c *RPCClient) ListKeys() (map[string]int, int, map[string]string, error) {
-	header := requestHeader{
+	header := requestHeader{ //nolint:staticcheck
 		Command: listKeysCommand,
 		Seq:     c.getSeq(),
 	}
