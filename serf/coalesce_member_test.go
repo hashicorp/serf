@@ -16,8 +16,8 @@ func TestMemberEventCoalesce_Basic(t *testing.T) {
 	defer close(shutdownCh)
 
 	c := &memberEventCoalescer{
-		lastEvents:   make(map[string]EventType),
-		latestEvents: make(map[string]coalesceEvent),
+		lastEvents: make(map[string]*nodeEvent),
+		newEvents:  make(map[string]*nodeEvent),
 	}
 
 	inCh := coalescedEventCh(outCh, shutdownCh,
@@ -125,8 +125,8 @@ func TestMemberEventCoalesce_TagUpdate(t *testing.T) {
 	defer close(shutdownCh)
 
 	c := &memberEventCoalescer{
-		lastEvents:   make(map[string]EventType),
-		latestEvents: make(map[string]coalesceEvent),
+		lastEvents: make(map[string]*nodeEvent),
+		newEvents:  make(map[string]*nodeEvent),
 	}
 
 	inCh := coalescedEventCh(outCh, shutdownCh,
@@ -184,5 +184,83 @@ func TestMemberEventCoalesce_passThrough(t *testing.T) {
 		if tc.handle != c.Handle(tc.e) {
 			t.Fatalf("bad: %#v", tc.e)
 		}
+	}
+}
+
+func TestMemberEventCoalesce_MemberUpdateEvent(t *testing.T) {
+	outCh := make(chan Event, 64)
+	shutdownCh := make(chan struct{})
+	defer close(shutdownCh)
+
+	c := &memberEventCoalescer{
+		lastEvents: make(map[string]*nodeEvent),
+		newEvents:  make(map[string]*nodeEvent),
+	}
+
+	inCh := coalescedEventCh(outCh, shutdownCh,
+		5*time.Millisecond, 5*time.Millisecond, c)
+
+	inCh <- MemberEvent{
+		Type:    EventMemberUpdate,
+		Members: []Member{Member{Name: "zip", Tags: map[string]string{"role": "foo"}}},
+	}
+
+	time.Sleep(10 * time.Millisecond)
+
+	inCh <- MemberEvent{
+		Type:    EventMemberUpdate,
+		Members: []Member{Member{Name: "zip", Tags: map[string]string{"role": "bar"}}},
+	}
+
+	time.Sleep(10 * time.Millisecond)
+
+	inCh <- MemberEvent{
+		Type:    EventMemberUpdate,
+		Members: []Member{Member{Name: "zip", Tags: map[string]string{"role": "bar"}}},
+	}
+
+	events := []Event{}
+	timeout := time.After(10 * time.Millisecond)
+
+MEMBEREVENTFORLOOP:
+	for {
+		select {
+		case e := <-outCh:
+			events = append(events, e)
+		case <-timeout: // wait until coalescer flush done
+			break MEMBEREVENTFORLOOP
+		}
+	}
+
+	if len(events) != 2 {
+		t.Fatalf("bad: %#v", events)
+	}
+
+	e, ok := events[0].(MemberEvent)
+	if !ok {
+		t.Fatalf("bad: %#v", e)
+	}
+	if len(e.Members) != 1 {
+		t.Fatalf("bad: %#v", e.Members)
+	}
+	if e.Members[0].Name != "zip" {
+		t.Fatalf("bad: %#v", e.Members)
+	}
+	if e.Members[0].Tags["role"] != "foo" {
+		t.Fatalf("bad %#v", e.Members[0].Tags)
+	}
+
+	e, ok = events[1].(MemberEvent)
+	if !ok {
+		t.Fatalf("bad: %#v", e)
+	}
+	if len(e.Members) != 1 {
+		t.Fatalf("bad: %#v", e.Members)
+	}
+	if e.Members[0].Name != "zip" {
+		t.Fatalf("bad: %#v", e.Members)
+	}
+	if e.Members[0].Tags["role"] != "bar" {
+		t.Fatalf("bad %#v", e.Members[0].Tags)
 	}
 }
