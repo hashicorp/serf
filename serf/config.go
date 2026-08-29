@@ -86,14 +86,12 @@ type Config struct {
 	// seconds, then the events will be coalesced and dispatched if no
 	// new events are received within 2 seconds of the last event. Otherwise,
 	// every event will always be delayed by at least 10 seconds.
-	CoalescePeriod  time.Duration
-	QuiescentPeriod time.Duration
+	CoalescePeriod time.Duration
 
 	// The settings below relate to Serf's user event coalescing feature.
 	// The settings operate like above but only affect user messages and
 	// not the Member* messages that Serf generates.
-	UserCoalescePeriod  time.Duration
-	UserQuiescentPeriod time.Duration
+	UserCoalescePeriod time.Duration
 
 	// The settings below relate to Serf keeping track of recently
 	// failed/left nodes and attempting reconnects.
