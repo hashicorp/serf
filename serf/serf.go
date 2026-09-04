@@ -67,6 +67,8 @@ type Serf struct {
 
 	broadcasts    *memberlist.TransmitLimitedQueue
 	config        *Config
+	tagsLock      sync.RWMutex // protects config.Tags
+	setTagsLock   sync.Mutex   // serializes memberlist.UpdateNode from SetTags
 	failedMembers []*memberState
 	leftMembers   []*memberState
 	memberlist    *memberlist.Memberlist
@@ -621,11 +623,21 @@ func (s *Serf) SetTags(tags map[string]string) error {
 			memberlist.MetaMaxSize)
 	}
 
-	// Update the config
+	s.tagsLock.Lock()
 	s.config.Tags = tags
+	s.tagsLock.Unlock()
 
-	// Trigger a memberlist update
+	// Serialize UpdateNode; memberlist is not safe for concurrent calls.
+	s.setTagsLock.Lock()
+	defer s.setTagsLock.Unlock()
 	return s.memberlist.UpdateNode(s.config.BroadcastTimeout)
+}
+
+func (s *Serf) getTags() map[string]string {
+	s.tagsLock.RLock()
+	tags := s.config.Tags
+	s.tagsLock.RUnlock()
+	return tags
 }
 
 // Join joins an existing Serf cluster. Returns the number of nodes

@@ -20,9 +20,10 @@ type delegate struct {
 var _ memberlist.Delegate = &delegate{}
 
 func (d *delegate) NodeMeta(limit int) []byte {
-	roleBytes := d.serf.encodeTags(d.serf.config.Tags)
+	tags := d.serf.getTags()
+	roleBytes := d.serf.encodeTags(tags)
 	if len(roleBytes) > limit {
-		panic(fmt.Errorf("Node tags '%v' exceeds length limit of %d bytes", d.serf.config.Tags, limit))
+		panic(fmt.Errorf("Node tags '%v' exceeds length limit of %d bytes", tags, limit))
 	}
 
 	return roleBytes
