@@ -242,8 +242,7 @@ func (s *Serf) shouldProcessQuery(filters [][]byte) bool {
 			}
 
 			// Check if we match this regex
-			tags := s.config.Tags
-			matched, err := regexp.MatchString(filt.Expr, tags[filt.Tag])
+			matched, err := regexp.MatchString(filt.Expr, s.getTags()[filt.Tag])
 			if err != nil {
 				s.logger.Printf("[WARN] serf: failed to compile filter regex (%s): %v", filt.Expr, err)
 				return false

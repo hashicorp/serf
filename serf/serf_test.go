@@ -2005,6 +2005,41 @@ func TestSerf_SetTags(t *testing.T) {
 		[]EventType{EventMemberJoin, EventMemberUpdate})
 }
 
+func TestSerf_SetTags_Concurrent(t *testing.T) {
+	ip1, returnFn1 := testutil.TakeIP()
+	defer returnFn1()
+
+	s1Config := testConfig(t, ip1)
+	s1Config.BroadcastTimeout = time.Millisecond
+	s1, err := Create(s1Config)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	defer s1.Shutdown()
+
+	const goroutines = 16
+	const iterations = 32
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	for i := 0; i < goroutines; i++ {
+		wg.Go(func() {
+			<-start
+			for j := 0; j < iterations; j++ {
+				tags := map[string]string{
+					"id": strconv.Itoa(i),
+					"n":  strconv.Itoa(j),
+				}
+				if err := s1.SetTags(tags); err != nil {
+					t.Errorf("SetTags: %v", err)
+					return
+				}
+			}
+		})
+	}
+	close(start)
+	wg.Wait()
+}
+
 func TestSerf_Query(t *testing.T) {
 	ip1, returnFn1 := testutil.TakeIP()
 	defer returnFn1()
