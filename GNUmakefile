@@ -14,7 +14,6 @@ GIT_COMMIT_FLAG = $(GO_MODULE)/version.GitCommit=$(GIT_COMMIT)$(GIT_DIRTY)
 GO_MODULE = github.com/hashicorp/serf
 GO_LDFLAGS = -X $(GIT_COMMIT_FLAG)
 GO_PKGS ?= $(shell go list ./...)
-GO_TAGS = "hashicorpmetrics"
 
 # ----------------------------------------------------------
 # build and package for distribution
@@ -50,7 +49,7 @@ pkg/%/serf:
 	CGO_ENABLED=0 \
 		GOOS=$(firstword $(subst _, ,$*)) \
 	 	GOARCH=$(lastword $(subst _, ,$*)) \
-	 	go build -trimpath -ldflags "$(GO_LDFLAGS)" -tags "$(GO_TAGS)" -o $(GO_OUT) ./cmd/serf
+	 	go build -trimpath -ldflags "$(GO_LDFLAGS)" -o $(GO_OUT) ./cmd/serf
 
 pkg/windows_%/serf: GO_OUT = $@.exe
 
@@ -86,7 +85,7 @@ check: lint tidy copywriteheaders
 
 # lint covers go vet and go fmt
 lint:
-	golangci-lint run --build-tags "$(GO_TAGS)"
+	golangci-lint run
 
 # make sure our copyright headers are correct
 copywriteheaders:
