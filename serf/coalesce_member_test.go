@@ -21,7 +21,7 @@ func TestMemberEventCoalesce_Basic(t *testing.T) {
 	}
 
 	inCh := coalescedEventCh(outCh, shutdownCh,
-		5*time.Millisecond, 5*time.Millisecond, c)
+		5*time.Millisecond, c)
 
 	send := []Event{
 		MemberEvent{
@@ -130,7 +130,7 @@ func TestMemberEventCoalesce_TagUpdate(t *testing.T) {
 	}
 
 	inCh := coalescedEventCh(outCh, shutdownCh,
-		5*time.Millisecond, 5*time.Millisecond, c)
+		5*time.Millisecond, c)
 
 	inCh <- MemberEvent{
 		Type:    EventMemberUpdate,
