@@ -85,8 +85,9 @@ func TestClient_InvalidInPingValues(t *testing.T) {
 	other.Vec[2] = 0.001
 	dist := client.DistanceTo(other)
 
-	// Update with a series of invalid ping periods, should return an error and estimated rtt remains unchanged
-	pings := []int{1<<63 - 1, -35, 11}
+	// Update with a series of invalid ping periods, should return an error and estimated rtt remains unchanged.
+	// The huge value has to be an int64. On GOARCH=386, int is 32 bits and 1<<63-1 does not fit.
+	pings := []int64{1<<63 - 1, -35, 11}
 
 	for _, ping := range pings {
 		expectedErr := fmt.Errorf("round trip time not in valid range, duration %v is not a positive value less than %v", ping, 10*time.Second)
