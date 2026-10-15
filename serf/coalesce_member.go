@@ -3,14 +3,30 @@
 
 package serf
 
-type coalesceEvent struct {
+import "reflect"
+
+// event happens to a node
+type nodeEvent struct {
 	Type   EventType
 	Member *Member
 }
 
+func (n *nodeEvent) Equal(m *nodeEvent) bool {
+	if m == nil {
+		return false
+	}
+	if n.Type != m.Type {
+		return false
+	}
+	if n.Type != EventMemberUpdate {
+		return true
+	}
+	return reflect.DeepEqual(n.Member, m.Member)
+}
+
 type memberEventCoalescer struct {
-	lastEvents   map[string]EventType
-	latestEvents map[string]coalesceEvent
+	lastEvents map[string]*nodeEvent // the last event happens to a node
+	newEvents  map[string]*nodeEvent // most recent event for a node.
 }
 
 func (c *memberEventCoalescer) Handle(e Event) bool {
@@ -33,35 +49,30 @@ func (c *memberEventCoalescer) Handle(e Event) bool {
 func (c *memberEventCoalescer) Coalesce(raw Event) {
 	e := raw.(MemberEvent)
 	for _, m := range e.Members {
-		c.latestEvents[m.Name] = coalesceEvent{
+		c.newEvents[m.Name] = &nodeEvent{ // overwrite the old events
 			Type:   e.Type,
 			Member: &m,
 		}
 	}
 }
-
 func (c *memberEventCoalescer) Flush(outCh chan<- Event) {
 	// Coalesce the various events we got into a single set of events.
 	events := make(map[EventType]*MemberEvent)
-	for name, cevent := range c.latestEvents {
-		previous, ok := c.lastEvents[name]
-
-		// If we sent the same event before, then ignore
-		// unless it is a MemberUpdate
-		if ok && previous == cevent.Type && cevent.Type != EventMemberUpdate {
+	for name, e := range c.newEvents {
+		if e.Equal(c.lastEvents[name]) {
 			continue
 		}
 
 		// Update our last event
-		c.lastEvents[name] = cevent.Type
+		c.lastEvents[name] = e
 
 		// Add it to our event
-		newEvent, ok := events[cevent.Type]
+		event, ok := events[e.Type]
 		if !ok {
-			newEvent = &MemberEvent{Type: cevent.Type}
-			events[cevent.Type] = newEvent
+			event = &MemberEvent{Type: e.Type}
+			events[e.Type] = event
 		}
-		newEvent.Members = append(newEvent.Members, *cevent.Member)
+		event.Members = append(event.Members, *e.Member)
 	}
 
 	// Send out those events
