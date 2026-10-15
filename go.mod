@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/cli v1.1.7
 	github.com/hashicorp/go-metrics v0.7.0
 	github.com/hashicorp/go-msgpack/v2 v2.1.5
-	github.com/hashicorp/go-syslog v1.0.0
+	github.com/hashicorp/go-syslog v1.0.1
 	github.com/hashicorp/logutils v1.0.0
 	github.com/hashicorp/mdns v1.0.7
 	github.com/hashicorp/memberlist v0.7.0
