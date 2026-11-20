@@ -180,7 +180,7 @@ func ClientFromConfig(c *Config) (*RPCClient, error) {
 	return client, err
 }
 
-// StreamHandle is an opaque handle passed to stop to stop streaming
+// StreamHandle is an opaque handle passed to Stop to stop streaming
 type StreamHandle uint64
 
 func (c *RPCClient) IsClosed() bool {
@@ -327,7 +327,7 @@ func (c *RPCClient) Respond(id uint64, buf []byte) error {
 	return c.genericRPC(&header, &req, nil)
 }
 
-// IntallKey installs a new encryption key onto the keyring
+// InstallKey installs a new encryption key onto the keyring
 func (c *RPCClient) InstallKey(key string) (map[string]string, error) {
 	header := requestHeader{
 		Command: installKeyCommand,
@@ -823,7 +823,7 @@ func (c *RPCClient) deregisterHandler(seq uint64) {
 	}
 }
 
-// handleSeq is used to setup a handlerto wait on a response for
+// handleSeq is used to setup a handler to wait on a response for
 // a given sequence number.
 func (c *RPCClient) handleSeq(seq uint64, handler seqHandler) {
 	c.dispatchLock.Lock()
@@ -843,8 +843,8 @@ func (c *RPCClient) respondSeq(seq uint64, respHeader *responseHeader) {
 	}
 }
 
-// listen is used to processes data coming over the IPC channel,
-// and wrote it to the correct destination based on seq no
+// listen is used to process data coming over the IPC channel,
+// and write it to the correct destination based on seq no
 func (c *RPCClient) listen() {
 	defer c.Close()
 	var respHeader responseHeader
